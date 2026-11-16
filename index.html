@@ -2095,58 +2095,7 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
 </style>
 
 
-<style id="v20-mobile-premium-redesign">
-/* V20.2 — dedicated mobile-first visual system. Desktop layout and business logic remain untouched. */
-@media (max-width:767px){
- :root{--v20-petrol:#082f33;--v20-petrol-2:#0d4144;--v20-silver:#cbd5d9;--v20-glass:rgba(248,251,251,.91)}
- html,body{min-width:0!important;width:100%!important;max-width:100%!important;overflow-x:hidden!important;background:#06272b!important}
- body{color:#17272b!important;background:radial-gradient(ellipse at 50% -15%,#1b5a5d 0%,#0b383c 42%,#041e22 100%)!important;padding:0 0 calc(86px + env(safe-area-inset-bottom))!important;font-family:Cairo,Tahoma,Arial,sans-serif!important}
- header{position:sticky!important;top:0!important;z-index:100!important;background:rgba(5,35,39,.94)!important;border:0!important;border-bottom:1px solid rgba(207,224,226,.16)!important;box-shadow:0 10px 32px rgba(0,0,0,.24)!important;backdrop-filter:blur(22px) saturate(145%)!important}
- header>div:first-child{height:auto!important;min-height:58px!important;max-width:none!important;width:100%!important;padding:10px 13px 7px!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:7px!important}
- header>div:first-child>div:first-child{display:flex!important;align-items:center!important;gap:10px!important;min-width:0!important}
- header #brandLogoImg,header #brandLogoFallback{border-radius:13px!important}
- header h1{color:#edf3f4!important;font-size:17px!important;letter-spacing:.15em!important}
- header #cloudHeaderStatus{background:rgba(199,216,219,.12)!important;border:1px solid rgba(199,216,219,.22)!important;color:#cbd9dc!important;font-size:9px!important}
- header>div:first-child>div:first-child>div:first-child>div>span:last-child,header>div:first-child>div:nth-child(3){display:none!important}
- .v1916-desktop-nav{display:none!important}
- #workspaceSubnav{display:flex!important;gap:7px!important;overflow-x:auto!important;white-space:nowrap!important;padding:5px 12px 10px!important;margin:0!important;border:0!important;background:transparent!important;scrollbar-width:none!important;-webkit-overflow-scrolling:touch}
- #workspaceSubnav::-webkit-scrollbar{display:none!important}
- #workspaceSubnav button{flex:0 0 auto!important;min-height:34px!important;padding:7px 13px!important;border-radius:12px!important;background:rgba(224,237,238,.09)!important;border:1px solid rgba(224,237,238,.12)!important;color:#d5e1e3!important;font-size:10px!important;font-weight:800!important}
- #workspaceSubnav button.active{background:linear-gradient(135deg,#dce5e7,#aab9be)!important;color:#123438!important;border-color:#e8f0f1!important;box-shadow:0 5px 15px #0003!important}
- main{display:block!important;width:100%!important;max-width:none!important;min-width:0!important;margin:0!important;padding:13px 11px 28px!important;overflow-x:clip!important}
- .tab-section{display:block!important;width:100%!important;min-width:0!important;max-width:100%!important;gap:13px!important}
- .tab-section>div{min-width:0!important;max-width:100%!important;width:100%!important;margin-bottom:12px!important}
- .tab-section .bg-white,.tab-section [class~="bg-slate-50"],.tab-section [class~="bg-white/95"]{background:var(--v20-glass)!important;color:#17272b!important;border:1px solid rgba(224,237,238,.64)!important;border-radius:19px!important;box-shadow:0 10px 28px rgba(0,0,0,.14),inset 0 1px rgba(255,255,255,.9)!important;backdrop-filter:blur(18px) saturate(130%)!important}
- .tab-section h2,.tab-section h3,.tab-section h4{color:#17383b!important;line-height:1.5!important}
- .tab-section .text-slate-500,.tab-section .text-slate-400{color:#62777a!important}
- .tab-section .border-slate-200,.tab-section .border-slate-300{border-color:#d8e3e4!important}
- .tab-section input,.tab-section select,.tab-section textarea{min-width:0!important;max-width:100%!important;min-height:43px!important;font-size:14px!important;border-radius:12px!important;border:1px solid #d3dfe1!important;background:rgba(255,255,255,.94)!important;color:#183235!important;padding:10px 12px!important}
- .tab-section button{min-height:40px;touch-action:manipulation;border-radius:12px!important}
- .tab-section .grid{min-width:0!important}
- #tab-pos{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:12px!important}
- #tab-pos>div,#tab-pos>div[class*="col-span"]{grid-column:1/-1!important;width:100%!important}
- #tab-pos>div:nth-child(2)>div{position:static!important;top:auto!important;width:100%!important}
- #posProductsGrid,#catalogGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
- #posProductsGrid>* ,#catalogGrid>*{width:100%!important;min-width:0!important;max-width:100%!important;border-radius:16px!important;overflow:hidden!important}
- #posProductsGrid img,#catalogGrid img{max-width:100%!important;object-fit:contain!important}
- .tab-section .grid-cols-2,.tab-section .sm\\:grid-cols-2,.tab-section .md\\:grid-cols-2,.tab-section .lg\\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))!important}
- .tab-section .overflow-x-auto{width:100%!important;max-width:100%!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch!important}
- .tab-section table{min-width:620px!important}
- .tab-section .sticky{position:static!important;top:auto!important}
- .tab-section .rounded-2xl{border-radius:18px!important}
- .tab-section .shadow-xs,.tab-section .shadow-sm{box-shadow:0 7px 20px rgba(14,44,47,.08)!important}
- .v20-bottom-nav{position:fixed!important;z-index:999!important;left:10px!important;right:10px!important;bottom:calc(8px + env(safe-area-inset-bottom))!important;display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr))!important;gap:3px!important;padding:7px 5px!important;border:1px solid rgba(221,236,237,.22)!important;border-radius:21px!important;background:rgba(5,34,38,.94)!important;box-shadow:0 12px 36px rgba(0,0,0,.38),inset 0 1px rgba(255,255,255,.12)!important;backdrop-filter:blur(24px) saturate(150%)!important}
- .v20-bottom-nav .workspace-btn{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important;min-width:0!important;min-height:49px!important;padding:5px 1px!important;border:1px solid transparent!important;border-radius:13px!important;background:transparent!important;color:#c0d0d2!important;font-size:9px!important;font-weight:800!important;white-space:nowrap!important}
- .v20-bottom-nav .workspace-btn .v20-nav-icon{font-size:17px!important;line-height:1.1!important}
- .v20-bottom-nav .workspace-btn.active{background:linear-gradient(145deg,#dce6e8,#aebdc1)!important;color:#103438!important;box-shadow:0 4px 12px #0004!important}
- .modal,.modal-overlay{align-items:flex-start!important;justify-content:center!important;padding:10px!important;overflow-y:auto!important}
- .modal>div,.modal-overlay>div{width:100%!important;max-width:100%!important;max-height:calc(100dvh - 20px)!important;overflow-y:auto!important;margin:auto!important;border-radius:20px!important}
- .modal input,.modal select,.modal textarea,.modal-overlay input,.modal-overlay select,.modal-overlay textarea{min-width:0!important;max-width:100%!important;font-size:16px!important}
- #toastContainer{top:8px!important;width:calc(100vw - 20px)!important}
- #printPreviewBody{max-width:100%!important;overflow-x:auto!important}
-}
-@media (max-width:380px){.v20-bottom-nav{left:5px!important;right:5px!important;gap:1px!important;padding:6px 3px!important}.v20-bottom-nav .workspace-btn{font-size:8px!important}.v20-bottom-nav .workspace-btn .v20-nav-icon{font-size:16px!important}#posProductsGrid,#catalogGrid{gap:6px!important}}
-</style>
+
 
 </head>
 <!-- V19.30: smart operating supplies inventory; preserve original layout and schemaVersion 18 -->
@@ -2190,15 +2139,7 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
   </header>
 
   
-<nav class="v20-bottom-nav" aria-label="التنقل الرئيسي">
-<button type="button" class="workspace-btn active" data-workspace="sales"><span class="v20-nav-icon">⌂</span><span>المبيعات</span></button>
-<button type="button" class="workspace-btn" data-workspace="customers"><span class="v20-nav-icon">♙</span><span>العملاء</span></button>
-<button type="button" class="workspace-btn" data-workspace="delivery"><span class="v20-nav-icon">⇢</span><span>التوصيل</span></button>
-<button type="button" class="workspace-btn" data-workspace="inventory"><span class="v20-nav-icon">▦</span><span>المخزون</span></button>
-<button type="button" class="workspace-btn" data-workspace="finance"><span class="v20-nav-icon">◈</span><span>المالية</span></button>
-<button type="button" class="workspace-btn" data-workspace="settings"><span class="v20-nav-icon">⚙</span><span>الإعدادات</span></button>
-<button type="button" class="workspace-btn" data-workspace="intelligence"><span class="v20-nav-icon">✧</span><span>التحليل</span></button>
-</nav>
+
 
   <div id="toastContainer" class="fixed top-[82px] left-1/2 -translate-x-1/2 z-[12000] flex flex-col gap-2 pointer-events-none w-[min(94vw,560px)] items-center" aria-live="polite"></div>
 
