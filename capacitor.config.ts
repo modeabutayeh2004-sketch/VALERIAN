@@ -4,7 +4,6 @@ const config: CapacitorConfig = {
   appId: 'com.valerian.business',
   appName: 'VALERIAN',
   webDir: 'dist',
-  bundledWebRuntime: false
 };
 
 export default config;
