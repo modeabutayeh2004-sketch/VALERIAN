@@ -9,5 +9,13 @@
   "scope": "./",
   "display": "standalone",
   "background_color": "#080b10",
-  "theme_color": "#101d35"
+  "theme_color": "#101d35",
+  "icons": [
+    {
+      "src": "./valerian-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }
