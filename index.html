@@ -5153,7 +5153,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       if(!cssWidth||!cssHeight) throw new Error('تعذر تحديد أبعاد المستند في المعاينة');
       // A higher adaptive scale improves mobile export clarity; the pixel cap still
       // prevents excessive memory use on phones for long reports or large documents.
-      const isLoyaltyCard=source.classList.contains('v1960-loyalty-card');
+      const isLoyaltyCard=source.classList.contains('v1960-loyalty-card')||!!source.querySelector('.v1965-loyalty-card');
       const pixelBudget=32000000;
       const scale=Math.max(2,Math.min(5.5,Math.sqrt(pixelBudget/Math.max(1,cssWidth*cssHeight))));
       const canvas=await window.html2canvas(source,{
@@ -6025,30 +6025,30 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
 
     async function printCustomerLoyaltyCard(idx) {
       await window.__valImgReady;
-      const c = state.customers[idx];
-      const pts = calculateCurrentLoyaltyPoints(c.phone); c.points = pts;
+      const c=(state.customers||[])[idx];
+      if(!c){showToast('بيانات العميل غير موجودة.','error');return;}
+      const pts=calculateCurrentLoyaltyPoints(c.phone);
       pendingOffersBlob=null;pendingOffersFiles=null;pendingPreviewImageBlob=null;pendingInvoiceShareOrder=null;
-      pendingCustomerImageShare={id:'loyalty-card',name:String(c.name||'عميلنا'),phone:String(c.phone||''),type:'loyalty_card'};
+      pendingCustomerImageShare={id:'loyalty-'+String(c.phone||idx),name:String(c.name||'عميلنا'),phone:String(c.phone||''),type:'loyalty_card'};
       document.getElementById('invoiceWhatsAppBtn')?.classList.toggle('hidden',!pendingCustomerImageShare.phone);
       document.getElementById('invoiceOpenWhatsAppBtn')?.classList.toggle('hidden',!pendingCustomerImageShare.phone);
       document.getElementById('genericShareImageBtn')?.classList.remove('hidden');
-      pendingPrintHtml = `
-        <div class="v1960-loyalty-card" dir="rtl">
-          <div class="v1962-card-brand">${((valIdb.cache.brand_logo)||(state.brand?.logo&&state.brand.logo!==VAL_IMG_PH?state.brand.logo:''))?`<img src="${valIdb.cache.brand_logo||(state.brand?.logo!==VAL_IMG_PH?state.brand.logo:'')}" alt="VALERIAN"/>`:''}<span><strong>VALERIAN</strong><small>THE ART OF FRAGRANCE</small></span></div>
-          <div class="v1960-card-title">بطاقة الولاء</div>
-          <div class="v1960-card-subtitle">امتيازات خاصة — لأن اختياركم يستحق التقدير</div>
-          <div class="v1960-card-name">${escapeHTML(c.name||'عميلنا')}</div>
-          <div class="v1960-card-phone" dir="ltr"><bdi dir="ltr">${escapeHTML(c.phone||'')}</bdi></div>
-          <div class="v1960-points-panel">
-            <div style="font-size:11px;font-weight:800;color:#475569">رصيد نقاط الولاء الحالي</div>
-            <div class="v1960-points-value">${formatNumber(pts,0)}</div>
-            <div style="font-size:11px;font-weight:900;color:#334155">نقطة</div>
-            <div class="v1960-card-value">قيمة الاستبدال ${formatCurrency(pts * state.settings.pointValue)}</div>
-          </div>
-          <div class="v1960-card-foot">شكراً لثقتكم — نعتز بكونكم جزءاً من عائلة ڤاليريان</div>
-        </div>
-      `;
-      document.getElementById('printPreviewBody').innerHTML = pendingPrintHtml;
+      const logo=(valIdb?.cache?.brand_logo)||(state.brand?.logo&&state.brand.logo!==VAL_IMG_PH?state.brand.logo:'');
+      pendingPrintHtml = '<div class="v1965-loyalty-sheet" dir="rtl"><article class="v1965-loyalty-card">' +
+        '<div class="v1965-card-top"><div class="v1965-brand-lockup">' +
+        (logo?'<img src="'+logo+'" alt="VALERIAN"/>':'') +
+        '<span><strong>VALERIAN</strong><small>THE ART OF FRAGRANCE</small></span></div><span class="v1965-card-label">LOYALTY PRIVILEGE</span></div>' +
+        '<div class="v1965-card-main"><div class="v1965-customer-side">' +
+        '<div class="v1965-card-eyebrow">بطاقة الولاء الخاصة بكم</div><h2>شكراً لثقتكم</h2>' +
+        '<p class="v1965-card-caption">كل اختيار منكم يستحق تقديراً خاصاً.</p>' +
+        '<div class="v1965-customer-name">'+escapeHTML(c.name||'عميلنا')+'</div>' +
+        '<div class="v1965-customer-phone" dir="ltr"><bdi>'+escapeHTML(c.phone||'')+'</bdi></div></div>' +
+        '<div class="v1965-points-side"><div class="v1965-points-caption">رصيد نقاطكم الحالي</div>' +
+        '<div class="v1965-points-number">'+formatNumber(pts,0)+'</div><div class="v1965-points-word">نقطة</div>' +
+        '<div class="v1965-points-divider"></div><div class="v1965-points-worth">قيمة الاستبدال</div>' +
+        '<strong>'+formatCurrency(pts*Number(state.settings.pointValue||0))+'</strong></div></div>' +
+        '<div class="v1965-card-bottom"><span>VALERIAN · THE ART OF FRAGRANCE</span><span>نعتز بكونكم جزءاً من عائلتنا</span></div></article></div>';
+      document.getElementById('printPreviewBody').innerHTML=pendingPrintHtml;
       document.getElementById('printPaperSize').value='a4';
       v1953SyncPrintPreviewSize();
       openModal('printPreviewModal');
@@ -6626,7 +6626,54 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     function v1931PrintElement(elementId,title){
       const el=document.getElementById(elementId);if(!el)return showToast('المحتوى المطلوب طباعته غير موجود.','error');
       const win=window.open('','_blank','width=1000,height=800');if(!win)return showToast('اسمح بفتح النوافذ المنبثقة لإتمام الطباعة.','error');
-      win.document.open();win.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${escapeHTML(title)}</title><style>body{font-family:Arial,Tahoma,sans-serif;padding:24px;color:#111}h2{text-align:center}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ddd;padding:8px}@page{margin:14mm}</style></head><body>${v1946BrandHeader()}<h2>${escapeHTML(title)}</h2>${el.innerHTML}<script>window.onload=()=>setTimeout(()=>window.print(),300);<\/script></body></html>`);win.document.close();
+      win.document.open();win.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${escapeHTML(title)}</title><style>body{font-family:Arial,Tahoma,sans-serif;padding:24px;color:#111}h2{text-align:center}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ddd;padding:8px}@page{margin:14mm}</style>
+<style id="v1965-loyalty-card-redesign">
+.v1965-loyalty-sheet{width:100%;max-width:860px;margin:12px auto;padding:0;box-sizing:border-box;display:flex;justify-content:center}
+.v1965-loyalty-card{position:relative;isolation:isolate;overflow:hidden;width:100%;max-width:860px;aspect-ratio:1.586/1;min-height:0;margin:0 auto;padding:4.2% 4.6%;border-radius:22px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;color:#f7f9fc;background:radial-gradient(ellipse at 12% 90%,rgba(122,151,184,.22),transparent 42%),linear-gradient(118deg,#0a1422 0%,#17283d 58%,#0b1421 100%);font-family:'Cairo',Tahoma,Arial,sans-serif;text-align:right;box-shadow:0 12px 34px rgba(15,23,42,.18)}
+.v1965-loyalty-card:before{content:"";position:absolute;inset:12px;border:1px solid rgba(220,230,241,.22);border-radius:15px;pointer-events:none;z-index:-1}
+.v1965-card-top{display:flex;align-items:center;justify-content:space-between;gap:12px;direction:ltr}
+.v1965-brand-lockup{display:flex;align-items:center;gap:12px;direction:ltr;text-align:left}
+.v1965-brand-lockup img{display:block;width:clamp(34px,5vw,58px);height:clamp(34px,5vw,58px);object-fit:contain;flex:0 0 auto}
+.v1965-brand-lockup strong{display:block;font:900 clamp(17px,2.8vw,25px)/1.1 Arial,sans-serif;letter-spacing:2px;color:#fff}
+.v1965-brand-lockup small{display:block;margin-top:4px;font:700 clamp(7px,1.1vw,10px)/1.2 Arial,sans-serif;letter-spacing:1.4px;color:#c4cfdb}
+.v1965-card-label{font:800 clamp(7px,1vw,10px)/1.2 Arial,sans-serif;letter-spacing:2px;color:#b9c7d6}
+.v1965-card-main{display:grid;grid-template-columns:1.12fr .88fr;align-items:center;gap:5%;direction:rtl;margin:2.5% 0}
+.v1965-customer-side{min-width:0;text-align:right}
+.v1965-card-eyebrow{font-size:clamp(9px,1.35vw,13px);font-weight:800;color:#c5d0dd;margin-bottom:5px}
+.v1965-customer-side h2{font-size:clamp(19px,3.2vw,30px);line-height:1.25;font-weight:900;color:#fff;margin:0 0 5px}
+.v1965-card-caption{font-size:clamp(8px,1.2vw,11px);color:#bdc9d6;margin:0 0 7%}
+.v1965-customer-name{font-size:clamp(13px,2vw,19px);font-weight:900;color:#fff;overflow-wrap:anywhere}
+.v1965-customer-phone{font:600 clamp(10px,1.45vw,13px)/1.4 Arial,sans-serif;color:#cbd5e1;margin-top:5px;text-align:right}
+.v1965-points-side{min-width:0;text-align:center;padding:7% 5%;border:1px solid rgba(255,255,255,.8);border-radius:14px;background:linear-gradient(145deg,#f8fafc,#dce5ee);color:#142236;box-shadow:0 8px 20px rgba(0,0,0,.13)}
+.v1965-points-caption{font-size:clamp(8px,1.25vw,12px);font-weight:800;color:#526174}
+.v1965-points-number{font:900 clamp(32px,6vw,54px)/1.08 Arial,sans-serif;color:#14263c;margin:5px 0 0}
+.v1965-points-word{font-size:clamp(9px,1.35vw,13px);font-weight:900;color:#334155}
+.v1965-points-divider{height:1px;background:#cbd5e1;margin:7% 0 5%}
+.v1965-points-worth{font-size:clamp(8px,1.1vw,10px);font-weight:800;color:#64748b}
+.v1965-points-side>strong{display:block;font-size:clamp(11px,1.7vw,16px);font-weight:900;color:#17283d;margin-top:3px}
+.v1965-card-bottom{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid rgba(220,230,241,.2);padding-top:2.2%;font-size:clamp(7px,1vw,10px);font-weight:700;color:#c5d0dd}
+@media(max-width:520px){.v1965-loyalty-card{border-radius:13px;padding:5%}.v1965-loyalty-card:before{inset:7px;border-radius:9px}.v1965-card-main{gap:3%}.v1965-points-side{border-radius:9px}.v1965-card-bottom{letter-spacing:0}}
+@media print{
+#printArea .v1965-loyalty-sheet{width:190mm!important;max-width:190mm!important;margin:0 auto!important;padding:0!important;display:flex!important;justify-content:center!important}
+#printArea .v1965-loyalty-card{width:180mm!important;max-width:180mm!important;height:113.5mm!important;min-height:113.5mm!important;aspect-ratio:auto!important;padding:7mm 8mm!important;border-radius:5mm!important;box-shadow:none!important;break-inside:avoid!important;page-break-inside:avoid!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+#printArea .v1965-brand-lockup img{width:14mm!important;height:14mm!important}
+#printArea .v1965-brand-lockup strong{font-size:19pt!important}
+#printArea .v1965-brand-lockup small{font-size:7pt!important}
+#printArea .v1965-card-label{font-size:7pt!important}
+#printArea .v1965-card-eyebrow{font-size:9pt!important}
+#printArea .v1965-customer-side h2{font-size:22pt!important}
+#printArea .v1965-card-caption{font-size:8pt!important}
+#printArea .v1965-customer-name{font-size:15pt!important}
+#printArea .v1965-customer-phone{font-size:10pt!important}
+#printArea .v1965-points-caption{font-size:9pt!important}
+#printArea .v1965-points-number{font-size:42pt!important}
+#printArea .v1965-points-word{font-size:10pt!important}
+#printArea .v1965-points-worth{font-size:8pt!important}
+#printArea .v1965-points-side>strong{font-size:13pt!important}
+#printArea .v1965-card-bottom{font-size:7pt!important}
+}
+</style>
+</head><body>${v1946BrandHeader()}<h2>${escapeHTML(title)}</h2>${el.innerHTML}<script>window.onload=()=>setTimeout(()=>window.print(),300);<\/script></body></html>`);win.document.close();
     }
     function v1931PrintTable(tableId,title,fromId,toId){
       const table=document.getElementById(tableId); if(!table)return showToast('الجدول المطلوب طباعته غير موجود.','error');
