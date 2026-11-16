@@ -2542,6 +2542,77 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
   #tab-pos #posCartItems,#tab-inventory .inventory-subnav{overflow:visible!important;}
 }
 </style>
+<style id="v20-navy-operations-refinement">
+/* V20.6 — imports, delivery, offers, reports and settings surfaces. Presentation only. */
+@media screen{
+  /* Offers: remove purple panel treatment in favor of the approved Navy identity. */
+  #tab-offers .offers-workspace-banner{
+    background:radial-gradient(circle at 95% 0%,rgba(190,205,224,.16),transparent 38%),
+      linear-gradient(120deg,#1b3049,#101d30)!important;
+    border:1px solid rgba(195,210,229,.19)!important;
+    color:#eef2f7!important;box-shadow:0 14px 32px rgba(0,0,0,.22)!important;
+  }
+  #tab-offers .offers-workspace-banner h2{color:#f0f3f7!important;}
+  #tab-offers .offers-workspace-banner p{color:#b9c6d6!important;}
+  #tab-offers .offers-workspace-banner button{
+    background:linear-gradient(135deg,#e6ebf1,#b8c6d5)!important;
+    color:#142238!important;border:1px solid #e6ebf1!important;
+  }
+  /* Delivery and imports: section headers and company panel. */
+  #tab-tracking>div:first-child,#tab-imports>div:first-child,
+  #tab-suppliers>div:first-child{
+    background:linear-gradient(115deg,rgba(29,47,70,.96),rgba(16,30,48,.97))!important;
+    border:1px solid rgba(195,210,229,.18)!important;border-radius:18px!important;
+  }
+  #tab-tracking .bg-slate-50,#tab-imports .bg-slate-50,
+  #tab-suppliers .bg-slate-50{
+    background:rgba(195,210,229,.055)!important;
+  }
+  #tab-tracking .bg-slate-50 p,#tab-imports .bg-slate-50 p,
+  #tab-suppliers .bg-slate-50 p{color:#aebdd0!important;}
+  /* Finance section callouts should be calm; retain warning meaning without purple blocks. */
+  #tab-reports>div:first-child,#tab-expenses>div:first-child,
+  #tab-cashbook>div:first-child{
+    background:rgba(195,210,229,.055)!important;
+    border-color:rgba(195,210,229,.16)!important;
+  }
+  #tab-reports .bg-violet-50,#tab-expenses .bg-violet-50,
+  #tab-cashbook .bg-violet-50{
+    background:rgba(195,210,229,.07)!important;
+    border-color:rgba(195,210,229,.18)!important;color:#dce5ef!important;
+  }
+  #tab-reports .bg-violet-50 button,#tab-expenses .bg-violet-50 button,
+  #tab-cashbook .bg-violet-50 button{min-height:40px!important;}
+  /* Settings: visually separate safety and backup actions without hiding warnings. */
+  #tab-settings>div:first-child{
+    background:linear-gradient(145deg,rgba(29,47,70,.94),rgba(16,30,48,.97))!important;
+    border-color:rgba(195,210,229,.18)!important;
+  }
+  #tab-settings .bg-rose-50{
+    background:rgba(165,62,83,.12)!important;color:#f0c4ce!important;
+    border-color:rgba(210,112,133,.3)!important;
+  }
+  #tab-settings .text-rose-800,#tab-settings .text-rose-700{color:#f0c4ce!important;}
+  /* Keep modal action areas readable and touch friendly. */
+  .modal-overlay input,.modal-overlay select,.modal-overlay textarea,
+  .modal input,.modal select,.modal textarea{
+    min-height:40px!important;background:rgba(5,14,26,.72)!important;
+    color:#f1f4f8!important;border-color:rgba(195,210,229,.24)!important;
+  }
+  .modal-overlay button,.modal button{border-radius:11px!important;}
+}
+@media screen and (max-width:767px){
+  #tab-offers .offers-workspace-banner{padding:14px!important;gap:12px!important;}
+  #tab-offers .offers-workspace-banner button{width:100%!important;justify-content:center!important;}
+  #tab-tracking table,#tab-imports table,#tab-suppliers table{min-width:640px!important;}
+  #tab-settings>div:first-child{padding:15px!important;}
+}
+@media print{
+  #tab-offers .offers-workspace-banner,#tab-settings>div:first-child{
+    background:#fff!important;color:#111!important;box-shadow:none!important;
+  }
+}
+</style>
 </head>
 <!-- V19.30: smart operating supplies inventory; preserve original layout and schemaVersion 18 -->
 <!-- V19.37: compact A4 landscape inventory print with fixed image thumbnails -->
