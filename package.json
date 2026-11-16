@@ -5,8 +5,8 @@
   "description": "VALERIAN Android app build workspace",
   "scripts": {
     "prepare:app": "node scripts/prepare-app.mjs",
-    "android:add": "npm run prepare:app && cap add android",
-    "android:sync": "npm run prepare:app && cap sync android",
+    "android:add": "npm run prepare:app && cap add android && npm run prepare:app",
+    "android:sync": "npm run prepare:app && cap sync android && npm run prepare:app",
     "android:open": "cap open android",
     "android:run": "cap run android"
   },
@@ -15,6 +15,8 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.0.0",
-    "@capacitor/android": "^8.0.0"
-  }
+    "@capacitor/android": "^8.0.0",
+    "typescript": "^5.9.3"
+  },
+  "type": "module"
 }
