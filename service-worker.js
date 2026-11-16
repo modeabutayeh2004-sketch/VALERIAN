@@ -1,4 +1,4 @@
-/* VALERIAN V19.66 — offline application shell */
+/* VALERIAN V19.68 — offline application shell */
 'use strict';
 const CACHE_NAME = 'valerian-app-shell-v19-68';
 const APP_SHELL = ['./', './index.html', './manifest.webmanifest'];
