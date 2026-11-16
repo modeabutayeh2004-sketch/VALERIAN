@@ -3220,14 +3220,26 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     function persistLocal(st){
       const {json,pend}=valSerializeState(st);
       localStorage.setItem(STORAGE_KEY,json);
-      if(Object.keys(pend).length){Object.assign(valIdb.pending,pend);clearTimeout(valIdb.flushTimer);valIdb.flushTimer=setTimeout(valIdbFlush,300);}
+      if(Object.keys(pend).length){Object.assign(valIdb.pending,pend);clearTimeout(valIdb.flushTimer);valIdb.flushTimer=setTimeout(()=>valIdbFlush().catch(err=>console.error('VALERIAN scheduled image flush failed',err)),300);}
       return json;
     }
     async function valIdbFlush(){
       const batch=valIdb.pending; valIdb.pending=Object.create(null);
       if(!Object.keys(batch).length) return;
-      try{ await valIdbPutMany('images',batch); Object.assign(valIdb.cache,batch); try{persistLocal(state);}catch(_){} }
-      catch(e){ console.warn('VALERIAN image store failed; keeping images in localStorage',e); valIdb.failed=true; valIdb.ready=false; }
+      try{
+        await valIdbPutMany('images',batch);
+        Object.assign(valIdb.cache,batch);
+        try{persistLocal(state);}catch(e){console.warn('تعذر تحديث نسخة الحالة المختصرة بعد حفظ الصور',e);}
+      }catch(e){
+        // Never drop the batch: retain it for retry and fall back to inline data
+        // in the compact local snapshot whenever localStorage still has room.
+        Object.assign(valIdb.pending,batch);
+        valIdb.failed=true;valIdb.ready=false;
+        try{persistLocal(state);}catch(localErr){console.error('تعذر حفظ نسخة الصور الاحتياطية محلياً',localErr);}
+        console.error('VALERIAN image store failed; image batch retained for retry',e);
+        try{showToast('تعذر حفظ بعض الصور في قاعدة البيانات المحلية؛ احتفظنا بالبيانات وحاول مرة أخرى بعد توفير مساحة.','error');}catch(_){}
+        throw e;
+      }
     }
     function valWalkImages(o,fn,d){
       d=d||0; if(!o||typeof o!=='object'||d>6) return;
@@ -4959,7 +4971,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
 
     function v1946EnsureBrandHeader(html){
       const value=String(html||'');
-      if(/data-v1946-brand=["']1["']|VALERIAN_INVOICE_EMBLEM|data-v1945-invoice-brand/i.test(value)) return value;
+      // Loyalty cards already contain their own complete brand header.
+      if(/v1960-loyalty-card|data-v1946-brand=["']1["']|VALERIAN_INVOICE_EMBLEM|data-v1945-invoice-brand/i.test(value)) return value;
       return `<div data-v1946-document="1" style="width:100%;box-sizing:border-box;background:#fff;">${v1946BrandHeaderHtml()}${value}</div>`;
     }
 
@@ -5116,7 +5129,9 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const area=document.getElementById('printArea');
       try {
         area.classList.remove('hidden');
-        area.innerHTML=v1946EnsureBrandHeader(pendingPrintHtml);
+        const previewRoot=document.getElementById('printPreviewBody')?.firstElementChild;
+        if(!previewRoot) throw new Error('لا توجد معاينة جاهزة للطباعة');
+        area.replaceChildren(previewRoot.cloneNode(true));
         renderInvoiceQrCodes(area);
         const isOffers=!!area.querySelector('.v1940-offers-print');
         const width=v1953PaperWidth(size);
@@ -5161,24 +5176,26 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       if(pendingPreviewImageBlob) return pendingPreviewImageBlob;
       const source=document.getElementById('printPreviewBody')?.firstElementChild;
       if(!source) throw new Error('لا يوجد مستند للتصدير');
-      if(typeof window.html2canvas!=='function' && !(await loadOptionalLibrary('html2canvas'))) throw new Error('مكتبة تصدير الصور غير متاحة دون اتصال. يمكنك استخدام الطباعة، أو إعادة المحاولة عند توفر الإنترنت.');
+      if(typeof window.html2canvas!=='function' && !(await loadOptionalLibrary('html2canvas'))) throw new Error('مكتبة تحويل المعاينة إلى صورة غير متاحة. اتصل بالإنترنت مرة واحدة ثم أعد المحاولة.');
       if(document.fonts?.ready){try{await document.fonts.ready;}catch(e){}}
       const imgs=[...source.querySelectorAll('img')];
-      await Promise.all(imgs.map(img=>img.complete&&img.naturalWidth>0?Promise.resolve():new Promise(resolve=>{img.onload=resolve;img.onerror=resolve;setTimeout(resolve,15000);})));
+      await Promise.all(imgs.map(img=>img.complete&&img.naturalWidth>0?Promise.resolve():new Promise(resolve=>{img.onload=resolve;img.onerror=resolve;setTimeout(resolve,12000);})));
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       const rect=source.getBoundingClientRect();
       const cssWidth=Math.ceil(Math.max(source.scrollWidth,rect.width));
       const cssHeight=Math.ceil(Math.max(source.scrollHeight,rect.height));
       if(!cssWidth||!cssHeight)throw new Error('تعذر تحديد أبعاد المستند في المعاينة');
       const isCard=source.classList.contains('v1960-loyalty-card');
-      // Cards receive a fixed 4x export for crisp text and logos. Long documents
-      // use an adaptive 3x capture to avoid exhausting mobile memory.
-      const maxPixels=isCard?24000000:36000000;
-      const preferredScale=isCard?4:3;
-      const scale=Math.min(preferredScale,Math.sqrt(maxPixels/Math.max(1,cssWidth*cssHeight)));
-      const safeScale=Math.max(1.5,scale);
+      // Keep mobile canvas memory bounded. The previous 24–36 MP targets can
+      // require well over 100 MB before the browser encodes the PNG.
+      const maxPixels=isCard?8000000:10000000;
+      const maxSide=6000;
+      const preferredScale=isCard?2.2:2;
+      const scale=Math.max(1,Math.min(preferredScale,
+        Math.sqrt(maxPixels/Math.max(1,cssWidth*cssHeight)),
+        maxSide/Math.max(cssWidth,cssHeight)));
       const canvas=await window.html2canvas(source,{
-        scale:safeScale,
+        scale,
         backgroundColor:'#ffffff',
         useCORS:true,
         allowTaint:false,
@@ -5187,14 +5204,36 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         width:cssWidth,height:cssHeight,
         windowWidth:Math.max(document.documentElement.clientWidth,cssWidth),
         windowHeight:Math.max(document.documentElement.clientHeight,cssHeight),
-        imageTimeout:20000,
+        imageTimeout:15000,
         removeContainer:true,
         onclone:(clonedDoc)=>{
           const cloned=clonedDoc.querySelector('#printPreviewBody > *');
-          if(cloned){cloned.style.transform='none';cloned.style.maxWidth='none';cloned.style.width=cssWidth+'px';cloned.style.height=cssHeight+'px';cloned.style.boxSizing='border-box';cloned.style.margin='0';cloned.style.position='relative';cloned.style.inset='auto';}
+          if(!cloned)return;
+          cloned.style.transform='none';
+          cloned.style.maxWidth='none';
+          cloned.style.width=cssWidth+'px';
+          cloned.style.height=cssHeight+'px';
+          cloned.style.boxSizing='border-box';
+          cloned.style.margin='0';
+          cloned.style.position='relative';
+          cloned.style.inset='auto';
+          if(isCard){
+            // html2canvas 1.4.1 can fail on modern color-mix() CSS values.
+            cloned.style.setProperty('background','linear-gradient(135deg,#123f43 0%,#075653 55%,#063c3b 100%)','important');
+            cloned.style.setProperty('background-image','linear-gradient(135deg,#123f43 0%,#075653 55%,#063c3b 100%)','important');
+            cloned.style.setProperty('border-color','#aeb9c8','important');
+            cloned.style.setProperty('box-shadow','none','important');
+            cloned.querySelectorAll('img').forEach(img=>img.style.setProperty('filter','none','important'));
+            const safeStyle=clonedDoc.createElement('style');
+            safeStyle.textContent='.v1960-loyalty-card:before{display:none!important}.v1960-loyalty-card .v1960-points-panel{background:#e8edf3!important;color:#142033!important}';
+            clonedDoc.head.appendChild(safeStyle);
+          }
         }
       });
-      const blob=await new Promise((resolve,reject)=>canvas.toBlob(result=>result?resolve(result):reject(new Error('تعذر حفظ الصورة')),'image/png'));
+      let blob=null;
+      try{blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));}catch(_){}
+      if(!blob){try{blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.94));}catch(_){}}
+      if(!blob||!blob.size)throw new Error('المتصفح لم يستطع إنشاء ملف الصورة. جرّب تقليل محتوى الفاتورة أو استخدم الطباعة إلى PDF.');
       if(pendingInvoiceShareOrder||pendingCustomerImageShare)pendingPreviewImageBlob=blob;
       return blob;
     }
@@ -5203,21 +5242,28 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     }
     async function savePreviewImageDirect() {
       try {
-        showToast('جارٍ تجهيز صورة المستند بجودة عالية...');
+        showToast('جارٍ تجهيز صورة المستند...');
         const blob=await renderPreviewBlob();
         const id=(pendingCustomerImageShare?.id||pendingInvoiceShareOrder?.id||'document').replace(/[^a-z0-9_-]/gi,'_');
         const ext=blob.type==='image/jpeg'?'jpg':'png';
-        const file=new File([blob],`VALERIAN-${id}.${ext}`,{type:blob.type||'image/png'});
-        if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
-          await navigator.share({files:[file],title:'VALERIAN'});
-          showToast('الصورة جاهزة؛ اختر حفظ في الجهاز من قائمة المشاركة.','success');
-        } else {
-          v1955DownloadBlob(blob,file.name);
-          showToast('تم تجهيز الصورة للتنزيل.','success');
+        const fileName=`VALERIAN-${id}.${ext}`;
+        if(!blob||!blob.size)throw new Error('ملف الصورة فارغ');
+        // This button performs a real browser download. Sharing is a separate action.
+        if(window.navigator&&typeof navigator.msSaveOrOpenBlob==='function'){
+          navigator.msSaveOrOpenBlob(blob,fileName);
+        }else{
+          const url=URL.createObjectURL(blob);
+          const a=document.createElement('a');
+          a.href=url;a.download=fileName;a.rel='noopener';a.style.display='none';
+          document.body.appendChild(a);a.click();a.remove();
+          setTimeout(()=>URL.revokeObjectURL(url),120000);
         }
-      } catch(err) { showToast('تعذر حفظ الصورة: '+(err.message||'خطأ غير معروف'),'error'); }
-    }
-    async function shareInvoiceToCustomerWhatsApp() {
+        showToast('تم إرسال الصورة إلى تنزيلات الجهاز. إذا لم يبدأ التنزيل، افتح مشاركة الصورة واختر حفظ.','success');
+      } catch(err) {
+        console.error('VALERIAN image download failed',err);
+        showToast('تعذر تنزيل الصورة: '+(err?.message||err?.name||'خطأ غير معروف'),'error');
+      }
+    }    async function shareInvoiceToCustomerWhatsApp() {
       try {
         const order=pendingCustomerImageShare||pendingInvoiceShareOrder;
         if(!order) throw new Error('هذا المستند غير مرتبط بعميل');
