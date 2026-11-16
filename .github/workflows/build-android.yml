@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - v20-mobile-ui
+      - v20-mobile-redesign
     paths:
       - '.github/workflows/build-android.yml'
       - 'index.html'
