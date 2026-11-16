@@ -1,0 +1,13 @@
+{
+  "id": "./",
+  "name": "VALERIAN — Fragrance Business Manager",
+  "short_name": "VALERIAN",
+  "description": "إدارة أعمال العطور والمخزون والمبيعات والحسابات",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#080b10",
+  "theme_color": "#101d35"
+}
