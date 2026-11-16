@@ -5209,8 +5209,15 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         showToast('جارٍ تجهيز صورة المستند بجودة عالية...');
         const blob=await renderPreviewBlob();
         const id=(pendingCustomerImageShare?.id||pendingInvoiceShareOrder?.id||'document').replace(/[^a-z0-9_-]/gi,'_');
-        v1955DownloadBlob(blob,`VALERIAN-${id}.png`);
-        showToast('تم حفظ صورة المستند بجودة عالية.','success');
+        const ext=blob.type==='image/jpeg'?'jpg':'png';
+        const file=new File([blob],`VALERIAN-${id}.${ext}`,{type:blob.type||'image/png'});
+        if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+          await navigator.share({files:[file],title:'VALERIAN'});
+          showToast('الصورة جاهزة؛ اختر حفظ في الجهاز من قائمة المشاركة.','success');
+        } else {
+          v1955DownloadBlob(blob,file.name);
+          showToast('تم تجهيز الصورة للتنزيل.','success');
+        }
       } catch(err) { showToast('تعذر حفظ الصورة: '+(err.message||'خطأ غير معروف'),'error'); }
     }
     async function shareInvoiceToCustomerWhatsApp() {
@@ -6059,12 +6066,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       document.getElementById('invoiceOpenWhatsAppBtn')?.classList.toggle('hidden',!pendingCustomerImageShare.phone);
       document.getElementById('genericShareImageBtn')?.classList.remove('hidden');
       const logo=(valIdb.cache.brand_logo)||(state.brand?.logo&&state.brand.logo!==VAL_IMG_PH?state.brand.logo:'');
-      const loyaltyDesign=state.settings.loyaltyCardDesign||{};
-      const loyaltyColor=/^#[0-9a-f]{6}$/i.test(loyaltyDesign.color||'')?loyaltyDesign.color:'#075653';
-      const loyaltyLogoSize=Math.min(88,Math.max(40,Number(loyaltyDesign.logoSize)||62));
-      const loyaltyRadius=[24,14,6].includes(Number(loyaltyDesign.radius))?Number(loyaltyDesign.radius):24;
-      const loyaltyBrand=loyaltyDesign.showLogo===false?'':('<div class="v1962-card-brand">'+(logo?'<img src="'+logo+'" alt="VALERIAN"/>':'')+'<span><strong>VALERIAN</strong><small>THE ART OF FRAGRANCE</small></span></div>');
-      pendingPrintHtml = '<div class="v1960-loyalty-card" dir="rtl" style="--loyalty-card-color:'+loyaltyColor+';--loyalty-logo-size:'+loyaltyLogoSize+'px;border-radius:'+loyaltyRadius+'px">' +
+      const loyaltyBrand='<div class="v1962-card-brand">'+(logo?'<img src="'+logo+'" alt="VALERIAN"/>':'')+'<span><strong>VALERIAN</strong><small>THE ART OF FRAGRANCE</small></span></div>';
+      pendingPrintHtml = '<div class="v1960-loyalty-card" dir="rtl">' +
         loyaltyBrand +
         '<div class="v1960-card-title">بطاقة الولاء</div>' +
         '<div class="v1960-card-subtitle">امتيازات خاصة — لأن اختياركم يستحق التقدير</div>' +
