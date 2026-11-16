@@ -19,11 +19,16 @@ for (const file of requiredFiles) {
 
 try {
   const html = await readFile(resolve(root, 'index.html'), 'utf8');
-  const match = html.match(/const VALERIAN_INVOICE_EMBLEM\\s*=\\s*'data:image\\/png;base64,([^']+)'/);
-  if (!match) throw new Error('Original VALERIAN emblem was not found in index.html');
+  const marker = "const VALERIAN_INVOICE_EMBLEM = 'data:image/png;base64,";
+  const markerStart = html.indexOf(marker);
+  if (markerStart < 0) throw new Error('Original VALERIAN emblem was not found in index.html');
+  const dataStart = markerStart + marker.length;
+  const dataEnd = html.indexOf("'", dataStart);
+  if (dataEnd < 0) throw new Error('Original VALERIAN emblem data is incomplete');
+  const emblemBase64 = html.slice(dataStart, dataEnd);
 
-  const png = Buffer.from(match[1], 'base64');
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 414 414"><image href="data:image/png;base64,${match[1]}" x="-93" y="0" width="600" height="414" preserveAspectRatio="none"/></svg>`;
+  const png = Buffer.from(emblemBase64, 'base64');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 414 414"><image href="data:image/png;base64,${emblemBase64}" x="-93" y="0" width="600" height="414" preserveAspectRatio="none"/></svg>`
   await writeFile(resolve(dist, 'valerian-icon.svg'), svg, 'utf8');
   console.log('Prepared: original VALERIAN symbol icon');
 
