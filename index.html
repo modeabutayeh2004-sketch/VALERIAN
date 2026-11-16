@@ -5161,31 +5161,6 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       if(pendingPreviewImageBlob) return pendingPreviewImageBlob;
       const source=document.getElementById('printPreviewBody')?.firstElementChild;
       if(!source) throw new Error('لا يوجد مستند للتصدير');
-      if(source.classList.contains('v1960-loyalty-card')){
-        const cv=document.createElement('canvas');cv.width=1800;cv.height=1100;
-        const cx=cv.getContext('2d');if(!cx)throw new Error('المتصفح لا يدعم إنشاء الصور');
-        const g=cx.createLinearGradient(0,0,1800,1100);g.addColorStop(0,'#123f43');g.addColorStop(.55,'#075653');g.addColorStop(1,'#063c3b');
-        cx.fillStyle=g;cx.fillRect(0,0,1800,1100);cx.strokeStyle='rgba(230,240,240,.4)';cx.lineWidth=3;cx.strokeRect(28,28,1744,1044);
-        cx.textAlign='center';cx.direction='ltr';cx.fillStyle='#fff';
-        cx.font='bold 52px Arial';cx.fillText('VALERIAN',900,180);cx.font='bold 22px Arial';cx.fillStyle='#d7e4e3';cx.fillText('THE ART OF FRAGRANCE',900,220);
-        const logo=source.querySelector('.v1962-card-brand img');
-        if(logo&&logo.src&&(logo.src.startsWith('data:')||logo.src.startsWith('blob:')||new URL(logo.src,location.href).origin===location.origin)){
-          try{if(!logo.complete)await new Promise((ok,no)=>{logo.onload=ok;logo.onerror=no;setTimeout(()=>no(new Error('logo timeout')),8000)});cx.drawImage(logo,825,35,150,130);}catch(e){console.warn('Logo skipped during card image export',e);}
-        }
-        const get=q=>String(source.querySelector(q)?.textContent||'').trim();
-        cx.direction='rtl';cx.fillStyle='#fff';cx.font='bold 66px Cairo,Arial';cx.fillText('بطاقة الولاء',900,365);
-        cx.font='30px Cairo,Arial';cx.fillStyle='#d7e4e3';cx.fillText('امتيازات خاصة — لأن اختياركم يستحق التقدير',900,430);
-        cx.fillStyle='#fff';cx.font='bold 48px Cairo,Arial';cx.fillText(get('.v1960-card-name'),900,525);
-        cx.direction='ltr';cx.font='30px Arial';cx.fillText(get('.v1960-card-phone'),900,575);
-        cx.fillStyle='#f1f5f9';cx.fillRect(510,620,780,320);
-        cx.direction='rtl';cx.fillStyle='#475569';cx.font='bold 28px Cairo,Arial';cx.fillText('رصيد نقاط الولاء الحالي',900,685);
-        cx.fillStyle='#142033';cx.font='bold 100px Cairo,Arial';cx.fillText(get('.v1960-points-value'),900,805);
-        cx.font='bold 27px Cairo,Arial';cx.fillText(get('.v1960-card-value'),900,875);
-        cx.fillStyle='#d7e4e3';cx.font='24px Cairo,Arial';cx.fillText('شكراً لثقتكم — نعتز بكونكم جزءاً من عائلة ڤاليريان',900,1020);
-        const out=await new Promise(resolve=>cv.toBlob(resolve,'image/png'));
-        if(!out)throw new Error('تعذر إنشاء ملف صورة الكارت');
-        pendingPreviewImageBlob=out;return out;
-      }
       if(typeof window.html2canvas!=='function' && !(await loadOptionalLibrary('html2canvas'))) throw new Error('مكتبة تصدير الصور غير متاحة دون اتصال. يمكنك استخدام الطباعة، أو إعادة المحاولة عند توفر الإنترنت.');
       if(document.fonts?.ready){try{await document.fonts.ready;}catch(e){}}
       const imgs=[...source.querySelectorAll('img')];
@@ -5198,8 +5173,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const isCard=source.classList.contains('v1960-loyalty-card');
       // Cards receive a fixed 4x export for crisp text and logos. Long documents
       // use an adaptive 3x capture to avoid exhausting mobile memory.
-      const maxPixels=isCard?12000000:24000000;
-      const preferredScale=isCard?3:2.5;
+      const maxPixels=isCard?24000000:36000000;
+      const preferredScale=isCard?4:3;
       const scale=Math.min(preferredScale,Math.sqrt(maxPixels/Math.max(1,cssWidth*cssHeight)));
       const safeScale=Math.max(1.5,scale);
       const canvas=await window.html2canvas(source,{
@@ -5216,13 +5191,10 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         removeContainer:true,
         onclone:(clonedDoc)=>{
           const cloned=clonedDoc.querySelector('#printPreviewBody > *');
-          if(cloned){cloned.style.transform='none';cloned.style.maxWidth='none';}
+          if(cloned){cloned.style.transform='none';cloned.style.maxWidth='none';cloned.style.width=cssWidth+'px';cloned.style.height=cssHeight+'px';cloned.style.boxSizing='border-box';cloned.style.margin='0';cloned.style.position='relative';cloned.style.inset='auto';}
         }
       });
-      let blob=null;
-      try { blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png')); } catch(e) {}
-      if(!blob){try{blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.94));}catch(e){}}
-      if(!blob) throw new Error('تعذر إنشاء ملف الصورة؛ أغلق المعاينة وافتح الكارت مرة أخرى ثم أعد المحاولة');
+      const blob=await new Promise((resolve,reject)=>canvas.toBlob(result=>result?resolve(result):reject(new Error('تعذر حفظ الصورة')),'image/png'));
       if(pendingInvoiceShareOrder||pendingCustomerImageShare)pendingPreviewImageBlob=blob;
       return blob;
     }
@@ -6082,16 +6054,34 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     }
 
     async function printCustomerLoyaltyCard(idx) {
-      const w=window.open('','_blank');
-      if(!w){showToast('اسمح بالنوافذ المنبثقة للموقع لإتمام الطباعة.','error');return;}
-      try{
-        const c=state.customers[idx];if(!c)throw new Error('بيانات العميل غير موجودة');
-        const pts=calculateCurrentLoyaltyPoints(c.phone);
-        const logo=(valIdb.cache.brand_logo)||(state.brand?.logo&&state.brand.logo!==VAL_IMG_PH?state.brand.logo:'');
-        const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-        const html='<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VALERIAN</title><style>@page{size:100mm 70mm;margin:5mm}*{box-sizing:border-box}html,body{margin:0;padding:0;width:90mm;height:60mm;font-family:Cairo,Tahoma,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}.card{width:90mm;height:55mm;margin:auto;padding:3mm 5mm;border-radius:4mm;overflow:hidden;color:white;text-align:center;background:linear-gradient(135deg,#123f43,#075653 55%,#063c3b);display:flex;flex-direction:column;align-items:center}.brand{height:12mm;display:flex;align-items:center;justify-content:center;gap:2mm;direction:ltr;margin-bottom:1mm}.brand img{width:10mm;height:10mm;object-fit:contain}.brand strong{display:block;font:bold 12pt Arial;letter-spacing:1.5px}.brand small{display:block;font:6pt Arial;color:#d7e4e3}.title{font-size:16pt;font-weight:900}.sub{font-size:7pt;color:#d7e4e3;margin:1mm 0 2mm}.name{font-size:12pt;font-weight:900}.phone{font-size:7pt;direction:ltr;margin-bottom:2mm}.points{width:58mm;background:#f1f5f9;color:#142033;border-radius:3mm;padding:1.5mm 2mm}.num{font-size:18pt;font-weight:900}.small{font-size:7pt}.foot{font-size:6pt;color:#d7e4e3;margin-top:1.5mm}</style></head><body><main class="card">'+(logo?'<div class="brand"><img src="'+logo+'"><span><strong>VALERIAN</strong><small>THE ART OF FRAGRANCE</small></span></div>':'<div class="brand"><span><strong>VALERIAN</strong><small>THE ART OF FRAGRANCE</small></span></div>')+'<div class="title">بطاقة الولاء</div><div class="sub">امتيازات خاصة — لأن اختياركم يستحق التقدير</div><div class="name">'+esc(c.name||'عميلنا')+'</div><div class="phone">'+esc(c.phone||'')+'</div><section class="points"><div class="small">رصيد نقاط الولاء الحالي</div><div class="num">'+esc(formatNumber(pts,0))+'</div><div class="small">قيمة الاستبدال '+esc(formatCurrency(pts*state.settings.pointValue))+'</div></section><div class="foot">شكراً لثقتكم — نعتز بكونكم جزءاً من عائلة ڤاليريان</div></main><scr'+'ipt>window.onload=()=>setTimeout(()=>window.print(),500);window.onafterprint=()=>setTimeout(()=>window.close(),500);</scr'+'ipt></body></html>';
-        w.document.open();w.document.write(html);w.document.close();
-      }catch(e){try{w.close()}catch(_){}showToast('تعذرت طباعة الكارت: '+(e.message||'خطأ غير معروف'),'error')}
+      await window.__valImgReady;
+      const c = state.customers[idx];
+      const pts = calculateCurrentLoyaltyPoints(c.phone);
+      pendingOffersBlob=null;pendingOffersFiles=null;pendingPreviewImageBlob=null;pendingInvoiceShareOrder=null;
+      pendingCustomerImageShare={id:'loyalty-card',name:String(c.name||'عميلنا'),phone:String(c.phone||''),type:'loyalty_card'};
+      document.getElementById('invoiceWhatsAppBtn')?.classList.toggle('hidden',!pendingCustomerImageShare.phone);
+      document.getElementById('invoiceOpenWhatsAppBtn')?.classList.toggle('hidden',!pendingCustomerImageShare.phone);
+      document.getElementById('genericShareImageBtn')?.classList.remove('hidden');
+      const logo=(valIdb.cache.brand_logo)||(state.brand?.logo&&state.brand.logo!==VAL_IMG_PH?state.brand.logo:'');
+      const loyaltyDesign=state.settings.loyaltyCardDesign||{};
+      const loyaltyColor=/^#[0-9a-f]{6}$/i.test(loyaltyDesign.color||'')?loyaltyDesign.color:'#075653';
+      const loyaltyLogoSize=Math.min(88,Math.max(40,Number(loyaltyDesign.logoSize)||62));
+      const loyaltyRadius=[24,14,6].includes(Number(loyaltyDesign.radius))?Number(loyaltyDesign.radius):24;
+      const loyaltyBrand=loyaltyDesign.showLogo===false?'':('<div class="v1962-card-brand">'+(logo?'<img src="'+logo+'" alt="VALERIAN"/>':'')+'<span><strong>VALERIAN</strong><small>THE ART OF FRAGRANCE</small></span></div>');
+      pendingPrintHtml = '<div class="v1960-loyalty-card" dir="rtl" style="--loyalty-card-color:'+loyaltyColor+';--loyalty-logo-size:'+loyaltyLogoSize+'px;border-radius:'+loyaltyRadius+'px">' +
+        loyaltyBrand +
+        '<div class="v1960-card-title">بطاقة الولاء</div>' +
+        '<div class="v1960-card-subtitle">امتيازات خاصة — لأن اختياركم يستحق التقدير</div>' +
+        '<div class="v1960-card-name">'+escapeHTML(c.name||'عميلنا')+'</div>' +
+        '<div class="v1960-card-phone" dir="ltr"><bdi dir="ltr">'+escapeHTML(c.phone||'')+'</bdi></div>' +
+        '<div class="v1960-points-panel"><div style="font-size:11px;font-weight:800;color:#475569">رصيد نقاط الولاء الحالي</div>' +
+        '<div class="v1960-points-value">'+formatNumber(pts,0)+'</div><div style="font-size:11px;font-weight:900;color:#334155">نقطة</div>' +
+        '<div class="v1960-card-value">قيمة الاستبدال '+formatCurrency(pts*state.settings.pointValue)+'</div></div>' +
+        '<div class="v1960-card-foot">شكراً لثقتكم — نعتز بكونكم جزءاً من عائلة ڤاليريان</div></div>';
+      document.getElementById('printPreviewBody').innerHTML = pendingPrintHtml;
+      document.getElementById('printPaperSize').value='a4';
+      v1953SyncPrintPreviewSize();
+      openModal('printPreviewModal');
     }
     async function resetLocalOnlyData() {
       const typed = prompt('تحذير: سيتم مسح بيانات النشاط من هذا الجهاز فقط. ستظل بيانات السحابة والأجهزة الأخرى كما هي وقد تعود عند المزامنة لاحقًا. سيتم تنزيل نسخة احتياطية كاملة بالصور أولًا.\n\nاكتب العبارة التالية للتأكيد:\nامسح كل البيانات');
