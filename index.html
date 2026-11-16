@@ -2313,6 +2313,81 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
  .tab-section h2,.tab-section h3{color:#111!important;}
 }
 </style>
+<style id="v20-navy-responsive-navigation">
+/* V20.3 — final responsive navigation and Navy color correction. Visual-only. */
+@media screen and (max-width:1279px){
+  html,body{width:100%!important;min-width:0!important;max-width:100%!important;overflow-x:hidden!important;}
+  body{padding-bottom:calc(84px + env(safe-area-inset-bottom))!important;}
+  header .v1916-desktop-nav,header > div:first-child > div:nth-child(3){display:none!important;}
+  header{background:linear-gradient(112deg,#091321 0%,#14243a 58%,#1b2d44 100%)!important;}
+  #workspaceSubnav{
+    background:transparent!important;border:0!important;border-top:1px solid rgba(202,214,229,.12)!important;
+    margin:0!important;padding:7px 12px 10px!important;border-radius:0!important;
+  }
+  #workspaceSubnav button{
+    color:#d4deea!important;background:rgba(204,216,231,.07)!important;
+    border:1px solid rgba(202,214,229,.2)!important;border-radius:10px!important;
+  }
+  #workspaceSubnav button.active{
+    color:#142238!important;background:linear-gradient(135deg,#edf1f5,#bdc9d7)!important;
+    border-color:#e1e7ef!important;
+  }
+  main{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;}
+  .v20-lux-nav{
+    position:fixed!important;z-index:1000!important;left:9px!important;right:9px!important;
+    bottom:calc(8px + env(safe-area-inset-bottom))!important;
+    display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr))!important;
+    gap:2px!important;padding:7px 5px!important;
+    background:rgba(10,20,34,.96)!important;border:1px solid rgba(204,216,231,.22)!important;
+    border-radius:19px!important;box-shadow:0 12px 34px rgba(0,0,0,.42)!important;
+    backdrop-filter:blur(22px) saturate(130%)!important;
+  }
+  .v20-lux-nav .workspace-btn{
+    display:flex!important;flex-direction:column!important;align-items:center!important;
+    justify-content:center!important;gap:3px!important;min-width:0!important;width:100%!important;
+    min-height:49px!important;padding:4px 1px!important;border:0!important;
+    border-radius:12px!important;background:transparent!important;color:#c4cfdd!important;
+    font-size:9px!important;font-weight:750!important;white-space:nowrap!important;
+    box-shadow:none!important;
+  }
+  .v20-lux-nav .workspace-btn svg{width:18px!important;height:18px!important;stroke:currentColor!important;}
+  .v20-lux-nav .workspace-btn.active{
+    color:#142238!important;background:linear-gradient(145deg,#f0f2f5,#bdc8d5)!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.9),0 4px 12px rgba(0,0,0,.25)!important;
+  }
+}
+@media screen and (max-width:767px){
+  header{position:sticky!important;top:0!important;z-index:80!important;}
+  header > div:first-child{
+    min-height:60px!important;height:auto!important;padding:9px 11px!important;
+    display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;
+  }
+  header > div:first-child > div:first-child{min-width:0!important;gap:8px!important;}
+  header #brandLogoImg,header #brandLogoFallback{
+    width:40px!important;height:40px!important;min-width:40px!important;border-radius:12px!important;
+    border:1px solid rgba(210,222,237,.3)!important;background:rgba(255,255,255,.07)!important;
+  }
+  header h1{font-size:16px!important;letter-spacing:1.8px!important;}
+  header #cloudHeaderStatus{font-size:9px!important;padding:4px 7px!important;}
+  header > div:first-child > div:first-child > div:first-child > div > span:last-child{display:none!important;}
+  #workspaceSubnav{overflow-x:auto!important;flex-wrap:nowrap!important;white-space:nowrap!important;}
+  #workspaceSubnav button{flex:0 0 auto!important;min-height:34px!important;padding:7px 11px!important;font-size:10px!important;}
+  main{padding:13px 10px 26px!important;}
+  .tab-section{gap:12px!important;}
+  .v20-lux-nav{left:6px!important;right:6px!important;padding:6px 3px!important;border-radius:17px!important;}
+  .v20-lux-nav .workspace-btn{min-height:47px!important;font-size:8px!important;gap:2px!important;}
+  .v20-lux-nav .workspace-btn svg{width:17px!important;height:17px!important;}
+}
+@media screen and (max-width:360px){
+  .v20-lux-nav{left:4px!important;right:4px!important;padding:5px 2px!important;}
+  .v20-lux-nav .workspace-btn{font-size:7px!important;}
+}
+@media screen and (min-width:1280px){
+  .v20-lux-nav{display:none!important;}
+  body{padding-bottom:0!important;}
+  .v1916-desktop-nav{display:flex!important;}
+}
+</style>
 </head>
 <!-- V19.30: smart operating supplies inventory; preserve original layout and schemaVersion 18 -->
 <!-- V19.37: compact A4 landscape inventory print with fixed image thumbnails -->
@@ -7105,81 +7180,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const win=window.open('','_blank','width=1000,height=800');if(!win)return showToast('اسمح بفتح النوافذ المنبثقة لإتمام الطباعة.','error');
       win.document.open();win.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${escapeHTML(title)}</title><style>body{font-family:Arial,Tahoma,sans-serif;padding:24px;color:#111}h2{text-align:center}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ddd;padding:8px}@page{margin:14mm}</style>
 
-<style id="v20-navy-responsive-navigation">
-/* V20.3 — final responsive navigation and Navy color correction. Visual-only. */
-@media screen and (max-width:1279px){
-  html,body{width:100%!important;min-width:0!important;max-width:100%!important;overflow-x:hidden!important;}
-  body{padding-bottom:calc(84px + env(safe-area-inset-bottom))!important;}
-  header .v1916-desktop-nav,header > div:first-child > div:nth-child(3){display:none!important;}
-  header{background:linear-gradient(112deg,#091321 0%,#14243a 58%,#1b2d44 100%)!important;}
-  #workspaceSubnav{
-    background:transparent!important;border:0!important;border-top:1px solid rgba(202,214,229,.12)!important;
-    margin:0!important;padding:7px 12px 10px!important;border-radius:0!important;
-  }
-  #workspaceSubnav button{
-    color:#d4deea!important;background:rgba(204,216,231,.07)!important;
-    border:1px solid rgba(202,214,229,.2)!important;border-radius:10px!important;
-  }
-  #workspaceSubnav button.active{
-    color:#142238!important;background:linear-gradient(135deg,#edf1f5,#bdc9d7)!important;
-    border-color:#e1e7ef!important;
-  }
-  main{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;}
-  .v20-lux-nav{
-    position:fixed!important;z-index:1000!important;left:9px!important;right:9px!important;
-    bottom:calc(8px + env(safe-area-inset-bottom))!important;
-    display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr))!important;
-    gap:2px!important;padding:7px 5px!important;
-    background:rgba(10,20,34,.96)!important;border:1px solid rgba(204,216,231,.22)!important;
-    border-radius:19px!important;box-shadow:0 12px 34px rgba(0,0,0,.42)!important;
-    backdrop-filter:blur(22px) saturate(130%)!important;
-  }
-  .v20-lux-nav .workspace-btn{
-    display:flex!important;flex-direction:column!important;align-items:center!important;
-    justify-content:center!important;gap:3px!important;min-width:0!important;width:100%!important;
-    min-height:49px!important;padding:4px 1px!important;border:0!important;
-    border-radius:12px!important;background:transparent!important;color:#c4cfdd!important;
-    font-size:9px!important;font-weight:750!important;white-space:nowrap!important;
-    box-shadow:none!important;
-  }
-  .v20-lux-nav .workspace-btn svg{width:18px!important;height:18px!important;stroke:currentColor!important;}
-  .v20-lux-nav .workspace-btn.active{
-    color:#142238!important;background:linear-gradient(145deg,#f0f2f5,#bdc8d5)!important;
-    box-shadow:inset 0 1px rgba(255,255,255,.9),0 4px 12px rgba(0,0,0,.25)!important;
-  }
-}
-@media screen and (max-width:767px){
-  header{position:sticky!important;top:0!important;z-index:80!important;}
-  header > div:first-child{
-    min-height:60px!important;height:auto!important;padding:9px 11px!important;
-    display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;
-  }
-  header > div:first-child > div:first-child{min-width:0!important;gap:8px!important;}
-  header #brandLogoImg,header #brandLogoFallback{
-    width:40px!important;height:40px!important;min-width:40px!important;border-radius:12px!important;
-    border:1px solid rgba(210,222,237,.3)!important;background:rgba(255,255,255,.07)!important;
-  }
-  header h1{font-size:16px!important;letter-spacing:1.8px!important;}
-  header #cloudHeaderStatus{font-size:9px!important;padding:4px 7px!important;}
-  header > div:first-child > div:first-child > div:first-child > div > span:last-child{display:none!important;}
-  #workspaceSubnav{overflow-x:auto!important;flex-wrap:nowrap!important;white-space:nowrap!important;}
-  #workspaceSubnav button{flex:0 0 auto!important;min-height:34px!important;padding:7px 11px!important;font-size:10px!important;}
-  main{padding:13px 10px 26px!important;}
-  .tab-section{gap:12px!important;}
-  .v20-lux-nav{left:6px!important;right:6px!important;padding:6px 3px!important;border-radius:17px!important;}
-  .v20-lux-nav .workspace-btn{min-height:47px!important;font-size:8px!important;gap:2px!important;}
-  .v20-lux-nav .workspace-btn svg{width:17px!important;height:17px!important;}
-}
-@media screen and (max-width:360px){
-  .v20-lux-nav{left:4px!important;right:4px!important;padding:5px 2px!important;}
-  .v20-lux-nav .workspace-btn{font-size:7px!important;}
-}
-@media screen and (min-width:1280px){
-  .v20-lux-nav{display:none!important;}
-  body{padding-bottom:0!important;}
-  .v1916-desktop-nav{display:flex!important;}
-}
-</style>
+
 </head><body>${v1946BrandHeader()}<h2>${escapeHTML(title)}</h2>${el.innerHTML}<script>window.onload=()=>setTimeout(()=>window.print(),300);<\/script></body></html>`);win.document.close();
     }
     function v1931PrintTable(tableId,title,fromId,toId){
