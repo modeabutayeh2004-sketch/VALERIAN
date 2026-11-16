@@ -11,7 +11,10 @@
   <!-- V19.59: export the exact preview DOM; preserve Arabic shaping and bidi; align invoice phone row -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=1280, initial-scale=0.45, maximum-scale=3.0, user-scalable=yes" />
-  <title>VALERIAN V19.64 STORAGE RELIABILITY</title>
+  <title>VALERIAN V19.65 OFFLINE READY</title>
+  <meta name="theme-color" content="#101d35">
+  <meta name="application-name" content="VALERIAN">
+  <link rel="manifest" href="./manifest.webmanifest">
 <style id="valerian-offline-tailwind">/*! tailwindcss v4.1.10 | MIT License | https://tailwindcss.com */
 @layer properties;
 @layer theme, base, components, utilities;
@@ -4049,7 +4052,30 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       catch(e){showToast('رقم الباركود غير صالح للرسم (حروف إنجليزية وأرقام فقط).','error');return;}
       const productName=String(document.getElementById('prodName')?.value||'').trim();
       const win=window.open('','_blank','width=520,height=420');if(!win){showToast('اسمح بفتح النوافذ المنبثقة لطباعة الملصق.','error');return;}
-      win.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>ملصق باركود VALERIAN</title><style>body{font-family:Cairo,Tahoma,Arial,sans-serif;margin:0;padding:20px;text-align:center;color:#111}h3{font-size:15px;margin:0 0 5px}.name{font-size:12px;margin:0 0 8px}.label{display:inline-flex;flex-direction:column;align-items:center;border:1px solid #ddd;padding:12px 18px;border-radius:8px}svg{max-width:100%;height:auto}@media print{@page{margin:5mm}body{padding:0}.label{border:0}}</style></head><body><div style="max-width:320px;margin:0 auto 10px">${v1946BrandHeader(true)}</div><div class="label"><div class="name">${escapeHTML(productName)}</div>${svg.outerHTML}</div><script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script></body></html>`);win.document.close();
+      win.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>ملصق باركود VALERIAN</title><style>body{font-family:Cairo,Tahoma,Arial,sans-serif;margin:0;padding:20px;text-align:center;color:#111}h3{font-size:15px;margin:0 0 5px}.name{font-size:12px;margin:0 0 8px}.label{display:inline-flex;flex-direction:column;align-items:center;border:1px solid #ddd;padding:12px 18px;border-radius:8px}svg{max-width:100%;height:auto}@media print{@page{margin:5mm}body{padding:0}.label{border:0}}</style></head><body><div style="max-width:320px;margin:0 auto 10px">${v1946BrandHeader(true)}</div><div class="label"><div class="name">${escapeHTML(productName)}</div>${svg.outerHTML}</div><script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script>
+<script id="valerianServiceWorkerRegistration">
+  // V19.65: install the application shell for reliable offline reopening.
+  (function(){
+    if(!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('./service-worker.js', {scope:'./'})
+        .then(function(reg){
+          if(reg.waiting) reg.waiting.postMessage({type:'SKIP_WAITING'});
+          reg.addEventListener('updatefound', function(){
+            var worker=reg.installing;
+            if(worker) worker.addEventListener('statechange', function(){
+              if(worker.state==='installed' && navigator.serviceWorker.controller){
+                console.info('VALERIAN offline update is ready; it will activate on the next reload.');
+              }
+            });
+          });
+          console.info('VALERIAN offline app shell registered.');
+        })
+        .catch(function(err){ console.warn('VALERIAN offline registration failed:',err); });
+    });
+  })();
+</script>
+</body></html>`);win.document.close();
     }
 
     function openProductModalForAdd() {
