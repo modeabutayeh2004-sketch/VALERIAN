@@ -10,7 +10,7 @@
   <!-- V19.61: A4 portrait fit, higher-resolution preview export, pause global theme customization, streamlined customer CRM actions. -->
   <!-- V19.59: export the exact preview DOM; preserve Arabic shaping and bidi; align invoice phone row -->
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=1280, initial-scale=0.45, maximum-scale=3.0, user-scalable=yes" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover" />
   <title>VALERIAN V19.65 OFFLINE READY</title>
   <meta name="theme-color" content="#101d35">
   <meta name="application-name" content="VALERIAN">
@@ -1928,6 +1928,58 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
     #printArea [data-v1953-print-document] td { padding:5px 3px!important; line-height:1.65!important; vertical-align:middle!important; white-space:normal!important; overflow-wrap:anywhere!important; word-break:normal!important; }
     #printArea [data-v1953-print-document] > div { box-sizing:border-box!important; }
   }
+</style>
+
+
+<style id="v20-mobile-ui-initial">
+/* V20 mobile foundation: undo the legacy desktop-only width lock on small screens. */
+@media screen and (max-width: 1279px) {
+  html, body {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+  body { padding-bottom: 0 !important; }
+  main {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .v1916-desktop-nav {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+    gap: 6px !important;
+    flex-wrap: wrap !important;
+    max-width: 100% !important;
+  }
+  .v1916-desktop-nav .workspace-btn {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    white-space: normal !important;
+    justify-content: center !important;
+    padding: 9px 4px !important;
+    font-size: 11px !important;
+    box-sizing: border-box !important;
+  }
+  .v1916-subnav {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  header { max-width: 100% !important; }
+  img, video, canvas { max-width: 100%; }
+}
+@media screen and (max-width: 480px) {
+  .v1916-desktop-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
 </style>
 
 </head>
