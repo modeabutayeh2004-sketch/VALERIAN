@@ -1,4 +1,4 @@
-import { mkdir, copyFile, readFile, writeFile } from 'node:fs/promises';
+import { access, mkdir, copyFile, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 const root = process.cwd();
@@ -36,6 +36,7 @@ try {
   // the original brand symbol into native launcher resources without replacing app data.
   const androidRes = resolve(root, 'android/app/src/main/res');
   try {
+    await access(androidRes);
     await mkdir(resolve(androidRes, 'drawable-nodpi'), { recursive: true });
     await writeFile(resolve(androidRes, 'drawable-nodpi/valerian_mark.png'), png);
     await mkdir(resolve(androidRes, 'drawable'), { recursive: true });
