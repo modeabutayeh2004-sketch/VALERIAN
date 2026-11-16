@@ -5,6 +5,7 @@ on:
     branches:
       - v20-mobile-ui
       - v20-mobile-redesign
+      - v20-mobile-recovery
     paths:
       - '.github/workflows/build-android.yml'
       - 'index.html'
