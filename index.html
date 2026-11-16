@@ -2431,6 +2431,117 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
   }
 }
 </style>
+<style id="v20-navy-workspace-refinement">
+/* V20.5 — POS, stock, catalog and customer workspace polish. CSS only. */
+@media screen{
+  /* Page headers */
+  .tab-section>div:first-child.bg-white,
+  .tab-section>div:first-child.flex.bg-white{
+    background:linear-gradient(115deg,rgba(29,47,70,.96),rgba(16,30,48,.97))!important;
+    border:1px solid rgba(194,209,228,.18)!important;border-radius:18px!important;
+  }
+  .tab-section>div:first-child.bg-white p,
+  .tab-section>div:first-child.flex.bg-white p{color:#aebdd0!important;}
+  /* Neutral white buttons become quiet glass controls; semantic colors remain intact. */
+  .tab-section button.bg-white{
+    background:rgba(195,210,229,.085)!important;color:#dbe4ef!important;
+    border-color:rgba(195,210,229,.2)!important;
+  }
+  .tab-section button.bg-white:hover{background:rgba(195,210,229,.14)!important;}
+  /* POS product browsing and order panel */
+  #tab-pos #posSearchInput{
+    background:rgba(5,14,26,.68)!important;border-color:rgba(195,210,229,.24)!important;
+    min-height:44px!important;font-size:13px!important;
+  }
+  #tab-pos #posCategoryPills{scrollbar-width:none!important;}
+  #tab-pos #posCategoryPills::-webkit-scrollbar{display:none!important;}
+  #tab-pos .cat-pill{
+    border-color:rgba(195,210,229,.2)!important;color:#cbd6e4!important;
+    background:rgba(195,210,229,.07)!important;min-height:38px!important;
+  }
+  #tab-pos .cat-pill.active{
+    background:linear-gradient(135deg,#e6ebf1,#b8c6d5)!important;
+    color:#142238!important;border-color:#e6ebf1!important;
+  }
+  #tab-pos #posProductsGrid>div{
+    border:1px solid rgba(195,210,229,.16)!important;border-radius:17px!important;
+    overflow:hidden!important;box-shadow:0 10px 26px rgba(0,0,0,.18)!important;
+  }
+  #tab-pos .order-mode-btn{
+    min-height:42px!important;border-radius:12px!important;
+  }
+  #tab-pos .order-mode-btn.active{
+    background:linear-gradient(135deg,#e6ebf1,#b8c6d5)!important;
+    color:#142238!important;border-color:#e6ebf1!important;
+  }
+  #tab-pos #posCartItems{
+    border-color:rgba(195,210,229,.16)!important;
+  }
+  #tab-pos #cartGrandTotal{color:#e2e9f2!important;}
+  /* Inventory inner navigation */
+  #tab-inventory .inventory-subnav{
+    display:flex!important;flex-wrap:nowrap!important;gap:7px!important;
+    overflow-x:auto!important;padding:8px!important;
+    background:rgba(7,17,30,.52)!important;border:1px solid rgba(195,210,229,.15)!important;
+    border-radius:15px!important;scrollbar-width:none!important;
+  }
+  #tab-inventory .inventory-subnav::-webkit-scrollbar{display:none!important;}
+  #tab-inventory .inventory-subnav button{
+    flex:0 0 auto!important;min-height:39px!important;padding:8px 13px!important;
+    border-radius:11px!important;background:rgba(195,210,229,.07)!important;
+    color:#d4deea!important;border:1px solid rgba(195,210,229,.18)!important;
+  }
+  #tab-inventory .inventory-subnav button.active{
+    background:linear-gradient(135deg,#e6ebf1,#b8c6d5)!important;
+    color:#142238!important;border-color:#e6ebf1!important;
+  }
+  /* Product catalog and customer list */
+  #tab-catalog #catalogGrid>div{
+    border:1px solid rgba(195,210,229,.17)!important;border-radius:18px!important;
+    overflow:hidden!important;box-shadow:0 12px 28px rgba(0,0,0,.2)!important;
+  }
+  #tab-crm table,#tab-orders table,#tab-imports table,#tab-suppliers table{
+    border-collapse:separate!important;border-spacing:0!important;
+  }
+  #tab-crm table thead th,#tab-orders table thead th,
+  #tab-imports table thead th,#tab-suppliers table thead th{
+    background:rgba(195,210,229,.10)!important;color:#e6edf5!important;
+    font-weight:800!important;white-space:nowrap!important;
+  }
+  #tab-crm table tbody tr:hover,#tab-orders table tbody tr:hover,
+  #tab-imports table tbody tr:hover,#tab-suppliers table tbody tr:hover{
+    background:rgba(195,210,229,.075)!important;
+  }
+  /* Finance cards: remove loud tinted panels, keep positive/negative numbers meaningful. */
+  #tab-reports .grid>div,#tab-expenses .grid>div{
+    background:linear-gradient(145deg,rgba(29,47,70,.92),rgba(16,30,48,.96))!important;
+    border:1px solid rgba(195,210,229,.16)!important;border-radius:16px!important;
+    box-shadow:0 10px 25px rgba(0,0,0,.17)!important;
+  }
+  #tab-cashbook .bg-amber-50{
+    background:rgba(190,133,67,.12)!important;color:#edc895!important;
+    border-color:rgba(190,133,67,.28)!important;
+  }
+}
+@media screen and (min-width:1280px){
+  #tab-pos>div:last-child .sticky{top:18px!important;max-height:calc(100vh - 36px)!important;overflow-y:auto!important;}
+}
+@media screen and (max-width:767px){
+  #tab-pos{gap:12px!important;}
+  #tab-pos>div:last-child .sticky{position:relative!important;top:auto!important;}
+  #tab-pos #posProductsGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important;}
+  #tab-pos #posProductsGrid>div{min-width:0!important;}
+  #tab-pos #posCartItems{max-height:220px!important;}
+  #tab-pos .cat-pill{padding:8px 12px!important;font-size:10px!important;}
+  #tab-inventory .inventory-subnav button{font-size:10px!important;}
+}
+@media screen and (max-width:360px){
+  #tab-pos #posProductsGrid{grid-template-columns:minmax(0,1fr)!important;}
+}
+@media print{
+  #tab-pos #posCartItems,#tab-inventory .inventory-subnav{overflow:visible!important;}
+}
+</style>
 </head>
 <!-- V19.30: smart operating supplies inventory; preserve original layout and schemaVersion 18 -->
 <!-- V19.37: compact A4 landscape inventory print with fixed image thumbnails -->
