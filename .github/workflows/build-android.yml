@@ -6,6 +6,7 @@ on:
       - v20-mobile-ui
       - v20-mobile-redesign
       - v20-mobile-recovery
+      - v20-mobile-luxury
     paths:
       - '.github/workflows/build-android.yml'
       - 'index.html'
