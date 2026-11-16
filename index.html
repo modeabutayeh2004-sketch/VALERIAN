@@ -5161,6 +5161,31 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       if(pendingPreviewImageBlob) return pendingPreviewImageBlob;
       const source=document.getElementById('printPreviewBody')?.firstElementChild;
       if(!source) throw new Error('لا يوجد مستند للتصدير');
+      if(source.classList.contains('v1960-loyalty-card')){
+        const cv=document.createElement('canvas');cv.width=1800;cv.height=1100;
+        const cx=cv.getContext('2d');if(!cx)throw new Error('المتصفح لا يدعم إنشاء الصور');
+        const g=cx.createLinearGradient(0,0,1800,1100);g.addColorStop(0,'#123f43');g.addColorStop(.55,'#075653');g.addColorStop(1,'#063c3b');
+        cx.fillStyle=g;cx.fillRect(0,0,1800,1100);cx.strokeStyle='rgba(230,240,240,.4)';cx.lineWidth=3;cx.strokeRect(28,28,1744,1044);
+        cx.textAlign='center';cx.direction='ltr';cx.fillStyle='#fff';
+        cx.font='bold 52px Arial';cx.fillText('VALERIAN',900,180);cx.font='bold 22px Arial';cx.fillStyle='#d7e4e3';cx.fillText('THE ART OF FRAGRANCE',900,220);
+        const logo=source.querySelector('.v1962-card-brand img');
+        if(logo&&logo.src&&(logo.src.startsWith('data:')||logo.src.startsWith('blob:')||new URL(logo.src,location.href).origin===location.origin)){
+          try{if(!logo.complete)await new Promise((ok,no)=>{logo.onload=ok;logo.onerror=no;setTimeout(()=>no(new Error('logo timeout')),8000)});cx.drawImage(logo,825,35,150,130);}catch(e){console.warn('Logo skipped during card image export',e);}
+        }
+        const get=q=>String(source.querySelector(q)?.textContent||'').trim();
+        cx.direction='rtl';cx.fillStyle='#fff';cx.font='bold 66px Cairo,Arial';cx.fillText('بطاقة الولاء',900,365);
+        cx.font='30px Cairo,Arial';cx.fillStyle='#d7e4e3';cx.fillText('امتيازات خاصة — لأن اختياركم يستحق التقدير',900,430);
+        cx.fillStyle='#fff';cx.font='bold 48px Cairo,Arial';cx.fillText(get('.v1960-card-name'),900,525);
+        cx.direction='ltr';cx.font='30px Arial';cx.fillText(get('.v1960-card-phone'),900,575);
+        cx.fillStyle='#f1f5f9';cx.fillRect(510,620,780,320);
+        cx.direction='rtl';cx.fillStyle='#475569';cx.font='bold 28px Cairo,Arial';cx.fillText('رصيد نقاط الولاء الحالي',900,685);
+        cx.fillStyle='#142033';cx.font='bold 100px Cairo,Arial';cx.fillText(get('.v1960-points-value'),900,805);
+        cx.font='bold 27px Cairo,Arial';cx.fillText(get('.v1960-card-value'),900,875);
+        cx.fillStyle='#d7e4e3';cx.font='24px Cairo,Arial';cx.fillText('شكراً لثقتكم — نعتز بكونكم جزءاً من عائلة ڤاليريان',900,1020);
+        const out=await new Promise(resolve=>cv.toBlob(resolve,'image/png'));
+        if(!out)throw new Error('تعذر إنشاء ملف صورة الكارت');
+        pendingPreviewImageBlob=out;return out;
+      }
       if(typeof window.html2canvas!=='function' && !(await loadOptionalLibrary('html2canvas'))) throw new Error('مكتبة تصدير الصور غير متاحة دون اتصال. يمكنك استخدام الطباعة، أو إعادة المحاولة عند توفر الإنترنت.');
       if(document.fonts?.ready){try{await document.fonts.ready;}catch(e){}}
       const imgs=[...source.querySelectorAll('img')];
