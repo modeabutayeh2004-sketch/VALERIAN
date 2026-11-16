@@ -2477,14 +2477,11 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
             <label class="text-xs font-bold text-slate-700">شكل الحواف<select id="loyaltyDesignShape" onchange="updateLoyaltyCardDesignPreview()" class="block w-full mt-1 border rounded-lg px-3 py-2 bg-white"><option value="24">دائري فاخر</option><option value="14">متوسط</option><option value="6">مستطيل أنيق</option></select></label>
             <label class="flex items-center gap-2 text-xs font-bold text-slate-700 mt-5"><input id="loyaltyDesignShowLogo" type="checkbox" checked onchange="updateLoyaltyCardDesignPreview()" class="w-4 h-4"> إظهار شعار VALERIAN</label>
           </div>
-          <div class="bg-white border rounded-xl p-3">
-            <div class="text-xs font-extrabold text-slate-600 mb-2">معاينة مباشرة</div>
-            <div id="loyaltyDesignPreview" class="mx-auto max-w-sm rounded-2xl p-5 text-white text-center shadow-lg">
-              <div id="loyaltyDesignPreviewLogo" class="mb-3"><div class="font-black tracking-widest text-xl">VALERIAN</div><div class="text-[9px] tracking-widest opacity-80">THE ART OF FRAGRANCE</div></div>
-              <div class="font-black text-lg">بطاقة الولاء</div><div class="text-xs opacity-80 mt-1">امتيازات خاصة — لأن اختياركم يستحق التقدير</div>
-              <div class="font-extrabold mt-3">اسم العميل</div><div class="text-xs opacity-80">01xxxxxxxxx</div>
-              <div class="bg-slate-100 text-slate-800 rounded-xl p-3 mt-3"><div class="text-xs font-bold">رصيد نقاط الولاء الحالي</div><div class="text-2xl font-black">120</div><div class="text-xs">قيمة الاستبدال 120 ج.م</div></div>
-            </div>
+          <div class="bg-white border rounded-xl p-3 space-y-3">
+            <div class="text-xs font-extrabold text-slate-700">محرر عناصر الكارت: عدّل كل النصوص وحدد موضع العناصر أفقيًا ورأسيًا.</div>
+            <div id="loyaltyDesignEditorControls" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+            <div class="text-xs font-extrabold text-slate-600">معاينة مباشرة بالشعار الأصلي المحفوظ في بيانات العلامة</div>
+            <div id="loyaltyDesignPreview" class="mx-auto relative overflow-hidden max-w-sm text-white text-center shadow-lg" style="height:480px;min-height:480px"></div>
           </div>
           <div class="flex flex-wrap gap-2">
             <button type="button" onclick="saveLoyaltyCardDesign()" class="px-5 py-2.5 rounded-lg bg-teal-800 text-white text-xs font-extrabold">حفظ تصميم الكارت</button>
@@ -6056,38 +6053,21 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       document.getElementById('printPreviewBody').innerHTML=v1946EnsureBrandHeader(pendingPrintHtml);openModal('printPreviewModal');
     }
 
-    async function printCustomerLoyaltyCard(idx) {
+    async function printCustomerLoyaltyCard(idx){
       await window.__valImgReady;
-      const c = state.customers[idx];
-      const pts = calculateCurrentLoyaltyPoints(c.phone);
+      const c=state.customers[idx],pts=calculateCurrentLoyaltyPoints(c.phone);
       pendingOffersBlob=null;pendingOffersFiles=null;pendingPreviewImageBlob=null;pendingInvoiceShareOrder=null;
       pendingCustomerImageShare={id:'loyalty-card',name:String(c.name||'عميلنا'),phone:String(c.phone||''),type:'loyalty_card'};
       document.getElementById('invoiceWhatsAppBtn')?.classList.toggle('hidden',!pendingCustomerImageShare.phone);
       document.getElementById('invoiceOpenWhatsAppBtn')?.classList.toggle('hidden',!pendingCustomerImageShare.phone);
       document.getElementById('genericShareImageBtn')?.classList.remove('hidden');
-      const logo=(valIdb.cache.brand_logo)||(state.brand?.logo&&state.brand.logo!==VAL_IMG_PH?state.brand.logo:'');
-      const loyaltyDesign=state.settings.loyaltyCardDesign||{};
-      const loyaltyColor=/^#[0-9a-f]{6}$/i.test(loyaltyDesign.color||'')?loyaltyDesign.color:'#075653';
-      const loyaltyLogoSize=Math.min(88,Math.max(40,Number(loyaltyDesign.logoSize)||62));
-      const loyaltyRadius=[24,14,6].includes(Number(loyaltyDesign.radius))?Number(loyaltyDesign.radius):24;
-      const loyaltyBrand=loyaltyDesign.showLogo===false?'':('<div class="v1962-card-brand">'+(logo?'<img src="'+logo+'" alt="VALERIAN"/>':'')+'<span><strong>VALERIAN</strong><small>THE ART OF FRAGRANCE</small></span></div>');
-      pendingPrintHtml = '<div class="v1960-loyalty-card" dir="rtl" style="--loyalty-card-color:'+loyaltyColor+';--loyalty-logo-size:'+loyaltyLogoSize+'px;border-radius:'+loyaltyRadius+'px">' +
-        loyaltyBrand +
-        '<div class="v1960-card-title">بطاقة الولاء</div>' +
-        '<div class="v1960-card-subtitle">امتيازات خاصة — لأن اختياركم يستحق التقدير</div>' +
-        '<div class="v1960-card-name">'+escapeHTML(c.name||'عميلنا')+'</div>' +
-        '<div class="v1960-card-phone" dir="ltr"><bdi dir="ltr">'+escapeHTML(c.phone||'')+'</bdi></div>' +
-        '<div class="v1960-points-panel"><div style="font-size:11px;font-weight:800;color:#475569">رصيد نقاط الولاء الحالي</div>' +
-        '<div class="v1960-points-value">'+formatNumber(pts,0)+'</div><div style="font-size:11px;font-weight:900;color:#334155">نقطة</div>' +
-        '<div class="v1960-card-value">قيمة الاستبدال '+formatCurrency(pts*state.settings.pointValue)+'</div></div>' +
-        '<div class="v1960-card-foot">شكراً لثقتكم — نعتز بكونكم جزءاً من عائلة ڤاليريان</div></div>';
-      document.getElementById('printPreviewBody').innerHTML = pendingPrintHtml;
-      document.getElementById('printPaperSize').value='a4';
-      v1953SyncPrintPreviewSize();
-      openModal('printPreviewModal');
+      const d=getLoyaltyDesign();
+      pendingPrintHtml=renderLoyaltyCardMarkup(d,{name:c.name||'عميلنا',phone:c.phone||'',points:formatNumber(pts,0),value:formatCurrency(pts*state.settings.pointValue)});
+      document.getElementById('printPreviewBody').innerHTML=pendingPrintHtml;
+      document.getElementById('printPaperSize').value='a4';v1953SyncPrintPreviewSize();openModal('printPreviewModal');
     }
 
-    async function resetLocalOnlyData() {
+        async function resetLocalOnlyData() {
       const typed = prompt('تحذير: سيتم مسح بيانات النشاط من هذا الجهاز فقط. ستظل بيانات السحابة والأجهزة الأخرى كما هي وقد تعود عند المزامنة لاحقًا. سيتم تنزيل نسخة احتياطية كاملة بالصور أولًا.\n\nاكتب العبارة التالية للتأكيد:\nامسح كل البيانات');
       if (typed !== 'امسح كل البيانات') { showToast('تم إلغاء عملية التفريغ.'); return; }
       if (!confirm('هل أنت متأكد؟ سيتم مسح بيانات النشاط من هذا الجهاز فقط مع الاحتفاظ بإعداداتك وهوية البراند.')) return;
@@ -6150,36 +6130,26 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       document.getElementById('setInvoiceReservationMsg').value = state.settings.invoiceReservationMsg;
       document.getElementById('setInvoiceFinalMsg').value = state.settings.invoiceFinalMsg;
       document.getElementById('setInvoiceWhatsAppMsg').value = state.settings.invoiceWhatsAppMsg || 'مرحباً {customer}، مرفق فاتورتكم رقم {order} من ڤاليريان. شكراً لثقتكم بنا.';
+      initLoyaltyCardEditor();
     }
 
 
-    function updateLoyaltyCardDesignPreview(){
-      const color=document.getElementById('loyaltyDesignColor')?.value||'#075653';
-      const size=Number(document.getElementById('loyaltyDesignLogoSize')?.value||62);
-      const radius=Number(document.getElementById('loyaltyDesignShape')?.value||24);
-      const show=!!document.getElementById('loyaltyDesignShowLogo')?.checked;
-      const preview=document.getElementById('loyaltyDesignPreview');
-      const logo=document.getElementById('loyaltyDesignPreviewLogo');
-      const label=document.getElementById('loyaltyDesignLogoSizeLabel');
-      if(preview){preview.style.background='linear-gradient(135deg,color-mix(in srgb,'+color+' 72%,#000 28%),'+color+',color-mix(in srgb,'+color+' 65%,#000 35%))';preview.style.borderRadius=radius+'px';}
-      if(logo){logo.style.display=show?'block':'none';logo.style.fontSize=Math.max(10,size/3)+'px';}
-      if(label)label.textContent=String(size);
-    }
-    async function saveLoyaltyCardDesign(){
-      const color=document.getElementById('loyaltyDesignColor').value;
-      if(!/^#[0-9a-f]{6}$/i.test(color)){showToast('لون الكارت غير صالح.','error');return;}
-      state.settings.loyaltyCardDesign={color,logoSize:Math.min(88,Math.max(40,Number(document.getElementById('loyaltyDesignLogoSize').value)||62)),radius:[24,14,6].includes(Number(document.getElementById('loyaltyDesignShape').value))?Number(document.getElementById('loyaltyDesignShape').value):24,showLogo:document.getElementById('loyaltyDesignShowLogo').checked};
-      if(!saveState())return;
-      if(cloudReady&&cloudClient&&cloudUser&&navigator.onLine){await cloudSyncNow(true);if(cloudDirty){showToast('تم حفظ التصميم على هذا الجهاز، والمزامنة السحابية ما زالت قيد المحاولة.','error');return;}}
-      showToast('تم حفظ تصميم كارت الولاء وتطبيقه على الكروت الجديدة.','success');
-    }
-    function resetLoyaltyCardDesign(){
-      document.getElementById('loyaltyDesignColor').value='#075653';
-      document.getElementById('loyaltyDesignLogoSize').value='62';
-      document.getElementById('loyaltyDesignShape').value='24';
-      document.getElementById('loyaltyDesignShowLogo').checked=true;
-      updateLoyaltyCardDesignPreview();
-    }
+    const LOYALTY_EDITOR_DEFAULTS={texts:{brand:'VALERIAN',tagline:'THE ART OF FRAGRANCE',title:'بطاقة الولاء',subtitle:'امتيازات خاصة — لأن اختياركم يستحق التقدير',name:'اسم العميل',phone:'01xxxxxxxxx',pointsLabel:'رصيد نقاط الولاء الحالي',pointsUnit:'نقطة',redeem:'قيمة الاستبدال',footer:'شكراً لثقتكم — نعتز بكونكم جزءاً من عائلة ڤاليريان'},positions:{brand:{x:50,y:12},title:{x:50,y:31},subtitle:{x:50,y:40},name:{x:50,y:51},phone:{x:50,y:58},points:{x:50,y:73},footer:{x:50,y:93}}};
+    function getLoyaltyDesign(){const d=state.settings.loyaltyCardDesign||{};return {...d,texts:{...LOYALTY_EDITOR_DEFAULTS.texts,...(d.texts||{})},positions:{...LOYALTY_EDITOR_DEFAULTS.positions,...(d.positions||{})}};}
+    function loyaltyLogoSource(){return (val_idb.cache.brand_logo)||(state.brand?.logo&&state.brand.logo!==VAL_IMG_PH?state.brand.logo:'');}
+    function loyaltyPos(key,p){const q=p[key]||{x:50,y:50};return 'position:absolute!important;left:'+Math.max(3,Math.min(97,Number(q.x)||50))+'%!important;top:'+Math.max(3,Math.min(97,Number(q.y)||50))+'%!important;transform:translate(-50%,-50%)!important;width:90%!important;max-width:90%!important;margin:0!important;text-align:center!important;';}
+    function renderLoyaltyCardMarkup(d,c){const t=d.texts||LOYALTY_EDITOR_DEFAULTS.texts,p=d.positions||LOYALTY_EDITOR_DEFAULTS.positions,esc=v=>escapeHTML(String(v??'')),logo=loyaltyLogoSource(),size=Math.max(32,Math.min(120,Number(d.logoSize)||62)),image=logo?'<img src="'+String(logo).replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'" alt="VALERIAN" style="display:block!important;width:'+size+'px!important;height:'+size+'px!important;object-fit:contain!important;margin:0 auto!important">':'';
+      const brand=d.showLogo===false?'':'<div style="'+loyaltyPos('brand',p)+'display:flex!important;flex-direction:column!important;align-items:center!important;gap:4px!important">'+image+'<strong style="font:900 21px Arial!important;letter-spacing:2px!important;color:#fff!important">'+esc(t.brand)+'</strong><small style="font:700 9px Arial!important;letter-spacing:1.5px!important;color:#e2e8f0!important">'+esc(t.tagline)+'</small></div>';
+      const pts=c?.points??120,val=c?.value??'120 ج.م';
+      return '<div class="v1960-loyalty-card" dir="rtl" style="position:relative!important;display:block!important;overflow:hidden!important;width:100%!important;max-width:680px!important;height:480px!important;min-height:480px!important;padding:0!important;margin:0 auto!important;border-radius:'+(Number(d.radius)||24)+'px!important;background:linear-gradient(135deg,#032f30 0%,'+(d.color||'#075653')+' 52%,#043b3b 100%)!important;color:#f8fafc!important;text-align:center!important;box-sizing:border-box!important">'+brand+
+      '<div style="'+loyaltyPos('title',p)+'font-size:27px!important;font-weight:900!important;color:#fff!important">'+esc(t.title)+'</div><div style="'+loyaltyPos('subtitle',p)+'font-size:12px!important;color:#dce7e7!important">'+esc(t.subtitle)+'</div><div style="'+loyaltyPos('name',p)+'font-size:20px!important;font-weight:900!important;color:#fff!important">'+esc(c?.name||t.name)+'</div><div style="'+loyaltyPos('phone',p)+'font-size:12px!important;color:#d1d9e4!important;direction:ltr!important">'+esc(c?.phone||t.phone)+'</div>'+
+      '<div style="'+loyaltyPos('points',p)+'width:82%!important;max-width:390px!important;background:linear-gradient(135deg,#f8fafc,#dce4ed)!important;color:#142033!important;border-radius:14px!important;padding:12px 10px!important"><div style="font-size:11px!important;font-weight:800!important;color:#475569!important">'+esc(t.pointsLabel)+'</div><div style="font-size:30px!important;font-weight:900!important;color:#17283d!important">'+esc(pts)+'</div><div style="font-size:11px!important;color:#334155!important">'+esc(t.pointsUnit)+'</div><div style="font-size:11px!important;color:#475569!important">'+esc(t.redeem)+' '+esc(val)+'</div></div><div style="'+loyaltyPos('footer',p)+'font-size:10px!important;color:#d5e1e1!important;line-height:1.7!important">'+esc(t.footer)+'</div></div>';}
+    function renderLoyaltyEditorControls(){const host=document.getElementById('loyaltyDesignEditorControls');if(!host)return;const d=getLoyaltyDesign(),t=d.texts,p=d.positions,labels={brand:'اسم العلامة',tagline:'السطر التعريفي',title:'عنوان الكارت',subtitle:'الوصف',name:'اسم العميل بالمعاينة',phone:'رقم الهاتف بالمعاينة',pointsLabel:'عنوان النقاط',pointsUnit:'وحدة النقاط',redeem:'عبارة الاستبدال',footer:'النص السفلي'},keys=Object.keys(labels);host.innerHTML=keys.map(k=>'<label class="block text-xs font-bold text-slate-700">'+labels[k]+'<input data-loyalty-text="'+k+'" value="'+escapeHTML(t[k]||'').replace(/"/g,'&quot;')+'" oninput="updateLoyaltyCardDesignPreview()" class="block w-full mt-1 border rounded-lg p-2 bg-white"></label>').join('')+['brand','title','subtitle','name','phone','points','footer'].map(k=>'<div class="rounded-lg border p-2 bg-slate-50"><b class="text-xs">'+({brand:'الشعار والاسم',title:'العنوان',subtitle:'الوصف',name:'اسم العميل',phone:'الهاتف',points:'لوحة النقاط',footer:'النص السفلي'}[k])+'</b><label class="block text-xs">أفقي<input type="range" min="5" max="95" value="'+(p[k]?.x??50)+'" data-loyalty-x="'+k+'" oninput="updateLoyaltyCardDesignPreview()" class="w-full"></label><label class="block text-xs">رأسي<input type="range" min="5" max="95" value="'+(p[k]?.y??50)+'" data-loyalty-y="'+k+'" oninput="updateLoyaltyCardDesignPreview()" class="w-full"></label></div>').join('');}
+    function collectLoyaltyEditorValues(){const d=getLoyaltyDesign();document.querySelectorAll('[data-loyalty-text]').forEach(e=>d.texts[e.dataset.loyaltyText]=e.value);document.querySelectorAll('[data-loyalty-x]').forEach(e=>{const k=e.dataset.loyaltyX;d.positions[k]={...(d.positions[k]||{}),x:Number(e.value)};});document.querySelectorAll('[data-loyalty-y]').forEach(e=>{const k=e.dataset.loyaltyY;d.positions[k]={...(d.positions[k]||{}),y:Number(e.value)};});d.color=document.getElementById('loyaltyDesignColor')?.value||d.color||'#075653';d.logoSize=Number(document.getElementById('loyaltyDesignLogoSize')?.value||d.logoSize||62);d.radius=Number(document.getElementById('loyaltyDesignShape')?.value||d.radius||24);d.showLogo=!!document.getElementById('loyaltyDesignShowLogo')?.checked;return d;}
+    function updateLoyaltyCardDesignPreview(){const d=collectLoyaltyEditorValues(),el=document.getElementById('loyaltyDesignPreview'),lab=document.getElementById('loyaltyDesignLogoSizeLabel');if(el)el.innerHTML=renderLoyaltyCardMarkup(d);if(lab)lab.textContent=String(d.logoSize);}
+    function initLoyaltyCardEditor(){const d=getLoyaltyDesign();const c=document.getElementById('loyaltyDesignColor'),z=document.getElementById('loyaltyDesignLogoSize'),r=document.getElementById('loyaltyDesignShape'),sh=document.getElementById('loyaltyDesignShowLogo');if(c)c.value=d.color||'#075653';if(z)z.value=d.logoSize||62;if(r)r.value=d.radius||24;if(sh)sh.checked=d.showLogo!==false;renderLoyaltyEditorControls();updateLoyaltyCardDesignPreview();}
+    async function saveLoyaltyCardDesign(){const d=collectLoyaltyEditorValues();if(!/^#[0-9a-f]{6}$/i.test(d.color)){showToast('لون الكارت غير صالح.','error');return;}state.settings.loyaltyCardDesign=d;if(!saveState())return;if(cloudReady&&cloudClient&&cloudUser&&navigator.onLine){await cloudSyncNow(true);if(cloudDirty){showToast('تم الحفظ محليًا والمزامنة السحابية ما زالت قيد المحاولة.','error');return;}}showToast('تم حفظ تصميم كارت الولاء وتطبيقه على الكروت الجديدة.','success');}
+    function resetLoyaltyCardDesign(){state.settings.loyaltyCardDesign={color:'#075653',logoSize:62,radius:24,showLogo:true,texts:{...LOYALTY_EDITOR_DEFAULTS.texts},positions:JSON.parse(JSON.stringify(LOYALTY_EDITOR_DEFAULTS.positions))};document.getElementById('loyaltyDesignColor').value='#075653';document.getElementById('loyaltyDesignLogoSize').value='62';document.getElementById('loyaltyDesignShape').value='24';document.getElementById('loyaltyDesignShowLogo').checked=true;renderLoyaltyEditorControls();updateLoyaltyCardDesignPreview();}
 
     async function saveComprehensiveSettings() {
       state.settings.primaryColor = document.getElementById('setPrimaryColorInput').value;
