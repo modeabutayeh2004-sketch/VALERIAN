@@ -3229,6 +3229,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       try{
         await valIdbPutMany('images',batch);
         Object.assign(valIdb.cache,batch);
+        valIdb.failed=false;valIdb.ready=true;
         try{persistLocal(state);}catch(e){console.warn('تعذر تحديث نسخة الحالة المختصرة بعد حفظ الصور',e);}
       }catch(e){
         // Never drop the batch: retain it for retry and fall back to inline data
@@ -3237,7 +3238,9 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         valIdb.failed=true;valIdb.ready=false;
         try{persistLocal(state);}catch(localErr){console.error('تعذر حفظ نسخة الصور الاحتياطية محلياً',localErr);}
         console.error('VALERIAN image store failed; image batch retained for retry',e);
-        try{showToast('تعذر حفظ بعض الصور في قاعدة البيانات المحلية؛ احتفظنا بالبيانات وحاول مرة أخرى بعد توفير مساحة.','error');}catch(_){}
+        try{showToast('تعذر حفظ بعض الصور في قاعدة البيانات المحلية؛ احتفظنا بالبيانات وسنحاول مجدداً.','error');}catch(_){}
+        clearTimeout(valIdb.flushTimer);
+        valIdb.flushTimer=setTimeout(()=>valIdbFlush().catch(err=>console.error('VALERIAN image retry failed',err)),15000);
         throw e;
       }
     }
