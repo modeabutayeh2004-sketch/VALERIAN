@@ -2252,6 +2252,67 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
  .v20-lux-nav{display:none!important;}
 }
 </style>
+<style id="v20-navy-layout-refinement">
+/* V20.2 — visual hierarchy and component refinement; presentation only. */
+:root{
+ --brand-50:#eef2f7;--brand-100:#dce4ee;--brand-200:#c3cfdd;
+ --brand-300:#a8b8cb;--brand-500:#71849d;--brand-600:#526983;
+ --brand-700:#3c526d;--brand-800:#2b4059;--brand-900:#1c3048;
+}
+@media screen{
+ .tab-section h2,.tab-section h3{
+   color:#edf2f7!important;font-weight:800!important;letter-spacing:.01em;
+ }
+ .tab-section h2{padding-bottom:2px;}
+ .tab-section .rounded-2xl.border,.tab-section .rounded-xl.border{
+   border-color:rgba(194,209,228,.16)!important;
+ }
+ .tab-section .rounded-2xl.border{box-shadow:0 12px 32px rgba(0,0,0,.18)!important;}
+ .tab-section label{color:#cbd5e1!important;}
+ .tab-section .text-brand-700,.tab-section .text-brand-600{color:#cbd5e1!important;}
+ .tab-section .bg-brand-50,.tab-section .bg-brand-100{background:rgba(190,207,228,.10)!important;color:#e6edf5!important;}
+ .tab-section .border-brand-200,.tab-section .border-brand-100{border-color:rgba(196,211,230,.22)!important;}
+ .tab-section button[class*="bg-brand-"],.tab-section button[class*="bg-violet-"]{
+   background:linear-gradient(135deg,#dce3eb,#aebdce)!important;color:#142238!important;
+   border:1px solid rgba(238,243,248,.42)!important;box-shadow:0 5px 14px rgba(0,0,0,.18)!important;
+ }
+ .tab-section button[class*="bg-brand-"]:hover,.tab-section button[class*="bg-violet-"]:hover{filter:brightness(1.06)!important;}
+ .tab-section button[class*="border-slate"],.tab-section button[class*="border-gray"]{
+   border-color:rgba(190,205,224,.24)!important;
+ }
+ .tab-section .divide-y>*+*{border-color:rgba(190,205,224,.12)!important;}
+ .tab-section hr{border-color:rgba(190,205,224,.16)!important;}
+ .tab-section table thead th{font-weight:800!important;color:#e8edf4!important;}
+ .tab-section table tbody td{color:#d5deea!important;}
+ .tab-section .overflow-x-auto{border-radius:14px;}
+ .tab-section input:focus,.tab-section select:focus,.tab-section textarea:focus{
+   outline:2px solid rgba(190,207,228,.26)!important;outline-offset:1px!important;
+   border-color:#91a5bd!important;
+ }
+ .v1916-desktop-nav .workspace-btn{
+   color:#c5d0dd!important;border:1px solid transparent!important;
+   transition:background .18s ease,border-color .18s ease,color .18s ease!important;
+ }
+ .v1916-desktop-nav .workspace-btn.active{
+   color:#142238!important;background:linear-gradient(135deg,#e5eaf0,#b8c5d4)!important;
+   border-color:#e1e7ee!important;box-shadow:0 4px 14px rgba(0,0,0,.2)!important;
+ }
+ #workspaceSubnav button{transition:all .18s ease!important;}
+ #workspaceSubnav button:focus-visible,.workspace-btn:focus-visible{
+   outline:2px solid #cbd5e1!important;outline-offset:2px!important;
+ }
+}
+@media screen and (max-width:767px){
+ .tab-section .rounded-2xl.border{border-radius:18px!important;}
+ .tab-section .rounded-xl.border{border-radius:14px!important;}
+ .tab-section h2{font-size:16px!important;}
+ .tab-section .overflow-x-auto{border-radius:13px!important;}
+ .tab-section button{font-weight:750!important;}
+}
+@media print{
+ .tab-section h2,.tab-section h3{color:#111!important;}
+}
+</style>
 </head>
 <!-- V19.30: smart operating supplies inventory; preserve original layout and schemaVersion 18 -->
 <!-- V19.37: compact A4 landscape inventory print with fixed image thumbnails -->
