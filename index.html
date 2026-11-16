@@ -1982,6 +1982,118 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
 }
 </style>
 
+
+<style id="v20-mobile-first-layout">
+/* V20.1 — real phone layout: remove the legacy desktop width lock and reflow workspaces. */
+@media screen and (max-width: 767px) {
+  html, body {
+    width:100% !important; min-width:0 !important; max-width:100% !important;
+    overflow-x:hidden !important; overscroll-behavior-x:none;
+  }
+  body { padding:0 0 calc(18px + env(safe-area-inset-bottom)) !important; }
+  *, *::before, *::after { box-sizing:border-box; }
+  header { position:sticky !important; top:0 !important; z-index:100 !important; width:100% !important; }
+  header > div:first-child {
+    height:auto !important; min-height:58px !important; width:100% !important;
+    max-width:none !important; padding:8px 12px !important;
+    display:grid !important; grid-template-columns:minmax(0,1fr) !important;
+    gap:8px !important;
+  }
+  header > div:first-child > div:first-child {
+    min-width:0 !important; width:100% !important; gap:9px !important;
+  }
+  header > div:first-child > div:first-child > div { min-width:0 !important; }
+  header h1 { font-size:17px !important; letter-spacing:.08em !important; }
+  header #cloudHeaderStatus { font-size:9px !important; padding:4px 7px !important; }
+  header > div:first-child > div:first-child > div:first-child > div > span:last-child { display:none !important; }
+  header > div:first-child > div:nth-child(3) { display:none !important; }
+  .v1916-desktop-nav {
+    display:flex !important; width:100% !important; min-width:0 !important;
+    max-width:100% !important; flex-wrap:nowrap !important; justify-content:flex-start !important;
+    gap:6px !important; overflow-x:auto !important; overflow-y:hidden !important;
+    padding:2px 1px 5px !important; scrollbar-width:none !important;
+    -webkit-overflow-scrolling:touch;
+  }
+  .v1916-desktop-nav::-webkit-scrollbar, .v1916-subnav::-webkit-scrollbar { display:none !important; }
+  .v1916-desktop-nav .workspace-btn {
+    display:inline-flex !important; flex:0 0 auto !important; width:auto !important;
+    min-width:max-content !important; min-height:38px !important; padding:8px 12px !important;
+    border-radius:11px !important; font-size:11px !important; white-space:nowrap !important;
+  }
+  .v1916-subnav {
+    position:relative !important; top:auto !important; z-index:90 !important;
+    width:100% !important; max-width:100% !important; min-width:0 !important;
+    margin:0 !important; padding:7px 10px !important; border:0 !important;
+    border-top:1px solid #e7edf3 !important; border-radius:0 !important;
+    display:flex !important; flex-wrap:nowrap !important; gap:7px !important;
+    overflow-x:auto !important; overflow-y:hidden !important; scrollbar-width:none !important;
+    -webkit-overflow-scrolling:touch;
+  }
+  .v1916-subnav button {
+    flex:0 0 auto !important; min-height:34px !important;
+    padding:7px 11px !important; font-size:10px !important; white-space:nowrap !important;
+  }
+  main {
+    display:block !important; width:100% !important; min-width:0 !important;
+    max-width:100% !important; margin:0 !important; padding:12px 10px 24px !important;
+    overflow-x:clip !important;
+  }
+  .tab-section, .tab-section > *, .tab-section [class*="col-span"] {
+    min-width:0 !important; max-width:100% !important;
+  }
+  .tab-section { width:100% !important; gap:12px !important; }
+  #tab-pos { display:grid !important; grid-template-columns:minmax(0,1fr) !important; }
+  #tab-pos > div, #tab-pos > div[class*="col-span"] {
+    grid-column:1 / -1 !important; width:100% !important;
+  }
+  #tab-pos > div:nth-child(2) > div {
+    position:static !important; top:auto !important; width:100% !important;
+  }
+  #posProductsGrid, #catalogGrid { grid-template-columns:minmax(0,1fr) !important; }
+  #posProductsGrid > *, #catalogGrid > * { min-width:0 !important; width:100% !important; }
+  .tab-section .grid-cols-2, .tab-section .sm\:grid-cols-2,
+  .tab-section .md\:grid-cols-2, .tab-section .lg\:grid-cols-2 {
+    grid-template-columns:minmax(0,1fr) !important;
+  }
+  #orderModeSelector, #tab-pos .grid.grid-cols-2:last-child {
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+  .tab-section .flex-wrap { min-width:0 !important; }
+  .tab-section input, .tab-section select, .tab-section textarea {
+    max-width:100% !important; min-width:0 !important; font-size:14px !important;
+  }
+  .tab-section button { min-height:38px; touch-action:manipulation; }
+  .tab-section .overflow-x-auto {
+    max-width:100% !important; width:100% !important;
+    overflow-x:auto !important; -webkit-overflow-scrolling:touch !important;
+  }
+  .tab-section table { min-width:620px; }
+  .tab-section .overflow-hidden { min-width:0 !important; }
+  .tab-section h2 { font-size:16px !important; line-height:1.5 !important; }
+  .tab-section .sticky { position:static !important; top:auto !important; }
+  .modal, .modal-overlay {
+    align-items:flex-start !important; justify-content:center !important;
+    padding:10px !important; overflow-y:auto !important;
+  }
+  .modal > div, .modal-overlay > div {
+    width:100% !important; max-width:100% !important; max-height:calc(100dvh - 20px) !important;
+    overflow-y:auto !important; margin:auto !important;
+  }
+  .modal input, .modal select, .modal textarea,
+  .modal-overlay input, .modal-overlay select, .modal-overlay textarea {
+    min-width:0 !important; max-width:100% !important; font-size:16px !important;
+  }
+  #toastContainer { top:8px !important; width:calc(100vw - 20px) !important; }
+  #printPreviewBody { max-width:100% !important; overflow-x:auto !important; }
+}
+@media screen and (min-width: 768px) and (max-width: 1279px) {
+  html, body { min-width:0 !important; width:100% !important; max-width:100% !important; overflow-x:hidden !important; }
+  body { padding-bottom:0 !important; }
+  main { min-width:0 !important; width:100% !important; max-width:100% !important; }
+  .v1916-desktop-nav { display:flex !important; flex-wrap:wrap !important; }
+}
+</style>
+
 </head>
 <!-- V19.30: smart operating supplies inventory; preserve original layout and schemaVersion 18 -->
 <!-- V19.37: compact A4 landscape inventory print with fixed image thumbnails -->
