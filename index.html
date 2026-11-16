@@ -7180,7 +7180,6 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const win=window.open('','_blank','width=1000,height=800');if(!win)return showToast('اسمح بفتح النوافذ المنبثقة لإتمام الطباعة.','error');
       win.document.open();win.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${escapeHTML(title)}</title><style>body{font-family:Arial,Tahoma,sans-serif;padding:24px;color:#111}h2{text-align:center}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ddd;padding:8px}@page{margin:14mm}</style>
 
-
 </head><body>${v1946BrandHeader()}<h2>${escapeHTML(title)}</h2>${el.innerHTML}<script>window.onload=()=>setTimeout(()=>window.print(),300);<\/script></body></html>`);win.document.close();
     }
     function v1931PrintTable(tableId,title,fromId,toId){
