@@ -6668,24 +6668,19 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const {data:row,error}=await cloudClient.from('valerian_state').select('state,revision,updated_at').eq('user_id',user.id).maybeSingle();
       if(error){setCloudStatus('خطأ قراءة السحابة: '+cloudErrorMessage(error),'#b91c1c');return;}
       if(!row){
-        const choice=confirm('لا توجد بيانات سابقة على السحابة. هل تريد رفع البيانات الموجودة على هذا الجهاز لأول مرة؟\n\nاضغط موافق للرفع، أو إلغاء لإبقاء البرنامج محلياً الآن.');
-        if(!choice){setCloudStatus('تم تسجيل الدخول — لم يتم رفع البيانات بعد','#a16207');return;}
-        let cloudSnapshot;try{cloudSnapshot=await valBuildCloudSyncState(state);}catch(assetErr){setCloudStatus('لم نرفع البيانات: '+assetErr.message,'#b91c1c');return;}
-        const {data,error:saveErr}=await cloudClient.rpc('valerian_save_state',{p_state:cloudSnapshot,p_expected_revision:0});
-        if(saveErr || !data?.[0]?.ok){setCloudStatus('فشل الرفع الأول: '+cloudErrorMessage(saveErr||new Error('تعذر تأكيد الحفظ')),'#b91c1c');return;}
-        cloudRevision=Number(data[0].current_revision); cloudReady=true; cloudDirty=false;
+        // Default to Cancel: never upload this device's existing data automatically.
+        showToast('لا توجد نسخة سحابية سابقة؛ تم إلغاء رفع بيانات هذا الجهاز والإبقاء عليها محلياً.');
+        setCloudStatus('تم تسجيل الدخول — البيانات الحالية محفوظة محلياً','#a16207');
+        cloudRevision=0; cloudReady=true; cloudDirty=false;
       } else {
         cloudRevision=Number(row.revision||0);
         const localMatchesCloud = valComparableStateJson(normalizeState(state)) === valComparableStateJson(normalizeState(row.state));
         const localHasBusinessData = ['products','orders','customers','imports','expenses','inventoryMovements'].some(key=>Array.isArray(state[key])&&state[key].length>0);
         if((hadLocalValerianState || localHasBusinessData) && !localMatchesCloud){
-          const useLocal=confirm('وجدنا بيانات محلية تختلف عن النسخة السحابية.\n\nموافق: رفع بيانات هذا الجهاز واستبدال النسخة السحابية.\nإلغاء: تحميل النسخة السحابية واستبدال البيانات المحلية.\n\nتأكد من وجود نسخة احتياطية قبل الاختيار.');
-          if(useLocal){
-            let cloudSnapshot;try{cloudSnapshot=await valBuildCloudSyncState(state);}catch(assetErr){setCloudStatus('لم نرفع البيانات: '+assetErr.message,'#b91c1c');return;}
-            const {data,error:saveErr}=await cloudClient.rpc('valerian_save_state',{p_state:cloudSnapshot,p_expected_revision:cloudRevision});
-            if(saveErr || !data?.[0]?.ok){cloudConflict=true;setCloudStatus('تعارض أثناء الرفع — لم يتم استبدال البيانات','#b91c1c');return;}
-            cloudRevision=Number(data[0].current_revision);
-          } else { const applied=await applyCloudState(row.state); if(!applied)return; }
+          // The old blocking choice is intentionally removed. Always take the Cancel path:
+          // keep the cloud copy authoritative and never overwrite it with this device's local data.
+          showToast('تم العثور على بيانات سحابية مختلفة؛ تم إلغاء رفع بيانات الجهاز واختيار النسخة السحابية.');
+          const applied=await applyCloudState(row.state); if(!applied)return;
         } else if(!localMatchesCloud) {
           const applied=await applyCloudState(row.state); if(!applied)return;
         }
