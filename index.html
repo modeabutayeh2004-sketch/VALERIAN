@@ -1397,10 +1397,11 @@
       const grid = document.getElementById('posCatalogGrid');
 
       const list = appState.products.filter(p => {
+        const matchAvailable = p.disabledForSales !== true;
         const matchCat = currentPosCat === 'all' || (currentPosCat === 'عروض' ? p.isOffer : p.category === currentPosCat);
         const matchType = type === 'all' || p.productType === type;
         const matchQ = !q || p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.includes(q));
-        return matchCat && matchType && matchQ;
+        return matchAvailable && matchCat && matchType && matchQ;
       });
 
       if (!list.length) {
@@ -1654,7 +1655,7 @@
       });
 
       const container = document.getElementById('inventoryCardsContainer');
-      const items = appState.products.filter(p => tier === 'all' || (tier === 'decant' ? p.category === 'تقسيم' : p.category !== 'تقسيم'));
+      const items = appState.products.filter(p => !p.archived && (tier === 'all' || (tier === 'decant' ? p.category === 'تقسيم' : p.category !== 'تقسيم')));
 
       if (!items.length) {
         container.innerHTML = renderEmptyPlaceholder('🧪', 'المخزون فارغ حالياً', 'أضف الزجاجات الأصلية أو عبوات التقسيم لبدء التتبع الحي.', '+ إضافة صنف للمخزون', "openSheet('quickAddProductSheet')");
@@ -1677,6 +1678,7 @@
                   <div>
                     <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full ${p.category === 'تقسيم' ? 'bg-sky-400/20 text-sky-200' : 'bg-slate-200/15 text-slate-200'}">${p.category}</span>
                     <h3 class="text-xs font-extrabold text-white mt-1">${p.name}</h3>
+                    ${p.disabledForSales === true ? '<span class="inline-flex mt-1 px-2 py-0.5 rounded-full bg-amber-400/15 border border-amber-300/30 text-amber-200 text-[9px] font-black">⏸ معطّل عن البيع والحجز</span>' : ''}
                   </div>
                 </div>
                 <div class="text-left">
@@ -1698,7 +1700,10 @@
                   <strong class="font-black text-sky-300 bidi-ltr">${p.category === 'تقسيم' ? (p.size || '') : (p.decantMlAvailable || 0) + ' ml'}</strong>
                 </div>
               </div>
-              <button onclick="editMobileProduct('${p.id}')" class="w-full py-2 rounded-xl border border-white/15 bg-white/5 text-slate-100 text-[11px] font-extrabold">تعديل بيانات المنتج ✎</button>
+              <div class="grid grid-cols-2 gap-2">
+                <button onclick="editMobileProduct('${p.id}')" class="py-2 rounded-xl border border-white/15 bg-white/5 text-slate-100 text-[10px] font-extrabold">تعديل البيانات ✎</button>
+                <button onclick="toggleInventoryProductAvailability('${encodeURIComponent(String(p.id))}')" class="py-2 rounded-xl ${p.disabledForSales === true ? 'bg-emerald-500/15 border border-emerald-300/35 text-emerald-200' : 'bg-amber-500/15 border border-amber-300/35 text-amber-100'} text-[10px] font-extrabold">${p.disabledForSales === true ? '▶ إعادة التفعيل' : '⏸ تعطيل البيع'}</button>
+              </div>
             </div>
           </div>
         `;
@@ -2253,7 +2258,7 @@
 
     function renderMoreOffers() {
       const box = document.getElementById('moreOffersContainer');
-      const offers = appState.products.filter(p => p.isOffer);
+      const offers = appState.products.filter(p => p.isOffer && !p.archived && p.disabledForSales !== true);
       if (!offers.length) {
         box.innerHTML = renderEmptyPlaceholder('🎁', 'لا توجد عروض نشطة حالياً', 'قم بتفعيل خاصية العرض لأي منتج لتظهر في كتالوج العروض وبوستر العملاء.');
         return;
@@ -2274,7 +2279,7 @@
     }
 
     async function openOffersPosterPreview() {
-      const offers = appState.products.filter(p => p.isOffer);
+      const offers = appState.products.filter(p => p.isOffer && !p.archived && p.disabledForSales !== true);
       if (!offers.length) return showToast('لا توجد عروض مفعلة لتوليد البوستر');
       activePreviewShareContext = {kind:'offers',id:'offers-'+offers.map(p=>[p.id,p.offerPrice,p.price,p.name].join(':')).join('|'),name:'عروض VALERIAN'};
       document.getElementById('previewSheetTitle').textContent = 'بوستر عروض VALERIAN الحصرية';
@@ -2774,6 +2779,26 @@
         const r=await runEngine('returnOrder',orderId);
         if(r.ok)showToast('تم تسجيل المرتجع من خلال سجل المرتجعات الأصلي.');
       }catch(err){reportError(err);}
+    };
+    window.toggleInventoryProductAvailability=async function(encodedId){
+      const id=decodeURIComponent(String(encodedId||''));
+      const product=appState.products.find(p=>String(p.id)===id);
+      if(!product)return showToast('المنتج غير موجود في المخزون.');
+      const disabling=product.disabledForSales!==true;
+      const question=disabling
+        ? 'تعطيل بيع وحجز «'+product.name+'»؟ سيظل المنتج موجودًا في المخزون وسجلاته ولن يتم حذفه.'
+        : 'إعادة إتاحة «'+product.name+'» للبيع والحجز؟';
+      if(!window.confirm(question))return;
+      const button=document.querySelector('[onclick="toggleInventoryProductAvailability(\\''+encodeURIComponent(id)+'\\')"]');
+      if(button)button.disabled=true;
+      try{
+        if(!window.ValerianUI?.toggleProductSalesAvailability)throw new Error('محرك إدارة المنتجات لم يجهز بعد.');
+        const result=await window.ValerianUI.toggleProductSalesAvailability(id);
+        if(result?.ok===false)throw new Error(result.error||'لم يتم حفظ تغيير حالة المنتج.');
+        appState=window.ValerianUI.getState();
+        renderInventoryScreen();
+        showToast(disabling?'تم تعطيل المنتج عن البيع والحجز مع الاحتفاظ به في المخزون.':'تمت إعادة إتاحة المنتج للبيع والحجز.');
+      }catch(err){console.error(err);showToast(String(err?.message||'تعذر تغيير حالة المنتج.'));}
     };
     window.editMobileProduct=function(id){
       const p=appState.products.find(x=>String(x.id)===String(id));if(!p)return showToast('المنتج غير موجود.');
