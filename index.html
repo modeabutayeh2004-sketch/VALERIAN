@@ -2133,12 +2133,15 @@
     let splashParticles = [];
     let splashStartTime = performance.now();
 
+    let splashAnimationFrame = 0;
+    let splashStopped = false;
     function resizeSplashCanvas() {
       const container = document.querySelector('.splash-inner');
-      if (!container) return;
-      splashCanvas.width = container.clientWidth * window.devicePixelRatio;
-      splashCanvas.height = container.clientHeight * window.devicePixelRatio;
-      sCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      if (!container || splashStopped) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      splashCanvas.width = Math.round(container.clientWidth * dpr);
+      splashCanvas.height = Math.round(container.clientHeight * dpr);
+      sCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
     class SplashParticle {
@@ -2186,26 +2189,46 @@
     }
 
     function animateSplashParticles(now) {
+      if (splashStopped || document.hidden) { splashAnimationFrame = 0; return; }
+      const overlay = document.getElementById('splashOverlay');
+      if (!overlay || overlay.classList.contains('fade-out') || getComputedStyle(overlay).visibility === 'hidden') { stopSplashParticles(); return; }
       const elapsed = now - splashStartTime;
       const container = document.querySelector('.splash-inner');
-      if (!container) return;
+      if (!container) { stopSplashParticles(); return; }
       sCtx.clearRect(0, 0, container.clientWidth, container.clientHeight);
+      const globalFade = elapsed > 1400 ? Math.min(1, (elapsed - 1400) / 1100) : 0;
+      for (const p of splashParticles) { p.update(elapsed); p.draw(sCtx, globalFade); }
+      splashAnimationFrame = requestAnimationFrame(animateSplashParticles);
+    }
 
-      let globalFade = elapsed > 1400 ? Math.min(1, (elapsed - 1400) / 1100) : 0;
-      for (const p of splashParticles) {
-        p.update(elapsed);
-        p.draw(sCtx, globalFade);
+    function stopSplashParticles() {
+      splashStopped = true;
+      if (splashAnimationFrame) cancelAnimationFrame(splashAnimationFrame);
+      splashAnimationFrame = 0;
+      splashParticles.length = 0;
+      sCtx.clearRect(0, 0, splashCanvas.width, splashCanvas.height);
+      window.removeEventListener('resize', resizeSplashCanvas);
+      document.removeEventListener('visibilitychange', onSplashVisibilityChange);
+    }
+
+    function onSplashVisibilityChange() {
+      if (document.hidden) {
+        if (splashAnimationFrame) cancelAnimationFrame(splashAnimationFrame);
+        splashAnimationFrame = 0;
+      } else if (!splashStopped && !splashAnimationFrame) {
+        splashAnimationFrame = requestAnimationFrame(animateSplashParticles);
       }
-      requestAnimationFrame(animateSplashParticles);
     }
 
     function dismissSplash() {
       document.getElementById('splashOverlay').classList.add('fade-out');
+      stopSplashParticles();
     }
 
     window.addEventListener('resize', resizeSplashCanvas);
+    document.addEventListener('visibilitychange', onSplashVisibilityChange);
     initSplashParticles();
-    requestAnimationFrame(animateSplashParticles);
+    splashAnimationFrame = requestAnimationFrame(animateSplashParticles);
 
     renderAllViews();
   </script>
