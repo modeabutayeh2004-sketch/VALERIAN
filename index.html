@@ -224,6 +224,16 @@
     @keyframes sweepOpacity { 0% { opacity: 0; } 15% { opacity: 0.95; } 85% { opacity: 0.95; } 100% { opacity: 0; } }
     @keyframes sweepMotion { 0% { transform: translateX(-550px) skewX(-28deg); } 100% { transform: translateX(850px) skewX(-28deg); } }
     @keyframes showReplay { to { opacity: 1; } }
+  
+    /* VALERIAN native-styled action confirmation dialogs */
+    #v5ActionModal{position:fixed;inset:0;z-index:140;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,5,9,.82);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+    #v5ActionModal.hidden{display:none}
+    .v5-action-panel{width:100%;max-width:440px;max-height:min(88dvh,720px);overflow:auto;border:1px solid rgba(203,213,225,.24);border-radius:28px;background:linear-gradient(150deg,#142634 0%,#07131d 58%,#03090e 100%);box-shadow:0 30px 100px rgba(0,0,0,.78),inset 0 1px 0 rgba(255,255,255,.12);padding:22px;animation:v5ActionIn .24s ease-out}
+    .v5-action-choice{width:100%;border:1px solid rgba(203,213,225,.18);border-radius:15px;background:rgba(255,255,255,.045);padding:12px 8px;color:#dbe7ef;font-size:12px;font-weight:800}
+    .v5-action-choice.selected{border-color:rgba(186,230,253,.78);background:rgba(186,230,253,.14);color:#f0f9ff;box-shadow:inset 0 0 0 1px rgba(186,230,253,.18)}
+    .v5-action-primary{border:1px solid rgba(226,232,240,.45);background:linear-gradient(135deg,#e2e8f0,#9eafbd 55%,#f1f5f9);color:#07131d;box-shadow:0 8px 24px rgba(148,163,184,.16)}
+    @keyframes v5ActionIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+
   </style>
 </head>
 <body class="pb-28 selection:bg-sky-300/30 selection:text-white">
@@ -381,6 +391,37 @@
       </div>
       <div id="moneyActionError" class="hidden rounded-xl border border-rose-300/20 bg-rose-500/10 px-3 py-2 text-[11px] text-rose-200"></div>
       <div class="grid grid-cols-2 gap-3 pt-1"><button type="button" onclick="closeMoneyActionModal()" class="py-3 rounded-full glass-pill text-xs font-bold text-slate-300">إلغاء</button><button id="moneyActionConfirm" type="button" onclick="confirmMoneyAction()" class="py-3 rounded-full silver-btn text-xs font-black">تأكيد العملية</button></div>
+    </section>
+  </div>
+
+
+  <!-- VALERIAN premium delivery / return confirmation -->
+  <div id="v5ActionModal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="v5ActionTitle" dir="rtl" onclick="if(event.target===this)closeV5ActionModal()">
+    <section class="v5-action-panel space-y-5">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div id="v5ActionIcon" class="w-12 h-12 rounded-2xl flex items-center justify-center border border-slate-300/20 bg-white/5 text-2xl">✓</div>
+          <div><div class="brand-serif text-[9px] tracking-[.24em] text-slate-400">VALERIAN • OPERATIONS</div><h2 id="v5ActionTitle" class="text-lg font-black text-white mt-1">تأكيد العملية</h2><p id="v5ActionSubtitle" class="text-[10px] text-slate-400 mt-1">راجع التفاصيل قبل الاعتماد</p></div>
+        </div>
+        <button type="button" onclick="closeV5ActionModal()" class="w-9 h-9 rounded-full glass-pill text-slate-300">✕</button>
+      </div>
+      <div class="rounded-2xl border border-white/10 bg-white/[.045] p-4"><p id="v5ActionMessage" class="text-sm leading-7 text-slate-200">هل تريد المتابعة؟</p></div>
+      <div id="v5ActionMethodWrap" class="hidden space-y-2">
+        <div class="text-[11px] font-extrabold text-slate-300">وسيلة التحصيل عند التسليم</div>
+        <input type="hidden" id="v5ActionMethod" value="نقدي">
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" data-v5-action-method="نقدي" class="v5-action-choice selected">💵 نقدي</button>
+          <button type="button" data-v5-action-method="تحويل بنكي" class="v5-action-choice">🏦 تحويل بنكي</button>
+          <button type="button" data-v5-action-method="محفظة إلكترونية" class="v5-action-choice">📱 محفظة إلكترونية</button>
+          <button type="button" data-v5-action-method="بطاقة" class="v5-action-choice">💳 بطاقة</button>
+          <button type="button" data-v5-action-method="أخرى" class="v5-action-choice col-span-2">⋯ أخرى</button>
+        </div>
+      </div>
+      <div id="v5ActionError" class="hidden rounded-xl border border-rose-300/20 bg-rose-500/10 px-3 py-2 text-xs text-rose-200"></div>
+      <div class="grid grid-cols-2 gap-3 pt-1">
+        <button type="button" onclick="closeV5ActionModal()" class="py-3 rounded-full glass-pill text-xs font-bold text-slate-300">إلغاء</button>
+        <button id="v5ActionConfirm" type="button" onclick="confirmV5Action()" class="v5-action-primary py-3 rounded-full text-xs font-black">تأكيد واعتماد</button>
+      </div>
     </section>
   </div>
 
@@ -2909,20 +2950,54 @@
       }catch(err){error.textContent=String(err?.message||'حدث خطأ أثناء تنفيذ العملية.');error.classList.remove('hidden');button.disabled=false;button.textContent='إعادة المحاولة';}
     };
     settleSupplierDue=function(invId){ openMoneyActionModal('supplier',invId); };
-    deliverReservedOrder=async function(orderId){
-      const method=window.prompt('وسيلة تحصيل المبلغ عند التسليم: نقدي / تحويل بنكي / محفظة إلكترونية / بطاقة / أخرى','نقدي');
-      if(method===null)return;
-      try{
-        const r=await runEngine('deliverOrder',{orderId,method});
-        if(r.ok)showToast('تم التسليم وتسجيل وسيلة التحصيل مع تحديث المخزون والحسابات.');
-      }catch(err){reportError(err);}
+    let pendingV5Action=null;
+    window.closeV5ActionModal=function(){
+      const modal=document.getElementById('v5ActionModal');
+      if(modal)modal.classList.add('hidden');
+      pendingV5Action=null;
     };
-    processMobileReturn=async function(orderId){
-      try{
-        const r=await runEngine('returnOrder',orderId);
-        if(r.ok)showToast('تم تسجيل المرتجع من خلال سجل المرتجعات الأصلي.');
-      }catch(err){reportError(err);}
+    window.openV5ActionModal=function(type,orderId){
+      const order=(appState.orders||[]).find(o=>String(o.id)===String(orderId));
+      if(!order)return showToast('الطلب غير موجود أو لم يتم تحميل بياناته.');
+      pendingV5Action={type,orderId:String(orderId)};
+      const delivery=type==='deliver';
+      document.getElementById('v5ActionIcon').textContent=delivery?'✓':'↶';
+      document.getElementById('v5ActionTitle').textContent=delivery?'تأكيد التسليم والتحصيل':'مراجعة المرتجع';
+      document.getElementById('v5ActionSubtitle').textContent=delivery?'اعتماد التسليم وتسجيل وسيلة التحصيل':'تأكيد تسجيل المرتجع قبل تحديث السجلات';
+      document.getElementById('v5ActionMessage').textContent=delivery
+        ? 'هل راجعت الطلب وأصبحت جاهزًا لتأكيد تسليمه؟ سيتم تسجيل التسليم ووسيلة التحصيل وتحديث المخزون والحسابات.'
+        : 'هل تريد تسجيل هذا الطلب كمرتجع؟ سيتم تنفيذ حركة المرتجع من خلال محرك الأعمال وتحديث السجلات المرتبطة.';
+      document.getElementById('v5ActionMethodWrap').classList.toggle('hidden',!delivery);
+      document.getElementById('v5ActionMethod').value='نقدي';
+      document.querySelectorAll('[data-v5-action-method]').forEach(b=>b.classList.toggle('selected',b.dataset.v5ActionMethod==='نقدي'));
+      document.getElementById('v5ActionError').classList.add('hidden');
+      const btn=document.getElementById('v5ActionConfirm');btn.disabled=false;btn.textContent=delivery?'تأكيد التسليم':'تأكيد المرتجع';
+      document.getElementById('v5ActionModal').classList.remove('hidden');
     };
+    document.addEventListener('click',event=>{
+      const choice=event.target.closest('[data-v5-action-method]');if(!choice)return;
+      document.getElementById('v5ActionMethod').value=choice.dataset.v5ActionMethod;
+      document.querySelectorAll('[data-v5-action-method]').forEach(b=>b.classList.toggle('selected',b===choice));
+    });
+    window.confirmV5Action=async function(){
+      if(!pendingV5Action)return;
+      const {type,orderId}=pendingV5Action,btn=document.getElementById('v5ActionConfirm'),error=document.getElementById('v5ActionError');
+      btn.disabled=true;btn.textContent='جارٍ تنفيذ العملية…';error.classList.add('hidden');
+      try{
+        const r=type==='deliver'
+          ?await runEngine('deliverOrder',{orderId,method:document.getElementById('v5ActionMethod').value})
+          :await runEngine('returnOrder',orderId);
+        if(!r||r.ok!==true)throw new Error(r?.error||(type==='deliver'?'تعذر اعتماد التسليم.':'تعذر تسجيل المرتجع.'));
+        if(r.snapshot)syncFromEngine(r.snapshot);else syncFromEngine();
+        closeV5ActionModal();
+        showToast(type==='deliver'?'تم التسليم وتسجيل وسيلة التحصيل وتحديث الحسابات والمخزون.':'تم تسجيل المرتجع وتحديث السجلات بنجاح.');
+      }catch(err){
+        error.textContent=String(err?.message||'حدث خطأ أثناء تنفيذ العملية.');
+        error.classList.remove('hidden');btn.disabled=false;btn.textContent='إعادة المحاولة';
+      }
+    };
+    deliverReservedOrder=function(orderId){openV5ActionModal('deliver',orderId);};
+    processMobileReturn=function(orderId){openV5ActionModal('return',orderId);};
     window.permanentlyDeleteInventoryProduct=async function(encodedId){
       const id=decodeURIComponent(String(encodedId||''));
       const product=appState.products.find(p=>String(p.id)===id);
