@@ -1,7 +1,7 @@
 /* VALERIAN V20.7 — offline application shell */
 'use strict';
 const CACHE_NAME = 'valerian-app-shell-v20-18-premium-finance-intro';
-const APP_SHELL = ['./', './index.html', './engine.html?v=20261117-decant-reset-auth-1', './manifest.webmanifest', './assets/valerian-icon.jpg'];
+const APP_SHELL = ['./', './index.html', './engine.html?v=20261117-premium-finance-2', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
