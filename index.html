@@ -2748,8 +2748,9 @@
           return {ok:true,snapshot:result.snapshot};
         },
         addShippingCompany:async name=>{
-          await connectEngine();
-          if(!engine?.addShippingCompany)throw new Error('وظيفة إضافة شركة الشحن غير متاحة في محرك الأعمال.');
+          await waitForEngineBridge();
+          await engine.ready;
+          if(typeof engine?.addShippingCompany!=='function')throw new Error('وظيفة إضافة شركة الشحن غير متاحة في محرك الأعمال.');
           const result=await engine.addShippingCompany(name);
           if(result?.ok!==true)throw new Error(result?.error||'لم يتم حفظ شركة الشحن.');
           syncFromEngine(result.snapshot);
@@ -2764,8 +2765,10 @@
     // Public entry point is exposed immediately; it must not depend on window.ValerianUI,
     // which is only populated after connectEngine completes.
     window.ValerianUIAddShippingCompany=async name=>{
-      await connectEngine();
-      if(!engine?.addShippingCompany)throw new Error('وظيفة إضافة شركة الشحن غير متاحة في محرك الأعمال.');
+      // Resolve the iframe bridge directly; this entry point must not depend on connectEngine.
+      await waitForEngineBridge();
+      await engine.ready;
+      if(typeof engine?.addShippingCompany!=='function')throw new Error('وظيفة إضافة شركة الشحن غير متاحة في محرك الأعمال.');
       const result=await engine.addShippingCompany(name);
       if(result?.ok!==true)throw new Error(result?.error||'لم يتم حفظ شركة الشحن.');
       syncFromEngine(result.snapshot);
