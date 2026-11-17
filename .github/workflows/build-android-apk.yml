@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [android/apk-v20]
-    paths: ['index.html','engine.html','service-worker.js','manifest.webmanifest','assets/**','scripts/**','package.json','capacitor.config.json','.github/workflows/build-android-apk.yml']
+    paths: ['index.html','engine.html','service-worker.js','manifest.webmanifest','assets/**','scripts/**','android-native/**','package.json','capacitor.config.json','.github/workflows/build-android-apk.yml']
 permissions:
   contents: read
 jobs:
