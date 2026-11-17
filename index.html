@@ -1626,6 +1626,7 @@
                   <strong class="font-black text-sky-300 bidi-ltr">${p.category === 'تقسيم' ? (p.size || '') : (p.decantMlAvailable || 0) + ' ml'}</strong>
                 </div>
               </div>
+              <button onclick="editMobileProduct('${p.id}')" class="w-full py-2 rounded-xl border border-white/15 bg-white/5 text-slate-100 text-[11px] font-extrabold">تعديل بيانات المنتج ✎</button>
             </div>
           </div>
         `;
@@ -2587,6 +2588,21 @@
       try{
         const r=await runEngine('returnOrder',orderId);
         if(r.ok)showToast('تم تسجيل المرتجع من خلال سجل المرتجعات الأصلي.');
+      }catch(err){reportError(err);}
+    };
+    window.editMobileProduct=async function(id){
+      const product=appState.products.find(p=>String(p.id)===String(id));
+      if(!product)return showToast('المنتج غير موجود.');
+      const name=window.prompt('اسم المنتج',product.name);if(name===null)return;
+      const price=window.prompt('سعر البيع الحالي: '+fmtEgp(product.price),String(product.price));if(price===null)return;
+      const minimumStock=window.prompt('حد التنبيه للمخزون',String(product.minimumStock??2));if(minimumStock===null)return;
+      const notes=window.prompt('ملاحظات المنتج',String(product.notes||''));if(notes===null)return;
+      const isOffer=window.confirm('هل تريد تفعيل عرض على هذا المنتج؟');
+      let offerPrice=0;
+      if(isOffer){const entered=window.prompt('سعر العرض (أقل من سعر البيع)',String(product.offerPrice||''));if(entered===null)return;offerPrice=Number(entered);}
+      try{
+        const r=await runEngine('updateProduct',{id,name,price:Number(price),minimumStock:Number(minimumStock),notes,isOffer,offerPrice});
+        if(r.ok)showToast('تم تحديث بيانات المنتج وحفظها في محرك الأعمال.');
       }catch(err){reportError(err);}
     };
     window.saveLoyaltySettings=async function(){
