@@ -1029,6 +1029,7 @@
         </div>
         <div class="grid grid-cols-2 gap-2.5">
           <button onclick="exportMobileJson()" class="py-3 rounded-full silver-btn text-xs font-black">💾 تصدير JSON</button>
+          <label class="py-3 rounded-full glass-pill text-xs font-black text-center cursor-pointer">📂 استيراد JSON<input type="file" accept=".json,application/json" onchange="importMobileJson(event)" class="hidden"></label>
           <button type="button" onclick="v5DeleteAllBusinessData()" class="py-3 rounded-full glass-pill text-xs font-extrabold text-rose-300">🗑 حذف جميع البيانات</button>
         </div>
       </div>
@@ -3357,6 +3358,20 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
       document.getElementById('repMobileDeposits').textContent=fmtEgp(deposits);
       document.getElementById('repMobileExpenses').textContent=fmtEgp(expenses);
       document.getElementById('repMobileNet').textContent=fmtEgp(net);
+    };
+    importMobileJson=async function(event){
+      const input=event?.target, file=input?.files?.[0];
+      if(!file)return;
+      try{
+        if(!engine)throw new Error('محرك البيانات لم يجهز بعد.');
+        const raw=await file.text();
+        if(raw.length>250*1024*1024)throw new Error('حجم ملف النسخة الاحتياطية أكبر من الحد الآمن (250 MB).');
+        const parsed=JSON.parse(raw);
+        const result=await engine.restoreSnapshot(parsed);
+        if(result?.ok)showToast('تم استيراد النسخة الاحتياطية بنجاح. المنتجات: '+result.counts.products+'، الطلبات: '+result.counts.orders);
+        else if(!result?.cancelled)throw new Error('لم تكتمل عملية الاستيراد.');
+      }catch(err){console.error('VALERIAN JSON import failed',err);showToast('تعذر استيراد النسخة: '+(err?.message||err),'error');}
+      finally{if(input)input.value='';}
     };
     exportMobileJson=function(){
       if(!engine)return showToast('انتظر اتصال محرك البيانات أولاً.');
