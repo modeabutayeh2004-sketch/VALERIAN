@@ -2228,11 +2228,16 @@
           showToast('تم فتح مشاركة الصورة؛ اختر واتساب ثم المحادثة المطلوبة.');
           return;
         }
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = file.name; a.style.display = 'none';
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        if (window.ValerianNative && typeof window.ValerianNative.saveImage === 'function') {
+          const saved = window.ValerianNative.saveImage(await blobToDataUrl(blob), file.name, 'image/png');
+          if (!saved) throw new Error('تعذر حفظ الصورة في معرض الجهاز.');
+        } else {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = file.name; a.style.display = 'none';
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 60000);
+        }
         const phone = normalizeWhatsAppPhone(activePreviewShareContext && activePreviewShareContext.phone);
         const waUrl = phone
           ? 'https://wa.me/' + phone + '?text=' + encodeURIComponent(message + '\n\nتم تنزيل صورة المستند؛ أرفقها من التنزيلات قبل الإرسال.')
