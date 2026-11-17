@@ -6667,7 +6667,10 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     async function applyCloudState(remoteState) {
       cloudApplyingRemote=true;
       try {
-        const localImageSafeState=valMergeLocalImagesIntoCloudState(remoteState);
+        // One-time compatibility migration: copy legacy cloud images into this device's
+        // IndexedDB before replacing the cloud snapshot with image-free references.
+        const imported=await valHydrateImageState(remoteState,{storeIncoming:true,strict:false});
+        const localImageSafeState=valMergeLocalImagesIntoCloudState(imported);
         const hydrated=await valHydrateImageState(localImageSafeState,{storeIncoming:false,strict:false});
         state=normalizeState(hydrated);persistLocal(state);
         clearTimeout(valIdb.flushTimer);await valIdbFlush();
@@ -6687,6 +6690,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         cloudRevision=0; cloudReady=true; cloudDirty=false;
       } else {
         cloudRevision=Number(row.revision||0);
+        let cloudHasLegacyImages=false;
+        valWalkImages(row.state,(owner,key)=>{if(typeof owner[key]==='string'&&owner[key].startsWith('data:')&&owner[key]!==VAL_IMG_PH)cloudHasLegacyImages=true;});
         const localMatchesCloud = valComparableStateJson(normalizeState(state)) === valComparableStateJson(normalizeState(row.state));
         const localHasBusinessData = ['products','orders','customers','imports','expenses','inventoryMovements'].some(key=>Array.isArray(state[key])&&state[key].length>0);
         if((hadLocalValerianState || localHasBusinessData) && !localMatchesCloud){
@@ -6697,10 +6702,14 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         } else if(!localMatchesCloud) {
           const applied=await applyCloudState(row.state); if(!applied)return;
         }
-        cloudReady=true; cloudDirty=false;
+        cloudReady=true;
+        // Remove embedded legacy images from the cloud only after this device has
+        // successfully opened IndexedDB and imported the image assets locally.
+        cloudDirty=!!(cloudHasLegacyImages&&valIdb.ready);
       }
       document.getElementById('cloudSyncNow').style.display='block'; document.getElementById('cloudLogout').style.display='block';
-      setCloudStatus('متصل — المزامنة مفعّلة','#047857'); closeCloudPanel(); subscribeCloudChanges();
+      setCloudStatus(cloudDirty?'تم حفظ الصور محلياً — جارٍ تنظيف النسخة السحابية القديمة':'متصل — المزامنة مفعّلة','#047857'); closeCloudPanel(); subscribeCloudChanges();
+      if(cloudDirty)setTimeout(()=>cloudSyncNow(false),1200);
     }
     function scheduleCloudRetry() {
       if (cloudRetryTimer || !cloudReady || !cloudDirty || cloudConflict) return;
