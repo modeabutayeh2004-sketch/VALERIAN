@@ -1,6 +1,6 @@
 /* VALERIAN V20.7 — offline application shell */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-83-sync-diagnostics';
+const CACHE_NAME = 'valerian-app-shell-v20-84-invoice-order';
 const APP_SHELL = ['./', './index.html', './engine.html?v=20261118-83-sync-diagnostics', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
