@@ -5949,7 +5949,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     function permanentlyDeleteProduct(id) {
       const index=state.products.findIndex(p=>String(p.id)===String(id));
       if(index<0)return {ok:false,error:'المنتج غير موجود.'};
-      const before=structuredClone(state),product=state.products[index];
+      const before=structuredClone(state),cartBefore=Array.isArray(cart)?structuredClone(cart):null,product=state.products[index];
       // A parent perfume and its generated decant SKU form one inventory relationship.
       const relatedIds=new Set([String(id)]);
       state.products.forEach(p=>{if(String(p.parentId||'')===String(id))relatedIds.add(String(p.id));});
@@ -5958,6 +5958,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       logAudit('PRODUCT_PERMANENTLY_DELETED','حذف نهائي للمنتج '+product.name+' والأصناف التابعة له مع الاحتفاظ بالفواتير والحركات التاريخية');
       if(!saveState()){
         state=before;
+        if(Array.isArray(cart)&&cartBefore){cart=cartBefore;renderCart();}
         refreshAllViews();
         return {ok:false,error:window.__valerianLastSaveError?.message||'تعذر حفظ الحذف في قاعدة البيانات.'};
       }
