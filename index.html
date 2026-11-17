@@ -2588,9 +2588,11 @@
       }catch(err){reportError(err);}
     };
     deliverReservedOrder=async function(orderId){
+      const method=window.prompt('وسيلة تحصيل المبلغ عند التسليم: نقدي / تحويل بنكي / محفظة إلكترونية / بطاقة / أخرى','نقدي');
+      if(method===null)return;
       try{
-        const r=await runEngine('deliverOrder',orderId);
-        if(r.ok)showToast('تم التسليم عبر إجراء المحرك مع خصم المخزون والتحصيل والنقاط.');
+        const r=await runEngine('deliverOrder',{orderId,method});
+        if(r.ok)showToast('تم التسليم وتسجيل وسيلة التحصيل مع تحديث المخزون والحسابات.');
       }catch(err){reportError(err);}
     };
     processMobileReturn=async function(orderId){
