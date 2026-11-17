@@ -2785,14 +2785,10 @@
       const product=appState.products.find(p=>String(p.id)===id);
       if(!product)return showToast('المنتج غير موجود في المخزون.');
       const disabling=product.disabledForSales!==true;
-      const question=disabling
-        ? 'تعطيل بيع وحجز «'+product.name+'»؟ سيظل المنتج موجودًا في المخزون وسجلاته ولن يتم حذفه.'
-        : 'إعادة إتاحة «'+product.name+'» للبيع والحجز؟';
-      if(!window.confirm(question))return;
       try{
         if(!window.ValerianUI?.toggleProductSalesAvailability)throw new Error('محرك إدارة المنتجات لم يجهز بعد.');
         const result=await window.ValerianUI.toggleProductSalesAvailability(id);
-        if(result?.ok===false)throw new Error(result.error||'لم يتم حفظ تغيير حالة المنتج.');
+        if(result?.ok!==true)return;
         appState=window.ValerianUI.getState();
         renderInventoryScreen();
         showToast(disabling?'تم تعطيل المنتج عن البيع والحجز مع الاحتفاظ به في المخزون.':'تمت إعادة إتاحة المنتج للبيع والحجز.');
