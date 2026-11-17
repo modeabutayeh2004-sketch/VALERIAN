@@ -13,7 +13,7 @@
   "icons": [
     {
       "src": "./assets/valerian-icon.jpg",
-      "sizes": "160x160",
+      "sizes": "96x96",
       "type": "image/jpeg",
       "purpose": "any"
     }
