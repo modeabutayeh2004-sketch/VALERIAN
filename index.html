@@ -992,7 +992,15 @@
 
     const fmtEgp = (n) => `${Math.round(Number(n || 0)).toLocaleString('en-US')} EGP`;
     const getAvail = (p) => Math.max(0, Number(p.stock || 0) - Number(p.reservedStock || 0));
-    const isDecantCategory = p => ['تقسيم','تقسيمات','decant','decants'].includes(String(p?.category||'').trim().toLowerCase());
+    const isDecantCategory = p => {
+      const category=String(p?.category||'').normalize('NFKC').replace(/[\\s\\u0640]+/g,'').toLowerCase();
+      const unit=String(p?.stockUnit||'').normalize('NFKC').toLowerCase();
+      const name=String(p?.name||'').normalize('NFKC').trim();
+      return category.includes('تقسيم') || category.includes('decant') ||
+        unit.includes('تقسيم') || unit.includes('decant') ||
+        (!!String(p?.parentId||'').trim() && Number(p?.decantSize||0)>0) ||
+        /^تقسيم(?:\\s|$)/.test(name);
+    };
     const isCatalogActive = p => !p?.archived && p?.disabledForSales !== true && p?.disabledForSales !== 'true' && p?.disabledForSales !== 1;
 
     window.ValerianUI = {
@@ -1429,7 +1437,7 @@
             <div class="bottle-content relative z-10 flex flex-col justify-between h-full">
               <div>
                 <div class="flex items-center justify-between gap-1">
-                  <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full ${p.category === 'تقسيم' ? 'bg-sky-400/20 text-sky-200' : 'bg-slate-200/15 text-slate-200'}">${p.category}</span>
+                  <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full ${isDecantCategory(p) ? 'bg-sky-400/20 text-sky-200' : 'bg-slate-200/15 text-slate-200'}">${p.category}</span>
                   <span class="text-[9px] text-slate-400 bidi-ltr">${p.size || ''}</span>
                 </div>
                 ${thumbHtml}
@@ -1658,7 +1666,7 @@
       });
 
       const container = document.getElementById('inventoryCardsContainer');
-      const items = appState.products.filter(p => !p.archived && (tier === 'all' || (tier === 'decant' ? isDecantCategory(p) : !isDecantCategory(p))));
+      // Inventory is the stock register: retain archived/disabled SKUs here for visibility and audit; sales screens filter them separately.\n      const items = appState.products.filter(p => tier === 'all' || (tier === 'decant' ? isDecantCategory(p) : !isDecantCategory(p)));
 
       if (!items.length) {
         container.innerHTML = renderEmptyPlaceholder('🧪', 'المخزون فارغ حالياً', 'أضف الزجاجات الأصلية أو عبوات التقسيم لبدء التتبع الحي.', '+ إضافة صنف للمخزون', "openSheet('quickAddProductSheet')");
@@ -1681,7 +1689,7 @@
                   <div>
                     <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full ${p.category === 'تقسيم' ? 'bg-sky-400/20 text-sky-200' : 'bg-slate-200/15 text-slate-200'}">${p.category}</span>
                     <h3 class="text-xs font-extrabold text-white mt-1">${p.name}</h3>
-                    ${p.disabledForSales === true ? '<span class="inline-flex mt-1 px-2 py-0.5 rounded-full bg-amber-400/15 border border-amber-300/30 text-amber-200 text-[9px] font-black">⏸ معطّل عن البيع والحجز</span>' : ''}
+                    ${p.archived ? '<span class="inline-flex mt-1 px-2 py-0.5 rounded-full bg-slate-400/15 border border-slate-300/30 text-slate-200 text-[9px] font-black">مؤرشف</span>' : p.disabledForSales === true ? '<span class="inline-flex mt-1 px-2 py-0.5 rounded-full bg-amber-400/15 border border-amber-300/30 text-amber-200 text-[9px] font-black">⏸ معطّل عن البيع والحجز</span>' : ''}
                   </div>
                 </div>
                 <div class="text-left">
