@@ -12,10 +12,16 @@
   "theme_color": "#101d35",
   "icons": [
     {
-      "src": "./assets/valerian-icon.jpg",
-      "sizes": "160x160",
-      "type": "image/jpeg",
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
