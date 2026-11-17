@@ -7071,6 +7071,21 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           const before=structuredClone(product),movementsBefore=structuredClone(state.inventoryMovements||[]),stockDelta=stock-Number(product.stock||0);
           Object.assign(product,{name,price,averageCost,totalCost:averageCost,stock,minimumStock,notes,isOffer,offerPrice:isOffer?offerPrice:0,productType,category,stockUnit,size,image:String(payload?.image??product.image??''),isDecantable,decantSize:decantSizeMl,decantSizeMl,decantBottleCost});
           if(stockDelta)addInventoryMovement(product.id,'ADJUST',stockDelta,'PRODUCT_EDIT','تعديل كمية المخزون من صفحة تعديل المنتج');
+          const existingDecant=state.products.find(p=>String(p.parentId||'')===String(product.id)&&p.category==='تقسيم'&&!p.archived);
+          if(isDecantable){
+            const volume=Math.max(1,getBottleVolumeMl(product)),unitCost=Number((averageCost/volume*decantSizeMl+decantBottleCost).toFixed(2));
+            const decantName='تقسيم '+name+' ('+formatNumber(decantSizeMl,2)+' مل)';
+            if(existingDecant){
+              Object.assign(existingDecant,{name:decantName,productType:'عطور',category:'تقسيم',size:formatNumber(decantSizeMl,2)+' مل',parentId:product.id,decantSize:decantSizeMl,decantBottleCost,averageCost:unitCost,totalCost:unitCost,price:Math.max(Number(existingDecant.price||0),Number((unitCost*1.4).toFixed(2))),image:String(payload?.image??existingDecant.image??product.image??''),isDecantable:true});
+            }else{
+              const decant={id:'dec_'+product.id+'_'+decantSizeMl+'_'+Date.now(),name:decantName,productType:'عطور',category:'تقسيم',size:formatNumber(decantSizeMl,2)+' مل',barcode:'D'+Date.now().toString().slice(-10),price:Number((unitCost*1.4).toFixed(2)),totalCost:unitCost,averageCost:unitCost,stock:0,reservedStock:0,minimumStock:2,notes:'تقسيم مرتبط بالزجاجة الأصلية: '+name,image:String(payload?.image??product.image??''),isOffer:false,offerPrice:0,isDecantable:true,parentId:product.id,decantSize:decantSizeMl,decantBottleCost,emptyContainersStock:0,legacyStockNeedsReview:false,volumeMlPerBottle:0,decantMlAvailable:0,stockUnit:'عبوة تقسيم جاهزة'};
+              state.products.unshift(decant);
+              logAudit('DECANT_SKU_CREATED','إنشاء صنف تقسيم مرتبط بالمنتج '+name+' بحجم '+decantSizeMl+' مل');
+            }
+          }else if(existingDecant){
+            existingDecant.archived=true;
+            logAudit('DECANT_SKU_ARCHIVED','إيقاف التقسيم للمنتج '+name+' مع الاحتفاظ بسجل الصنف');
+          }
           logAudit('PRODUCT_UPDATED','تعديل بيانات المنتج '+name);
           if(!saveState()){Object.assign(product,before);state.inventoryMovements=movementsBefore;refreshAllViews();throw new Error('تعذر حفظ تعديل المنتج.');}
           await valDurableWritePromise;try{await valIdbFlush();}catch(_){}
