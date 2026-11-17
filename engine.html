@@ -6624,7 +6624,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
 
     // V20 incremental journal client. Legacy snapshot sync remains available until
     // the additive Supabase migration has been installed and bootstrap succeeds.
-    let cloudIncrementalReady=false, cloudIncrementalBase=null, cloudIncrementalQueue=Promise.resolve();
+    let cloudIncrementalReady=false, cloudIncrementalBase=null, cloudIncrementalQueue=Promise.resolve(), cloudIncrementalGeneration=0;
     const VAL_SYNC_OUTBOX_KEY='val_sync_outbox_v1', VAL_SYNC_CURSOR_KEY='val_sync_cursor_v1';
     const VAL_SYNC_ID_ARRAYS=new Set([
       'products','imports','purchases','supplierInvoices','supplierPayments','customers','orders',
@@ -6688,6 +6688,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       if(!cloudIncrementalReady||cloudApplyingRemote||!cloudIncrementalBase)return;
       const previous=cloudIncrementalBase,current=valSyncCloudClone(state),patch=valSyncBuildPatch(previous,current);
       if(!patch)return;
+      cloudIncrementalGeneration++;
       cloudIncrementalBase=current;
       cloudIncrementalQueue=cloudIncrementalQueue.then(async()=>{
         const items=await valSyncReadOutbox();
@@ -6739,9 +6740,11 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     async function valIncrementalPull(){
       let cursor=await valSyncReadCursor(),rounds=0;
       while(rounds++<10){
+        const generationAtRequest=cloudIncrementalGeneration;
         const {data,error}=await cloudClient.rpc('valerian_sync_pull',{p_after_seq:cursor,p_limit:200});
         if(error)throw error;
         if(!data?.ok||!Array.isArray(data.changes))throw new Error('تعذر قراءة سجل التغييرات السحابي.');
+        if(generationAtRequest!==cloudIncrementalGeneration){cloudConflict=true;throw new Error('وصلت تغييرات محلية أثناء استقبال تحديثات جهاز آخر؛ احتفظنا بالبيانات المحلية وأوقفنا التطبيق التلقائي.');}
         if(!data.changes.length)break;
         let next=structuredClone(state);
         for(const row of data.changes)next=valSyncApplyPatch(next,row.patch);
@@ -6760,9 +6763,11 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     }
     async function valIncrementalSync(){
       if(!cloudIncrementalReady)throw new Error('المزامنة الجزئية لم تُهيأ بعد.');
+      const generationAtStart=cloudIncrementalGeneration;
       await valIncrementalPush();
+      await cloudIncrementalQueue;
       // Do not pull over newer local edits. They are queued and pushed first.
-      if(!(await valSyncReadOutbox()).length){
+      if(generationAtStart===cloudIncrementalGeneration && !(await valSyncReadOutbox()).length){
         await valIncrementalPull();
       }
     }
