@@ -2029,13 +2029,20 @@
         stock:Number(p.stock||0),
         reservedStock:Number(p.reservedStock||0)
       }));
-      const imports=(raw.imports||[]).map(inv=>({
-        ...inv,
-        totalEgp:Number(inv.totalEgp??inv.totalAmount??0),
-        paidAmount:Number(inv.paidAmount||0),
-        exchangeRate:Number(inv.exchangeRate||0),
-        itemsSummary:inv.itemsSummary||((inv.items||[]).map(x=>x.productName+' ('+x.qty+')').join('، ')||'فاتورة استيراد')
-      }));
+      const supplierById=new Map((raw.supplierInvoices||[]).map(x=>[String(x.id),x]));
+      const supplierPaid=new Map();
+      (raw.supplierPayments||[]).forEach(p=>supplierPaid.set(String(p.invoiceId),(supplierPaid.get(String(p.invoiceId))||0)+Number(p.amount||0)));
+      const imports=(raw.imports||[]).map(inv=>{
+        const supplier=supplierById.get(String(inv.id));
+        const paid=Math.max(Number(inv.paidAmount||0),Number(supplier?.paidAmount||0),supplierPaid.get(String(inv.id))||0);
+        return {
+          ...inv,
+          totalEgp:Number(inv.totalEgp??supplier?.totalAmount??0),
+          paidAmount:paid,
+          exchangeRate:Number(inv.exchangeRate||0),
+          itemsSummary:inv.itemsSummary||((inv.items||[]).map(x=>x.productName+' ('+x.qty+')').join('، ')||'فاتورة استيراد')
+        };
+      });
       return {
         ...defaultSchema(),
         ...raw,
@@ -2192,6 +2199,22 @@
         const r=await runEngine('returnOrder',orderId);
         if(r.ok)showToast('تم تسجيل المرتجع من خلال سجل المرتجعات الأصلي.');
       }catch(err){reportError(err);}
+    };
+    renderMoreReports=function(){
+      const delivered=appState.orders.filter(o=>o.stockDeducted||String(o.status||'').includes('تم التسليم'));
+      const sales=delivered.reduce((sum,o)=>sum+Math.max(0,Number(o.grandTotal||0)-Number(o.returnedValue||0)),0);
+      const deposits=appState.orders.filter(o=>!o.stockDeducted&&!String(o.status||'').includes('مرتجع')).reduce((sum,o)=>sum+Number(o.depositAmount||0),0);
+      const expenses=appState.expenses.reduce((sum,x)=>sum+Number(x.amount||0),0);
+      const cogs=delivered.reduce((sum,o)=>sum+(o.items||[]).reduce((lineSum,item)=>{
+        const qty=Math.max(0,Number(item.qty||0)-Number(item.returnedQty||0));
+        const unitCost=Number(item.unitCostAtSale??appState.products.find(p=>p.id===item.id)?.averageCost??0);
+        return lineSum+qty*unitCost;
+      },0),0);
+      const net=sales-cogs-expenses;
+      document.getElementById('repMobileSales').textContent=fmtEgp(sales);
+      document.getElementById('repMobileDeposits').textContent=fmtEgp(deposits);
+      document.getElementById('repMobileExpenses').textContent=fmtEgp(expenses);
+      document.getElementById('repMobileNet').textContent=fmtEgp(net);
     };
     exportMobileJson=function(){
       if(!engine)return showToast('انتظر اتصال محرك البيانات أولاً.');
