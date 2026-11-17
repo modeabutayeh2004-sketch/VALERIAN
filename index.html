@@ -688,7 +688,13 @@
               <option value="مل">ملليلتر (مل)</option><option value="جرام">جرام</option><option value="كيلوجرام">كيلوجرام</option><option value="وحدة">وحدة / قطعة</option>
             </select>
           </div>
-          <label id="newProdDecantWrap" class="flex items-center gap-2 text-[11px] text-slate-200"><input id="newProdDecantable" type="checkbox" class="accent-sky-400"> العطر متاح للتقسيم</label>
+          <div id="newProdDecantWrap" class="space-y-2">
+            <label class="flex items-center gap-2 text-[11px] text-slate-200"><input id="newProdDecantable" type="checkbox" class="accent-sky-400" onchange="document.getElementById('newProdDecantOptions').classList.toggle('hidden',!this.checked)"> العطر متاح للتقسيم</label>
+            <div id="newProdDecantOptions" class="hidden grid grid-cols-2 gap-2">
+              <div><span class="text-[10px] text-slate-400">حجم عبوة التقسيم (مل)</span><input id="newProdDecantSize" type="number" min="1" step="any" value="10" class="w-full glass-pill rounded-xl px-2.5 py-2 text-white bidi-ltr"></div>
+              <div><span class="text-[10px] text-slate-400">تكلفة العبوة الفارغة</span><input id="newProdDecantBottleCost" type="number" min="0" step="any" value="15" class="w-full glass-pill rounded-xl px-2.5 py-2 text-white bidi-ltr"></div>
+            </div>
+          </div>
           <div class="grid grid-cols-3 gap-2">
             <div><span class="text-[10px] text-slate-400">سعر البيع</span><input id="newProdPrice" type="number" placeholder="0" class="w-full glass-pill rounded-xl px-2.5 py-2 text-white font-bold bidi-ltr" /></div>
             <div><span class="text-[10px] text-slate-400">التكلفة</span><input id="newProdCost" type="number" placeholder="0" class="w-full glass-pill rounded-xl px-2.5 py-2 text-white font-bold bidi-ltr" /></div>
@@ -742,6 +748,12 @@
             <span id="chkGrandTotal" class="text-xl font-black silver-text bidi-ltr">0 EGP</span>
           </div>
 
+          <div class="pt-2 border-t border-white/[0.1] space-y-1.5">
+            <label class="block text-[11px] font-extrabold text-slate-200">وسيلة الدفع / التحصيل</label>
+            <select id="chkPaymentMethod" class="w-full rounded-xl px-3 py-2 bg-slate-900/80 border border-white/15 text-white text-xs">
+              <option value="نقدي">نقدي</option><option value="تحويل بنكي">تحويل بنكي</option><option value="محفظة إلكترونية">محفظة إلكترونية</option><option value="بطاقة">بطاقة</option><option value="أخرى">أخرى</option>
+            </select>
+          </div>
           <div id="chkDepositWrapper" class="pt-2 border-t border-white/[0.1] space-y-1.5">
             <div class="flex items-center justify-between">
               <label class="text-[11px] font-extrabold text-slate-200">مقدم الحجز (اقتراح تلقائي 30%)</label>
@@ -2449,6 +2461,8 @@
         size:(document.getElementById('newProdSize').value.trim()||'100')+' '+document.getElementById('newProdUnit').value,
         stockUnit:document.getElementById('newProdUnit').value,
         isDecantable:document.getElementById('newProdType').value==='عطور'&&document.getElementById('newProdDecantable').checked,
+        decantSizeMl:Number(document.getElementById('newProdDecantSize')?.value||10),
+        decantBottleCost:Number(document.getElementById('newProdDecantBottleCost')?.value||15),
         price:Number(document.getElementById('newProdPrice').value||0),
         averageCost:Number(document.getElementById('newProdCost').value||0),
         stock:Number(document.getElementById('newProdStock').value||0),
@@ -2499,7 +2513,7 @@
           discount:totals.discount,
           usePoints:redeemPointsActive,
           deposit,
-          paymentMethod:'نقدي'
+          paymentMethod:document.getElementById('chkPaymentMethod')?.value||'نقدي'
         });
         if(!r.ok)return;
         mobileCart=[];redeemPointsActive=false;updateFloatingCart();closeSheet('checkoutSheet');
