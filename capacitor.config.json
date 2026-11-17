@@ -5,14 +5,5 @@
   "backgroundColor": "#02080c",
   "android": {
     "allowMixedContent": false
-  },
-  "plugins": {
-    "SplashScreen": {
-      "launchShowDuration": 0,
-      "launchAutoHide": true,
-      "showSpinner": false,
-      "backgroundColor": "#02080c",
-      "androidScaleType": "CENTER_INSIDE"
-    }
   }
 }
