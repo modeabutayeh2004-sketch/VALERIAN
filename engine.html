@@ -1930,6 +1930,16 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
   }
 </style>
 
+<style id="valerian-premium-financial-modals">
+.modal-overlay{position:fixed!important;inset:0!important;z-index:140!important;display:flex;align-items:center;justify-content:center;padding:16px!important;background:rgba(1,7,12,.84)!important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}.modal-overlay.hidden{display:none!important}
+#supplierPaymentModal>div,#deliveryConfirmModal>div,#refundPaymentModal>div,#preDeliveryPaymentModal>div{width:min(100%,460px)!important;max-height:min(88dvh,760px);overflow:auto;padding:24px!important;border:1px solid rgba(186,230,253,.24)!important;border-radius:28px!important;background:linear-gradient(155deg,#142635 0%,#07131e 55%,#02080c 100%)!important;color:#f8fafc!important;box-shadow:0 28px 90px rgba(0,0,0,.72),inset 0 1px 0 rgba(255,255,255,.1)!important;animation:valerianModalIn .28s cubic-bezier(.2,.8,.2,1)}
+#supplierPaymentModal h3,#deliveryConfirmModal h3,#refundPaymentModal h3,#preDeliveryPaymentModal h3{color:#f8fafc!important;font-size:17px!important;font-weight:900!important}#supplierPaymentModal p,#deliveryConfirmModal p,#refundPaymentModal p,#preDeliveryPaymentModal p{color:#b9c9d5!important;line-height:1.8}#supplierPaymentModal label,#deliveryConfirmModal label,#refundPaymentModal label,#preDeliveryPaymentModal label{color:#b9c9d5!important;font-size:12px!important;font-weight:800!important}
+#supplierPaymentModal input,#supplierPaymentModal select,#deliveryConfirmModal select,#refundPaymentModal input,#refundPaymentModal select,#preDeliveryPaymentModal input,#preDeliveryPaymentModal select{width:100%;min-height:48px;padding:12px 14px!important;border:1px solid rgba(203,213,225,.2)!important;border-radius:14px!important;background:#0a1a26!important;color:#f8fafc!important;font-weight:800!important;outline:none}
+#deliveryConfirmModal .bg-slate-50{background:rgba(186,230,253,.09)!important;border:1px solid rgba(186,230,253,.18);border-radius:16px;color:#dcecf5!important}#deliveryConfirmModal .bg-slate-50 b{color:#fff}
+#supplierPaymentModal button[onclick*="closeModal"],#deliveryConfirmModal button[onclick*="closeModal"],#refundPaymentModal button[onclick*="closeModal"],#preDeliveryPaymentModal button[onclick*="closeModal"]{border:1px solid rgba(203,213,225,.22)!important;border-radius:13px!important;color:#dce7ef!important;background:rgba(255,255,255,.045)!important;padding:11px 16px!important;font-weight:800}
+#supplierPaymentModal button[onclick*="confirm"],#deliveryConfirmModal button[onclick*="confirm"],#refundPaymentModal button[onclick*="confirm"],#preDeliveryPaymentModal button[onclick*="confirm"]{border:1px solid rgba(226,232,240,.55)!important;border-radius:13px!important;background:linear-gradient(135deg,#f8fafc,#b8c7d3)!important;color:#07131e!important;padding:11px 17px!important;font-weight:900!important;box-shadow:0 8px 22px rgba(186,230,253,.12)}
+@keyframes valerianModalIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}@media(max-width:520px){#supplierPaymentModal>div,#deliveryConfirmModal>div,#refundPaymentModal>div,#preDeliveryPaymentModal>div{padding:20px!important;border-radius:24px!important}}
+</style>
 </head>
 <!-- V19.30: smart operating supplies inventory; preserve original layout and schemaVersion 18 -->
 <!-- V19.37: compact A4 landscape inventory print with fixed image thumbnails -->
@@ -6847,16 +6857,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       win.document.open();win.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${escapeHTML(title)}</title><style>body{font-family:Arial,Tahoma,sans-serif;padding:24px;color:#111}h2{text-align:center}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ddd;padding:8px}@page{margin:14mm}</style>
 
 
-<style id="valerian-premium-financial-modals">
-.modal-overlay{position:fixed!important;inset:0!important;z-index:140!important;display:flex;align-items:center;justify-content:center;padding:16px!important;background:rgba(1,7,12,.84)!important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}.modal-overlay.hidden{display:none!important}
-#supplierPaymentModal>div,#deliveryConfirmModal>div,#refundPaymentModal>div,#preDeliveryPaymentModal>div{width:min(100%,460px)!important;max-height:min(88dvh,760px);overflow:auto;padding:24px!important;border:1px solid rgba(186,230,253,.24)!important;border-radius:28px!important;background:linear-gradient(155deg,#142635 0%,#07131e 55%,#02080c 100%)!important;color:#f8fafc!important;box-shadow:0 28px 90px rgba(0,0,0,.72),inset 0 1px 0 rgba(255,255,255,.1)!important;animation:valerianModalIn .28s cubic-bezier(.2,.8,.2,1)}
-#supplierPaymentModal h3,#deliveryConfirmModal h3,#refundPaymentModal h3,#preDeliveryPaymentModal h3{color:#f8fafc!important;font-size:17px!important;font-weight:900!important}#supplierPaymentModal p,#deliveryConfirmModal p,#refundPaymentModal p,#preDeliveryPaymentModal p{color:#b9c9d5!important;line-height:1.8}#supplierPaymentModal label,#deliveryConfirmModal label,#refundPaymentModal label,#preDeliveryPaymentModal label{color:#b9c9d5!important;font-size:12px!important;font-weight:800!important}
-#supplierPaymentModal input,#supplierPaymentModal select,#deliveryConfirmModal select,#refundPaymentModal input,#refundPaymentModal select,#preDeliveryPaymentModal input,#preDeliveryPaymentModal select{width:100%;min-height:48px;padding:12px 14px!important;border:1px solid rgba(203,213,225,.2)!important;border-radius:14px!important;background:#0a1a26!important;color:#f8fafc!important;font-weight:800!important;outline:none}
-#deliveryConfirmModal .bg-slate-50{background:rgba(186,230,253,.09)!important;border:1px solid rgba(186,230,253,.18);border-radius:16px;color:#dcecf5!important}#deliveryConfirmModal .bg-slate-50 b{color:#fff}
-#supplierPaymentModal button[onclick*="closeModal"],#deliveryConfirmModal button[onclick*="closeModal"],#refundPaymentModal button[onclick*="closeModal"],#preDeliveryPaymentModal button[onclick*="closeModal"]{border:1px solid rgba(203,213,225,.22)!important;border-radius:13px!important;color:#dce7ef!important;background:rgba(255,255,255,.045)!important;padding:11px 16px!important;font-weight:800}
-#supplierPaymentModal button[onclick*="confirm"],#deliveryConfirmModal button[onclick*="confirm"],#refundPaymentModal button[onclick*="confirm"],#preDeliveryPaymentModal button[onclick*="confirm"]{border:1px solid rgba(226,232,240,.55)!important;border-radius:13px!important;background:linear-gradient(135deg,#f8fafc,#b8c7d3)!important;color:#07131e!important;padding:11px 17px!important;font-weight:900!important;box-shadow:0 8px 22px rgba(186,230,253,.12)}
-@keyframes valerianModalIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}@media(max-width:520px){#supplierPaymentModal>div,#deliveryConfirmModal>div,#refundPaymentModal>div,#preDeliveryPaymentModal>div{padding:20px!important;border-radius:24px!important}}
-</style>
+
 </head><body>${v1946BrandHeader()}<h2>${escapeHTML(title)}</h2>${el.innerHTML}<script>window.onload=()=>setTimeout(()=>window.print(),300);<\/script></body></html>`);win.document.close();
     }
     function v1931PrintTable(tableId,title,fromId,toId){
@@ -7120,7 +7121,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           if(state.shippingCompanies.some(x=>String(x).trim().toLocaleLowerCase('ar-EG')===value.toLocaleLowerCase('ar-EG')))throw new Error('شركة الشحن مسجلة بالفعل.');
           const before=structuredClone(state.shippingCompanies);state.shippingCompanies.push(value);
           if(!saveState()){state.shippingCompanies=before;throw new Error('تعذر حفظ شركة الشحن.');}
-          try{await valDurableWritePromise;await valIdbFlush();}catch(err){state.shippingCompanies=before;saveState();throw new Error('لم يكتمل الحفظ الدائم لشركة الشحن: '+String(err?.message||err));}
+          try{await valDurableWritePromise;if(valDurableWriteError)throw valDurableWriteError;}catch(err){state.shippingCompanies=before;saveState();throw new Error('لم يكتمل الحفظ الدائم لشركة الشحن: '+String(err?.message||err));}
           if(!state.shippingCompanies.includes(value))throw new Error('لم يتم تأكيد تسجيل شركة الشحن داخل المحرك.');
           refreshAllViews();return {ok:true,company:value,snapshot:snapshot()};
         },
