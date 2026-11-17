@@ -2167,13 +2167,29 @@
       return 'VALERIAN-' + id + '-' + signature + '-' + stamp + '.png';
     }
 
+    async function blobToDataUrl(blob) {
+      return await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('تعذر قراءة ملف الصورة.'));
+        reader.readAsDataURL(blob);
+      });
+    }
+
     async function downloadPreviewImage() {
       try {
         showToast('جارٍ تجهيز صورة المعاينة...');
         const blob = await createPreviewImageBlob();
+        const fileName = previewImageFileName();
+        if (window.ValerianNative && typeof window.ValerianNative.saveImage === 'function') {
+          const saved = window.ValerianNative.saveImage(await blobToDataUrl(blob), fileName, 'image/png');
+          if (!saved) throw new Error('لم يستطع Android حفظ الصورة في مجلد Pictures/VALERIAN.');
+          showToast('تم حفظ الصورة في معرض الصور داخل Pictures/VALERIAN.');
+          return;
+        }
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url; a.download = previewImageFileName(); a.rel = 'noopener';
+        a.href = url; a.download = fileName; a.rel = 'noopener';
         a.style.display = 'none'; document.body.appendChild(a); a.click(); a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 60000);
         showToast('تم تجهيز الصورة وإرسالها إلى تنزيلات الجهاز.');
@@ -2787,7 +2803,14 @@
     window.printPreviewImage=async function(){
       try{
         showToast('جارٍ تجهيز نسخة الطباعة عالية الدقة...');
-        const blob=await createPreviewImageBlob(),url=URL.createObjectURL(blob);
+        const blob=await createPreviewImageBlob();
+        if(window.ValerianNative && typeof window.ValerianNative.printImage==='function'){
+          const thermal=activePreviewShareContext?.kind==='order';
+          window.ValerianNative.printImage(await blobToDataUrl(blob), 'VALERIAN-'+(activePreviewShareContext?.kind||'document'), thermal);
+          showToast('تم إرسال المستند إلى خدمة الطباعة في Android.');
+          return;
+        }
+        const url=URL.createObjectURL(blob);
         const frame=document.createElement('iframe');
         frame.style.cssText='position:fixed;width:1px;height:1px;right:0;bottom:0;border:0;opacity:0;';
         document.body.appendChild(frame);
