@@ -2502,7 +2502,7 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
           <p class="text-xs leading-6 text-rose-700">يمسح المنتجات والعملاء والطلبات والمشتريات والموردين والمصروفات وحركات المخزون والخزنة وسجلات التدقيق من هذا الحساب السحابي وكل الأجهزة المتزامنة. يحتفظ بإعدادات الشكل ونقاط الولاء ورسائل الفواتير. سيتم تنزيل نسخة احتياطية تلقائياً قبل المسح.</p>
           <div class="flex flex-wrap items-center justify-between gap-3">
             <span class="text-[11px] font-bold text-rose-700">⚠️ لا يمكن التراجع عن المسح بعد تأكيده.</span>
-            <button type="button" onclick="resetAllSystemData()" class="px-4 py-2.5 bg-rose-700 hover:bg-rose-800 text-white rounded-xl font-extrabold text-xs">مسح كل بيانات النشاط والبدء من جديد</button>
+            <button type="button" onclick="if(window.parent&&typeof window.parent.v5DeleteAllBusinessData==='function'){window.parent.v5DeleteAllBusinessData();}else{showToast('نافذة الحذف الآمن غير متاحة. أعد فتح التطبيق.','error');}" class="px-4 py-2.5 bg-rose-700 hover:bg-rose-800 text-white rounded-xl font-extrabold text-xs">مسح كل بيانات النشاط والبدء من جديد</button>
           </div>
         </div>
 
@@ -6090,7 +6090,9 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       if(digits.length<10){showToast('رقم الهاتف غير صحيح؛ راجع الرقم المسجل للعميل.','error');return;}
       const message=order.type==='loyalty_card'
         ? `مرحباً ${String(order.name||'عميلنا')}، يسعدنا تواصلكم مع ڤاليريان.`
-        : `مرحباً ${String(order.name||'عميلنا')}، بخصوص طلبكم رقم ${String(order.id||'')} من ڤاليريان.`;
+        : order.type==='customer_profile'
+          ? `مرحباً ${String(order.name||'عميلنا')}، يسعدنا تواصلكم مع ڤاليريان. نرحب بأي استفسار أو طلب جديد.`
+          : `مرحباً ${String(order.name||'عميلنا')}، بخصوص طلبكم رقم ${String(order.id||'')} من ڤاليريان.`;
       const url='https://wa.me/'+digits+'?text='+encodeURIComponent(message);
       const opened=window.open(url,'_blank');
       if(opened) opened.opener=null; else window.location.href=url;
@@ -6147,10 +6149,10 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const html=`<div class="customer-print-sheet" dir="rtl"><div class="customer-print-head"><h2>ملف العميل</h2><div class="customer-print-name">${escapeHTML(c.name||'عميل')}</div><div class="muted">تاريخ الطباعة: ${new Date().toLocaleString('ar-EG')}</div></div><h3>بيانات وتفضيلات العميل</h3><table class="w-full text-right text-xs v1916-table"><tbody>${profile}</tbody></table><h3>سجل الطلبات (${orders.length})</h3><table class="w-full text-right text-xs v1916-table"><thead><tr><th>رقم الطلب</th><th>التاريخ</th><th>المنتجات</th><th>الحالة</th><th>الإجمالي</th></tr></thead><tbody>${orderRows}</tbody></table><div class="customer-print-foot">تم استخراج هذا الملف من نظام VALERIAN.</div></div>`;
       pendingOffersBlob=null;pendingOffersFiles=null;pendingPreviewImageBlob=null;pendingInvoiceShareOrder=null;
       pendingCustomerImageShare={id:'customer-profile-'+String(c.phone||idx),name:String(c.name||'عميلنا'),phone:String(c.phone||''),type:'customer_profile'};
-      const customerDownloadBtn=document.getElementById('previewSaveImageBtn');if(customerDownloadBtn){customerDownloadBtn.classList.remove('hidden');customerDownloadBtn.textContent='⬇️ تنزيل صورة ملف العميل';}
-      const customerWhatsAppBtn=document.getElementById('invoiceWhatsAppBtn');if(customerWhatsAppBtn){customerWhatsAppBtn.classList.toggle('hidden',!pendingCustomerImageShare.phone);customerWhatsAppBtn.textContent='🟢 مشاركة ملف العميل على واتساب';}
-      const customerOpenWhatsAppBtn=document.getElementById('invoiceOpenWhatsAppBtn');if(customerOpenWhatsAppBtn){customerOpenWhatsAppBtn.classList.toggle('hidden',!pendingCustomerImageShare.phone);customerOpenWhatsAppBtn.textContent='💬 فتح محادثة العميل';}
-      document.getElementById('genericShareImageBtn')?.classList.remove('hidden');
+      const customerDownloadBtn=document.getElementById('previewSaveImageBtn');if(customerDownloadBtn){customerDownloadBtn.classList.remove('hidden');customerDownloadBtn.style.display='inline-flex';customerDownloadBtn.textContent='⬇️ تنزيل صورة ملف العميل';}
+      const customerWhatsAppBtn=document.getElementById('invoiceWhatsAppBtn');if(customerWhatsAppBtn){customerWhatsAppBtn.classList.toggle('hidden',!pendingCustomerImageShare.phone);customerWhatsAppBtn.style.display=pendingCustomerImageShare.phone?'inline-flex':'none';customerWhatsAppBtn.textContent='🟢 مشاركة ملف العميل على واتساب';}
+      const customerOpenWhatsAppBtn=document.getElementById('invoiceOpenWhatsAppBtn');if(customerOpenWhatsAppBtn){customerOpenWhatsAppBtn.classList.toggle('hidden',!pendingCustomerImageShare.phone);customerOpenWhatsAppBtn.style.display=pendingCustomerImageShare.phone?'inline-flex':'none';customerOpenWhatsAppBtn.textContent='💬 فتح محادثة العميل';}
+      const customerGenericShareBtn=document.getElementById('genericShareImageBtn');if(customerGenericShareBtn){customerGenericShareBtn.classList.remove('hidden');customerGenericShareBtn.style.display='inline-flex';}
       pendingPrintHtml=html;
       document.getElementById('printPreviewBody').innerHTML=v1946EnsureBrandHeader(html);
       document.getElementById('printPaperSize').value='a4';
