@@ -30,10 +30,10 @@ fs.writeFileSync(path.join(drawableDir,'valerian_transparent_splash.xml'),`<?xml
 const stylesPath=path.join(resDir,'values/styles.xml');
 if(!fs.existsSync(stylesPath)) throw new Error('Android styles.xml was not generated; cannot safely remove the system splash icon.');
 let styles=fs.readFileSync(stylesPath,'utf8');
-const launchStyle=/(<style\\s+name=["']AppTheme\\.NoActionBarLaunch["'][^>]*>)([\\s\\S]*?)(<\\/style>)/;
+const launchStyle=/(<style\s+name=["']AppTheme\.NoActionBarLaunch["'][^>]*>)([\s\S]*?)(<\/style>)/;
 if(!launchStyle.test(styles)) throw new Error('Could not locate AppTheme.NoActionBarLaunch in styles.xml.');
 styles=styles.replace(launchStyle,(_match,open,body,close)=>{
-  const clean=body.replace(/\\s*<item\\s+name=["'](?:windowSplashScreenAnimatedIcon|windowSplashScreenBackground|windowSplashScreenAnimationDuration|postSplashScreenTheme)["'][^>]*>[\\s\\S]*?<\\/item>/g,'');
+  const clean=body.replace(/\s*<item\s+name=["'](?:windowSplashScreenAnimatedIcon|windowSplashScreenBackground|windowSplashScreenAnimationDuration|postSplashScreenTheme)["'][^>]*>[\s\S]*?<\/item>/g,'');
   return open+clean+`
         <item name="windowSplashScreenBackground">#02080c</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/valerian_transparent_splash</item>
