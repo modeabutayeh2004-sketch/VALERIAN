@@ -6336,7 +6336,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           if(journalError||!journalData?.ok)throw new Error('تم تحديث النسخة الأساسية لكن تعذر نشر إشارة إعادة التصفير للأجهزة الأخرى: '+cloudErrorMessage(journalError));
         }
         state=fresh;
-        if(cloudIncrementalReady)cloudIncrementalBase=structuredClone(fresh);
+        if(cloudIncrementalReady)cloudIncrementalBase=valSyncCloudClone(fresh);
         await valClearUnreferencedImages(fresh);
         cloudRevision=Number(data[0].current_revision);cloudDirty=false;cloudConflict=false;clearTimeout(cloudSaveTimer);
         refreshAllViews();loadSettingsToUI();
@@ -6633,6 +6633,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       'cashbookOpenings','cashbookTransfers','refundTransactions','returnRecords','shipments',
       'auditLog','offers','stockTransfers'
     ]);
+    function valSyncCloudClone(value){const copy=structuredClone(value||{});valWalkImages(copy,(owner,key)=>{owner[key]=VAL_IMG_PH;});return copy;}
     function valSyncJson(value){try{return JSON.stringify(value===undefined?null:value);}catch(_){return '';}}
     function valSyncClone(value){return value===undefined?null:structuredClone(value);}
     function valSyncNewId(){return (window.crypto?.randomUUID?.()||('xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&3|8)).toString(16);}))).toLowerCase();}
@@ -6685,7 +6686,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     }
     function valCaptureIncrementalChanges(){
       if(!cloudIncrementalReady||cloudApplyingRemote||!cloudIncrementalBase)return;
-      const previous=cloudIncrementalBase,current=structuredClone(state),patch=valSyncBuildPatch(previous,current);
+      const previous=cloudIncrementalBase,current=valSyncCloudClone(state),patch=valSyncBuildPatch(previous,current);
       if(!patch)return;
       cloudIncrementalBase=current;
       cloudIncrementalQueue=cloudIncrementalQueue.then(async()=>{
@@ -6712,10 +6713,11 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       }
       await valSyncWriteCursor(Number(data.cursor||0));
       cloudRevision=Number(data.revision||0);
-      cloudIncrementalBase=structuredClone(state);
+      cloudIncrementalBase=valSyncCloudClone(state);
       cloudIncrementalReady=true;
       if(!base){
-        const seed={version:1,ops:Object.keys(state).map(key=>({op:'set',key,value:valSyncClone(state[key])}))};
+        const seedState=valSyncCloudClone(state);
+        const seed={version:1,ops:Object.keys(seedState).map(key=>({op:'set',key,value:valSyncClone(seedState[key])}))};
         const items=await valSyncReadOutbox();
         if(!items.length){items.push({change_id:valSyncNewId(),patch:seed,created_at:new Date().toISOString()});await valSyncWriteOutbox(items);}
       }
@@ -6745,13 +6747,13 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         for(const row of data.changes)next=valSyncApplyPatch(next,row.patch);
         cloudApplyingRemote=true;
         try{
-          state=normalizeState(next);
+          state=normalizeState(valMergeLocalImagesIntoCloudState(next));
           persistLocal(state);
           await valQueueDurableState(state);await valDurableWritePromise;await valIdbFlush();
           refreshAllViews();
           cursor=Number(data.cursor||cursor);
           await valSyncWriteCursor(cursor);
-          cloudIncrementalBase=structuredClone(state);
+          cloudIncrementalBase=valSyncCloudClone(state);
         }finally{cloudApplyingRemote=false;}
         if(data.changes.length<200)break;
       }
