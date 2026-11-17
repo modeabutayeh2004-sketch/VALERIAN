@@ -6736,11 +6736,13 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       if(!navigator.onLine){setCloudStatus('لا يوجد إنترنت — التغييرات محفوظة محلياً وستتم إعادة المحاولة','#a16207');return;}
       if(!cloudDirty && !manual) return;
       cloudSaveInFlight=true;
-      const sourceSnapshot=structuredClone(state), expected=cloudRevision;
-      setCloudStatus('جارٍ تجهيز البيانات والصور للمزامنة…','#a16207');
+      const expected=cloudRevision;
+      setCloudStatus('بدأت محاولة المزامنة — جارٍ تجهيز بيانات النشاط…','#a16207');
       let writeSucceeded = false;
       try {
-        // Never let a stalled IndexedDB image initialization leave the manual sync button silent.
+        // Keep every potentially-throwing preparation step inside try/finally so the
+        // button can never become silently stuck if state cloning or IndexedDB stalls.
+        const sourceSnapshot=structuredClone(state);
         await Promise.race([window.__valImgReady,new Promise((_,reject)=>setTimeout(()=>reject(new Error('تأخر تجهيز مخزن الصور المحلي أكثر من 12 ثانية')),12000))]);
         const snapshot=await valBuildCloudSyncState(sourceSnapshot);
         const payloadBytes=new Blob([JSON.stringify(snapshot)]).size;
