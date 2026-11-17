@@ -2078,11 +2078,18 @@
       // html2canvas can paint background-clip:text as a rectangular gradient.
       // Keep the live preview untouched; normalize gradient text only in the export clone.
       captureNode.querySelectorAll('.silver-text').forEach(node => {
-        node.style.setProperty('background', 'none', 'important');
-        node.style.setProperty('-webkit-background-clip', 'border-box', 'important');
-        node.style.setProperty('background-clip', 'border-box', 'important');
+        // Remove the gradient-text class entirely: html2canvas may still paint
+        // its background layer as a full-width rectangle on some Android browsers.
+        node.classList.remove('silver-text');
+        node.style.removeProperty('background');
+        node.style.removeProperty('background-image');
+        node.style.removeProperty('-webkit-background-clip');
+        node.style.removeProperty('background-clip');
+        node.style.setProperty('background', 'transparent', 'important');
+        node.style.setProperty('background-image', 'none', 'important');
         node.style.setProperty('-webkit-text-fill-color', '#e2e8f0', 'important');
         node.style.setProperty('color', '#e2e8f0', 'important');
+        node.style.setProperty('display', 'inline-block', 'important');
       });
       captureNode.style.width = width + 'px'; captureNode.style.maxWidth = 'none';
       captureNode.style.height = 'auto'; captureNode.style.minHeight = '0';
