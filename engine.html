@@ -6728,7 +6728,6 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     }
 
     async function cloudSyncNow(manual) {
-      await window.__valImgReady;
       if(!cloudClient || !cloudUser || !cloudReady || cloudConflict) {
         if(manual) setCloudStatus('المزامنة غير جاهزة أو يوجد تعارض يحتاج مراجعة','#b91c1c');
         return;
@@ -6741,6 +6740,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       setCloudStatus('جارٍ تجهيز البيانات والصور للمزامنة…','#a16207');
       let writeSucceeded = false;
       try {
+        // Never let a stalled IndexedDB image initialization leave the manual sync button silent.
+        await Promise.race([window.__valImgReady,new Promise((_,reject)=>setTimeout(()=>reject(new Error('تأخر تجهيز مخزن الصور المحلي أكثر من 12 ثانية')),12000))]);
         const snapshot=await valBuildCloudSyncState(sourceSnapshot);
         const payloadBytes=new Blob([JSON.stringify(snapshot)]).size;
         const payloadLabel=payloadBytes>=1048576?(payloadBytes/1048576).toFixed(2)+' MB':Math.max(1,Math.round(payloadBytes/1024))+' KB';
@@ -6769,7 +6770,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       } catch(err) {
         cloudDirty=true;
         const detail=cloudErrorMessage(err);
-        const assetBlock=/صور مطلوبة|حجم البيانات مع الصور|IndexedDB/.test(detail);
+        const assetBlock=/صور مطلوبة|حجم البيانات مع الصور|IndexedDB|تأخر تجهيز مخزن الصور/.test(detail);
         setCloudStatus((assetBlock?'توقفت المزامنة لحماية الصور: ':'انقطع الاتصال أثناء المزامنة: ')+detail+(assetBlock?' — أصلح الصور/الحجم ثم أعد المحاولة.':' — سنعيد المحاولة'),'#b91c1c');
         if(!assetBlock)scheduleCloudRetry();
       } finally {
