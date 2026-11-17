@@ -2673,7 +2673,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         <label class="font-bold">النوتات غير المفضلة<textarea id="customerProfileAvoidNotes" rows="2" placeholder="روائح لا يفضلها أو تسبب له نفورًا..." class="mt-1 w-full border rounded-xl p-2"></textarea></label>
         <label class="font-bold sm:col-span-2">الاستخدام والمناسبات<textarea id="customerProfileOccasions" rows="2" placeholder="يومي، عمل، مناسبات، صيف، شتاء..." class="mt-1 w-full border rounded-xl p-2"></textarea></label>
         <label class="font-bold sm:col-span-2">ملاحظات إضافية<textarea id="customerProfileNotes" rows="2" class="mt-1 w-full border rounded-xl p-2"></textarea></label>
-        <div class="sm:col-span-2 flex justify-between items-center border-t pt-3"><div class="flex flex-wrap gap-2"><button type="button" onclick="printCustomerFullProfile(Number(document.getElementById(\'customerProfileIndex\').value))" class="px-4 py-2 rounded-xl bg-slate-800 text-white font-bold">🖨️ طباعة / تنزيل / مشاركة ملف العميل</button></div><div class="flex gap-2"><button type="button" onclick="closeModal('customerProfileModal')" class="px-4 py-2 border rounded-xl font-bold">إلغاء</button><button class="px-5 py-2 rounded-xl bg-violet-700 text-white font-extrabold">حفظ الملف</button></div></div>
+        <div class="sm:col-span-2 flex justify-between items-center border-t pt-3"><div class="flex flex-wrap gap-2"><button type="button" onclick="printCustomerProfileFromModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-white font-bold">🖨️ طباعة</button></div><div class="flex gap-2"><button type="button" onclick="closeModal('customerProfileModal')" class="px-4 py-2 border rounded-xl font-bold">إلغاء</button><button class="px-5 py-2 rounded-xl bg-violet-700 text-white font-extrabold">حفظ الملف</button></div></div>
       </form>
     </div>
   </div>
@@ -6137,6 +6137,13 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     function setInventoryPane(key){
       document.querySelectorAll('#tab-inventory .inventory-pane').forEach(el=>el.classList.toggle('hidden',el.id!=='inventoryPane-'+key));
       document.querySelectorAll('.inventory-subnav [data-inv-pane]').forEach(b=>b.classList.toggle('active',b.dataset.invPane===key));
+    }
+
+    function printCustomerProfileFromModal(){
+      const field=document.getElementById('customerProfileIndex');
+      const idx=Number(field?.value);
+      if(!field||!Number.isInteger(idx)||idx<0){showToast('تعذر تحديد ملف العميل للطباعة.','error');return;}
+      printCustomerFullProfile(idx);
     }
 
     function printCustomerFullProfile(idx) {
