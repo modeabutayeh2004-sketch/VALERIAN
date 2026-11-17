@@ -1,7 +1,7 @@
 /* VALERIAN V20.7 — offline application shell */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-64-fix-shipping-and-native-waybill-print';
-const APP_SHELL = ['./', './index.html', './engine.html?v=20261117-64-fix-shipping-and-native-waybill-print', './manifest.webmanifest', './assets/valerian-icon.jpg'];
+const CACHE_NAME = 'valerian-app-shell-v20-65-local-only-assets-low-egress';
+const APP_SHELL = ['./', './index.html', './engine.html?v=20261117-65-local-only-assets-low-egress', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
@@ -29,8 +29,6 @@ self.addEventListener('fetch', event => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  // App navigation: try the latest published page, then fall back to the
-  // previously cached application so a lost connection never blocks startup.
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
@@ -46,7 +44,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Cache same-origin application assets only; never cache Supabase/API data.
+  // Cache application assets only; never cache Supabase/API data.
   if (url.pathname.startsWith(new URL('./', self.location).pathname)) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
