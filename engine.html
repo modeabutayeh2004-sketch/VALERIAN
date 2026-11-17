@@ -6840,7 +6840,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         }
         if(valDurableWriteError) throw valDurableWriteError;
       }catch(err){console.error('VALERIAN durable startup',err);showToast('تعذر تأكيد التخزين الدائم. صدّر نسخة احتياطية قبل متابعة العمليات.','error');}
-      finally{valStartupLock.remove();window.__valerianReadyResolve?.();}
+      finally{valStartupLock.remove();window.__valerianStartupComplete=true;window.__valerianReadyResolve?.();}
     })();
 
     // V19.31: reusable table printing with optional date-range filtering.
@@ -6906,6 +6906,9 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const ready=new Promise(resolve=>{resolveReady=resolve;});
       window.__valerianReady=ready;
       window.__valerianReadyResolve=resolveReady;
+      // The startup routine is declared before this bridge and may already have finished.
+      // Resolve immediately in that case; otherwise startup's finally block resolves it later.
+      if(window.__valerianStartupComplete===true)resolveReady();
       const snapshot=()=>structuredClone(state);
       const el=id=>{const node=document.getElementById(id);if(!node)throw new Error('Missing engine control: '+id);return node;};
       const emit=(type,detail={})=>window.dispatchEvent(new CustomEvent(type,{detail}));
