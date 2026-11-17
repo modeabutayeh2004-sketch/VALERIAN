@@ -2386,25 +2386,43 @@
 
     // All write paths below call the ERP engine. V5's local appState is only a view model.
     saveNewProductFromSheet=async function(){
+      const button=document.getElementById('saveNewProductBtn');
+      if(window.__v5ImageProcessing)return showToast('انتظر انتهاء تجهيز صورة المنتج أولاً.');
+      const payload={
+        name:document.getElementById('newProdName').value.trim(),
+        category:document.getElementById('newProdCategory').value,
+        size:document.getElementById('newProdSize').value.trim()||'100 مل',
+        price:Number(document.getElementById('newProdPrice').value||0),
+        averageCost:Number(document.getElementById('newProdCost').value||0),
+        stock:Number(document.getElementById('newProdStock').value||0),
+        image:pendingNewProductImage||''
+      };
+      if(!payload.name)return showToast('أدخل اسم المنتج أولاً.');
+      if(!Number.isFinite(payload.price)||payload.price<=0)return showToast('أدخل سعر بيع صحيح.');
+      if(!Number.isFinite(payload.averageCost)||payload.averageCost<0)return showToast('راجع تكلفة المنتج.');
+      if(!Number.isSafeInteger(payload.stock)||payload.stock<0)return showToast('راجع الرصيد الافتتاحي.');
+      if(button){button.disabled=true;button.textContent='جارٍ الحفظ والمزامنة...';}
       try{
-        const payload={
-          name:document.getElementById('newProdName').value.trim(),
-          category:document.getElementById('newProdCategory').value,
-          size:document.getElementById('newProdSize').value.trim()||'100 مل',
-          price:Number(document.getElementById('newProdPrice').value||0),
-          averageCost:Number(document.getElementById('newProdCost').value||0),
-          stock:Number(document.getElementById('newProdStock').value||0),
-          image:pendingNewProductImage||''
-        };
         const r=await runEngine('addProduct',payload);
-        if(!r.ok)return;
+        if(!r||!r.ok)return;
         document.getElementById('newProdName').value='';
         document.getElementById('newProdPrice').value='';
         document.getElementById('newProdCost').value='';
         document.getElementById('newProdStock').value='';
         clearNewProdImage();closeSheet('quickAddProductSheet');
-        showToast('تمت إضافة المنتج إلى كتالوج محرك VALERIAN وحفظه.');
+        showToast('تم حفظ المنتج على الجهاز. جارٍ تأكيد رفعه للسحابة...');
+        const cloud=engine&&engine.syncCloud?await engine.syncCloud():null;
+        if(cloud&&cloud.ok){
+          showToast('تمت إضافة المنتج وحفظه محليًا ومزامنته سحابيًا بنجاح.');
+        }else{
+          const detail=String(cloud&&cloud.status&&cloud.status.label||'لم يصل تأكيد المزامنة السحابية.');
+          showToast('المنتج محفوظ على الجهاز، لكن رفعه للسحابة لم يتأكد: '+detail);
+          paintCloudStatus(cloud&&cloud.status||engine&&engine.cloudStatus&&engine.cloudStatus());
+        }
       }catch(err){reportError(err);}
+      finally{
+        if(button){button.disabled=false;button.textContent='حفظ وإدراج في المخزون';}
+      }
     };
     submitMobileOrder=async function(openReceipt){
       const phone=document.getElementById('chkPhone').value.trim();
