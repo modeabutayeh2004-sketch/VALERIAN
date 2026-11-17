@@ -1,7 +1,7 @@
 /* VALERIAN V20.7 — offline application shell */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-79-whatsapp-fallback';
-const APP_SHELL = ['./', './index.html', './engine.html?v=20261118-79-whatsapp-fallback', './manifest.webmanifest', './assets/valerian-icon.jpg'];
+const CACHE_NAME = 'valerian-app-shell-v20-80-full-card-liquid';
+const APP_SHELL = ['./', './index.html', './engine.html?v=20261118-80-full-card-liquid', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
