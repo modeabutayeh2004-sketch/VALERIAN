@@ -2128,8 +2128,19 @@
     };
     window.saveMobileShippingDetails=async function(orderId){
       const company=document.getElementById('mobileShippingCompanyValue')?.value||'',tracking=document.getElementById('mobileShippingTrackingValue')?.value.trim()||'';
-      if(!company)return showToast('اختر شركة الشحن أولاً.');
-      try{const r=await runEngine('updateOrderShippingDetails',{orderId,company,tracking});if(r?.ok){document.getElementById('mobileShippingEditor')?.remove();renderMoreTracking();showToast('تم حفظ شركة الشحن ورقم التتبع.');}}catch(err){reportError(err);}
+      const button=document.querySelector('#mobileShippingEditor button[onclick*="saveMobileShippingDetails"]');
+      if(!company){showToast('اختر شركة الشحن أولاً.');return false;}
+      if(button){button.disabled=true;button.textContent='جارٍ الحفظ…';}
+      try{
+        if(typeof window.ValerianShippingAction!=='function')throw new Error('موصل حفظ بيانات الشحنة غير متاح. أعد تحميل التطبيق.');
+        const result=await window.ValerianShippingAction('updateOrderShippingDetails',{orderId,company,tracking});
+        if(result?.ok!==true)throw new Error(result?.error||'لم يؤكد محرك الأعمال حفظ بيانات الشحنة.');
+        document.getElementById('mobileShippingEditor')?.remove();
+        renderMoreTracking();
+        showToast('✓ تم حفظ شركة الشحن ورقم التتبع بنجاح.');
+        return true;
+      }catch(err){reportError(err);return false;}
+      finally{if(button){button.disabled=false;button.textContent='حفظ البيانات';}}
     };
     function mobileBrandHeader(){
       const fallback='<div dir="ltr" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:2px 0 12px;border-bottom:1px solid rgba(203,213,225,.32);color:#e2e8f0;font-family:Arial,sans-serif"><span style="font-size:22px;font-weight:900;letter-spacing:3px;color:#e2e8f0">VALERIAN</span></div>';
@@ -2149,7 +2160,17 @@
       const o=appState.orders.find(x=>String(x.id)===String(orderId));if(!o)return showToast('الطلب غير موجود.');
       const rows=(o.items||[]).map(x=>'<tr><td>'+escapeHtmlMobile(x.name||x.productName||'منتج')+'</td><td>'+escapeHtmlMobile(x.size||'')+'</td><td>'+Number(x.qty||0)+'</td></tr>').join('');
       const html='<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>بوليصة شحن '+escapeHtmlMobile(o.id)+'</title><style>@page{size:A5 portrait;margin:9mm}*{box-sizing:border-box}body{font-family:Arial,Tahoma,sans-serif;color:#111;margin:0;font-size:12px}.sheet{border:2px solid #111;padding:16px;border-radius:8px}.brand{text-align:center;font-family:Georgia,serif;font-size:22px;letter-spacing:4px;font-weight:bold;border-bottom:2px solid #111;padding-bottom:10px}.title{text-align:center;background:#e8edf2;padding:9px;font-size:17px;font-weight:bold;margin:12px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.field{border:1px solid #bbb;padding:9px;min-height:45px}.wide{grid-column:1/-1}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border:1px solid #999;padding:8px;text-align:right}th{background:#eee}.cod{margin-top:12px;border:2px dashed #222;padding:12px;font-size:17px;font-weight:bold;text-align:center}.foot{text-align:center;margin-top:18px;font-size:10px}</style></head><body><main class="sheet">'+mobileBrandHeader()+'<div class="title">بوليصة شحن وتوصيل</div><div class="grid"><div class="field"><b>رقم الطلب:</b><br>'+escapeHtmlMobile(o.id)+'</div><div class="field"><b>التاريخ:</b><br>'+escapeHtmlMobile(o.date||'—')+'</div><div class="field"><b>اسم العميل:</b><br>'+escapeHtmlMobile(o.name||'—')+'</div><div class="field"><b>رقم الهاتف:</b><br>'+escapeHtmlMobile(o.phone||'—')+'</div><div class="field wide"><b>العنوان:</b><br>'+escapeHtmlMobile(o.address||'—')+'</div><div class="field"><b>شركة الشحن:</b><br>'+escapeHtmlMobile(o.shippingCompany||'غير محددة')+'</div><div class="field"><b>رقم التتبع:</b><br>'+escapeHtmlMobile(o.trackingNumber||'—')+'</div></div><table><thead><tr><th>الصنف</th><th>الحجم</th><th>الكمية</th></tr></thead><tbody>'+rows+'</tbody></table><div class="cod">المطلوب تحصيله عند الاستلام: '+fmtEgp(Math.max(0,Number(o.remainingAmount||0)))+'</div><div class="foot">يرجى التأكد من بيانات المستلم ومحتويات الشحنة — VALERIAN</div></main><script>window.onload=()=>setTimeout(()=>window.print(),350)<\/script></body></html>';
-      const w=window.open('','_blank');if(!w){showToast('اسمح بفتح نافذة الطباعة من إعدادات المتصفح.');return;}w.document.open();w.document.write(html);w.document.close();
+      if(window.ValerianNative&&typeof window.ValerianNative.printHtml==='function'){
+        window.ValerianNative.printHtml(html,'VALERIAN-Waybill-'+String(o.id),false);
+        showToast('تم إرسال بوليصة الشحن إلى خدمة الطباعة في Android.');
+        return;
+      }
+      const frame=document.createElement('iframe');
+      frame.setAttribute('aria-hidden','true');
+      frame.style.cssText='position:fixed;width:1px;height:1px;right:0;bottom:0;border:0;opacity:0;';
+      document.body.appendChild(frame);
+      frame.onload=()=>{try{frame.contentWindow.focus();setTimeout(()=>frame.contentWindow.print(),250);}catch(err){showToast('تعذرت الطباعة: '+String(err.message||err));}setTimeout(()=>frame.remove(),60000);};
+      frame.srcdoc=html;
     };
     function renderMoreTracking(){
       const box=document.getElementById('moreTrackingContainer');if(!box)return;
@@ -2862,16 +2883,18 @@
     }
     // Public entry point is exposed immediately; it must not depend on window.ValerianUI,
     // which is only populated after connectEngine completes.
-    window.ValerianUIAddShippingCompany=async name=>{
-      // Resolve the iframe bridge directly; this entry point must not depend on connectEngine.
+    window.ValerianShippingAction=async (method,payload)=>{
       await waitForEngineBridge();
       await engine.ready;
-      if(typeof engine?.addShippingCompany!=='function')throw new Error('وظيفة إضافة شركة الشحن غير متاحة في محرك الأعمال.');
-      const result=await engine.addShippingCompany(name);
-      if(result?.ok!==true)throw new Error(result?.error||'لم يتم حفظ شركة الشحن.');
+      if(!['addShippingCompany','updateOrderShippingDetails'].includes(method))throw new Error('طلب شحن غير معروف.');
+      if(typeof engine?.[method]!=='function')throw new Error('وظيفة الشحن المطلوبة غير متاحة في محرك الأعمال.');
+      const result=method==='addShippingCompany'?await engine[method](payload):await engine[method](payload);
+      if(result?.ok!==true)throw new Error(result?.error||'لم يؤكد محرك الأعمال حفظ بيانات الشحنة.');
+      if(!result.snapshot)throw new Error('تم تنفيذ الطلب دون إرجاع نسخة بيانات مؤكدة.');
       syncFromEngine(result.snapshot);
       return result;
     };
+    window.ValerianUIAddShippingCompany=async name=>window.ValerianShippingAction('addShippingCompany',name);
     function reportError(err){console.error(err);showToast(String(err?.message||err||'تعذر تنفيذ العملية في محرك الأعمال.'));}
     async function getCloudEngine(){
       if(!engine)await connectEngine();
