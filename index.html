@@ -2173,7 +2173,7 @@
       const box=document.getElementById('moreCrmContainer');if(!box)return;
       const q=(document.getElementById('crmSearchMobile')?.value||'').trim().toLowerCase(),list=(appState.customers||[]).filter(c=>!q||String(c.name||'').toLowerCase().includes(q)||String(c.phone||'').includes(q));
       if(!list.length){box.innerHTML=renderEmptyPlaceholder('👑','قاعدة العملاء فارغة','يتم إنشاء ملف العميل ونقاط الولاء تلقائياً عند إتمام أول طلب.');return;}
-      box.innerHTML=list.map(c=>`<div class="glass-card rounded-2xl p-4 space-y-3 text-xs"><div class="flex items-start justify-between"><div><strong class="text-sm font-black text-white">${escapeHtmlMobile(c.name)}</strong><span class="text-[11px] text-slate-400 block bidi-ltr mt-1">${escapeHtmlMobile(c.phone)}</span><span class="text-[10px] text-slate-400 block mt-1">${escapeHtmlMobile(c.address||'لا يوجد عنوان مسجل')}</span></div><div class="text-left"><span class="px-2.5 py-1 rounded-full bg-slate-200/15 text-slate-100 font-black text-[11px]">${Number(c.points||0)} نقطة</span><span class="text-[9px] text-emerald-300 block mt-1">${fmtEgp(Number(c.points||0)*Number(appState.settings.pointValue||0))}</span></div></div>${Number(c.debtToCustomer||0)>0?'<div class="rounded-xl bg-rose-500/15 border border-rose-400/30 px-3 py-1.5 text-[10px] text-rose-200 font-bold">مستحقات العميل: '+fmtEgp(c.debtToCustomer)+'</div>':''}<div class="flex justify-between items-center border-t border-white/[.08] pt-3"><span class="text-[10px] text-slate-400">إجمالي المشتريات: <b class="text-white">${fmtEgp(c.totalSpent)}</b></span><span class="text-[10px] text-slate-400">الطلبات: <b class="text-white">${Number(c.ordersCount||0)}</b></span></div><div class="grid grid-cols-3 gap-2"><button onclick="editMobileCustomer('${String(c.phone).replace(/'/g,"\\'")}')" class="rounded-xl border border-white/15 py-2 text-slate-100">تعديل ✎</button><button type="button" onclick="window.printMobileCustomerProfile(String(this.dataset.customerPhone||''));return false;" data-customer-phone="${escapeHtmlMobile(c.phone)}" class="rounded-xl silver-btn py-2 font-black">طباعة الملف 🖨️</button><button onclick="openDigitalLoyaltyCard('${String(c.phone).replace(/'/g,"\\'")}')" class="rounded-xl border border-sky-200/20 py-2 text-sky-200">بطاقة الولاء</button></div></div>`).join('');
+      box.innerHTML=list.map(c=>`<div class="glass-card rounded-2xl p-4 space-y-3 text-xs"><div class="flex items-start justify-between"><div><strong class="text-sm font-black text-white">${escapeHtmlMobile(c.name)}</strong><span class="text-[11px] text-slate-400 block bidi-ltr mt-1">${escapeHtmlMobile(c.phone)}</span><span class="text-[10px] text-slate-400 block mt-1">${escapeHtmlMobile(c.address||'لا يوجد عنوان مسجل')}</span></div><div class="text-left"><span class="px-2.5 py-1 rounded-full bg-slate-200/15 text-slate-100 font-black text-[11px]">${Number(c.points||0)} نقطة</span><span class="text-[9px] text-emerald-300 block mt-1">${fmtEgp(Number(c.points||0)*Number(appState.settings.pointValue||0))}</span></div></div>${Number(c.debtToCustomer||0)>0?'<div class="rounded-xl bg-rose-500/15 border border-rose-400/30 px-3 py-1.5 text-[10px] text-rose-200 font-bold">مستحقات العميل: '+fmtEgp(c.debtToCustomer)+'</div>':''}<div class="flex justify-between items-center border-t border-white/[.08] pt-3"><span class="text-[10px] text-slate-400">إجمالي المشتريات: <b class="text-white">${fmtEgp(c.totalSpent)}</b></span><span class="text-[10px] text-slate-400">الطلبات: <b class="text-white">${Number(c.ordersCount||0)}</b></span></div><div class="grid grid-cols-3 gap-2"><button onclick="editMobileCustomer('${String(c.phone).replace(/'/g,"\\'")}')" class="rounded-xl border border-white/15 py-2 text-slate-100">تعديل ✎</button><button type="button" data-action="customer-profile-preview" data-customer-phone="${escapeHtmlMobile(c.phone)}" class="rounded-xl silver-btn py-2 font-black">طباعة الملف 🖨️</button><button onclick="openDigitalLoyaltyCard('${String(c.phone).replace(/'/g,"\\'")}')" class="rounded-xl border border-sky-200/20 py-2 text-sky-200">بطاقة الولاء</button></div></div>`).join('');
     }
     window.editMobileCustomer=function(phone){
       const c=(appState.customers||[]).find(x=>String(x.phone)===String(phone));if(!c)return;
@@ -2208,6 +2208,19 @@
       }catch(err){console.error('VALERIAN customer profile preview failed',err);showToast('تعذر فتح معاينة ملف العميل: '+String(err?.message||err));}
     };
 
+    // Capture this action before any legacy or delegated print handler.
+    if(!window.__valCustomerProfilePreviewBound){
+      window.__valCustomerProfilePreviewBound=true;
+      document.addEventListener('click',event=>{
+        const button=event.target?.closest?.('[data-action="customer-profile-preview"]');
+        if(!button)return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        const phone=String(button.dataset.customerPhone||'');
+        if(typeof window.printMobileCustomerProfile==='function')window.printMobileCustomerProfile(phone);
+        else showToast('تعذر تحميل معاينة ملف العميل. حدّث الصفحة وحاول مرة أخرى.');
+      },true);
+    }
     function openDigitalLoyaltyCard(phone) {
       const c = appState.customers.find(x => x.phone === phone);
       if (!c) return;
@@ -2662,7 +2675,7 @@
        in a same-origin hidden frame and remains the sole owner of business data. -->
   <iframe id="valerianEngineFrame" title="VALERIAN business engine" aria-hidden="true"
     style="position:fixed;left:-20px;top:-20px;width:2px;height:2px;border:0;opacity:0;pointer-events:none;z-index:-1"
-    src="./engine.html?v=20261117-customer-profile-preview-fix-38"></iframe>
+    src="./engine.html?v=20261117-customer-profile-preview-force-39"></iframe>
   <script id="valerianV5EngineAdapter">
   (function(){
     'use strict';
