@@ -5880,7 +5880,6 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           for (let i = cart.length - 1; i >= 0; i--) if (String(cart[i].id) === String(product.id)) cart.splice(i, 1);
           renderCart();
         }
-        product.isOffer = false;
       }
       logAudit(disabling ? 'PRODUCT_SALES_DISABLED' : 'PRODUCT_SALES_ENABLED',
         (disabling ? 'تعطيل البيع والحجز للمنتج ' : 'إعادة إتاحة المنتج للبيع والحجز ') + product.name);
