@@ -95,35 +95,25 @@
       box-shadow: 0 20px 45px rgba(0, 0, 0, 0.65);
     }
 
-    /* VALERIAN Liquid Metrics — recognizable bottle silhouette with a live liquid level */
+    /* VALERIAN Liquid Metrics — a direct, honest level indicator (no decorative bottle). */
     .bottle-card { position: relative; overflow: hidden; isolation: isolate; }
-    .bottle-card::before {
-      content: ""; position: absolute; z-index: 0; left: 12px; bottom: 8px;
-      width: 44px; height: 76%; opacity: .82; pointer-events: none;
-      background: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 120'%3E%3Cpath d='M24 3h16v17l8 9v79q0 8-8 8H24q-8 0-8-8V29l8-9z' fill='%23cbd5e1' fill-opacity='.035' stroke='%23dbeafe' stroke-opacity='.72' stroke-width='2.2'/%3E%3Cpath d='M24 11h16M18 34h28' stroke='%23e2e8f0' stroke-opacity='.42' stroke-width='1.5'/%3E%3C/svg%3E");
-      filter: drop-shadow(0 0 7px rgba(125,211,252,.16));
-    }
     .water-fill {
-      position: absolute; z-index: 1; left: 20px; right: auto; bottom: 13px;
-      width: 28px; height: 66%; border: 0; border-radius: 0;
-      clip-path: polygon(24% 0,76% 0,76% 15%,94% 25%,94% 100%,6% 100%,6% 25%,24% 15%);
-      background: linear-gradient(to top, rgba(14,165,233,.58) 0%, rgba(56,189,248,.40) var(--level, 8%), rgba(56,189,248,.025) var(--level, 8%), rgba(56,189,248,.025) 100%);
-      transition: background 1.15s cubic-bezier(.22,1,.36,1);
+      position: absolute; z-index: 0; left: 10px; right: 10px; bottom: 0;
+      width: auto; height: var(--level, 0%); max-height: 100%;
+      border: 0; border-radius: 7px 7px 0 0;
+      background: linear-gradient(180deg, rgba(125,211,252,.78), rgba(14,165,233,.48));
+      box-shadow: 0 -2px 12px rgba(56,189,248,.16);
+      transition: height .65s cubic-bezier(.22,1,.36,1);
       pointer-events: none;
-      filter: drop-shadow(0 0 5px rgba(56,189,248,.22));
     }
     .water-fill::after {
-      content: ""; position: absolute; left: 0; right: 0; top: calc(100% - var(--level, 8%));
-      height: 3px; background: rgba(186,230,253,.8); border-radius: 50%;
+      content: ""; position: absolute; left: 0; right: 0; top: 0;
+      height: 2px; background: rgba(186,230,253,.9);
       box-shadow: 0 0 8px rgba(125,211,252,.45);
     }
-    #heroWaterFill { left: 26px; width: 42px; height: 78%; bottom: 10px; }
+    #heroWaterFill { left: 0; right: 0; width: auto; }
     .bottle-content { position: relative; z-index: 2; }
-    @media (prefers-reduced-motion: no-preference) {
-      .water-fill { animation: liquidShimmer 4.5s ease-in-out infinite alternate; }
-      @keyframes liquidShimmer { from { filter: drop-shadow(0 0 3px rgba(56,189,248,.16)); } to { filter: drop-shadow(0 0 9px rgba(56,189,248,.38)); } }
-    }
-    @media (prefers-reduced-motion: reduce) { .water-fill { transition: none; animation: none; } }
+    @media (prefers-reduced-motion: reduce) { .water-fill { transition: none; } }
 
     /* Bottom Sheet & Modal Transitions */
     .sheet-backdrop {
@@ -345,7 +335,7 @@
       <section id="screen-home" class="app-screen space-y-6">
         <!-- Hero KPI Card: Total Sales Standalone -->
         <div class="glass-card rounded-3xl p-5 md:p-6 bottle-card relative overflow-hidden">
-          <div id="heroWaterFill" class="water-fill" style="height: 8%;"></div>
+          <div id="heroWaterFill" class="water-fill" style="--level: 8%;"></div>
           <div class="bottle-content relative z-10 flex items-center justify-between gap-2">
             <div>
               <span class="text-[11px] font-bold text-slate-400">إجمالي المبيعات المحققة</span>
@@ -1042,10 +1032,10 @@
       const decFill = decStock > 0 ? Math.min(85, Math.max(18, Math.round((decStock / 50) * 100))) : 8;
       const resFill = pendingCount > 0 ? Math.min(82, Math.max(18, Math.round((pendingCount / 10) * 100))) : 8;
 
-      if (document.getElementById('heroWaterFill')) document.getElementById('heroWaterFill').style.setProperty('--level', `${salesFill}%`);
-      if (document.getElementById('kpiWaterOrig')) document.getElementById('kpiWaterOrig').style.setProperty('--level', `${origFill}%`);
-      if (document.getElementById('kpiWaterDec')) document.getElementById('kpiWaterDec').style.setProperty('--level', `${decFill}%`);
-      if (document.getElementById('kpiWaterRes')) document.getElementById('kpiWaterRes').style.setProperty('--level', `${resFill}%`);
+      if (document.getElementById('heroWaterFill')) document.getElementById('heroWaterFill').style.setProperty('--level', `${Math.max(0,Math.min(100,salesFill))}%`);
+      if (document.getElementById('kpiWaterOrig')) document.getElementById('kpiWaterOrig').style.setProperty('--level', `${Math.max(0,Math.min(100,origFill))}%`);
+      if (document.getElementById('kpiWaterDec')) document.getElementById('kpiWaterDec').style.setProperty('--level', `${Math.max(0,Math.min(100,decFill))}%`);
+      if (document.getElementById('kpiWaterRes')) document.getElementById('kpiWaterRes').style.setProperty('--level', `${Math.max(0,Math.min(100,resFill))}%`);
     }
 
     function renderHome() {
@@ -1090,7 +1080,7 @@
 
           return `
             <div class="glass-card rounded-3xl p-3.5 min-w-[172px] max-w-[172px] flex flex-col justify-between shrink-0 relative bottle-card">
-              <div class="water-fill" style="height: 42%;"></div>
+              <div class="water-fill" style="--level: 42%;"></div>
               <div class="bottle-content relative z-10">
                 <div class="flex items-center justify-between">
                   <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-slate-200/15 text-slate-200 border border-slate-300/20">${p.badge || p.category}</span>
@@ -1333,7 +1323,7 @@
 
         return `
           <div class="glass-card rounded-3xl p-3 flex flex-col justify-between bottle-card">
-            <div class="water-fill" style="height: 40%;"></div>
+            <div class="water-fill" style="--level: 40%;"></div>
             <div class="bottle-content relative z-10 flex flex-col justify-between h-full">
               <div>
                 <div class="flex items-center justify-between gap-1">
@@ -1545,7 +1535,7 @@
         const fillH = pool.quantity > 0 ? Math.min(85, Math.max(15, Math.round((pool.quantity / 200) * 100))) : 8;
         return `
           <div class="glass-card rounded-xl p-2.5 text-center bottle-card overflow-hidden">
-            <div class="water-fill" style="height: ${fillH}%;"></div>
+            <div class="water-fill" style="--level: ${fillH}%;"></div>
             <div class="bottle-content relative z-10">
               <span class="text-[10px] font-bold text-slate-400 block bidi-ltr">${pool.sizeMl} ml</span>
               <strong class="text-sm font-black text-white block mt-0.5 bidi-ltr">${pool.quantity}</strong>
@@ -1588,7 +1578,7 @@
 
         return `
           <div class="glass-card rounded-2xl p-3.5 space-y-2.5 bottle-card ${isLow ? 'border-amber-400/40' : ''}">
-            <div class="water-fill" style="height: ${fillPct}%;"></div>
+            <div class="water-fill" style="--level: ${fillPct}%;"></div>
             <div class="bottle-content relative z-10 space-y-2.5">
               <div class="flex items-start justify-between gap-2">
                 <div class="flex items-center gap-2.5">
