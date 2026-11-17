@@ -2277,7 +2277,6 @@
       // Match the live preview's rendered width exactly. Using scrollWidth here
       // widened the export clone and changed line wrapping/vertical positions.
       const width = Math.ceil(rect.width || source.offsetWidth || source.scrollWidth);
-      const height = Math.ceil(Math.max(source.scrollHeight, rect.height));
       const captureNode = source.cloneNode(true);
       // html2canvas can paint background-clip:text as a rectangular gradient.
       // Keep the live preview untouched; normalize gradient text only in the export clone.
@@ -2307,12 +2306,16 @@
       captureNode.style.margin = '0'; captureNode.style.transform = 'none';
       captureNode.style.boxSizing = 'border-box'; captureNode.style.overflow = 'visible';
       const captureHost = document.createElement('div');
-      // Keep the clone at the same viewport origin instead of far off-screen:
-      // off-screen placement can alter bidi/layout measurements on Android WebView.
-      captureHost.style.cssText = 'position:fixed;left:0;top:0;z-index:-1;opacity:0;pointer-events:none;width:'+width+'px;max-width:'+width+'px;background:#02080c;direction:rtl;overflow:visible;';
-      captureHost.appendChild(captureNode); document.body.appendChild(captureHost);
+      // Keep the export clone inside the same preview parent so it inherits the
+      // exact RTL/font/layout context used by the visible preview on Android.
+      // Position it over the original preview without affecting document flow.
+      captureHost.style.cssText = 'position:fixed;left:'+rect.left+'px;top:'+rect.top+'px;z-index:-1;opacity:0;pointer-events:none;width:'+width+'px;max-width:'+width+'px;background:transparent;direction:rtl;overflow:visible;';
+      captureHost.appendChild(captureNode);
+      (source.parentElement || document.body).appendChild(captureHost);
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-      if (!width || !height) throw new Error('تعذر تحديد أبعاد المعاينة.');
+      const captureRect = captureNode.getBoundingClientRect();
+      const height = Math.ceil(Math.max(captureNode.scrollHeight, captureRect.height));
+      if (!width || !height) { captureHost.remove(); throw new Error('تعذر تحديد أبعاد المعاينة.'); }
       const imageNodes=[...captureNode.querySelectorAll('img')];
       await Promise.all(imageNodes.map(async img=>{
         img.loading='eager'; img.decoding='sync';
