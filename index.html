@@ -1099,6 +1099,12 @@
 
     const fmtEgp = (n) => `${Math.round(Number(n || 0)).toLocaleString('en-US')} EGP`;
     const getAvail = (p) => Math.max(0, Number(p.stock || 0) - Number(p.reservedStock || 0));
+    // Shared calculation: displayed percentage and liquid fill always use the same real stock capacity.
+    const getProductStockCapacity = p => {
+      const soldQty=(appState.inventoryMovements||[]).filter(m=>String(m.productId||m.product_id||m.product||'')===String(p?.id)&&/SALE|بيع/i.test(String(m.type||m.movementType||m.reason||''))).reduce((sum,m)=>sum+Math.abs(Number(m.quantity||m.qty||0)),0);
+      return Math.max(1,Number(p?.stockCapacity||p?.initialStock||p?.maxStock||0),Number(p?.stock||0)+soldQty);
+    };
+    const getProductStockLevelPercent = p => Math.max(0,Math.min(100,Math.round((getAvail(p)/getProductStockCapacity(p))*100)));
     const isDecantCategory = p => {
       const normalize = value => String(value ?? '').normalize('NFKC').replace(/[\s\u0640]+/g,'').toLowerCase();
       const category=normalize(p?.category), unit=normalize(p?.stockUnit), name=normalize(p?.name);
@@ -1243,8 +1249,8 @@
       document.getElementById('liveArabicDate').textContent = dateStr;
 
       const deliveredSales = appState.orders.filter(o => o.stockDeducted).reduce((s, o) => s + Number(o.grandTotal || 0), 0);
-      const origStock = appState.products.filter(p => p.category !== 'تقسيم').reduce((s, p) => s + getAvail(p), 0);
-      const decStock = appState.products.filter(p => p.category === 'تقسيم').reduce((s, p) => s + getAvail(p), 0);
+      const origStock = appState.products.filter(p => !isDecantCategory(p)).reduce((s, p) => s + getAvail(p), 0);
+      const decStock = appState.products.filter(p => isDecantCategory(p)).reduce((s, p) => s + getAvail(p), 0);
       const pendingCount = appState.orders.filter(o => !o.stockDeducted).length;
 
       document.getElementById('kpiTotalSales').textContent = fmtEgp(deliveredSales);
@@ -1279,13 +1285,10 @@
                  <span class="text-[9px] text-slate-400 mt-0.5">${p.category}</span>
                </div>`;
 
-          const soldQty = (appState.inventoryMovements || []).filter(m => String(m.productId || m.product_id || m.product || '') === String(p.id) && /SALE|بيع/i.test(String(m.type || m.movementType || m.reason || ''))).reduce((sum,m) => sum + Math.abs(Number(m.quantity || m.qty || 0)), 0);
-          const capacity = Math.max(1, Number(p.stockCapacity || p.initialStock || p.maxStock || 20), Number(p.stock || 0) + soldQty);
-          const liquidLevel = Math.max(0, Math.min(100, Math.round((getAvail(p) / capacity) * 100)));
+          const liquidLevel = getProductStockLevelPercent(p);
           return `
             <div class="glass-card rounded-3xl p-3.5 min-w-[172px] max-w-[172px] flex flex-col justify-between shrink-0 relative bottle-card">
-              <div class="water-fill" style="--level: ${liquidLevel}%;"></div>
-              <div class="bottle-content relative z-10">
+                <div class="bottle-content relative z-10">
                 <div class="flex items-center justify-between">
                   <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-slate-200/15 text-slate-200 border border-slate-300/20">${p.badge || p.category}</span>
                   <span class="text-[10px] font-bold text-slate-400 bidi-ltr">${p.size || ''}</span>
@@ -1530,8 +1533,7 @@
 
       grid.innerHTML = list.map(p => {
         const avail = getAvail(p);
-        const soldQty=(appState.inventoryMovements||[]).filter(m=>String(m.productId||m.product_id||m.product||'')===String(p.id)&&/SALE|بيع/i.test(String(m.type||m.movementType||m.reason||''))).reduce((sum,m)=>sum+Math.abs(Number(m.quantity||m.qty||0)),0);
-        const capacity=Math.max(1,Number(p.stockCapacity||p.initialStock||p.maxStock||0),Number(p.stock||0)+soldQty);
+        const stockLevelPercent=getProductStockLevelPercent(p);
         const price = p.isOffer && p.offerPrice ? p.offerPrice : p.price;
         const thumbHtml = p.image
           ? `<div class="mt-2 h-24 rounded-2xl overflow-hidden border border-white/10 bg-black/30">
@@ -1541,7 +1543,6 @@
 
         return `
           <div class="glass-card rounded-3xl p-3 flex flex-col justify-between bottle-card">
-            <div class="water-fill" style="--level: ${Math.max(0,Math.min(100,Math.round((avail/capacity)*100)))}%;"></div>
             <div class="bottle-content relative z-10 flex flex-col justify-between h-full">
               <div>
                 <div class="flex items-center justify-between gap-1">
@@ -1750,10 +1751,8 @@
 
     function renderInventoryScreen() {
       document.getElementById('emptyBottlesPoolGrid').innerHTML = Object.values(appState.packagingInventory).map(pool => {
-        const fillH = pool.quantity > 0 ? Math.min(85, Math.max(15, Math.round((pool.quantity / 200) * 100))) : 8;
         return `
           <div class="glass-card rounded-xl p-2.5 text-center bottle-card overflow-hidden">
-            <div class="water-fill" style="--level: ${fillH}%;"></div>
             <div class="bottle-content relative z-10">
               <span class="text-[10px] font-bold text-slate-400 block bidi-ltr">${pool.sizeMl} ml</span>
               <strong class="text-sm font-black text-white block mt-0.5 bidi-ltr">${pool.quantity}</strong>
@@ -1785,15 +1784,18 @@
       container.innerHTML = items.map(p => {
         const avail = getAvail(p);
         const isLow = avail <= Number(p.minimumStock || 0);
-        const fillPct = avail > 0 ? Math.min(100, Math.max(0, Math.round((avail / Math.max(1, (p.minimumStock || 2) * 3)) * 100))) : 0;
+        const fillPct = getProductStockLevelPercent(p);
 
         return `
           <div class="glass-card bottle-card relative rounded-2xl p-3.5 space-y-2.5 overflow-hidden ${isLow ? 'border-amber-400/40' : ''}">
-            <div class="water-fill" aria-hidden="true" style="--level:${fillPct}%"></div>
             <div class="relative z-10 space-y-2.5">
               <div class="flex items-start justify-between gap-2">
                 <div class="flex items-center gap-2.5">
-                  ${p.image ? `<img src="${p.image}" alt="${p.name}" class="w-11 h-11 rounded-xl object-cover border border-white/15 shrink-0" />` : `<div class="w-11 h-11 rounded-xl bg-white/5 border border-white/15 shrink-0 flex items-center justify-center text-[9px] text-slate-400">V</div>`}
+                  <div class="inventory-level-icon" role="img" aria-label="مستوى المخزون ${fillPct}%">
+                    ${p.image ? `<img src="${p.image}" alt="" />` : ''}
+                    <div class="inventory-level-fill" style="height:${fillPct}%"></div>
+                    <span>${fillPct}%</span>
+                  </div>
 
                   <div>
                     <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full ${isDecantCategory(p) ? 'bg-sky-400/20 text-sky-200' : 'bg-slate-200/15 text-slate-200'}">${p.category}</span>
@@ -1832,7 +1834,7 @@
     }
 
     function populateDecantLab() {
-      const decants = appState.products.filter(p => p.category === 'تقسيم');
+      const decants = appState.products.filter(p => isDecantCategory(p));
       const sel = document.getElementById('labDecantSelect');
       if (!decants.length) {
         sel.innerHTML = `<option value="">لا توجد أصناف تقسيم مسجلة بعد</option>`;
@@ -2553,7 +2555,7 @@
 
     function renderMoreOffers() {
       const box = document.getElementById('moreOffersContainer');
-      const offers = appState.products.filter(p => p.isOffer && !p.archived && p.disabledForSales !== true);
+      const offers = appState.products.filter(p => p.isOffer && isCatalogActive(p));
       if (!offers.length) {
         box.innerHTML = renderEmptyPlaceholder('🎁', 'لا توجد عروض نشطة حالياً', 'قم بتفعيل خاصية العرض لأي منتج لتظهر في كتالوج العروض وبوستر العملاء.');
         return;
@@ -2574,7 +2576,7 @@
     }
 
     async function openOffersPosterPreview() {
-      const offers = appState.products.filter(p => p.isOffer && !p.archived && p.disabledForSales !== true);
+      const offers = appState.products.filter(p => p.isOffer && isCatalogActive(p));
       if (!offers.length) return showToast('لا توجد عروض مفعلة لتوليد البوستر');
       activePreviewShareContext = {kind:'offers',id:'offers-'+offers.map(p=>[p.id,p.offerPrice,p.price,p.name].join(':')).join('|'),name:'عروض VALERIAN'};
       document.getElementById('previewSheetTitle').textContent = 'بوستر عروض VALERIAN الحصرية';
