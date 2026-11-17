@@ -6966,9 +6966,10 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       let writeSucceeded = false;
       try {
         if(cloudIncrementalReady){
+          const syncGeneration=cloudIncrementalGeneration;
           await valIncrementalSync();
           const pending=await valSyncReadOutbox();
-          cloudDirty=pending.length>0;
+          cloudDirty=pending.length>0 || syncGeneration!==cloudIncrementalGeneration;
           writeSucceeded=!cloudDirty;
           setCloudStatus(cloudDirty?'تم رفع دفعة تغييرات — توجد تغييرات أخرى بانتظار المزامنة':'متصل — تمت مزامنة التغييرات الجزئية بنجاح','#047857');
           return;
