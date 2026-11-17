@@ -2793,13 +2793,30 @@
       if(!product)return showToast('المنتج غير موجود في المخزون.');
       const disabling=product.disabledForSales!==true;
       try{
-        if(!window.ValerianUI?.toggleProductSalesAvailability)throw new Error('محرك إدارة المنتجات لم يجهز بعد.');
-        const result=await window.ValerianUI.toggleProductSalesAvailability(id);
+        // Resolve the real engine from its iframe directly. Do not depend on
+        // window.ValerianUI, which the initial V5 shell defines before the
+        // engine adapter has connected.
+        const frame=document.getElementById('valerianEngineFrame');
+        if(!frame)throw new Error('تعذر العثور على محرك البيانات.');
+        let api=frame.contentWindow?.ValerianEngine;
+        if(!api){
+          await new Promise((resolve,reject)=>{
+            let attempts=0;
+            const timer=setInterval(()=>{
+              api=frame.contentWindow?.ValerianEngine;
+              if(api){clearInterval(timer);resolve();}
+              else if(++attempts>=100){clearInterval(timer);reject(new Error('محرك البيانات لم يستجب. أعد تحميل الصفحة وحاول مرة أخرى.'));}
+            },150);
+          });
+        }
+        await api.ready;
+        if(typeof api.toggleProductSalesAvailability!=='function')throw new Error('نسخة محرك البيانات لا تدعم تعطيل المنتجات. حدّث الصفحة من جديد.');
+        const result=await api.toggleProductSalesAvailability(id);
         if(result?.ok!==true)return;
-        appState=window.ValerianUI.getState();
+        appState=result.snapshot||api.getSnapshot();
         renderInventoryScreen();
         showToast(disabling?'تم تعطيل المنتج عن البيع والحجز مع الاحتفاظ به في المخزون.':'تمت إعادة إتاحة المنتج للبيع والحجز.');
-      }catch(err){console.error(err);showToast(String(err?.message||'تعذر تغيير حالة المنتج.'));}
+      }catch(err){console.error('VALERIAN product availability toggle failed',err);showToast(String(err?.message||'تعذر تغيير حالة المنتج.'));}
     };
     window.editMobileProduct=function(id){
       const p=appState.products.find(x=>String(x.id)===String(id));if(!p)return showToast('المنتج غير موجود.');
