@@ -2665,7 +2665,15 @@
     };
     window.saveEditedProduct=async function(){
       const id=document.getElementById('editProdId').value,button=document.getElementById('saveEditProductBtn');
-      const readFile=async file=>new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result));r.onerror=reject;r.readAsDataURL(file);});
+      const readFile=async file=>new Promise((resolve,reject)=>{
+        const reader=new FileReader();reader.onerror=reject;reader.onload=()=>{
+          const image=new Image();image.onerror=()=>reject(new Error('تعذر قراءة صورة المنتج.'));
+          image.onload=()=>{const ratio=Math.min(1,1200/Math.max(image.width,image.height)),canvas=document.createElement('canvas');
+            canvas.width=Math.max(1,Math.round(image.width*ratio));canvas.height=Math.max(1,Math.round(image.height*ratio));
+            const ctx=canvas.getContext('2d');ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(image,0,0,canvas.width,canvas.height);
+            resolve(canvas.toDataURL('image/jpeg',0.82));};image.src=String(reader.result);
+        };reader.readAsDataURL(file);
+      });
       const file=document.getElementById('editProdImage').files?.[0],current=appState.products.find(p=>String(p.id)===String(id));
       if(!current)return showToast('المنتج غير موجود.');
       try{
