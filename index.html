@@ -1849,6 +1849,7 @@
           <div class="flex gap-2">
             <button onclick='openThermalReceiptPreview(${JSON.stringify(o)})' class="flex-1 py-2 rounded-full glass-pill text-[11px] font-bold">معاينة الفاتورة 🖨️</button>
             ${!o.stockDeducted ? `<button onclick="deliverReservedOrder('${o.id}')" class="flex-1 py-2 rounded-full silver-btn text-[11px] font-black">تأكيد التسليم ✓</button>` : ''}
+            ${Number(o.refundLiability||0)>0 ? '<button onclick="settleMobileRefund(\''+o.id+'\')" class="flex-1 py-2 rounded-full bg-rose-500/20 border border-rose-300/30 text-rose-100 text-[11px] font-extrabold">تسوية مستحق العميل '+fmtEgp(o.refundLiability)+'</button>' : ''}
           </div>
         </div>
       `).join('');
@@ -2578,6 +2579,15 @@
         const r=await runEngine('returnOrder',orderId);
         if(r.ok)showToast('تم تسجيل المرتجع من خلال سجل المرتجعات الأصلي.');
       }catch(err){reportError(err);}
+    };
+    window.settleMobileRefund=async function(orderId){
+      const order=appState.orders.find(x=>String(x.id)===String(orderId));
+      if(!order||Number(order.refundLiability||0)<=0)return showToast('لا يوجد مستحق للعميل على هذا الطلب.');
+      const amount=window.prompt('المبلغ المراد رده للعميل. المستحق الحالي: '+fmtEgp(order.refundLiability),String(order.refundLiability));
+      if(amount===null)return;
+      const method=window.prompt('وسيلة رد المبلغ: نقدي / تحويل بنكي / محفظة إلكترونية / بطاقة / أخرى','نقدي');
+      if(method===null)return;
+      try{const r=await runEngine('settleRefund',{orderId,amount:Number(amount),method});if(r.ok)showToast('تمت تسوية مستحق العميل وتسجيل وسيلة رد المبلغ.');}catch(err){reportError(err);}
     };
     renderMoreReports=function(){
       const delivered=appState.orders.filter(o=>o.stockDeducted||String(o.status||'').includes('تم التسليم'));
