@@ -2524,10 +2524,18 @@
         const blob = await createPreviewImageBlob();
         const file = new File([blob], previewImageFileName(), {type:'image/png'});
         const message = previewWhatsAppMessage();
-        if (navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
-          await navigator.share({files:[file], title:'VALERIAN', text:message});
-          showToast('تم فتح مشاركة الصورة؛ اختر واتساب ثم المحادثة المطلوبة.');
-          return;
+        // A failed Web Share attempt must not abort the WhatsApp fallback.
+        if (navigator.share && navigator.canShare) {
+          try {
+            if (navigator.canShare({files:[file]})) {
+              await navigator.share({files:[file], title:'VALERIAN', text:message});
+              showToast('تم فتح مشاركة الصورة؛ اختر واتساب ثم المحادثة المطلوبة.');
+              return;
+            }
+          } catch (shareError) {
+            if (shareError && shareError.name === 'AbortError') return;
+            console.warn('VALERIAN native share unavailable; continuing with WhatsApp fallback.', shareError);
+          }
         }
         if (window.ValerianNative && typeof window.ValerianNative.saveImage === 'function') {
           const saved = window.ValerianNative.saveImage(await blobToDataUrl(blob), file.name, 'image/png');
@@ -2535,14 +2543,18 @@
         } else {
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
-          a.href = url; a.download = file.name; a.style.display = 'none';
+          a.href = url; a.download = file.name; a.rel = 'noopener';
+          a.style.display = 'none';
           document.body.appendChild(a); a.click(); a.remove();
           setTimeout(() => URL.revokeObjectURL(url), 60000);
         }
         const phone = normalizeWhatsAppPhone(activePreviewShareContext && activePreviewShareContext.phone);
+        const shareText = message + (window.ValerianNative && typeof window.ValerianNative.saveImage === 'function'
+          ? '\n\nتم حفظ صورة المستند في Pictures/VALERIAN؛ أرفقها قبل الإرسال.'
+          : '\n\nتم تنزيل صورة المستند؛ أرفقها من التنزيلات قبل الإرسال.');
         const waUrl = phone
-          ? 'https://wa.me/' + phone + '?text=' + encodeURIComponent(message + '\n\nتم تنزيل صورة المستند؛ أرفقها من التنزيلات قبل الإرسال.')
-          : 'https://wa.me/?text=' + encodeURIComponent(message + '\n\nتم تنزيل صورة المستند؛ أرفقها قبل الإرسال.');
+          ? 'https://wa.me/' + phone + '?text=' + encodeURIComponent(shareText)
+          : 'https://wa.me/?text=' + encodeURIComponent(shareText);
         window.location.assign(waUrl);
       } catch (err) {
         if (!err || err.name !== 'AbortError') {
