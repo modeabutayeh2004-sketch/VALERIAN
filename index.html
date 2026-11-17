@@ -2073,10 +2073,10 @@
       if(button){button.disabled=true;button.textContent='جارٍ الحفظ…';}
       if(status){status.textContent='جارٍ الاتصال بمحرك الأعمال…';status.classList.remove('hidden');}
       try{
-        if(!window.ValerianUI?.addShippingCompany)throw new Error('واجهة الربط بمحرك الأعمال غير جاهزة. أعد تحميل الصفحة وحاول مرة أخرى.');
+        if(typeof window.ValerianUIAddShippingCompany!=='function')throw new Error('موصل إضافة شركات الشحن لم يتم تحميله. أعد تحميل الصفحة وحاول مرة أخرى.');
         if(status)status.textContent='تم الاتصال. جارٍ حفظ الشركة…';
         const result=await Promise.race([
-          window.ValerianUI.addShippingCompany(name),
+          window.ValerianUIAddShippingCompany(name),
           new Promise((_,reject)=>setTimeout(()=>reject(new Error('عملية الحفظ لم تنتهِ خلال 20 ثانية. لم يتم تأكيد إضافة الشركة؛ افحص حالة التخزين ثم أعد المحاولة.')),20000))
         ]);
         if(result?.ok!==true)throw new Error(result?.error||'لم يقبل محرك الأعمال إضافة شركة الشحن.');
@@ -2761,6 +2761,16 @@
       if(badge)badge.textContent='متصل بمحرك الأعمال V19';
       return true;
     }
+    // Public entry point is exposed immediately; it must not depend on window.ValerianUI,
+    // which is only populated after connectEngine completes.
+    window.ValerianUIAddShippingCompany=async name=>{
+      await connectEngine();
+      if(!engine?.addShippingCompany)throw new Error('وظيفة إضافة شركة الشحن غير متاحة في محرك الأعمال.');
+      const result=await engine.addShippingCompany(name);
+      if(result?.ok!==true)throw new Error(result?.error||'لم يتم حفظ شركة الشحن.');
+      syncFromEngine(result.snapshot);
+      return result;
+    };
     function reportError(err){console.error(err);showToast(String(err?.message||err||'تعذر تنفيذ العملية في محرك الأعمال.'));}
     async function getCloudEngine(){
       if(!engine)await connectEngine();
