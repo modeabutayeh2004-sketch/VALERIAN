@@ -113,6 +113,26 @@
       box-shadow: 0 0 8px rgba(125,211,252,.45);
     }
     #heroWaterFill { left: 0; right: 0; width: auto; }
+    .inventory-level-icon {
+      position: relative; display: inline-flex; width: 44px; height: 44px;
+      flex: 0 0 44px; align-items: center; justify-content: center;
+      overflow: hidden; isolation: isolate; border-radius: 50%;
+      border: 1px solid rgba(186,230,253,.42);
+      background: rgba(2,8,12,.78);
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,.035), 0 0 12px rgba(56,189,248,.08);
+    }
+    .inventory-level-fill {
+      position: absolute; z-index: 0; left: 0; right: 0; bottom: 0;
+      height: var(--level,0%); border-radius: 0 0 50% 50%;
+      background: linear-gradient(180deg,rgba(125,211,252,.52),rgba(14,165,233,.34));
+      transition: height .45s ease; pointer-events: none;
+    }
+    .inventory-level-fill::before {
+      content: ""; position: absolute; left: -10%; right: -10%; top: -2px;
+      height: 4px; border-radius: 50%; background: rgba(186,230,253,.95);
+      box-shadow: 0 0 8px rgba(125,211,253,.5);
+    }
+    .inventory-level-icon span { position: relative; z-index: 1; font-size: 9px; font-weight: 900; color: #f8fafc; text-shadow: 0 1px 3px #02080c; }
     .bottle-content { position: relative; z-index: 2; }
     @media (prefers-reduced-motion: reduce) { .water-fill { transition: none; } }
 
@@ -677,7 +697,7 @@
 
           <input id="newProdName" type="text" placeholder="اسم العطر أو المنتج *" class="w-full glass-pill rounded-xl px-3.5 py-2.5 text-white focus:outline-none" />
           <div class="grid grid-cols-2 gap-2">
-            <select id="newProdType" class="glass-pill rounded-xl px-3 py-2 text-white bg-[#04121a] font-bold" onchange="updateQuickProductFields()">
+            <select id="newProdType" class="glass-pill rounded-xl px-3 py-2 text-white bg-[#04121a] font-bold" onchange="updateQuickProductFields();toggleNewProductDecantFields()">
               <option value="عطور">عطور</option><option value="مزيلات عرق">مزيلات عرق</option><option value="شامبو">شامبو</option><option value="كريمات">كريمات</option><option value="عناية بالبشرة">عناية بالبشرة</option><option value="عناية بالشعر">عناية بالشعر</option><option value="مستحضرات تجميل">مستحضرات تجميل</option><option value="منتجات أخرى">منتجات أخرى</option>
             </select>
             <select id="newProdCategory" class="glass-pill rounded-xl px-3 py-2 text-white bg-[#04121a] font-bold">
@@ -1640,17 +1660,13 @@
         const avail = getAvail(p);
         const isLow = avail <= Number(p.minimumStock || 0);
         const fillPct = avail > 0 ? Math.min(90, Math.max(15, Math.round((avail / Math.max(1, (p.minimumStock || 2) * 3)) * 100))) : 8;
-        const visualMark = p.image
+        const visualMark = `${p.image
           ? `<img src="${p.image}" alt="${p.name}" class="w-11 h-11 rounded-xl object-cover border border-white/15 shrink-0" />`
-          : `<div class="w-10 h-10 rounded-full border border-sky-200/25 bg-slate-900/70 shrink-0 relative overflow-hidden flex items-center justify-center" role="img" aria-label="مستوى المخزون ${fillPct}%">
-               <div class="absolute inset-x-0 bottom-0 bg-sky-400/45" style="height:${fillPct}%"></div>
-               <span class="relative z-10 text-[9px] font-black text-white bidi-ltr">${fillPct}%</span>
-             </div>`;
+          : ''}<div class="inventory-level-icon" role="img" aria-label="مستوى المخزون ${fillPct}%"><div class="inventory-level-fill" style="--level:${fillPct}%"></div><span class="bidi-ltr">${fillPct}%</span></div>`;
 
         return `
-          <div class="glass-card rounded-2xl p-3.5 space-y-2.5 bottle-card ${isLow ? 'border-amber-400/40' : ''}">
-            <div class="water-fill" style="--level: ${fillPct}%;"></div>
-            <div class="bottle-content relative z-10 space-y-2.5">
+          <div class="glass-card rounded-2xl p-3.5 space-y-2.5 ${isLow ? 'border-amber-400/40' : ''}">
+            <div class="relative z-10 space-y-2.5">
               <div class="flex items-start justify-between gap-2">
                 <div class="flex items-center gap-2.5">
                   ${visualMark}
@@ -2070,8 +2086,19 @@
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       if (!width || !height) throw new Error('تعذر تحديد أبعاد المعاينة.');
       const imageNodes=[...captureNode.querySelectorAll('img')];
-      await Promise.all(imageNodes.map(img=>{img.loading='eager';if(img.complete&&img.naturalWidth)return Promise.resolve();return new Promise(resolve=>{img.onload=resolve;img.onerror=resolve;setTimeout(resolve,12000);});}));
-      const scale = Math.max(2, Math.min(4, (window.devicePixelRatio || 2) * 2, 6000 / Math.max(width, height)));
+      await Promise.all(imageNodes.map(async img=>{
+        img.loading='eager'; img.decoding='sync';
+        const src=img.currentSrc||img.getAttribute('src')||'';
+        if(src.startsWith('data:')||src.startsWith('blob:'))img.removeAttribute('crossorigin');
+        if(typeof img.decode==='function'){
+          try{await Promise.race([img.decode(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('انتهت مهلة تحميل صورة داخل المستند.')),15000))]);}
+          catch(err){if(!img.complete||!img.naturalWidth)throw err;}
+        }else if(!img.complete||!img.naturalWidth){
+          await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('تعذر تحميل صورة داخل المستند.')),15000);img.onload=()=>{clearTimeout(timer);resolve();};img.onerror=()=>{clearTimeout(timer);reject(new Error('تعذر تحميل صورة داخل المستند.'));};});
+        }
+        if(!img.naturalWidth||!img.naturalHeight)throw new Error('إحدى صور المستند غير متاحة للتصدير.');
+      }));
+      const scale = Math.max(3, Math.min(5, (window.devicePixelRatio || 2) * 2, 9000 / Math.max(width, height)));
       let canvas;
       try {
         canvas = await capture(captureNode, {scale,backgroundColor:null,useCORS:true,allowTaint:false,logging:false,
@@ -2172,7 +2199,7 @@
       `).join('');
     }
 
-    function openOffersPosterPreview() {
+    async function openOffersPosterPreview() {
       const offers = appState.products.filter(p => p.isOffer);
       if (!offers.length) return showToast('لا توجد عروض مفعلة لتوليد البوستر');
       activePreviewShareContext = {kind:'offers',id:'offers-'+new Date().toISOString().slice(0,10),name:'عروض VALERIAN'};
@@ -2201,6 +2228,10 @@
         </div>
       `;
       openSheet('previewModalSheet');
+      const posterImages=[...document.querySelectorAll('#previewSheetBody img')];
+      try{
+        await Promise.all(posterImages.map(img=>img.decode?img.decode():new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('تعذر تحميل صورة أحد منتجات العرض.'));})));
+      }catch(err){console.error('VALERIAN offer poster image load failed',err);showToast('البوستر جاهز، لكن تعذر تحميل صورة منتج واحد على الأقل.');}
     }
 
     function renderMoreReports() {
@@ -2525,6 +2556,17 @@
     }
 
     // All write paths below call the ERP engine. V5's local appState is only a view model.
+    function toggleNewProductDecantFields(){
+      const perfume=document.getElementById('newProdType')?.value==='عطور';
+      const wrap=document.getElementById('newProdDecantWrap');
+      const check=document.getElementById('newProdDecantable');
+      const options=document.getElementById('newProdDecantOptions');
+      if(wrap)wrap.classList.toggle('hidden',!perfume);
+      if(check){check.disabled=!perfume;if(!perfume)check.checked=false;}
+      if(options)options.classList.toggle('hidden',!perfume||!check?.checked);
+    }
+    toggleNewProductDecantFields();
+
     saveNewProductFromSheet=async function(){
       const button=document.getElementById('saveNewProductBtn');
       if(window.__v5ImageProcessing)return showToast('انتظر انتهاء تجهيز صورة المنتج أولاً.');
@@ -2693,7 +2735,9 @@
         frame.style.cssText='position:fixed;width:1px;height:1px;right:0;bottom:0;border:0;opacity:0;';
         document.body.appendChild(frame);
         frame.onload=()=>{try{frame.contentWindow.focus();frame.contentWindow.print();}catch(err){showToast('تعذر فتح نافذة الطباعة: '+err.message);}setTimeout(()=>{frame.remove();URL.revokeObjectURL(url);},60000);};
-        frame.srcdoc='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>@page{margin:8mm}html,body{margin:0;padding:0;background:#fff}img{display:block;width:100%;height:auto;max-height:calc(100vh - 16mm);object-fit:contain;page-break-inside:avoid}</style></head><body><img src="'+url+'" onload="setTimeout(()=>print(),250)"></body></html>';
+        const thermal=activePreviewShareContext?.kind==='order';
+        const printCss=thermal?'@page{size:80mm auto;margin:2mm}img{width:100%;max-width:76mm}':'@page{margin:6mm}img{width:100%;max-width:100%}';
+        frame.srcdoc='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;padding:0;background:#fff}img{display:block;height:auto;object-fit:contain;page-break-inside:avoid;image-rendering:auto}'+printCss+'</style></head><body><img src="'+url+'" onload="setTimeout(()=>print(),350)"></body></html>';
       }catch(err){console.error(err);showToast('تعذرت طباعة صورة المعاينة: '+String(err.message||err));}
     };
     window.saveEditedProduct=async function(){
@@ -2719,7 +2763,16 @@
           offerPrice:Number(document.getElementById('editProdOfferPrice').value||0),image:file?await readFile(file):current.image||''};
         if(!payload.name||!Number.isFinite(payload.price)||payload.price<=0||!Number.isFinite(payload.averageCost)||payload.averageCost<0||!Number.isSafeInteger(payload.stock)||payload.stock<0)return showToast('راجع الاسم والسعر والتكلفة والكمية.');
         button.disabled=true;button.textContent='جارٍ الحفظ...';
-        const r=await runEngine('updateProduct',payload);if(r?.ok){closeSheet('editProductSheet');showToast('تم تحديث بيانات المنتج بالكامل.');}
+        const r=await runEngine('updateProduct',payload);if(r?.ok){
+          closeSheet('editProductSheet');
+          const generatedDecant=payload.isDecantable?(r.snapshot?.products||[]).find(x=>String(x.parentId)===String(id)&&x.category==='تقسيم'&&!x.archived):null;
+          if(generatedDecant){
+            renderInventoryList('all');
+            showToast('تم تحديث العطر وإنشاء صنف التقسيم فعليًا: '+generatedDecant.name);
+          }else if(!payload.isDecantable){
+            showToast('تم تحديث المنتج. وإذا كان له تقسيم سابق فقد تم إيقافه مع الاحتفاظ بسجله.');
+          }else showToast('تم تحديث المنتج، لكن لم يؤكد المحرك إنشاء صنف التقسيم؛ راجع المخزون قبل المتابعة.');
+        }
       }catch(err){reportError(err);}finally{button.disabled=false;button.textContent='حفظ جميع التعديلات';}
     };
     document.getElementById('editProdImage')?.addEventListener('change',function(){const f=this.files?.[0],img=document.getElementById('editProdImagePreview');if(!f)return;const r=new FileReader();r.onload=()=>{img.src=String(r.result);img.classList.remove('hidden');};r.readAsDataURL(f);});
