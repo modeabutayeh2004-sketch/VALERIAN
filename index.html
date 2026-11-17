@@ -2073,17 +2073,15 @@
       if(button){button.disabled=true;button.textContent='جارٍ الحفظ…';}
       if(status){status.textContent='جارٍ الاتصال بمحرك الأعمال…';status.classList.remove('hidden');}
       try{
-        await connectEngine();
-        if(typeof engine?.addShippingCompany!=='function')throw new Error('المحرك اتصل، لكن وظيفة إضافة شركة الشحن غير موجودة في نسخته الحالية.');
+        if(!window.ValerianUI?.addShippingCompany)throw new Error('واجهة الربط بمحرك الأعمال غير جاهزة. أعد تحميل الصفحة وحاول مرة أخرى.');
         if(status)status.textContent='تم الاتصال. جارٍ حفظ الشركة…';
         const result=await Promise.race([
-          engine.addShippingCompany(name),
+          window.ValerianUI.addShippingCompany(name),
           new Promise((_,reject)=>setTimeout(()=>reject(new Error('عملية الحفظ لم تنتهِ خلال 20 ثانية. لم يتم تأكيد إضافة الشركة؛ افحص حالة التخزين ثم أعد المحاولة.')),20000))
         ]);
         if(result?.ok!==true)throw new Error(result?.error||'لم يقبل محرك الأعمال إضافة شركة الشحن.');
         const saved=(result.snapshot?.shippingCompanies||[]).some(x=>String(x).trim().toLocaleLowerCase('ar-EG')===name.toLocaleLowerCase('ar-EG'));
         if(!saved)throw new Error('المحرك لم يؤكد وجود الشركة في قائمة شركات الشحن بعد الحفظ.');
-        syncFromEngine(result.snapshot);
         if(input)input.value='';
         renderMoreTracking();
         populateMobileShippingCompanySelect();
@@ -2748,6 +2746,14 @@
           if(result?.ok!==true)throw new Error(result?.error||'لم يتم حفظ حالة المنتج.');
           syncFromEngine(result.snapshot);
           return {ok:true,snapshot:result.snapshot};
+        },
+        addShippingCompany:async name=>{
+          await connectEngine();
+          if(!engine?.addShippingCompany)throw new Error('وظيفة إضافة شركة الشحن غير متاحة في محرك الأعمال.');
+          const result=await engine.addShippingCompany(name);
+          if(result?.ok!==true)throw new Error(result?.error||'لم يتم حفظ شركة الشحن.');
+          syncFromEngine(result.snapshot);
+          return result;
         },
         reset:()=>showToast('تصفير البيانات متوقف من واجهة V5 لحماية قاعدة بيانات النشاط. استخدم أدوات النسخ الاحتياطي والإدارة داخل المحرك.')
       };
