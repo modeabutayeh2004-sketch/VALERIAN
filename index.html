@@ -234,7 +234,10 @@
     .v5-action-primary{border:1px solid rgba(226,232,240,.45);background:linear-gradient(135deg,#e2e8f0,#9eafbd 55%,#f1f5f9);color:#07131d;box-shadow:0 8px 24px rgba(148,163,184,.16)}
     @keyframes v5ActionIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
 
-  </style>
+  
+/* VALERIAN secure deletion credential dialog */
+#v5DeleteCredentialModal{position:fixed;inset:0;z-index:220;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,5,9,.84);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}#v5DeleteCredentialModal.hidden{display:none}.v5-delete-panel{width:100%;max-width:430px;border:1px solid rgba(203,213,225,.24);border-radius:27px;background:linear-gradient(150deg,#172b39 0%,#081620 60%,#03090e 100%);box-shadow:0 30px 100px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.12);padding:22px;animation:v5ActionIn .24s ease-out}.v5-delete-input{width:100%;border:1px solid rgba(203,213,225,.24);border-radius:14px;background:rgba(0,0,0,.3);padding:14px;color:#f8fafc;font-size:15px;font-weight:800;outline:none}.v5-delete-input:focus{border-color:rgba(186,230,253,.75);box-shadow:0 0 0 3px rgba(186,230,253,.1)}
+</style>
 </head>
 <body class="pb-28 selection:bg-sky-300/30 selection:text-white">
 
@@ -1033,6 +1036,9 @@
     </div>
 
   </div>
+
+
+<div id="v5DeleteCredentialModal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="v5DeleteCredentialTitle" dir="rtl"><div class="v5-delete-panel"><div class="flex items-center gap-3 mb-4"><div class="w-11 h-11 rounded-2xl flex items-center justify-center bg-rose-500/15 border border-rose-300/25 text-rose-200 text-xl">🔐</div><div><h3 id="v5DeleteCredentialTitle" class="text-lg font-black text-white">تأكيد الحذف</h3><p class="text-[10px] text-slate-400 mt-1">VALERIAN • حماية البيانات</p></div></div><p id="v5DeleteCredentialDescription" class="text-xs leading-7 text-slate-300 mb-4"></p><label id="v5DeleteCredentialLabel" for="v5DeleteCredentialInput" class="block text-xs font-extrabold text-slate-200 mb-2">كلمة المرور</label><input id="v5DeleteCredentialInput" class="v5-delete-input" type="password" autocomplete="current-password" dir="auto"><p id="v5DeleteCredentialError" class="hidden text-xs text-rose-300 mt-2"></p><div class="grid grid-cols-2 gap-2 mt-5"><button id="v5DeleteCredentialCancel" type="button" class="rounded-xl border border-white/15 bg-white/5 py-3 text-xs font-extrabold text-slate-200">إلغاء</button><button id="v5DeleteCredentialConfirm" type="button" class="rounded-xl bg-gradient-to-br from-rose-200 to-rose-400 py-3 text-xs font-black text-slate-950">تأكيد الحذف</button></div></div></div>
 
   <!-- ==================== CLEAN DECOUPLED UI CHASSIS ENGINE V5.0 ==================== -->
   <script>
@@ -2644,7 +2650,7 @@
        in a same-origin hidden frame and remains the sole owner of business data. -->
   <iframe id="valerianEngineFrame" title="VALERIAN business engine" aria-hidden="true"
     style="position:fixed;left:-20px;top:-20px;width:2px;height:2px;border:0;opacity:0;pointer-events:none;z-index:-1"
-    src="./engine.html?v=20261117-shipping-company-ready-fix-2"></iframe>
+    src="./engine.html?v=20261117-final-delete-customer-actions-1"></iframe>
   <script id="valerianV5EngineAdapter">
   (function(){
     'use strict';
@@ -2822,6 +2828,9 @@
       try{const e=await getCloudEngine();const result=await e.syncCloud();paintCloudStatus(result.status||e.cloudStatus());}
       catch(err){paintCloudStatus({label:String(err?.message||err),online:navigator.onLine});}
     };
+
+function openV5DeleteCredential(options={}){const modal=document.getElementById('v5DeleteCredentialModal'),input=document.getElementById('v5DeleteCredentialInput'),title=document.getElementById('v5DeleteCredentialTitle'),description=document.getElementById('v5DeleteCredentialDescription'),label=document.getElementById('v5DeleteCredentialLabel'),error=document.getElementById('v5DeleteCredentialError'),confirmBtn=document.getElementById('v5DeleteCredentialConfirm');if(!modal||!input)return Promise.reject(new Error('نافذة تأكيد الحذف غير متاحة.'));title.textContent=options.title||'تأكيد الحذف';description.textContent=options.description||'أدخل بيانات التأكيد للمتابعة.';label.textContent=options.label||'كلمة المرور';input.type=options.inputType||'password';input.value='';input.placeholder=options.placeholder||'';error.textContent='';error.classList.add('hidden');confirmBtn.textContent=options.confirmText||'تأكيد الحذف';modal.classList.remove('hidden');return new Promise(resolve=>{let settled=false;const cancelBtn=document.getElementById('v5DeleteCredentialCancel');const finish=value=>{if(settled)return;settled=true;modal.classList.add('hidden');confirmBtn.onclick=null;cancelBtn.onclick=null;input.onkeydown=null;modal.onclick=null;resolve(value);};cancelBtn.onclick=()=>finish(null);modal.onclick=event=>{if(event.target===modal)finish(null);};confirmBtn.onclick=()=>{const value=String(input.value||'');if(!value){error.textContent=options.emptyMessage||'أدخل بيانات التأكيد أولاً.';error.classList.remove('hidden');input.focus();return;}if(options.requiredValue!==undefined&&value!==options.requiredValue){error.textContent=options.invalidMessage||'عبارة التأكيد غير صحيحة.';error.classList.remove('hidden');input.select();return;}finish(value);};input.onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();confirmBtn.click();}if(event.key==='Escape')finish(null);};setTimeout(()=>input.focus(),60);});}
+
     async function runEngine(method,payload){
       if(!engine)await connectEngine();
       const result=await engine[method](payload);
@@ -2831,9 +2840,8 @@
       return result;
     }
     window.v5DeleteAllBusinessData=async function(){
-      if(!confirm('سيتم حذف كل بيانات النشاط من السحابة وهذا الجهاز وجميع الأجهزة المتزامنة. سيتم تنزيل نسخة احتياطية تلقائيًا قبل الحذف. لا يمكن التراجع عن هذه العملية. هل تريد المتابعة؟'))return;
-      const password=prompt('أدخل كلمة مرور حساب VALERIAN CLOUD لتأكيد صلاحية الحذف:');
-      if(password===null||!String(password).length){showToast('تم إلغاء الحذف.');return;}
+      const password=await openV5DeleteCredential({title:'حذف جميع بيانات النشاط',description:'سيتم حذف بيانات النشاط من السحابة وهذا الجهاز وجميع الأجهزة المتزامنة. سيتم تنزيل نسخة احتياطية تلقائيًا قبل الحذف. لا يمكن التراجع عن هذه العملية. أدخل كلمة مرور حساب VALERIAN CLOUD للتحقق من صلاحية الحذف.',label:'كلمة مرور VALERIAN CLOUD',inputType:'password',placeholder:'أدخل كلمة المرور',confirmText:'تحقق وابدأ الحذف'});
+      if(password===null){showToast('تم إلغاء الحذف.');return;}
       try{
         const e=await getCloudEngine();
         if(typeof e.resetAllSystemData!=='function')throw new Error('ميزة الحذف الآمن غير متاحة في إصدار المحرك الحالي.');
@@ -3061,8 +3069,8 @@
       const id=decodeURIComponent(String(encodedId||''));
       const product=appState.products.find(p=>String(p.id)===id);
       if(!product)return showToast('المنتج غير موجود في المخزون.');
-      if(!window.confirm('تحذير: حذف نهائي للمنتج «'+product.name+'». لن يمكن استعادته. ستظل الفواتير والحركات التاريخية المسجلة كما هي. هل أنت متأكد؟'))return;
-      if(window.prompt('للتأكيد النهائي اكتب كلمة: حذف')!=='حذف')return showToast('تم إلغاء الحذف النهائي.');
+      const approval=await openV5DeleteCredential({title:'حذف المنتج نهائيًا',description:'أنت على وشك حذف «'+product.name+'» نهائيًا. لن يمكن استعادته، وستظل الفواتير والحركات التاريخية المسجلة كما هي. اكتب كلمة «حذف» للتأكيد.',label:'اكتب كلمة حذف',inputType:'text',placeholder:'حذف',requiredValue:'حذف',invalidMessage:'اكتب كلمة حذف كما هي للمتابعة.'});
+      if(approval===null){showToast('تم إلغاء الحذف النهائي.');return;}
       try{
         const result=await runEngine('permanentlyDeleteProduct',id);
         if(result?.ok!==true)throw new Error(result?.error||'لم يتم حذف المنتج.');
