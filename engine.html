@@ -7025,6 +7025,19 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           const updated=Number(order.refundedAmount||0)>before;
           return {ok:updated,error:updated?'':(window.__valerianLastSaveError?.message||'لم يتم اعتماد التسوية.'),snapshot:snapshot()};
         },
+        updateSettings:async payload=>{
+          await ready;
+          const before=structuredClone(state.settings||{});
+          const percentage=Number(payload?.loyaltyPercentage),startOrder=Math.floor(Number(payload?.loyaltyStartOrder)),pointValue=Number(payload?.pointValue);
+          if(!Number.isFinite(percentage)||percentage<0||percentage>100)throw new Error('نسبة اكتساب النقاط يجب أن تكون بين 0 و100.');
+          if(!Number.isSafeInteger(startOrder)||startOrder<1)throw new Error('رقم أول طلب مؤهل يجب أن يكون 1 أو أكثر.');
+          if(!Number.isFinite(pointValue)||pointValue<0)throw new Error('قيمة النقطة يجب أن تكون صفراً أو أكثر.');
+          state.settings={...(state.settings||{}),loyaltyPercentage:percentage,loyaltyStartOrder:startOrder,pointValue};
+          logAudit('LOYALTY_SETTINGS_UPDATED','تحديث إعدادات برنامج الولاء والنقاط');
+          if(!saveState()){state.settings=before;refreshAllViews();throw new Error('تعذر حفظ إعدادات النقاط.');}
+          await valDurableWritePromise;try{await valIdbFlush();}catch(_){}
+          refreshAllViews();return {ok:true,snapshot:snapshot()};
+        },
         exportSnapshot:snapshot
       });
       emit('valerian:engine-ready',{version:'19.65'});
