@@ -7025,6 +7025,25 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           const updated=Number(order.refundedAmount||0)>before;
           return {ok:updated,error:updated?'':(window.__valerianLastSaveError?.message||'لم يتم اعتماد التسوية.'),snapshot:snapshot()};
         },
+        updateProduct:async payload=>{
+          await ready;
+          const product=state.products.find(p=>String(p.id)===String(payload?.id));
+          if(!product)throw new Error('المنتج غير موجود.');
+          const name=String(payload?.name??product.name).trim(),price=Number(payload?.price??product.price),minimumStock=Math.floor(Number(payload?.minimumStock??product.minimumStock??2));
+          const notes=String(payload?.notes??product.notes??'');
+          const isOffer=payload?.isOffer===undefined?!!product.isOffer:!!payload.isOffer;
+          const offerPrice=Number(payload?.offerPrice??product.offerPrice??0);
+          if(!name)throw new Error('اسم المنتج مطلوب.');
+          if(!Number.isFinite(price)||price<=0||price+0.0001<Number(product.averageCost??product.totalCost??0))throw new Error('سعر البيع يجب أن يكون صحيحاً ولا يقل عن متوسط التكلفة.');
+          if(!Number.isSafeInteger(minimumStock)||minimumStock<0)throw new Error('حد التنبيه للمخزون يجب أن يكون صفراً أو أكثر.');
+          if(isOffer&&(!Number.isFinite(offerPrice)||offerPrice<=0||offerPrice>=price))throw new Error('سعر العرض يجب أن يكون أكبر من صفر وأقل من سعر البيع.');
+          const before=structuredClone(product);
+          Object.assign(product,{name,price,minimumStock,notes,isOffer,offerPrice:isOffer?offerPrice:0});
+          logAudit('PRODUCT_UPDATED','تعديل بيانات المنتج '+name);
+          if(!saveState()){Object.assign(product,before);refreshAllViews();throw new Error('تعذر حفظ تعديل المنتج.');}
+          await valDurableWritePromise;try{await valIdbFlush();}catch(_){}
+          refreshAllViews();return {ok:true,product:structuredClone(product),snapshot:snapshot()};
+        },
         updateSettings:async payload=>{
           await ready;
           const before=structuredClone(state.settings||{});
