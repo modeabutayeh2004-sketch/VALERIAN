@@ -6834,6 +6834,23 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       cloudUser=user; setCloudStatus('جارٍ فحص بيانات السحابة…','#a16207');
       const {data:row,error}=await cloudClient.from('valerian_state').select('state,revision,updated_at').eq('user_id',user.id).maybeSingle();
       if(error){setCloudStatus('خطأ قراءة السحابة: '+cloudErrorMessage(error),'#b91c1c');return;}
+      // Prefer journal-based sync when the additive migration is installed.
+      try{
+        await valIncrementalBootstrap();
+        cloudReady=true;
+        const pending=await valSyncReadOutbox();
+        cloudDirty=pending.length>0;
+        document.getElementById('cloudSyncNow').style.display='block';
+        document.getElementById('cloudLogout').style.display='block';
+        setCloudStatus(cloudDirty?'تم الاتصال — توجد تغييرات جزئية بانتظار الرفع':'متصل — المزامنة الجزئية مفعّلة','#047857');
+        closeCloudPanel();subscribeCloudChanges();
+        if(cloudDirty)setTimeout(()=>cloudSyncNow(false),500);
+        else setTimeout(()=>pollCloudChanges(),250);
+        return;
+      }catch(incrementalError){
+        cloudIncrementalReady=false;
+        console.warn('Incremental sync unavailable; preserving legacy snapshot mode until migration is installed.',incrementalError);
+      }
       if(!row){
         // Default to Cancel: never upload this device's existing data automatically.
         showToast('لا توجد نسخة سحابية سابقة؛ تم إلغاء رفع بيانات هذا الجهاز والإبقاء عليها محلياً.');
@@ -6873,6 +6890,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
 
     function queueCloudSave() {
       if(!cloudReady || cloudApplyingRemote || cloudConflict) return;
+      if(cloudIncrementalReady) valCaptureIncrementalChanges();
       cloudDirty=true; setCloudStatus('تغييرات بانتظار المزامنة','#a16207');
       clearTimeout(cloudSaveTimer);
       cloudSaveTimer=setTimeout(()=>cloudSyncNow(false),500);
@@ -6925,6 +6943,14 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       setCloudStatus('بدأت محاولة المزامنة — جارٍ تجهيز بيانات النشاط…','#a16207');
       let writeSucceeded = false;
       try {
+        if(cloudIncrementalReady){
+          await valIncrementalSync();
+          const pending=await valSyncReadOutbox();
+          cloudDirty=pending.length>0;
+          writeSucceeded=!cloudDirty;
+          setCloudStatus(cloudDirty?'تم رفع دفعة تغييرات — توجد تغييرات أخرى بانتظار المزامنة':'متصل — تمت مزامنة التغييرات الجزئية بنجاح','#047857');
+          return;
+        }
         // Keep every potentially-throwing preparation step inside try/finally so the
         // button can never become silently stuck if state cloning or IndexedDB stalls.
         const sourceSnapshot=structuredClone(state);
@@ -6973,6 +6999,11 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       if(!cloudReady || !cloudUser || !navigator.onLine || cloudConflict || cloudDirty || cloudSaveInFlight || cloudPollInFlight) return;
       cloudPollInFlight=true;
       try {
+        if(cloudIncrementalReady){
+          await valIncrementalPull();
+          setCloudStatus('متصل — تم فحص سجل التغييرات الجزئي','#047857');
+          return;
+        }
         // Cheap revision-only check: never download the full JSON business state unless
         // another device has actually advanced the revision.
         const {data:meta,error:metaError}=await cloudClient.from('valerian_state').select('revision,updated_at').eq('user_id',cloudUser.id).maybeSingle();
