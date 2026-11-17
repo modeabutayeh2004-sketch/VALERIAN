@@ -685,14 +685,20 @@
 
           <input id="newProdName" type="text" placeholder="اسم العطر أو المنتج *" class="w-full glass-pill rounded-xl px-3.5 py-2.5 text-white focus:outline-none" />
           <div class="grid grid-cols-2 gap-2">
-            <select id="newProdCategory" class="glass-pill rounded-xl px-3 py-2 text-white bg-[#04121a] font-bold">
-              <option value="رجالي">رجالي</option>
-              <option value="نسائي">نسائي</option>
-              <option value="للجنسين">للجنسين</option>
-              <option value="تقسيم">تقسيم 🧪</option>
+            <select id="newProdType" class="glass-pill rounded-xl px-3 py-2 text-white bg-[#04121a] font-bold" onchange="updateQuickProductFields()">
+              <option value="عطور">عطور</option><option value="مزيلات عرق">مزيلات عرق</option><option value="شامبو">شامبو</option><option value="كريمات">كريمات</option><option value="عناية بالبشرة">عناية بالبشرة</option><option value="عناية بالشعر">عناية بالشعر</option><option value="مستحضرات تجميل">مستحضرات تجميل</option><option value="منتجات أخرى">منتجات أخرى</option>
             </select>
-            <input id="newProdSize" type="text" placeholder="الحجم (مثال: 100 ml)" class="glass-pill rounded-xl px-3 py-2 text-white bidi-ltr text-right" />
+            <select id="newProdCategory" class="glass-pill rounded-xl px-3 py-2 text-white bg-[#04121a] font-bold">
+              <option value="رجالي">رجالي</option><option value="نسائي">نسائي</option><option value="للجنسين">للجنسين</option><option value="أطفال">أطفال</option><option value="غير محدد">غير محدد</option>
+            </select>
           </div>
+          <div class="grid grid-cols-2 gap-2">
+            <input id="newProdSize" type="number" min="0" step="any" placeholder="كمية العبوة" class="glass-pill rounded-xl px-3 py-2 text-white bidi-ltr text-right" />
+            <select id="newProdUnit" class="glass-pill rounded-xl px-3 py-2 text-white bg-[#04121a] font-bold">
+              <option value="مل">ملليلتر (مل)</option><option value="جرام">جرام</option><option value="كيلوجرام">كيلوجرام</option><option value="وحدة">وحدة / قطعة</option>
+            </select>
+          </div>
+          <label id="newProdDecantWrap" class="flex items-center gap-2 text-[11px] text-slate-200"><input id="newProdDecantable" type="checkbox" class="accent-sky-400"> العطر متاح للتقسيم</label>
           <div class="grid grid-cols-3 gap-2">
             <div><span class="text-[10px] text-slate-400">سعر البيع</span><input id="newProdPrice" type="number" placeholder="0" class="w-full glass-pill rounded-xl px-2.5 py-2 text-white font-bold bidi-ltr" /></div>
             <div><span class="text-[10px] text-slate-400">التكلفة</span><input id="newProdCost" type="number" placeholder="0" class="w-full glass-pill rounded-xl px-2.5 py-2 text-white font-bold bidi-ltr" /></div>
@@ -1215,6 +1221,15 @@
       if (status) status.textContent = 'ارفع صورة المنتج؛ سيتم ضغطها تلقائيًا لتسريع الحفظ والمزامنة.';
       const saveBtn = document.getElementById('saveNewProductBtn');
       if (saveBtn) saveBtn.disabled = false;
+    }
+
+    function updateQuickProductFields(){
+      const perfume=document.getElementById('newProdType')?.value==='عطور';
+      const unit=document.getElementById('newProdUnit');
+      const decant=document.getElementById('newProdDecantWrap');
+      if(unit){unit.value=perfume?'مل':(unit.value==='مل'?'جرام':unit.value);unit.querySelector('option[value="مل"]').disabled=!perfume;}
+      if(decant)decant.classList.toggle('hidden',!perfume);
+      if(!perfume&&document.getElementById('newProdDecantable'))document.getElementById('newProdDecantable').checked=false;
     }
 
     function saveNewProductFromSheet() {
@@ -2442,7 +2457,10 @@
       const payload={
         name:document.getElementById('newProdName').value.trim(),
         category:document.getElementById('newProdCategory').value,
-        size:document.getElementById('newProdSize').value.trim()||'100 مل',
+        productType:document.getElementById('newProdType').value,
+        size:(document.getElementById('newProdSize').value.trim()||'100')+' '+document.getElementById('newProdUnit').value,
+        stockUnit:document.getElementById('newProdUnit').value,
+        isDecantable:document.getElementById('newProdType').value==='عطور'&&document.getElementById('newProdDecantable').checked,
         price:Number(document.getElementById('newProdPrice').value||0),
         averageCost:Number(document.getElementById('newProdCost').value||0),
         stock:Number(document.getElementById('newProdStock').value||0),
