@@ -1,7 +1,7 @@
 /* VALERIAN V20.7 — offline application shell */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-29-shipping-direct-bridge';
-const APP_SHELL = ['./', './index.html', './engine.html?v=20261117-shipping-company-ready-fix-2', './manifest.webmanifest', './assets/valerian-icon.jpg'];
+const CACHE_NAME = 'valerian-app-shell-v20-30-final-delete-customer-actions';
+const APP_SHELL = ['./', './index.html', './engine.html?v=20261117-final-delete-customer-actions-1', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
