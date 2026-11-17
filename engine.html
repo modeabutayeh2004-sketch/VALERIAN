@@ -7101,16 +7101,20 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           const created=state.imports.length>beforeCount;
           return {ok:created,invoice:created?structuredClone(state.imports[0]):null,snapshot:snapshot()};
         },
-        paySupplierInvoice:async invoiceId=>{
+        paySupplierInvoice:async payload=>{
           await ready;
+          const invoiceId=typeof payload==='object'?payload.invoiceId:payload;
           const inv=state.supplierInvoices.find(x=>String(x.id)===String(invoiceId));
           if(!inv)throw new Error('فاتورة المورد غير موجودة في سجل المحرك.');
           const linked=(state.supplierPayments||[]).filter(p=>String(p.invoiceId)===String(inv.id)).reduce((a,p)=>a+Number(p.amount||0),0);
           const due=Math.max(0,Number(inv.totalAmount||0)-Math.max(Number(inv.paidAmount||0),linked));
           if(due<=0)return {ok:false,error:'الفاتورة مسددة بالكامل.',snapshot:snapshot()};
-          pendingSupplierInvoiceId=inv.id;el('supplierPaymentAmount').value=String(due);el('supplierPaymentMethod').value='نقدي';
+          const amount=Number(typeof payload==='object'?payload.amount:due);
+          const method=normalizePaymentMethod(typeof payload==='object'?payload.method:'نقدي');
+          if(!Number.isFinite(amount)||amount<=0||amount>due+0.0001)throw new Error('أدخل مبلغ سداد صحيحاً لا يتجاوز مستحق المورد.');
+          pendingSupplierInvoiceId=inv.id;el('supplierPaymentAmount').value=String(amount);el('supplierPaymentMethod').value=method;
           const before=(state.supplierPayments||[]).length;confirmSupplierPayment();
-          return {ok:(state.supplierPayments||[]).length>before,snapshot:snapshot()};
+          return {ok:(state.supplierPayments||[]).length>before,error:(state.supplierPayments||[]).length>before?'':(window.__valerianLastSaveError?.message||'لم يتم اعتماد السداد.'),snapshot:snapshot()};
         },
         deliverOrder:async payload=>{
           await ready;
