@@ -2186,7 +2186,7 @@
       }
       box.innerHTML = offers.map(p => `
         <div class="glass-card rounded-2xl p-3.5 flex items-center gap-3 text-xs">
-          ${p.image ? `<img src="${p.image}" alt="${p.name}" crossorigin="anonymous" class="w-16 h-16 rounded-xl object-contain bg-white/5 border border-white/10 shrink-0">` : `<div class="w-16 h-16 rounded-xl bg-white/5 flex items-center justify-center text-slate-500 text-[9px] shrink-0">VALERIAN</div>`}
+          ${p.image ? `<img src="${p.image}" alt="${p.name}" class="w-16 h-16 rounded-xl object-contain bg-white/5 border border-white/10 shrink-0">` : `<div class="w-16 h-16 rounded-xl bg-white/5 flex items-center justify-center text-slate-500 text-[9px] shrink-0">VALERIAN</div>`}
           <div class="flex-1 min-w-0">
             <strong class="text-white font-extrabold">${p.name}</strong>
             <div class="text-[10px] text-slate-400 bidi-ltr mt-0.5">${p.size}</div>
@@ -2213,7 +2213,7 @@
           <div class="space-y-2.5">
             ${offers.map(p => `
               <div class="bg-white/5 rounded-2xl p-3 border border-slate-300/20 flex items-center gap-3 text-xs">
-                ${p.image ? `<img src="${p.image}" alt="${p.name}" crossorigin="anonymous" class="w-20 h-20 rounded-xl object-contain bg-white/10 shrink-0">` : `<div class="w-20 h-20 rounded-xl bg-white/5 flex items-center justify-center text-slate-500 text-[9px] shrink-0">VALERIAN</div>`}
+                ${p.image ? `<img src="${p.image}" alt="${p.name}" class="w-20 h-20 rounded-xl object-contain bg-white/10 shrink-0">` : `<div class="w-20 h-20 rounded-xl bg-white/5 flex items-center justify-center text-slate-500 text-[9px] shrink-0">VALERIAN</div>`}
                 <div class="flex-1 min-w-0">
                   <strong class="text-white font-extrabold block">${p.name}</strong>
                   <span class="text-[10px] text-slate-300 bidi-ltr">${p.size}</span>
