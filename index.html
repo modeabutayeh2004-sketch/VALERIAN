@@ -2227,12 +2227,11 @@
       if(button){button.disabled=true;button.textContent='جارٍ الحفظ…';}
       say('تم استقبال طلب الحفظ؛ جارٍ الاتصال بمحرك البيانات…',true);
       try{
-        const bridge=await waitForEngineBridge(12000);say('المحرك متصل؛ جارٍ حفظ البيانات…',true);await bridge.ready;
         const method=root.dataset.mode==='add'?'createCustomerProfile':'updateCustomerProfile';
-        if(typeof bridge[method]!=='function')throw new Error('واجهة المحرك لا تحتوي على '+method+'. حدّث التطبيق بالكامل.');
-        const result=await bridge[method](payload);
+        if(typeof window.ValerianCustomerProfileSave!=='function')throw new Error('جسر حفظ بيانات العملاء غير متاح. أعد تحميل التطبيق بالكامل.');
+        const result=await window.ValerianCustomerProfileSave(method,payload);
         if(result?.ok!==true)throw new Error(result?.error||'محرك البيانات لم يؤكد نجاح العملية.');
-        syncFromEngine(result.snapshot||bridge.getSnapshot());renderCrmMobile();
+        renderCrmMobile();
         root.remove();showToast(root.dataset.mode==='add'?'تم إنشاء ملف العميل وحفظه بنجاح.':'تم حفظ تعديلات العميل بنجاح.');
         return true;
       }catch(error){
@@ -2923,6 +2922,17 @@
     };
 
 function openV5DeleteCredential(options={}){const modal=document.getElementById('v5DeleteCredentialModal'),input=document.getElementById('v5DeleteCredentialInput'),title=document.getElementById('v5DeleteCredentialTitle'),description=document.getElementById('v5DeleteCredentialDescription'),label=document.getElementById('v5DeleteCredentialLabel'),error=document.getElementById('v5DeleteCredentialError'),confirmBtn=document.getElementById('v5DeleteCredentialConfirm');if(!modal||!input)return Promise.reject(new Error('نافذة تأكيد الحذف غير متاحة.'));title.textContent=options.title||'تأكيد الحذف';description.textContent=options.description||'أدخل بيانات التأكيد للمتابعة.';label.textContent=options.label||'كلمة المرور';input.type=options.inputType||'password';input.value='';input.placeholder=options.placeholder||'';error.textContent='';error.classList.add('hidden');confirmBtn.textContent=options.confirmText||'تأكيد الحذف';modal.classList.remove('hidden');return new Promise(resolve=>{let settled=false;const cancelBtn=document.getElementById('v5DeleteCredentialCancel');const finish=value=>{if(settled)return;settled=true;modal.classList.add('hidden');confirmBtn.onclick=null;cancelBtn.onclick=null;input.onkeydown=null;modal.onclick=null;resolve(value);};cancelBtn.onclick=()=>finish(null);modal.onclick=event=>{if(event.target===modal)finish(null);};confirmBtn.onclick=()=>{const value=String(input.value||'');if(!value){error.textContent=options.emptyMessage||'أدخل بيانات التأكيد أولاً.';error.classList.remove('hidden');input.focus();return;}if(options.requiredValue!==undefined&&value!==options.requiredValue){error.textContent=options.invalidMessage||'عبارة التأكيد غير صحيحة.';error.classList.remove('hidden');input.select();return;}finish(value);};input.onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();confirmBtn.click();}if(event.key==='Escape')finish(null);};setTimeout(()=>input.focus(),60);});}
+
+    // Public customer-profile bridge: the editor lives in a separate script scope.
+    window.ValerianCustomerProfileSave=async function(method,payload){
+      await connectEngine();
+      if(!['createCustomerProfile','updateCustomerProfile'].includes(method))throw new Error('طلب حفظ عميل غير معروف.');
+      if(typeof engine?.[method]!=='function')throw new Error('وظيفة حفظ بيانات العميل غير متاحة في محرك الأعمال الحالي.');
+      const result=await engine[method](payload);
+      if(result?.ok!==true)throw new Error(result?.error||'محرك الأعمال لم يؤكد حفظ بيانات العميل.');
+      syncFromEngine(result.snapshot||engine.getSnapshot());
+      return result;
+    };
 
     async function runEngine(method,payload){
       if(!engine)await connectEngine();
