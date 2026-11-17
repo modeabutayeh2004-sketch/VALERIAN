@@ -30,6 +30,8 @@ jobs:
         run: npx cap add android
       - name: Sync Capacitor
         run: npx cap sync android
+      - name: Install native Android file and print bridge
+        run: node scripts/patch-android-native.mjs
       - name: Generate launcher icons
         run: node scripts/generate-android-icons.mjs
       - name: Build debug APK
