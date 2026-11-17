@@ -2048,7 +2048,7 @@
           const raw = order?.createdAt || order?.date || order?.deliveredAt || '';
           const parsed = Date.parse(raw);
           if (Number.isFinite(parsed)) return parsed;
-          const digits = String(order?.id || '').match(/(\\d+)$/);
+          const digits = String(order?.id || '').match(/(\d+)$/);
           return digits ? Number(digits[1]) : 0;
         };
         return timeOf(b) - timeOf(a);
