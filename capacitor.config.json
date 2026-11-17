@@ -1,0 +1,9 @@
+{
+  "appId": "com.valerian.business",
+  "appName": "VALERIAN",
+  "webDir": "www",
+  "backgroundColor": "#02080c",
+  "android": {
+    "allowMixedContent": false
+  }
+}
