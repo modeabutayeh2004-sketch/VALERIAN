@@ -919,6 +919,24 @@
       renderMoreReports();
     }
 
+    // Keep background screens lazy: every navigation action renders its own screen,
+    // so a data change only needs to refresh the screen the user is looking at.
+    function renderVisibleScreen() {
+      const active = document.querySelector('.app-screen:not(.hidden)')?.id || 'screen-home';
+      if (active === 'screen-home') { renderHome(); return; }
+      if (active === 'screen-pos') { renderPosGrid(); return; }
+      if (active === 'screen-inventory') { renderInventoryScreen(); return; }
+      if (active === 'screen-imports') { renderImportsScreen(); return; }
+      if (active === 'screen-more') {
+        const tab = document.querySelector('.more-view:not(.hidden)')?.id || 'more-orders';
+        if (tab === 'more-orders') renderMoreOrders();
+        else if (tab === 'more-tracking') renderMoreTracking();
+        else if (tab === 'more-crm') renderCrmMobile();
+        else if (tab === 'more-offers') renderMoreOffers();
+        else if (tab === 'more-reports') renderMoreReports();
+      }
+    }
+
     function resetChassisState() {
       appState = defaultEmptySchema();
       mobileCart = [];
@@ -2083,14 +2101,14 @@
         packagingInventory:{...defaultSchema.packagingInventory,...(raw.packagingInventory||{})}
       };
     }
-    function syncFromEngine(){
+    function syncFromEngine(rawSnapshot){
       if(!engine)return;
       try{
-        const raw=engine.getSnapshot();
+        const raw=rawSnapshot||engine.getSnapshot();
         appState=project(raw);
         const badge=document.getElementById('dbStatusBadge');
         if(badge)badge.textContent='متصل بمحرك الأعمال V19';
-        renderAllViews();
+        renderVisibleScreen();
         lastSync=Date.now();
       }catch(err){console.error('VALERIAN V5 sync failed',err);showToast('تعذر تحديث واجهة V5 من محرك البيانات.');}
     }
@@ -2114,7 +2132,7 @@
       await engine.ready;
       syncFromEngine();
       if(unsubscribe)unsubscribe();
-      unsubscribe=engine.subscribe(()=>syncFromEngine());
+      unsubscribe=engine.subscribe(snapshot=>syncFromEngine(snapshot));
       if(!cloudStatusBound&&frame.contentWindow?.addEventListener){
         frame.contentWindow.addEventListener('valerian:cloud-status',event=>paintCloudStatus(event.detail||{}));
         cloudStatusBound=true;
