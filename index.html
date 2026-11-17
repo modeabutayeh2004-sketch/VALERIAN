@@ -2412,11 +2412,12 @@
         clearNewProdImage();closeSheet('quickAddProductSheet');
         showToast('تم حفظ المنتج على الجهاز. جارٍ تأكيد رفعه للسحابة...');
         const cloud=engine&&engine.syncCloud?await engine.syncCloud():null;
-        if(cloud&&cloud.ok){
+        if(cloud&&cloud.ok&&cloud.durableSaved!==false){
           showToast('تمت إضافة المنتج وحفظه محليًا ومزامنته سحابيًا بنجاح.');
         }else{
           const detail=String(cloud&&cloud.status&&cloud.status.label||'لم يصل تأكيد المزامنة السحابية.');
-          showToast('المنتج محفوظ على الجهاز، لكن رفعه للسحابة لم يتأكد: '+detail);
+          const localWarning=cloud&&cloud.durableSaved===false?' كما أن تأكيد الحفظ الدائم على الجهاز لم يكتمل.':'';
+          showToast('المنتج محفوظ على الجهاز، لكن رفعه للسحابة لم يتأكد: '+detail+localWarning);
           paintCloudStatus(cloud&&cloud.status||engine&&engine.cloudStatus&&engine.cloudStatus());
         }
       }catch(err){reportError(err);}
