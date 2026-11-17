@@ -167,6 +167,17 @@
     @media (prefers-reduced-motion: reduce) {
       .water-fill { animation: none !important; transition: none !important; }
     }
+
+    /* VALERIAN premium financial action dialog */
+    #moneyActionModal{position:fixed;inset:0;z-index:120;display:flex;align-items:flex-end;justify-content:center;padding:16px;background:rgba(0,5,9,.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);}
+    #moneyActionModal.hidden{display:none;}
+    .money-action-panel{width:100%;max-width:430px;border:1px solid rgba(226,232,240,.22);border-radius:28px;background:linear-gradient(155deg,rgba(18,34,47,.98),rgba(3,10,16,.99));box-shadow:0 28px 90px rgba(0,0,0,.72),inset 0 1px 0 rgba(255,255,255,.12);padding:22px;animation:moneyPanelIn .32s cubic-bezier(.2,.8,.2,1);}
+    .money-action-field{width:100%;border:1px solid rgba(203,213,225,.18);border-radius:15px;background:rgba(255,255,255,.055);padding:13px 14px;color:#f8fafc;font-size:14px;font-weight:800;outline:none;}
+    .money-action-field:focus{border-color:rgba(186,230,253,.65);box-shadow:0 0 0 3px rgba(186,230,253,.09);}
+    .money-action-label{display:block;margin:0 0 7px;color:#aab8c5;font-size:11px;font-weight:800;}
+    @keyframes moneyPanelIn{from{opacity:0;transform:translateY(22px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+    @media(min-width:600px){#moneyActionModal{align-items:center}.money-action-panel{border-radius:30px}}
+
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
@@ -348,6 +359,30 @@
         </div>
       </div>
     </header>
+
+
+  <!-- Premium financial settlement dialog -->
+  <div id="moneyActionModal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="moneyActionTitle" onclick="if(event.target===this)closeMoneyActionModal()">
+    <section class="money-action-panel space-y-5" dir="rtl">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div id="moneyActionIcon" class="w-12 h-12 rounded-2xl flex items-center justify-center border border-slate-300/20 bg-white/5 text-2xl">↗</div>
+          <div><div class="text-[9px] tracking-[.24em] text-slate-400 brand-serif">VALERIAN FINANCE</div><h2 id="moneyActionTitle" class="text-lg font-black text-white mt-1">تسوية مالية</h2><p id="moneyActionSubtitle" class="text-[10px] text-slate-400 mt-1">مراجعة تفاصيل العملية</p></div>
+        </div>
+        <button type="button" onclick="closeMoneyActionModal()" class="w-9 h-9 rounded-full glass-pill text-slate-300">✕</button>
+      </div>
+      <div class="rounded-2xl border border-white/10 bg-white/[.045] p-4 space-y-2">
+        <div id="moneyActionParty" class="text-xs font-extrabold text-slate-200">—</div>
+        <div class="flex items-end justify-between gap-3"><span class="text-[10px] text-slate-400">المبلغ المستحق</span><strong id="moneyActionDue" class="text-xl font-black silver-text bidi-ltr">0 EGP</strong></div>
+      </div>
+      <div class="space-y-3">
+        <div><label class="money-action-label" for="moneyActionAmount">المبلغ المراد تسويته</label><input id="moneyActionAmount" class="money-action-field bidi-ltr" type="number" min="0.01" step="0.01" inputmode="decimal"></div>
+        <div><label class="money-action-label" for="moneyActionMethod">وسيلة الدفع / الرد</label><select id="moneyActionMethod" class="money-action-field"><option value="نقدي">نقدي</option><option value="تحويل بنكي">تحويل بنكي</option><option value="محفظة إلكترونية">محفظة إلكترونية</option><option value="بطاقة">بطاقة</option><option value="أخرى">أخرى</option></select></div>
+      </div>
+      <div id="moneyActionError" class="hidden rounded-xl border border-rose-300/20 bg-rose-500/10 px-3 py-2 text-[11px] text-rose-200"></div>
+      <div class="grid grid-cols-2 gap-3 pt-1"><button type="button" onclick="closeMoneyActionModal()" class="py-3 rounded-full glass-pill text-xs font-bold text-slate-300">إلغاء</button><button id="moneyActionConfirm" type="button" onclick="confirmMoneyAction()" class="py-3 rounded-full silver-btn text-xs font-black">تأكيد العملية</button></div>
+    </section>
+  </div>
 
     <!-- TOAST NOTIFICATION -->
     <div id="mobileToast" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-sm hidden">
@@ -2793,14 +2828,48 @@
         if(r.ok){closeSheet('newImportSheet');showToast('تم اعتماد فاتورة الاستيراد وتحديث متوسط التكلفة والموردين والمخزون.');syncFromEngine();}
       }catch(err){reportError(err);}
     };
-    settleSupplierDue=async function(invId){
-      const inv=appState.imports.find(x=>String(x.id)===String(invId));
-      if(!inv)return showToast('فاتورة المورد غير موجودة.');
-      try{
-        const r=await runEngine('paySupplierInvoice',invId);
-        if(r.ok)showToast('تم تسجيل سداد المورد في دفتر الموردين والخزنة.');
-      }catch(err){reportError(err);}
+
+    let pendingMoneyAction=null;
+    window.closeMoneyActionModal=function(){const modal=document.getElementById('moneyActionModal');if(modal)modal.classList.add('hidden');pendingMoneyAction=null;};
+    window.openMoneyActionModal=function(type,id){
+      let record,due,party;
+      if(type==='refund'){
+        record=appState.orders.find(x=>String(x.id)===String(id));due=Math.max(0,Number(record?.refundLiability||0));party=record?('العميل: '+(record.name||'عميل')+' • الطلب '+record.id):'';
+        if(!record||due<=0)return showToast('لا يوجد مستحق للعميل على هذا الطلب.');
+      }else{
+        record=appState.imports.find(x=>String(x.id)===String(id));due=Math.max(0,Number(record?.totalEgp??record?.totalAmount??0)-Number(record?.paidAmount||0));party=record?('المورد: '+(record.supplier||'—')+' • الفاتورة '+record.id):'';
+        if(!record)return showToast('فاتورة المورد غير موجودة.');
+        if(due<=0)return showToast('الفاتورة مسددة بالكامل.');
+      }
+      pendingMoneyAction={type,id:String(id),due};
+      document.getElementById('moneyActionTitle').textContent=type==='refund'?'رد مستحق للعميل':'سداد مستحق المورد';
+      document.getElementById('moneyActionSubtitle').textContent=type==='refund'?'تسجيل رد المبلغ في حساب العميل والخزنة':'تسجيل دفعة المورد في دفتر الحسابات والخزنة';
+      document.getElementById('moneyActionIcon').textContent=type==='refund'?'↙':'↗';
+      document.getElementById('moneyActionParty').textContent=party;
+      document.getElementById('moneyActionDue').textContent=fmtEgp(due);
+      const amount=document.getElementById('moneyActionAmount');amount.value=due.toFixed(2);amount.max=String(due);
+      document.getElementById('moneyActionMethod').value='نقدي';
+      document.getElementById('moneyActionError').classList.add('hidden');
+      document.getElementById('moneyActionConfirm').disabled=false;
+      document.getElementById('moneyActionConfirm').textContent='تأكيد العملية';
+      document.getElementById('moneyActionModal').classList.remove('hidden');
+      setTimeout(()=>amount.focus(),80);
     };
+    window.confirmMoneyAction=async function(){
+      if(!pendingMoneyAction)return;
+      const {type,id,due}=pendingMoneyAction,raw=document.getElementById('moneyActionAmount').value,amount=Number(raw),method=document.getElementById('moneyActionMethod').value;
+      const error=document.getElementById('moneyActionError');
+      if(raw===''||!Number.isFinite(amount)||amount<=0||amount>due+0.0001){error.textContent='أدخل مبلغًا صحيحًا لا يتجاوز المستحق الحالي.';error.classList.remove('hidden');return;}
+      const button=document.getElementById('moneyActionConfirm');button.disabled=true;button.textContent='جارٍ اعتماد العملية…';
+      try{
+        const r=type==='refund'?await runEngine('settleRefund',{orderId:id,amount,method}):await runEngine('paySupplierInvoice',{invoiceId:id,amount,method});
+        if(!r?.ok)throw new Error(r?.error||'تعذر اعتماد العملية.');
+        if(r.snapshot)syncFromEngine(r.snapshot);
+        closeMoneyActionModal();
+        showToast(type==='refund'?'تم رد المبلغ وتحديث حساب العميل بنجاح.':'تم تسجيل دفعة المورد وتحديث الحسابات بنجاح.');
+      }catch(err){error.textContent=String(err?.message||'حدث خطأ أثناء تنفيذ العملية.');error.classList.remove('hidden');button.disabled=false;button.textContent='إعادة المحاولة';}
+    };
+    settleSupplierDue=function(invId){ openMoneyActionModal('supplier',invId); };
     deliverReservedOrder=async function(orderId){
       const method=window.prompt('وسيلة تحصيل المبلغ عند التسليم: نقدي / تحويل بنكي / محفظة إلكترونية / بطاقة / أخرى','نقدي');
       if(method===null)return;
@@ -2965,15 +3034,7 @@
         if(r.ok)showToast('تم حفظ إعدادات برنامج الولاء والنقاط.');
       }catch(err){reportError(err);}
     };
-    window.settleMobileRefund=async function(orderId){
-      const order=appState.orders.find(x=>String(x.id)===String(orderId));
-      if(!order||Number(order.refundLiability||0)<=0)return showToast('لا يوجد مستحق للعميل على هذا الطلب.');
-      const amount=window.prompt('المبلغ المراد رده للعميل. المستحق الحالي: '+fmtEgp(order.refundLiability),String(order.refundLiability));
-      if(amount===null)return;
-      const method=window.prompt('وسيلة رد المبلغ: نقدي / تحويل بنكي / محفظة إلكترونية / بطاقة / أخرى','نقدي');
-      if(method===null)return;
-      try{const r=await runEngine('settleRefund',{orderId,amount:Number(amount),method});if(r.ok)showToast('تمت تسوية مستحق العميل وتسجيل وسيلة رد المبلغ.');}catch(err){reportError(err);}
-    };
+    window.settleMobileRefund=function(orderId){ openMoneyActionModal('refund',orderId); };
     renderMoreReports=function(){
       const delivered=appState.orders.filter(o=>o.stockDeducted||String(o.status||'').includes('تم التسليم'));
       const sales=delivered.reduce((sum,o)=>sum+Math.max(0,Number(o.grandTotal||0)-Number(o.returnedValue||0)),0);
