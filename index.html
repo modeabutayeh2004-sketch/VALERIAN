@@ -2575,6 +2575,13 @@
       window.ValerianUI={
         getState:()=>structuredClone(appState),
         hydrate:()=>syncFromEngine(),
+        toggleProductSalesAvailability:async id=>{
+          if(!engine?.toggleProductSalesAvailability)throw new Error('خاصية تغيير حالة المنتج غير متاحة في محرك الأعمال.');
+          const result=await engine.toggleProductSalesAvailability(String(id));
+          if(result?.ok!==true)throw new Error(result?.error||'لم يتم حفظ حالة المنتج.');
+          syncFromEngine(result.snapshot);
+          return {ok:true,snapshot:result.snapshot};
+        },
         reset:()=>showToast('تصفير البيانات متوقف من واجهة V5 لحماية قاعدة بيانات النشاط. استخدم أدوات النسخ الاحتياطي والإدارة داخل المحرك.')
       };
       const badge=document.getElementById('dbStatusBadge');
