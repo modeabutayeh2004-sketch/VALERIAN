@@ -1,7 +1,7 @@
 /* VALERIAN V20.7 — offline application shell */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-56-restore-pre-square-customer-profile';
-const APP_SHELL = ['./', './index.html', './engine.html?v=20261117-56-restore-pre-square-customer-profile', './manifest.webmanifest', './assets/valerian-icon.jpg'];
+const CACHE_NAME = 'valerian-app-shell-v20-57-restore-original-profile-layout';
+const APP_SHELL = ['./', './index.html', './engine.html?v=20261117-57-restore-original-profile-layout', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
