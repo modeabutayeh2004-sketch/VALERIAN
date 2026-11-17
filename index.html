@@ -2024,13 +2024,26 @@
     }
     function escapeHtmlMobile(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
     window.addMobileShippingCompany=async function(){
-      const input=document.getElementById('mobileNewShippingCompany');const name=String(input?.value||'').trim().replace(/\s+/g,' ');
-      if(!name)return showToast('اكتب اسم شركة الشحن أولاً.');
-      const button=input?.parentElement?.querySelector('button');if(button){button.disabled=true;button.textContent='جارٍ الحفظ…';}
-      try{if(!engine)await connectEngine();const result=await engine.addShippingCompany(name);
-        if(!result?.ok||!(result.snapshot?.shippingCompanies||[]).some(x=>String(x).toLocaleLowerCase('ar-EG')===name.toLocaleLowerCase('ar-EG')))throw new Error(result?.error||'لم يؤكد محرك الأعمال إضافة شركة الشحن.');
-        syncFromEngine(result.snapshot);if(input)input.value='';renderMoreTracking();populateMobileShippingCompanySelect();showToast('تم تسجيل شركة الشحن وحفظها بنجاح.');
-      }catch(err){reportError(err);}finally{if(button){button.disabled=false;button.textContent='＋ إضافة';}}
+      const input=document.getElementById('mobileNewShippingCompany');
+      const name=String(input?.value||'').trim().replace(/\s+/g,' ');
+      if(!name){showToast('اكتب اسم شركة الشحن أولاً.');return false;}
+      const button=input?.parentElement?.querySelector('button');
+      if(button){button.disabled=true;button.textContent='جارٍ الحفظ…';}
+      try{
+        await connectEngine();
+        if(typeof engine?.addShippingCompany!=='function')throw new Error('واجهة إضافة شركات الشحن غير متاحة في محرك الأعمال الحالي.');
+        const result=await engine.addShippingCompany(name);
+        if(result?.ok!==true)throw new Error(result?.error||'لم يقبل محرك الأعمال إضافة شركة الشحن.');
+        const saved=(result.snapshot?.shippingCompanies||[]).some(x=>String(x).trim().toLocaleLowerCase('ar-EG')===name.toLocaleLowerCase('ar-EG'));
+        if(!saved)throw new Error('المحرك لم يؤكد وجود الشركة في قائمة شركات الشحن بعد الحفظ.');
+        syncFromEngine(result.snapshot);
+        if(input)input.value='';
+        renderMoreTracking();
+        populateMobileShippingCompanySelect();
+        showToast('✓ تمت إضافة شركة '+name+' وحفظها بنجاح.','success');
+        return true;
+      }catch(err){reportError(err);return false;}
+      finally{if(button){button.disabled=false;button.textContent='＋ إضافة';}}
     };
     window.openMobileShippingEditor=function(orderId){
       const order=appState.orders.find(o=>String(o.id)===String(orderId));if(!order)return;
