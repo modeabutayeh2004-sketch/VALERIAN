@@ -950,7 +950,7 @@
         </div>
         <div class="grid grid-cols-2 gap-2.5">
           <button onclick="exportMobileJson()" class="py-3 rounded-full silver-btn text-xs font-black">💾 تصدير JSON</button>
-          <button onclick="resetChassisState()" class="py-3 rounded-full glass-pill text-xs font-extrabold text-rose-300">🧹 تصفير البيانات</button>
+          <button type="button" onclick="v5DeleteAllBusinessData()" class="py-3 rounded-full glass-pill text-xs font-extrabold text-rose-300">🗑 حذف جميع البيانات</button>
         </div>
       </div>
     </div>
@@ -993,13 +993,14 @@
     const fmtEgp = (n) => `${Math.round(Number(n || 0)).toLocaleString('en-US')} EGP`;
     const getAvail = (p) => Math.max(0, Number(p.stock || 0) - Number(p.reservedStock || 0));
     const isDecantCategory = p => {
-      const category=String(p?.category||'').normalize('NFKC').replace(/[\\s\\u0640]+/g,'').toLowerCase();
-      const unit=String(p?.stockUnit||'').normalize('NFKC').toLowerCase();
-      const name=String(p?.name||'').normalize('NFKC').trim();
+      const normalize = value => String(value ?? '').normalize('NFKC').replace(/[\s\u0640]+/g,'').toLowerCase();
+      const category=normalize(p?.category), unit=normalize(p?.stockUnit), name=normalize(p?.name);
+      const parentId=String(p?.parentId ?? '').trim();
+      const decantSize=Number(p?.decantSize ?? p?.decantSizeMl ?? 0);
       return category.includes('تقسيم') || category.includes('decant') ||
         unit.includes('تقسيم') || unit.includes('decant') ||
-        (!!String(p?.parentId||'').trim() && Number(p?.decantSize||0)>0) ||
-        /^تقسيم(?:\\s|$)/.test(name);
+        (parentId.length>0 && Number.isFinite(decantSize) && decantSize>0) ||
+        name.startsWith('تقسيم');
     };
     const isCatalogActive = p => !p?.archived && p?.disabledForSales !== true && p?.disabledForSales !== 'true' && p?.disabledForSales !== 1;
 
@@ -1666,7 +1667,8 @@
       });
 
       const container = document.getElementById('inventoryCardsContainer');
-      // Inventory is the stock register: retain archived/disabled SKUs here for visibility and audit; sales screens filter them separately.\n      const items = appState.products.filter(p => tier === 'all' || (tier === 'decant' ? isDecantCategory(p) : !isDecantCategory(p)));
+      // Inventory keeps archived and disabled SKUs visible for audit; sales screens filter them separately.
+      const items = (appState.products || []).filter(p => tier === 'all' || (tier === 'decant' ? isDecantCategory(p) : !isDecantCategory(p)));
 
       if (!items.length) {
         container.innerHTML = renderEmptyPlaceholder('🧪', 'المخزون فارغ حالياً', 'أضف الزجاجات الأصلية أو عبوات التقسيم لبدء التتبع الحي.', '+ إضافة صنف للمخزون', "openSheet('quickAddProductSheet')");
@@ -1687,7 +1689,7 @@
                   ${p.image ? `<img src="${p.image}" alt="${p.name}" class="w-11 h-11 rounded-xl object-cover border border-white/15 shrink-0" />` : `<div class="w-11 h-11 rounded-xl bg-white/5 border border-white/15 shrink-0 flex items-center justify-center text-[9px] text-slate-400">V</div>`}
 
                   <div>
-                    <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full ${p.category === 'تقسيم' ? 'bg-sky-400/20 text-sky-200' : 'bg-slate-200/15 text-slate-200'}">${p.category}</span>
+                    <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full ${isDecantCategory(p) ? 'bg-sky-400/20 text-sky-200' : 'bg-slate-200/15 text-slate-200'}">${p.category}</span>
                     <h3 class="text-xs font-extrabold text-white mt-1">${p.name}</h3>
                     ${p.archived ? '<span class="inline-flex mt-1 px-2 py-0.5 rounded-full bg-slate-400/15 border border-slate-300/30 text-slate-200 text-[9px] font-black">مؤرشف</span>' : p.disabledForSales === true ? '<span class="inline-flex mt-1 px-2 py-0.5 rounded-full bg-amber-400/15 border border-amber-300/30 text-amber-200 text-[9px] font-black">⏸ معطّل عن البيع والحجز</span>' : ''}
                   </div>
@@ -1707,8 +1709,8 @@
                   <strong class="font-black text-amber-200 bidi-ltr">${p.reservedStock || 0}</strong>
                 </div>
                 <div class="bg-[#02080c]/45 rounded-xl py-1.5">
-                  <span class="text-slate-400 block">${p.category === 'تقسيم' ? 'حجم العبوة' : 'سائل مفتوح'}</span>
-                  <strong class="font-black text-sky-300 bidi-ltr">${p.category === 'تقسيم' ? (p.size || '') : (p.decantMlAvailable || 0) + ' ml'}</strong>
+                  <span class="text-slate-400 block">${isDecantCategory(p) ? 'حجم العبوة' : 'سائل مفتوح'}</span>
+                  <strong class="font-black text-sky-300 bidi-ltr">${isDecantCategory(p) ? (p.size || (Number(p.decantSize||0)+' مل')) : (p.decantMlAvailable || 0) + ' ml'}</strong>
                 </div>
               </div>
               <div class="grid grid-cols-3 gap-1.5">
@@ -2503,7 +2505,7 @@
        in a same-origin hidden frame and remains the sole owner of business data. -->
   <iframe id="valerianEngineFrame" title="VALERIAN business engine" aria-hidden="true"
     style="position:fixed;left:-20px;top:-20px;width:2px;height:2px;border:0;opacity:0;pointer-events:none;z-index:-1"
-    src="./engine.html?v=20261117-inventory-fix-3"></iframe>
+    src="./engine.html?v=20261117-decant-reset-auth-1"></iframe>
   <script id="valerianV5EngineAdapter">
   (function(){
     'use strict';
@@ -2656,6 +2658,20 @@
       if(result&&result.ok===false)showToast(result.error||'لم يعتمد محرك الأعمال العملية.');
       return result;
     }
+    window.v5DeleteAllBusinessData=async function(){
+      if(!confirm('سيتم حذف كل بيانات النشاط من السحابة وهذا الجهاز وجميع الأجهزة المتزامنة. سيتم تنزيل نسخة احتياطية تلقائيًا قبل الحذف. لا يمكن التراجع عن هذه العملية. هل تريد المتابعة؟'))return;
+      const password=prompt('أدخل كلمة مرور حساب VALERIAN CLOUD لتأكيد صلاحية الحذف:');
+      if(password===null||!String(password).length){showToast('تم إلغاء الحذف.');return;}
+      try{
+        const e=await getCloudEngine();
+        if(typeof e.resetAllSystemData!=='function')throw new Error('ميزة الحذف الآمن غير متاحة في إصدار المحرك الحالي.');
+        const result=await e.resetAllSystemData(String(password));
+        if(!result?.ok)throw new Error(result?.error||'لم يكتمل حذف البيانات.');
+        syncFromEngine(result.snapshot);
+        closeSheet('settingsSheet');
+        showToast('تم حذف بيانات النشاط من السحابة والأجهزة المتزامنة بعد التحقق من كلمة المرور.','success');
+      }catch(err){reportError(err);}
+    };
 
     // All write paths below call the ERP engine. V5's local appState is only a view model.
     function toggleNewProductDecantFields(){
