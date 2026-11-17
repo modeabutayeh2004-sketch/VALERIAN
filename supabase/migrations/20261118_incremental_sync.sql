@@ -17,8 +17,6 @@ create index if not exists valerian_sync_changes_user_seq_idx
 
 alter table public.valerian_sync_changes enable row level security;
 revoke all on public.valerian_sync_changes from anon, authenticated;
-grant usage, select on sequence public.valerian_sync_changes_seq_seq to authenticated;
-
 -- Append a batch idempotently. Each payload is one record-level change/patch.
 create or replace function public.valerian_sync_push(p_changes jsonb)
 returns jsonb
