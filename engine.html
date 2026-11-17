@@ -6750,7 +6750,9 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         for(const row of data.changes)next=valSyncApplyPatch(next,row.patch);
         cloudApplyingRemote=true;
         try{
-          state=normalizeState(valMergeLocalImagesIntoCloudState(next));
+          const mergedRemote=valMergeLocalImagesIntoCloudState(next);
+          const hydratedRemote=await valHydrateImageState(mergedRemote,{storeIncoming:false,strict:false});
+          state=normalizeState(hydratedRemote);
           persistLocal(state);
           await valQueueDurableState(state);await valDurableWritePromise;await valIdbFlush();
           refreshAllViews();
