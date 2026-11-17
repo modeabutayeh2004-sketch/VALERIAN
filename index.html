@@ -118,19 +118,18 @@
       flex: 0 0 44px; align-items: center; justify-content: center;
       overflow: hidden; isolation: isolate; border-radius: 50%;
       border: 1px solid rgba(186,230,253,.52);
-      background: rgba(2,8,12,.78);
+      /* The icon itself is the vessel: the liquid fills its full silhouette. */
+      background: linear-gradient(to top,
+        rgba(14,165,233,.48) 0 var(--level,0%),
+        rgba(2,8,12,.78) var(--level,0%) 100%);
       box-shadow: 0 0 12px rgba(56,189,248,.08);
     }
-    .inventory-level-fill {
-      position: absolute; z-index: 0; left: 0; right: 0; bottom: 0;
-      height: var(--level,0%); border-radius: 0 0 50% 50%;
-      background: linear-gradient(180deg,rgba(125,211,252,.58),rgba(14,165,233,.38));
-      transition: height .45s ease; pointer-events: none;
-    }
-    .inventory-level-fill::before {
-      content: ""; position: absolute; left: 0; right: 0; top: 0;
-      height: 2px; border-radius: 0; background: rgba(186,230,253,.98);
+    .inventory-level-icon::before {
+      content: ""; position: absolute; z-index: 0; left: 0; right: 0;
+      top: calc(100% - var(--level,0%)); height: 2px;
+      background: rgba(186,230,253,.98);
       box-shadow: 0 0 7px rgba(125,211,253,.42);
+      pointer-events: none;
     }
     .inventory-level-icon span { position: relative; z-index: 1; font-size: 9px; font-weight: 900; color: #f8fafc; text-shadow: 0 1px 3px #02080c; }
     .bottle-content { position: relative; z-index: 2; }
@@ -1662,7 +1661,7 @@
         const fillPct = avail > 0 ? Math.min(90, Math.max(15, Math.round((avail / Math.max(1, (p.minimumStock || 2) * 3)) * 100))) : 8;
         const visualMark = `${p.image
           ? `<img src="${p.image}" alt="${p.name}" class="w-11 h-11 rounded-xl object-cover border border-white/15 shrink-0" />`
-          : ''}<div class="inventory-level-icon" role="img" aria-label="مستوى المخزون ${fillPct}%"><div class="inventory-level-fill" style="--level:${fillPct}%"></div><span class="bidi-ltr">${fillPct}%</span></div>`;
+          : ''}<div class="inventory-level-icon" role="img" aria-label="مستوى المخزون ${fillPct}%" style="--level:${fillPct}%"><span class="bidi-ltr">${fillPct}%</span></div>`;
 
         return `
           <div class="glass-card rounded-2xl p-3.5 space-y-2.5 ${isLow ? 'border-amber-400/40' : ''}">
@@ -2076,6 +2075,15 @@
       const width = Math.ceil(Math.max(source.scrollWidth, rect.width));
       const height = Math.ceil(Math.max(source.scrollHeight, rect.height));
       const captureNode = source.cloneNode(true);
+      // html2canvas can paint background-clip:text as a rectangular gradient.
+      // Keep the live preview untouched; normalize gradient text only in the export clone.
+      captureNode.querySelectorAll('.silver-text').forEach(node => {
+        node.style.setProperty('background', 'none', 'important');
+        node.style.setProperty('-webkit-background-clip', 'border-box', 'important');
+        node.style.setProperty('background-clip', 'border-box', 'important');
+        node.style.setProperty('-webkit-text-fill-color', '#e2e8f0', 'important');
+        node.style.setProperty('color', '#e2e8f0', 'important');
+      });
       captureNode.style.width = width + 'px'; captureNode.style.maxWidth = 'none';
       captureNode.style.height = 'auto'; captureNode.style.minHeight = '0';
       captureNode.style.margin = '0'; captureNode.style.transform = 'none';
