@@ -6330,7 +6330,13 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         const freshCloudSnapshot=await valBuildCloudSyncState(fresh);
         const {data,error}=await cloudClient.rpc('valerian_save_state',{p_state:freshCloudSnapshot,p_expected_revision:cloudRevision});
         if(error||!data?.[0]?.ok)throw new Error(error?.message||'رفضت السحابة الحفظ بسبب وجود إصدار أحدث أو تعارض. لم تُحذف البيانات.');
+        if(cloudIncrementalReady){
+          const resetPatch={version:1,ops:Object.keys(fresh).map(key=>({op:'set',key,value:valSyncClone(fresh[key])}))};
+          const {data:journalData,error:journalError}=await cloudClient.rpc('valerian_sync_push',{p_changes:[{change_id:valSyncNewId(),patch:resetPatch}]});
+          if(journalError||!journalData?.ok)throw new Error('تم تحديث النسخة الأساسية لكن تعذر نشر إشارة إعادة التصفير للأجهزة الأخرى: '+cloudErrorMessage(journalError));
+        }
         state=fresh;
+        if(cloudIncrementalReady)cloudIncrementalBase=structuredClone(fresh);
         await valClearUnreferencedImages(fresh);
         cloudRevision=Number(data[0].current_revision);cloudDirty=false;cloudConflict=false;clearTimeout(cloudSaveTimer);
         refreshAllViews();loadSettingsToUI();
@@ -6629,20 +6635,20 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     ]);
     function valSyncJson(value){try{return JSON.stringify(value===undefined?null:value);}catch(_){return '';}}
     function valSyncClone(value){return value===undefined?null:structuredClone(value);}
-    function valSyncNewId(){return (crypto?.randomUUID?.()||('xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&3|8)).toString(16);}))).toLowerCase();}
+    function valSyncNewId(){return (window.crypto?.randomUUID?.()||('xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&3|8)).toString(16);}))).toLowerCase();}
     function valSyncBuildPatch(before,after){
       const ops=[],keys=new Set([...Object.keys(before||{}),...Object.keys(after||{})]);
       for(const key of keys){
         const a=before?.[key],b=after?.[key];
         if(valSyncJson(a)===valSyncJson(b))continue;
-        if(Array.isArray(a)&&Array.isArray(b)&&VAL_SYNC_ID_ARRAYS.has(key)&&a.every(x=>x&&x.id!=null)&&b.every(x=>x&&x.id!=null)){
+        if(Array.isArray(a)&&Array.isArray(b)&&a.every(x=>x&&x.id!=null)&&b.every(x=>x&&x.id!=null)){
           const oldMap=new Map(a.map(x=>[String(x.id),x])),newMap=new Map(b.map(x=>[String(x.id),x]));
           for(const [id,item] of newMap)if(!oldMap.has(id)||valSyncJson(oldMap.get(id))!==valSyncJson(item))ops.push({op:'upsert',key,id,value:valSyncClone(item)});
           for(const id of oldMap.keys())if(!newMap.has(id))ops.push({op:'delete',key,id});
         }else if(key==='settings'&&a&&b&&typeof a==='object'&&typeof b==='object'&&!Array.isArray(a)&&!Array.isArray(b)){
           const subkeys=new Set([...Object.keys(a),...Object.keys(b)]);
-          for(const sub of subkeys)if(valSyncJson(a[sub])!==valSyncJson(b[sub]))ops.push({op:'set',key:'settings.'+sub,value:valSyncClone(b[sub])});
-        }else ops.push({op:'set',key,value:valSyncClone(b)});
+          for(const sub of subkeys)if(valSyncJson(a[sub])!==valSyncJson(b[sub]))ops.push({op:b[sub]===undefined?'unset':'set',key:'settings.'+sub,value:valSyncClone(b[sub])});
+        }else ops.push({op:b===undefined?'unset':'set',key,value:valSyncClone(b)});
       }
       return ops.length?{version:1,ops}:null;
     }
@@ -6650,9 +6656,9 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const next=structuredClone(source||{});
       if(!patch||patch.version!==1||!Array.isArray(patch.ops))throw new Error('صيغة تغيير سحابي غير معروفة.');
       for(const item of patch.ops){
-        if(item.op==='set'){
-          if(String(item.key).startsWith('settings.')){const sub=String(item.key).slice(9);next.settings=next.settings||{};if(item.value===null)delete next.settings[sub];else next.settings[sub]=valSyncClone(item.value);}
-          else if(item.value===null)delete next[item.key];else next[item.key]=valSyncClone(item.value);
+        if(item.op==='set'||item.op==='unset'){
+          if(String(item.key).startsWith('settings.')){const sub=String(item.key).slice(9);next.settings=next.settings||{};if(item.op==='unset')delete next.settings[sub];else next.settings[sub]=valSyncClone(item.value);}
+          else if(item.op==='unset')delete next[item.key];else next[item.key]=valSyncClone(item.value);
         }else if(item.op==='upsert'){
           if(!Array.isArray(next[item.key]))next[item.key]=[];
           const idx=next[item.key].findIndex(x=>String(x?.id)===String(item.id));
@@ -6679,7 +6685,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     }
     function valCaptureIncrementalChanges(){
       if(!cloudIncrementalReady||cloudApplyingRemote||!cloudIncrementalBase)return;
-      const current=structuredClone(state),patch=valSyncBuildPatch(cloudIncrementalBase,current);
+      const previous=cloudIncrementalBase,current=structuredClone(state),patch=valSyncBuildPatch(previous,current);
       if(!patch)return;
       cloudIncrementalBase=current;
       cloudIncrementalQueue=cloudIncrementalQueue.then(async()=>{
@@ -6689,7 +6695,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         cloudDirty=true;
         setCloudStatus('تغييرات جزئية محفوظة محلياً — بانتظار رفعها','#a16207');
       }).catch(err=>{
-        cloudDirty=true;cloudIncrementalReady=false;
+        cloudIncrementalBase=previous;cloudDirty=true;cloudIncrementalReady=false;
         setCloudStatus('تعذر حفظ طابور المزامنة الجزئية محلياً: '+cloudErrorMessage(err),'#b91c1c');
         console.error('VALERIAN incremental outbox failed',err);
       });
