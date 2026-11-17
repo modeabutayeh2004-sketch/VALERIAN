@@ -1011,6 +1011,15 @@
       if (id === 'decantLabSheet') populateDecantLab();
       if (id === 'stockAdjustSheet') populateAdjustSheet();
       if (id === 'newImportSheet') populateImportSheet();
+      if (id === 'settingsSheet') {
+        const settings=appState.settings||{};
+        const percentage=document.getElementById('v5LoyaltyPercentage');
+        const start=document.getElementById('v5LoyaltyStartOrder');
+        const value=document.getElementById('v5PointValue');
+        if(percentage)percentage.value=Number(settings.loyaltyPercentage??5);
+        if(start)start.value=Number(settings.loyaltyStartOrder??2);
+        if(value)value.value=Number(settings.pointValue??1);
+      }
     }
 
     function closeSheet(id) { document.getElementById(id).classList.add('hidden'); }
