@@ -7158,7 +7158,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         },
         updateCustomerProfile:async payload=>{
           await ready;
-          const normalizePhone=value=>String(value||'').trim().replace(/[\\s()-]/g,'');
+          const normalizePhone=value=>String(value||'').trim().replace(/[\s()-]/g,'');
           const oldPhone=normalizePhone(payload?.oldPhone),newPhone=normalizePhone(payload?.phone);
           const idx=state.customers.findIndex(customer=>normalizePhone(customer.phone)===oldPhone);
           if(!oldPhone||idx<0)throw new Error('لم يتم العثور على ملف العميل الأصلي. أعد فتح التعديل من قائمة العملاء وحاول مرة أخرى.');
