@@ -6692,7 +6692,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         }
         if(valDurableWriteError) throw valDurableWriteError;
       }catch(err){console.error('VALERIAN durable startup',err);showToast('تعذر تأكيد التخزين الدائم. صدّر نسخة احتياطية قبل متابعة العمليات.','error');}
-      finally{valStartupLock.remove();}
+      finally{valStartupLock.remove();window.__valerianReadyResolve?.();}
     })();
 
     // V19.31: reusable table printing with optional date-range filtering.
@@ -6749,13 +6749,26 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     setTimeout(installTablePrintTools,300);
 
 
-    /* VALERIAN V5 integration boundary — the core ERP remains the source of truth. */
+
+    /* VALERIAN V5 bridge. The original ERP state and business functions remain authoritative. */
     (function installValerianEngineBridge(){
+      let resolveReady;
+      const ready=new Promise(resolve=>{resolveReady=resolve;});
+      window.__valerianReady=ready;
+      window.__valerianReadyResolve=resolveReady;
       const snapshot=()=>structuredClone(state);
       const el=id=>{const node=document.getElementById(id);if(!node)throw new Error('Missing engine control: '+id);return node;};
       const emit=(type,detail={})=>window.dispatchEvent(new CustomEvent(type,{detail}));
+      const saved=saveState;
+      saveState=function(...args){
+        const ok=saved.apply(this,args);
+        if(ok) setTimeout(()=>emit('valerian:state-changed',{source:'save'}),0);
+        return ok;
+      };
+      const findOrder=id=>state.orders.findIndex(o=>String(o.id)===String(id));
       window.ValerianEngine=Object.freeze({
         version:'19.65',
+        ready,
         getSnapshot:snapshot,
         subscribe:callback=>{
           if(typeof callback!=='function')throw new TypeError('callback must be a function');
@@ -6764,7 +6777,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           return ()=>window.removeEventListener('valerian:state-changed',handler);
         },
         refresh:()=>{refreshAllViews();emit('valerian:state-changed',{source:'refresh'});return snapshot();},
-        createOrder:payload=>{
+        createOrder:async payload=>{
+          await ready;
           if(!payload||!Array.isArray(payload.items)||!payload.items.length)throw new Error('Order requires at least one item.');
           const count=state.orders.length;
           cart=payload.items.map(item=>{
@@ -6782,15 +6796,33 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           el('posCustomerAddress').value=String(payload.customer?.address||'').trim();
           el('posShippingFee').value=String(Math.max(0,Number(payload.shipping||0)));
           el('posDiscount').value=String(Math.max(0,Number(payload.discount||0)));
-          el('posPaymentMethod').value=String(payload.paymentMethod||'غير محدد');
+          el('posPaymentMethod').value=String(payload.paymentMethod||'نقدي');
           el('posDepositAmount').value=String(payload.deposit==null?'':Math.max(0,Number(payload.deposit)));
           completeOrder(false);
           const created=state.orders.length>count;
-          if(!created)return {ok:false,error:window.__valerianLastSaveError?.message||'The engine rejected the order.',snapshot:snapshot()};
+          if(!created)return {ok:false,error:window.__valerianLastSaveError?.message||'تعذر اعتماد الطلب من محرك الأعمال.',snapshot:snapshot()};
           return {ok:true,order:structuredClone(state.orders[0]),snapshot:snapshot()};
         },
-        adjustStock:payload=>{
-          if(!payload)throw new Error('Adjustment payload is required.');
+        addProduct:async payload=>{
+          await ready;
+          const name=String(payload?.name||'').trim(),category=String(payload?.category||'للجنسين'),size=String(payload?.size||'100 مل').trim();
+          const price=Number(payload?.price||0),cost=Number(payload?.averageCost||payload?.cost||0),openingQty=Math.floor(Number(payload?.stock||0));
+          if(!name||!Number.isFinite(price)||price<=0||!Number.isFinite(cost)||cost<0||!Number.isSafeInteger(openingQty)||openingQty<0)throw new Error('راجع اسم المنتج والسعر والتكلفة والرصيد الافتتاحي.');
+          if(category==='تقسيم')throw new Error('إضافة منتج تقسيم تتطلب ربطه بزجاجة أصلية وحجم تقسيم من شاشة المنتج المتقدمة. أضف الزجاجة الأصلية أولاً.');
+          if(price+0.0001<cost)throw new Error('سعر البيع لا يجوز أن يقل عن متوسط تكلفة المنتج.');
+          const barcode=String(payload.barcode||('622'+Date.now().toString().slice(-9)));
+          if(state.products.some(p=>String(p.barcode||'')===barcode))throw new Error('رقم الباركود مستخدم بالفعل.');
+          const before=structuredClone(state),id='prod_'+Date.now();
+          const product={id,name,productType:'عطور',category,size,barcode,price,totalCost:cost,averageCost:cost,stock:openingQty,reservedStock:0,minimumStock:2,notes:'',scentProfile:'',isOffer:false,offerPrice:0,lastPurchaseUnitCost:cost,replacementCost:cost,productPackagingCost:0,productTaxRate:0,productProfitMargin:40,productCalculator:{foreignUnitPrice:0,exchangeRate:1,importCost:0,packagingCost:0,taxRate:0,profitMargin:40},image:String(payload.image||''),isDecantable:false,parentId:'',decantSize:0,decantBottleCost:0,emptyContainersStock:0,legacyStockNeedsReview:false,volumeMlPerBottle:getBottleVolumeMl({size}),decantMlAvailable:0,stockUnit:'زجاجة أصلية'};
+          state.products.unshift(product);
+          if(openingQty>0)addInventoryMovement(id,'OPENING_BALANCE',openingQty,'OPEN-'+Date.now(),'رصيد افتتاحي مسجل من واجهة VALERIAN V5');
+          logAudit('PRODUCT_CREATED','إضافة المنتج '+name+' من واجهة VALERIAN V5'+(openingQty?' برصيد افتتاحي '+openingQty:''));
+          if(!saveState()){state=before;refreshAllViews();throw new Error(window.__valerianLastSaveError?.message||'تعذر حفظ المنتج.');}
+          refreshAllViews();return {ok:true,product:structuredClone(product),snapshot:snapshot()};
+        },
+        adjustStock:async payload=>{
+          await ready;
+          if(!payload)throw new Error('بيانات التسوية مطلوبة.');
           const kind=['product','packaging','supply'].includes(payload.kind)?payload.kind:'product';
           openStockAdjustmentModal(kind,String(payload.id||''));
           el('stockAdjReasonType').value=payload.reasonType==='COUNT_SHORTAGE'?'COUNT_SHORTAGE':'WASTAGE';
@@ -6800,18 +6832,65 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           saveStockAdjustment({preventDefault(){}});
           return {ok:JSON.stringify(state)!==before,snapshot:snapshot()};
         },
-        produceDecants:payload=>{
-          if(!payload)throw new Error('Production payload is required.');
+        produceDecants:async payload=>{
+          await ready;
+          if(!payload)throw new Error('بيانات الإنتاج مطلوبة.');
           openDecantProductionModal();
           el('decantProductionProduct').value=String(payload.productId||'');
           el('decantProductionQty').value=String(payload.quantity||0);
           const before=(state.decantProductionLog||[]).length;
           produceDecants({preventDefault(){}});
           return {ok:(state.decantProductionLog||[]).length>before,snapshot:snapshot()};
-        }
+        },
+        createImportInvoice:async payload=>{
+          await ready;
+          if(!payload)throw new Error('بيانات فاتورة الاستيراد مطلوبة.');
+          const beforeCount=state.imports.length;
+          openImportModal();
+          el('impSupplier').value=String(payload.supplier||'').trim();
+          el('impExchangeRate').value=String(Number(payload.rate||0));
+          el('impShippingCost').value=String(Math.max(0,Number(payload.shipping||0)));
+          el('impCustomsCost').value=String(Math.max(0,Number(payload.fees||0)));
+          el('impPaidAmount').value=String(Math.max(0,Number(payload.paid||0)));
+          if(el('impPaymentMethod'))el('impPaymentMethod').value=String(payload.paymentMethod||'نقدي');
+          el('impNotes').value='فاتورة من واجهة VALERIAN V5';
+          el('importLinesBody').innerHTML='';
+          addImportLine(String(payload.productId||''),Math.floor(Number(payload.quantity||0)),Number(payload.foreignUnitPrice||0));
+          updateImportTotals();
+          await saveImportShipment({preventDefault(){}});
+          const created=state.imports.length>beforeCount;
+          return {ok:created,invoice:created?structuredClone(state.imports[0]):null,snapshot:snapshot()};
+        },
+        paySupplierInvoice:async invoiceId=>{
+          await ready;
+          const inv=state.supplierInvoices.find(x=>String(x.id)===String(invoiceId));
+          if(!inv)throw new Error('فاتورة المورد غير موجودة في سجل المحرك.');
+          const linked=(state.supplierPayments||[]).filter(p=>String(p.invoiceId)===String(inv.id)).reduce((a,p)=>a+Number(p.amount||0),0);
+          const due=Math.max(0,Number(inv.totalAmount||0)-Math.max(Number(inv.paidAmount||0),linked));
+          if(due<=0)return {ok:false,error:'الفاتورة مسددة بالكامل.',snapshot:snapshot()};
+          pendingSupplierInvoiceId=inv.id;el('supplierPaymentAmount').value=String(due);el('supplierPaymentMethod').value='نقدي';
+          const before=(state.supplierPayments||[]).length;confirmSupplierPayment();
+          return {ok:(state.supplierPayments||[]).length>before,snapshot:snapshot()};
+        },
+        deliverOrder:async orderId=>{
+          await ready;
+          const idx=findOrder(orderId);if(idx<0)throw new Error('الطلب غير موجود.');
+          if(state.orders[idx].stockDeducted)return {ok:false,error:'الطلب مسجل بالفعل كطلب تم تسليمه.',snapshot:snapshot()};
+          pendingDeliveryOrderIndex=idx;el('deliveryConfirmMethod').value='نقدي';
+          const before=JSON.stringify(state.orders[idx]);confirmCollectAndDeliver();
+          return {ok:JSON.stringify(state.orders[idx])!==before&&!!state.orders[idx].stockDeducted,snapshot:snapshot()};
+        },
+        returnOrder:async orderId=>{
+          await ready;
+          const idx=findOrder(orderId);if(idx<0)throw new Error('الطلب غير موجود.');
+          const before=JSON.stringify(state.orders[idx]);markAsReturned(idx);
+          return {ok:JSON.stringify(state.orders[idx])!==before,snapshot:snapshot()};
+        },
+        exportSnapshot:snapshot
       });
       emit('valerian:engine-ready',{version:'19.65'});
     })();
+
 
 </script>
 \n<!-- VALERIAN CLOUD CONNECTOR (V18.3) -->
