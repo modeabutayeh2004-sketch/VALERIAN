@@ -7156,6 +7156,23 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           if(!saveState()){state.orders[idx]=before;throw new Error('تعذر حفظ بيانات الشحنة.');}
           refreshAllViews();return {ok:true,snapshot:snapshot()};
         },
+        createCustomerProfile:async payload=>{
+          await ready;
+          const normalizePhone=value=>String(value||'').trim().replace(/[\s()-]/g,'');
+          const name=String(payload?.name||'').trim(),phone=normalizePhone(payload?.phone);
+          if(!name)throw new Error('اسم العميل مطلوب.');
+          if(!phone||!/^[0-9+]{6,20}$/.test(phone))throw new Error('أدخل رقم هاتف صحيحًا من 6 إلى 20 رقمًا.');
+          if(state.customers.some(customer=>normalizePhone(customer.phone)===phone))throw new Error('يوجد ملف عميل مسجل بالفعل برقم الهاتف هذا.');
+          const before=structuredClone(state);
+          const customer={name,phone,address:String(payload?.address||'').trim(),fragrancePreferences:String(payload?.fragrancePreferences||'').trim(),favoriteNotes:String(payload?.favoriteNotes||'').trim(),avoidNotes:String(payload?.avoidNotes||'').trim(),usageOccasions:String(payload?.usageOccasions||'').trim(),profileNotes:String(payload?.profileNotes||'').trim(),totalSpent:0,ordersCount:0,points:0,debtToCustomer:0,createdAt:new Date().toISOString(),profileUpdatedAt:new Date().toISOString()};
+          state.customers.unshift(customer);
+          logAudit('CUSTOMER_PROFILE_CREATED','إنشاء ملف عميل '+name+' ('+phone+')');
+          if(!saveState()){state=before;refreshAllViews();throw new Error('تعذر حفظ ملف العميل في التخزين المحلي.');}
+          try{await valDurableWritePromise;await valIdbFlush();}
+          catch(error){state=before;refreshAllViews();throw new Error('لم يكتمل الحفظ الدائم لملف العميل: '+String(error?.message||error));}
+          refreshAllViews();
+          return {ok:true,snapshot:snapshot()};
+        },
         updateCustomerProfile:async payload=>{
           await ready;
           const normalizePhone=value=>String(value||'').trim().replace(/[\s()-]/g,'');
