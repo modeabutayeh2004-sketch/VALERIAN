@@ -6856,7 +6856,15 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         return;
       }catch(incrementalError){
         cloudIncrementalReady=false;
-        console.warn('Incremental sync unavailable; preserving legacy snapshot mode until migration is installed.',incrementalError);
+        const msg=String(incrementalError && incrementalError.message || incrementalError);
+        const missingMigration=msg.includes('PGRST202') || msg.includes('Could not find the function') || msg.includes('does not exist') || msg.includes('schema cache');
+        if(!missingMigration){
+          cloudReady=false;
+          setCloudStatus('تعذر تهيئة المزامنة الجزئية بأمان: '+cloudErrorMessage(incrementalError)+' — لم نبدأ مزامنة النسخة الكاملة لتجنب استبدال البيانات.','#b91c1c');
+          console.error('Incremental sync bootstrap failed; legacy snapshot writes are blocked.',incrementalError);
+          return;
+        }
+        console.warn('Incremental sync migration is not installed; retaining legacy snapshot mode.',incrementalError);
       }
       if(!row){
         // Default to Cancel: never upload this device's existing data automatically.
