@@ -115,14 +115,13 @@
     }
     #heroWaterFill { left: 0; right: 0; width: auto; }
     .inventory-level-icon {
-      position: relative; display: inline-flex; width: 44px; height: 44px;
-      flex: 0 0 44px; align-items: center; justify-content: center;
-      overflow: hidden; isolation: isolate; border-radius: 50%;
+      position: relative; display: inline-flex; width: 56px; height: 56px;
+      flex: 0 0 56px; align-items: center; justify-content: center;
+      overflow: hidden; isolation: isolate; border-radius: 13px;
       border: 1px solid rgba(186,230,253,.52);
-      /* The icon itself is the vessel: the liquid fills its full silhouette. */
       background: linear-gradient(to top,
-        rgba(14,165,233,.48) 0 var(--level,0%),
-        rgba(2,8,12,.78) var(--level,0%) 100%);
+        rgba(14,165,233,.58) 0 var(--level,0%),
+        rgba(2,8,12,.88) var(--level,0%) 100%);
       box-shadow: 0 0 12px rgba(56,189,248,.08);
     }
     .inventory-level-icon::before {
@@ -132,7 +131,7 @@
       box-shadow: 0 0 7px rgba(125,211,253,.42);
       pointer-events: none;
     }
-    .inventory-level-icon span { position: relative; z-index: 1; font-size: 9px; font-weight: 900; color: #f8fafc; text-shadow: 0 1px 3px #02080c; }
+    .inventory-level-icon span { position: relative; z-index: 1; font-size: 10px; font-weight: 900; color: #f8fafc; text-shadow: 0 1px 3px #02080c; }
     .bottle-content { position: relative; z-index: 2; }
     @media (prefers-reduced-motion: reduce) { .water-fill { transition: none; } }
 
@@ -1660,9 +1659,7 @@
         const avail = getAvail(p);
         const isLow = avail <= Number(p.minimumStock || 0);
         const fillPct = avail > 0 ? Math.min(90, Math.max(15, Math.round((avail / Math.max(1, (p.minimumStock || 2) * 3)) * 100))) : 8;
-        const visualMark = `${p.image
-          ? `<img src="${p.image}" alt="${p.name}" class="w-11 h-11 rounded-xl object-cover border border-white/15 shrink-0" />`
-          : ''}<div class="inventory-level-icon" role="img" aria-label="مستوى المخزون ${fillPct}%" style="--level:${fillPct}%"><span class="bidi-ltr">${fillPct}%</span></div>`;
+        const visualMark = `<div class="inventory-level-icon" role="img" aria-label="مستوى المخزون ${fillPct}%" style="--level:${fillPct}%"><span class="bidi-ltr">${fillPct}%</span></div>`
 
         return `
           <div class="glass-card rounded-2xl p-3.5 space-y-2.5 ${isLow ? 'border-amber-400/40' : ''}">
@@ -2223,7 +2220,7 @@
       document.getElementById('previewSheetBody').innerHTML = `
         <div class="loyalty-platinum-card rounded-3xl p-5 space-y-4">
           <div class="text-center border-b border-slate-300/20 pb-3">
-            <div class="brand-serif text-xl font-black silver-text">VALERIAN</div>
+            <div class="brand-serif text-xl font-black" style="display:inline-block;width:max-content;max-width:100%;background:none!important;background-image:none!important;-webkit-text-fill-color:#dbe4ef!important;color:#dbe4ef!important;text-shadow:0 1px 0 #fff,0 2px 5px rgba(148,163,184,.45)">VALERIAN</div>
             <div class="text-xs font-extrabold text-sky-200 mt-1">✨ عروض النخبة لفترة محدودة ✨</div>
           </div>
           <div class="space-y-2.5">
