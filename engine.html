@@ -6165,6 +6165,9 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       document.getElementById('printPreviewBody').innerHTML=v1946EnsureBrandHeader(html);
       document.getElementById('printPaperSize').value='a4';
       v1953SyncPrintPreviewSize();
+      // Close the customer editor first: it is later in the DOM at the same z-index
+      // and would otherwise cover the print preview on mobile and desktop.
+      closeModal('customerProfileModal');
       openModal('printPreviewModal');
     }
 
