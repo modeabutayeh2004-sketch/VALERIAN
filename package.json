@@ -1,0 +1,18 @@
+{
+  "name": "valerian-android",
+  "version": "20.7.0",
+  "private": true,
+  "description": "VALERIAN V20 Android wrapper",
+  "scripts": {
+    "build:web": "node scripts/prepare-web.mjs",
+    "build:android": "npm run build:web && cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.6.2",
+    "@capacitor/core": "8.6.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.6.2",
+    "sharp": "^0.34.5"
+  }
+}
