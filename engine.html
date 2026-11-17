@@ -6477,7 +6477,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const {data,error}=await cloudClient.auth.signInWithPassword({email,password});
       if(error){const message='فشل الدخول: '+cloudErrorMessage(error);setCloudStatus(message,'#b91c1c');return {ok:false,authenticated:false,message};}
       await initializeValerianCloud(data.user);
-      return {ok:!!cloudReady,authenticated:!!cloudUser,synced:!!cloudReady,message:(document.getElementById('cloudMessage')?.textContent||'').replace(/^الحالة:\\s*/,'')};
+      return {ok:!!cloudReady,authenticated:!!cloudUser,synced:!!cloudReady,message:(document.getElementById('cloudMessage')?.textContent||'').replace(/^الحالة:\s*/,'')};
     }
     async function cloudSignUp(credentials) {
       if (!cloudClient) { const ok=await loadSupabaseLibrary(); if(!ok || !cloudClient){const message='البرنامج يعمل محليًا؛ المزامنة تحتاج اتصالًا بالإنترنت.';setCloudStatus(message,'#a16207');return {ok:false,authenticated:false,message};} }
@@ -6489,7 +6489,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       if(error){const message='تعذر إنشاء الحساب: '+cloudErrorMessage(error);setCloudStatus(message,'#b91c1c');return {ok:false,authenticated:false,message};}
       if(data.session && data.user) {
         await initializeValerianCloud(data.user);
-        return {ok:!!cloudReady,authenticated:!!cloudUser,synced:!!cloudReady,message:(document.getElementById('cloudMessage')?.textContent||'').replace(/^الحالة:\\s*/,'')};
+        return {ok:!!cloudReady,authenticated:!!cloudUser,synced:!!cloudReady,message:(document.getElementById('cloudMessage')?.textContent||'').replace(/^الحالة:\s*/,'')};
       }
       const message='تم إنشاء الحساب. افتح رسالة تأكيد البريد ثم ارجع وسجّل الدخول.';
       setCloudStatus(message,'#a16207');
@@ -6804,7 +6804,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         cloudStatus:()=>({
           connected:!!cloudReady,authenticated:!!cloudUser,email:String(cloudUser?.email||''),
           online:!!navigator.onLine,dirty:!!cloudDirty,conflict:!!cloudConflict,
-          label:(document.getElementById('cloudMessage')?.textContent||'').replace(/^الحالة:\\s*/,'')
+          label:(document.getElementById('cloudMessage')?.textContent||'').replace(/^الحالة:\s*/,'')
         }),
         cloudSignIn:async credentials=>{
           await ready;
