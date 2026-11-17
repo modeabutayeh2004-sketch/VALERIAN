@@ -1,6 +1,6 @@
 /* VALERIAN V20.7 — offline application shell */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-76-runtime-diagnostics-fixed';
+const CACHE_NAME = 'valerian-app-shell-v20-77-settings-diagnostics';
 const APP_SHELL = ['./', './index.html', './engine.html?v=20261118-75-runtime-diagnostics', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
