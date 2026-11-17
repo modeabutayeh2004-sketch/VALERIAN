@@ -119,19 +119,25 @@
       flex: 0 0 56px; align-items: center; justify-content: center;
       overflow: hidden; isolation: isolate; border-radius: 13px;
       border: 1px solid rgba(186,230,253,.52);
-      background: linear-gradient(to top,
-        rgba(14,165,233,.58) 0 var(--level,0%),
-        rgba(2,8,12,.88) var(--level,0%) 100%);
+      background: rgba(2,8,12,.88);
       box-shadow: 0 0 12px rgba(56,189,248,.08);
     }
-    .inventory-level-icon::before {
-      content: ""; position: absolute; z-index: 0; left: 0; right: 0;
-      top: calc(100% - var(--level,0%)); height: 2px;
-      background: rgba(186,230,253,.98);
-      box-shadow: 0 0 7px rgba(125,211,253,.42);
+    .inventory-level-icon > img {
+      position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%;
+      object-fit: cover; border-radius: inherit;
+    }
+    .inventory-level-fill {
+      position: absolute; z-index: 1; left: 0; right: 0; bottom: 0;
+      height: var(--level,0%); border-radius: 0;
+      background: linear-gradient(180deg,rgba(56,189,248,.46),rgba(14,165,233,.66));
       pointer-events: none;
     }
-    .inventory-level-icon span { position: relative; z-index: 1; font-size: 10px; font-weight: 900; color: #f8fafc; text-shadow: 0 1px 3px #02080c; }
+    .inventory-level-fill::before {
+      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: rgba(186,230,253,.98);
+      box-shadow: 0 0 7px rgba(125,211,253,.5);
+    }
+    .inventory-level-icon span { position: relative; z-index: 2; font-size: 10px; font-weight: 900; color: #fff; text-shadow: 0 1px 4px #02080c,0 0 5px #02080c; }
     .bottle-content { position: relative; z-index: 2; }
     @media (prefers-reduced-motion: reduce) { .water-fill { transition: none; } }
 
@@ -1659,7 +1665,7 @@
         const avail = getAvail(p);
         const isLow = avail <= Number(p.minimumStock || 0);
         const fillPct = avail > 0 ? Math.min(90, Math.max(15, Math.round((avail / Math.max(1, (p.minimumStock || 2) * 3)) * 100))) : 8;
-        const visualMark = `<div class="inventory-level-icon" role="img" aria-label="مستوى المخزون ${fillPct}%" style="--level:${fillPct}%"><span class="bidi-ltr">${fillPct}%</span></div>`
+        const visualMark = `<div class="inventory-level-icon" role="img" aria-label="مستوى المخزون ${fillPct}%" style="--level:${fillPct}%">${p.image ? `<img src="${p.image}" alt="" />` : ''}<div class="inventory-level-fill"></div><span class="bidi-ltr">${fillPct}%</span></div>`
 
         return `
           <div class="glass-card rounded-2xl p-3.5 space-y-2.5 ${isLow ? 'border-amber-400/40' : ''}">
