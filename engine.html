@@ -7065,11 +7065,12 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         syncCloud:async()=>{
           await ready;
           try{await valDurableWritePromise;await valIdbFlush();}catch(_){}
-          const deadline=Date.now()+20000;
-          for(let attempt=0;attempt<3&&Date.now()<deadline;attempt++){
-            while(cloudSaveInFlight&&Date.now()<deadline) await new Promise(resolve=>setTimeout(resolve,100));
-            if(!cloudDirty||cloudConflict||!cloudReady||!navigator.onLine) break;
+          const deadline=Date.now()+25000;
+          while(cloudSaveInFlight&&Date.now()<deadline) await new Promise(resolve=>setTimeout(resolve,100));
+          if(cloudReady&&cloudUser&&navigator.onLine&&!cloudConflict){
             clearTimeout(cloudSaveTimer);
+            // A user-requested sync must force an upload even when the dirty flag is false.
+            // This is essential for the first cloud backup when no row exists yet.
             await cloudSyncNow(true);
           }
           while(cloudSaveInFlight&&Date.now()<deadline) await new Promise(resolve=>setTimeout(resolve,100));
