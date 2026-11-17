@@ -2992,7 +2992,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
     }
     toggleNewProductDecantFields();
 
-    saveNewProductFromSheet=async function(){
+    window.saveNewProductFromSheet=async function(){
       const button=document.getElementById('saveNewProductBtn');
       if(window.__v5ImageProcessing)return showToast('انتظر انتهاء تجهيز صورة المنتج أولاً.');
       const payload={
@@ -3037,7 +3037,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
         if(button){button.disabled=false;button.textContent='حفظ وإدراج في المخزون';}
       }
     };
-    submitMobileOrder=async function(openReceipt){
+    window.submitMobileOrder=async function(openReceipt){
       const phone=document.getElementById('chkPhone').value.trim();
       const name=document.getElementById('chkName').value.trim();
       const address=document.getElementById('chkAddress').value.trim();
@@ -3064,7 +3064,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
         syncFromEngine();
       }catch(err){reportError(err);}
     };
-    executeDecantProduction=async function(){
+    window.executeDecantProduction=async function(){
       try{
         const r=await runEngine('produceDecants',{
           productId:document.getElementById('labDecantSelect').value,
@@ -3073,7 +3073,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
         if(r.ok){closeSheet('decantLabSheet');showToast('تم تجهيز التقسيم وتسجيل حركات السائل والعبوات والمخزون.');}
       }catch(err){reportError(err);}
     };
-    applyMobileStockAdjustment=async function(){
+    window.applyMobileStockAdjustment=async function(){
       const id=document.getElementById('adjProductSelect').value;
       const qty=Number(document.getElementById('adjQty').value||0);
       const reason=document.getElementById('adjReason').value.trim();
@@ -3084,7 +3084,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
         if(r.ok){closeSheet('stockAdjustSheet');showToast('تم تسجيل التسوية في سجل حركات المخزون الأصلي.');}
       }catch(err){reportError(err);}
     };
-    saveMobileImportInvoice=async function(){
+    window.saveMobileImportInvoice=async function(){
       const supplier=document.getElementById('impFormSupplier').value.trim();
       const productId=document.getElementById('impFormProduct').value;
       if(!supplier||!productId)return showToast('يرجى إدخال اسم المورد واختيار الصنف');
@@ -3143,7 +3143,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
         showToast(type==='refund'?'تم رد المبلغ وتحديث حساب العميل بنجاح.':'تم تسجيل دفعة المورد وتحديث الحسابات بنجاح.');
       }catch(err){error.textContent=String(err?.message||'حدث خطأ أثناء تنفيذ العملية.');error.classList.remove('hidden');button.disabled=false;button.textContent='إعادة المحاولة';}
     };
-    settleSupplierDue=function(invId){ openMoneyActionModal('supplier',invId); };
+    window.settleSupplierDue=function(invId){ openMoneyActionModal('supplier',invId); };
     let pendingV5Action=null;
     window.closeV5ActionModal=function(){
       const modal=document.getElementById('v5ActionModal');
@@ -3190,8 +3190,8 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
         error.classList.remove('hidden');btn.disabled=false;btn.textContent='إعادة المحاولة';
       }
     };
-    deliverReservedOrder=function(orderId){openV5ActionModal('deliver',orderId);};
-    processMobileReturn=function(orderId){openV5ActionModal('return',orderId);};
+    window.deliverReservedOrder=function(orderId){openV5ActionModal('deliver',orderId);};
+    window.processMobileReturn=function(orderId){openV5ActionModal('return',orderId);};
     window.permanentlyDeleteInventoryProduct=async function(encodedId){
       const id=decodeURIComponent(String(encodedId||''));
       const product=appState.products.find(p=>String(p.id)===id);
@@ -3343,7 +3343,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
       }catch(err){reportError(err);}
     };
     window.settleMobileRefund=function(orderId){ openMoneyActionModal('refund',orderId); };
-    renderMoreReports=function(){
+    window.renderMoreReports=function(){
       const delivered=appState.orders.filter(o=>o.stockDeducted||String(o.status||'').includes('تم التسليم'));
       const sales=delivered.reduce((sum,o)=>sum+Math.max(0,Number(o.grandTotal||0)-Number(o.returnedValue||0)),0);
       const deposits=appState.orders.filter(o=>!o.stockDeducted&&!String(o.status||'').includes('مرتجع')).reduce((sum,o)=>sum+Number(o.depositAmount||0),0);
@@ -3359,7 +3359,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
       document.getElementById('repMobileExpenses').textContent=fmtEgp(expenses);
       document.getElementById('repMobileNet').textContent=fmtEgp(net);
     };
-    importMobileJson=async function(event){
+    window.importMobileJson=async function(event){
       const input=event?.target, file=input?.files?.[0];
       if(!file)return;
       try{
@@ -3373,7 +3373,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
       }catch(err){console.error('VALERIAN JSON import failed',err);showToast('تعذر استيراد النسخة: '+(err?.message||err),'error');}
       finally{if(input)input.value='';}
     };
-    exportMobileJson=function(){
+    window.exportMobileJson=function(){
       if(!engine)return showToast('انتظر اتصال محرك البيانات أولاً.');
       const blob=new Blob([JSON.stringify(engine.exportSnapshot(),null,2)],{type:'application/json'});
       const a=document.createElement('a');a.href=URL.createObjectURL(blob);
@@ -3381,7 +3381,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
       setTimeout(()=>URL.revokeObjectURL(a.href),1000);
       showToast('تم تصدير نسخة من بيانات محرك VALERIAN الأصلية.');
     };
-    resetChassisState=function(){
+    window.resetChassisState=function(){
       showToast('تم تعطيل التصفير من واجهة V5 حتى لا تُحذف بيانات النشاط بالخطأ.');
     };
 
