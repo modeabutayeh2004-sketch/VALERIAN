@@ -649,7 +649,7 @@
               </label>
               <input id="newProdImgInput" type="file" accept="image/*" class="hidden" onchange="handleNewProdImage(event)" />
               <div class="flex-1 space-y-1">
-                <p class="text-[10px] text-slate-300 leading-4">ارفع صورة زجاجة العطر أو العبوة لتظهر بشكل فاخر في الكتالوج والكاشير.</p>
+                <p id="newProdImageStatus" class="text-[10px] text-slate-300 leading-4">ارفع صورة المنتج؛ سيتم ضغطها تلقائيًا لتسريع الحفظ والمزامنة.</p>
                 <button type="button" id="clearProdImgBtn" onclick="clearNewProdImage()" class="hidden text-[10px] text-rose-300 font-bold underline">إزالة الصورة</button>
               </div>
             </div>
@@ -670,7 +670,7 @@
             <div><span class="text-[10px] text-slate-400">التكلفة</span><input id="newProdCost" type="number" placeholder="0" class="w-full glass-pill rounded-xl px-2.5 py-2 text-white font-bold bidi-ltr" /></div>
             <div><span class="text-[10px] text-slate-400">الرصيد الافتتاحي</span><input id="newProdStock" type="number" placeholder="0" class="w-full glass-pill rounded-xl px-2.5 py-2 text-white font-bold bidi-ltr" /></div>
           </div>
-          <button onclick="saveNewProductFromSheet()" class="w-full py-3 rounded-full silver-btn text-xs font-black mt-1">حفظ وإدراج في المخزون</button>
+          <button id="saveNewProductBtn" onclick="saveNewProductFromSheet()" class="w-full py-3 rounded-full silver-btn text-xs font-black mt-1">حفظ وإدراج في المخزون</button>
         </div>
       </div>
     </div>
@@ -823,9 +823,10 @@
           <button onclick="closeSheet('previewModalSheet')" class="w-8 h-8 rounded-full glass-pill text-xs">✕</button>
         </div>
         <div id="previewSheetBody"></div>
-        <div class="grid grid-cols-2 gap-2 pt-2">
-          <button onclick="shareViaWhatsApp()" class="py-3 rounded-full bg-emerald-500 text-[#02080c] text-xs font-black">مشاركة واتساب 🟢</button>
-          <button onclick="window.print()" class="py-3 rounded-full silver-btn text-xs font-black">طباعة حرارية 🖨️</button>
+        <div class="grid grid-cols-3 gap-2 pt-2">
+          <button onclick="shareViaWhatsApp()" class="py-3 rounded-full bg-emerald-500 text-[#02080c] text-[10px] font-black">واتساب 🟢</button>
+          <button onclick="downloadPreviewImage()" class="py-3 rounded-full silver-btn text-[10px] font-black">تنزيل الصورة ⬇️</button>
+          <button onclick="window.print()" class="py-3 rounded-full glass-pill text-[10px] font-black">طباعة 🖨️</button>
         </div>
       </div>
     </div>
@@ -887,6 +888,10 @@
     let mobileCart = [];
     let redeemPointsActive = false;
     let pendingNewProductImage = '';
+    let activePreviewShareContext = null;
+    window.__v5ImageProcessing = false;
+    window.__v5ImageToken = 0;
+    window.__v5Html2CanvasPromise = null;
 
     const fmtEgp = (n) => `${Math.round(Number(n || 0)).toLocaleString('en-US')} EGP`;
     const getAvail = (p) => Math.max(0, Number(p.stock || 0) - Number(p.reservedStock || 0));
@@ -1090,29 +1095,98 @@
       }
     }
 
-    function handleNewProdImage(e) {
-      const file = e.target.files[0];
+    async function handleNewProdImage(e) {
+      const file = e.target.files && e.target.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        pendingNewProductImage = evt.target.result;
-        const preview = document.getElementById('newProdImgPreview');
-        preview.src = pendingNewProductImage;
-        preview.classList.remove('hidden');
-        document.getElementById('newProdImgPlaceholder').classList.add('hidden');
-        document.getElementById('clearProdImgBtn').classList.remove('hidden');
-      };
-      reader.readAsDataURL(file);
+      const token = ++window.__v5ImageToken;
+      const status = document.getElementById('newProdImageStatus');
+      const placeholder = document.getElementById('newProdImgPlaceholder');
+      const saveBtn = document.getElementById('saveNewProductBtn');
+      window.__v5ImageProcessing = true;
+      if (saveBtn) saveBtn.disabled = true;
+      if (status) status.textContent = 'جارٍ تجهيز الصورة وضغطها...';
+      if (placeholder) placeholder.querySelector('span:last-child').textContent = 'جارٍ التجهيز';
+      try {
+        if (!String(file.type || '').startsWith('image/')) throw new Error('الملف المختار ليس صورة.');
+        if (file.size > 25 * 1024 * 1024) throw new Error('حجم الصورة الأصلية أكبر من 25 ميجابايت.');
+        let source = null, objectUrl = '';
+        try {
+          if (typeof createImageBitmap === 'function') source = await createImageBitmap(file);
+          else {
+            objectUrl = URL.createObjectURL(file);
+            source = await new Promise((resolve, reject) => {
+              const img = new Image();
+              img.onload = () => resolve(img);
+              img.onerror = () => reject(new Error('تعذر فتح الصورة المختارة.'));
+              img.src = objectUrl;
+            });
+          }
+          if (token !== window.__v5ImageToken) return;
+          const sourceWidth = source.width || source.naturalWidth;
+          const sourceHeight = source.height || source.naturalHeight;
+          if (!sourceWidth || !sourceHeight) throw new Error('أبعاد الصورة غير صالحة.');
+          const scale = Math.min(1, 720 / Math.max(sourceWidth, sourceHeight));
+          const width = Math.max(1, Math.round(sourceWidth * scale));
+          const height = Math.max(1, Math.round(sourceHeight * scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          const ctx = canvas.getContext('2d', {alpha:false});
+          if (!ctx) throw new Error('المتصفح لم يستطع تجهيز الصورة.');
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, width, height);
+          ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(source, 0, 0, width, height);
+          let blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.76));
+          if (!blob) throw new Error('تعذر ضغط الصورة.');
+          if (blob.size > 450 * 1024) blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.64));
+          if (!blob || !blob.size) throw new Error('ملف الصورة الناتج فارغ.');
+          const dataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result || ''));
+            reader.onerror = () => reject(new Error('تعذر قراءة الصورة بعد ضغطها.'));
+            reader.readAsDataURL(blob);
+          });
+          if (token !== window.__v5ImageToken) return;
+          pendingNewProductImage = dataUrl;
+          const preview = document.getElementById('newProdImgPreview');
+          preview.src = dataUrl;
+          preview.classList.remove('hidden');
+          placeholder.classList.add('hidden');
+          document.getElementById('clearProdImgBtn').classList.remove('hidden');
+          if (status) status.textContent = 'الصورة جاهزة — ' + Math.round(blob.size / 1024) + ' كيلوبايت بعد الضغط.';
+        } finally {
+          if (source && typeof source.close === 'function') source.close();
+          if (objectUrl) URL.revokeObjectURL(objectUrl);
+        }
+      } catch (err) {
+        if (token === window.__v5ImageToken) {
+          pendingNewProductImage = '';
+          if (status) status.textContent = 'تعذر تجهيز الصورة. جرّب صورة أخرى.';
+          showToast(String(err && err.message || 'تعذر تجهيز صورة المنتج.'));
+        }
+      } finally {
+        if (token === window.__v5ImageToken) {
+          window.__v5ImageProcessing = false;
+          if (saveBtn) saveBtn.disabled = false;
+          if (placeholder && !pendingNewProductImage) placeholder.querySelector('span:last-child').textContent = 'اختر صورة';
+        }
+      }
     }
 
     function clearNewProdImage() {
+      window.__v5ImageToken++;
+      window.__v5ImageProcessing = false;
       pendingNewProductImage = '';
       document.getElementById('newProdImgInput').value = '';
       const preview = document.getElementById('newProdImgPreview');
       preview.src = '';
       preview.classList.add('hidden');
       document.getElementById('newProdImgPlaceholder').classList.remove('hidden');
+      document.getElementById('newProdImgPlaceholder').querySelector('span:last-child').textContent = 'اختر صورة';
       document.getElementById('clearProdImgBtn').classList.add('hidden');
+      const status = document.getElementById('newProdImageStatus');
+      if (status) status.textContent = 'ارفع صورة المنتج؛ سيتم ضغطها تلقائيًا لتسريع الحفظ والمزامنة.';
+      const saveBtn = document.getElementById('saveNewProductBtn');
+      if (saveBtn) saveBtn.disabled = false;
     }
 
     function saveNewProductFromSheet() {
@@ -1395,6 +1469,7 @@
     }
 
     function openThermalReceiptPreview(order) {
+      activePreviewShareContext = {kind:'order',id:String(order.id||''),phone:String(order.phone||''),name:String(order.name||''),total:Number(order.grandTotal||0),remaining:Number(order.remainingAmount||0)};
       document.getElementById('previewSheetTitle').textContent = order.mode === 'reservation' ? 'إيصال حجز مسبق (80mm)' : 'فاتورة مبيعات نهائية (80mm)';
       document.getElementById('previewSheetBody').innerHTML = `
         <div class="bg-white text-slate-900 rounded-2xl p-4 space-y-3 text-xs shadow-xl">
@@ -1836,6 +1911,7 @@
     function openDigitalLoyaltyCard(phone) {
       const c = appState.customers.find(x => x.phone === phone);
       if (!c) return;
+      activePreviewShareContext = {kind:'loyalty',id:'loyalty-'+String(c.phone||''),phone:String(c.phone||''),name:String(c.name||''),points:Number(c.points||0)};
       document.getElementById('previewSheetTitle').textContent = 'بطاقة ولاء VALERIAN البلاتينية';
       document.getElementById('previewSheetBody').innerHTML = `
         <div class="loyalty-platinum-card rounded-3xl p-6 text-center space-y-4 relative overflow-hidden">
@@ -1854,7 +1930,110 @@
       openSheet('previewModalSheet');
     }
 
-    function shareViaWhatsApp() { showToast('تم نسخ تفاصيل البطاقة للمشاركة 🟢'); }
+    async function loadPreviewCaptureLibrary() {
+      if (typeof window.html2canvas === 'function') return window.html2canvas;
+      if (!window.__v5Html2CanvasPromise) {
+        window.__v5Html2CanvasPromise = new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+          script.async = true;
+          script.onload = () => typeof window.html2canvas === 'function' ? resolve(window.html2canvas) : reject(new Error('مكتبة تجهيز الصورة لم تبدأ.'));
+          script.onerror = () => reject(new Error('تعذر تحميل أداة تجهيز الصورة. تأكد من الاتصال بالإنترنت.'));
+          document.head.appendChild(script);
+        }).catch(err => { window.__v5Html2CanvasPromise = null; throw err; });
+      }
+      return window.__v5Html2CanvasPromise;
+    }
+
+    async function createPreviewImageBlob() {
+      const source = document.querySelector('#previewSheetBody > *');
+      if (!source) throw new Error('لا توجد معاينة مفتوحة لتحويلها إلى صورة.');
+      const capture = await loadPreviewCaptureLibrary();
+      if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
+      const rect = source.getBoundingClientRect();
+      const width = Math.ceil(Math.max(source.scrollWidth, rect.width));
+      const height = Math.ceil(Math.max(source.scrollHeight, rect.height));
+      if (!width || !height) throw new Error('تعذر تحديد أبعاد المعاينة.');
+      const scale = Math.max(1, Math.min(2, window.devicePixelRatio || 1.5, 3600 / Math.max(width, height)));
+      const canvas = await capture(source, {
+        scale, backgroundColor:'#ffffff', useCORS:true, allowTaint:false, logging:false,
+        scrollX:0, scrollY:0, width, height,
+        windowWidth:Math.max(document.documentElement.clientWidth, width),
+        windowHeight:Math.max(document.documentElement.clientHeight, height),
+        imageTimeout:10000
+      });
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      if (!blob || !blob.size) throw new Error('تعذر إنشاء ملف الصورة.');
+      return blob;
+    }
+
+    function previewImageFileName() {
+      const id = String(activePreviewShareContext && activePreviewShareContext.id || 'preview').replace(/[^a-z0-9_-]/gi, '_').slice(0,70);
+      return 'VALERIAN-' + (id || 'preview') + '.png';
+    }
+
+    async function downloadPreviewImage() {
+      try {
+        showToast('جارٍ تجهيز صورة المعاينة...');
+        const blob = await createPreviewImageBlob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = previewImageFileName(); a.rel = 'noopener';
+        a.style.display = 'none'; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        showToast('تم تجهيز الصورة وإرسالها إلى تنزيلات الجهاز.');
+      } catch (err) {
+        console.error('VALERIAN preview image download failed', err);
+        showToast('تعذر تنزيل الصورة: ' + String(err && err.message || err));
+      }
+    }
+
+    function previewWhatsAppMessage() {
+      const context = activePreviewShareContext || {};
+      const body = String(document.getElementById('previewSheetBody') && document.getElementById('previewSheetBody').innerText || '').replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n').trim();
+      const heading = context.kind === 'order'
+        ? 'مرحباً ' + (context.name || 'عميلنا') + '، مرفق مستند VALERIAN رقم ' + (context.id || '') + '.'
+        : context.kind === 'loyalty'
+          ? 'مرحباً ' + (context.name || 'عميلنا') + '، هذه بطاقة الولاء الخاصة بك من VALERIAN.'
+          : 'يسعدنا مشاركتكم عروض VALERIAN الحصرية.';
+      return [heading, body.slice(0, 1800)].filter(Boolean).join('\n\n');
+    }
+
+    function normalizeWhatsAppPhone(value) {
+      let digits = String(value || '').replace(/\D/g,'');
+      if (digits.startsWith('00')) digits = digits.slice(2);
+      if (digits.length === 11 && digits.startsWith('0')) digits = '20' + digits.slice(1);
+      return digits;
+    }
+
+    async function shareViaWhatsApp() {
+      try {
+        showToast('جارٍ تجهيز المستند للمشاركة...');
+        const blob = await createPreviewImageBlob();
+        const file = new File([blob], previewImageFileName(), {type:'image/png'});
+        const message = previewWhatsAppMessage();
+        if (navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
+          await navigator.share({files:[file], title:'VALERIAN', text:message});
+          showToast('تم فتح مشاركة الصورة؛ اختر واتساب ثم المحادثة المطلوبة.');
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = file.name; a.style.display = 'none';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        const phone = normalizeWhatsAppPhone(activePreviewShareContext && activePreviewShareContext.phone);
+        const waUrl = phone
+          ? 'https://wa.me/' + phone + '?text=' + encodeURIComponent(message + '\n\nتم تنزيل صورة المستند؛ أرفقها من التنزيلات قبل الإرسال.')
+          : 'https://wa.me/?text=' + encodeURIComponent(message + '\n\nتم تنزيل صورة المستند؛ أرفقها قبل الإرسال.');
+        window.location.assign(waUrl);
+      } catch (err) {
+        if (!err || err.name !== 'AbortError') {
+          console.error('VALERIAN WhatsApp share failed', err);
+          showToast('تعذرت مشاركة المستند: ' + String(err && err.message || err));
+        }
+      }
+    }
 
     function renderMoreOffers() {
       const box = document.getElementById('moreOffersContainer');
@@ -1880,6 +2059,7 @@
     function openOffersPosterPreview() {
       const offers = appState.products.filter(p => p.isOffer);
       if (!offers.length) return showToast('لا توجد عروض مفعلة لتوليد البوستر');
+      activePreviewShareContext = {kind:'offers',id:'offers-'+new Date().toISOString().slice(0,10),name:'عروض VALERIAN'};
       document.getElementById('previewSheetTitle').textContent = 'بوستر عروض VALERIAN الحصرية';
       document.getElementById('previewSheetBody').innerHTML = `
         <div class="loyalty-platinum-card rounded-3xl p-5 space-y-4">
@@ -2198,7 +2378,7 @@
     async function runEngine(method,payload){
       if(!engine)await connectEngine();
       const result=await engine[method](payload);
-      if(result?.snapshot){appState=project(result.snapshot);renderAllViews();}
+      if(result?.snapshot){appState=project(result.snapshot);renderVisibleScreen();}
       else syncFromEngine();
       if(result&&result.ok===false)showToast(result.error||'لم يعتمد محرك الأعمال العملية.');
       return result;
