@@ -6563,15 +6563,18 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         cloudRevision=Number(data[0].current_revision); cloudReady=true; cloudDirty=false;
       } else {
         cloudRevision=Number(row.revision||0);
-        if(hadLocalValerianState){
-          const useLocal=confirm('وجدنا بيانات على هذا الجهاز وبيانات مختلفة/موجودة على السحابة.\n\nموافق: اعتماد بيانات هذا الجهاز ورفعها فوق النسخة السحابية الحالية.\nإلغاء: تحميل نسخة السحابة واستبدال الحالة المحلية الحالية.\n\nتأكد من وجود نسخة احتياطية قبل الاختيار.');
+        const localMatchesCloud = valComparableStateJson(normalizeState(state)) === valComparableStateJson(normalizeState(row.state));
+        if(hadLocalValerianState && !localMatchesCloud){
+          const useLocal=confirm('وجدنا بيانات محلية تختلف عن النسخة السحابية.\n\nموافق: رفع بيانات هذا الجهاز واستبدال النسخة السحابية.\nإلغاء: تحميل النسخة السحابية واستبدال البيانات المحلية.\n\nتأكد من وجود نسخة احتياطية قبل الاختيار.');
           if(useLocal){
             let cloudSnapshot;try{cloudSnapshot=await valBuildCloudSyncState(state);}catch(assetErr){setCloudStatus('لم نرفع البيانات: '+assetErr.message,'#b91c1c');return;}
             const {data,error:saveErr}=await cloudClient.rpc('valerian_save_state',{p_state:cloudSnapshot,p_expected_revision:cloudRevision});
             if(saveErr || !data?.[0]?.ok){cloudConflict=true;setCloudStatus('تعارض أثناء الرفع — لم يتم استبدال البيانات','#b91c1c');return;}
             cloudRevision=Number(data[0].current_revision);
           } else { const applied=await applyCloudState(row.state); if(!applied)return; }
-        } else { const applied=await applyCloudState(row.state); if(!applied)return; }
+        } else if(!localMatchesCloud) {
+          const applied=await applyCloudState(row.state); if(!applied)return;
+        }
         cloudReady=true; cloudDirty=false;
       }
       document.getElementById('cloudSyncNow').style.display='block'; document.getElementById('cloudLogout').style.display='block';
