@@ -5231,9 +5231,9 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const isCard=source.classList.contains('v1960-loyalty-card');
       // Keep mobile canvas memory bounded. The previous 24–36 MP targets can
       // require well over 100 MB before the browser encodes the PNG.
-      const maxPixels=isCard?8000000:10000000;
-      const maxSide=6000;
-      const preferredScale=isCard?2.2:2;
+      const maxPixels=isCard?12000000:16000000;
+      const maxSide=8000;
+      const preferredScale=isCard?2.6:2.6;
       const scale=Math.max(1,Math.min(preferredScale,
         Math.sqrt(maxPixels/Math.max(1,cssWidth*cssHeight)),
         maxSide/Math.max(cssWidth,cssHeight)));
@@ -7068,7 +7068,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           if(!Number.isSafeInteger(minimumStock)||minimumStock<0||!Number.isSafeInteger(stock)||stock<0)throw new Error('الكمية وحد التنبيه يجب أن يكونا رقمين صحيحين غير سالبين.');
           if(isOffer&&(!Number.isFinite(offerPrice)||offerPrice<=0||offerPrice>=price))throw new Error('سعر العرض يجب أن يكون أكبر من صفر وأقل من سعر البيع.');
           if(isDecantable&&(!Number.isFinite(decantSizeMl)||decantSizeMl<=0||!Number.isFinite(decantBottleCost)||decantBottleCost<0))throw new Error('راجع بيانات التقسيم وتكلفة العبوة.');
-          const before=structuredClone(product),movementsBefore=structuredClone(state.inventoryMovements||[]),stockDelta=stock-Number(product.stock||0);
+          const before=structuredClone(product),productsBefore=structuredClone(state.products),movementsBefore=structuredClone(state.inventoryMovements||[]),stockDelta=stock-Number(product.stock||0);
           Object.assign(product,{name,price,averageCost,totalCost:averageCost,stock,minimumStock,notes,isOffer,offerPrice:isOffer?offerPrice:0,productType,category,stockUnit,size,image:String(payload?.image??product.image??''),isDecantable,decantSize:decantSizeMl,decantSizeMl,decantBottleCost});
           if(stockDelta)addInventoryMovement(product.id,'ADJUST',stockDelta,'PRODUCT_EDIT','تعديل كمية المخزون من صفحة تعديل المنتج');
           const existingDecant=state.products.find(p=>String(p.parentId||'')===String(product.id)&&p.category==='تقسيم'&&!p.archived);
@@ -7087,7 +7087,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
             logAudit('DECANT_SKU_ARCHIVED','إيقاف التقسيم للمنتج '+name+' مع الاحتفاظ بسجل الصنف');
           }
           logAudit('PRODUCT_UPDATED','تعديل بيانات المنتج '+name);
-          if(!saveState()){Object.assign(product,before);state.inventoryMovements=movementsBefore;refreshAllViews();throw new Error('تعذر حفظ تعديل المنتج.');}
+          if(!saveState()){state.products=productsBefore;state.inventoryMovements=movementsBefore;refreshAllViews();throw new Error('تعذر حفظ تعديل المنتج.');}
           await valDurableWritePromise;try{await valIdbFlush();}catch(_){}
           refreshAllViews();return {ok:true,product:structuredClone(product),snapshot:snapshot()};
         },
