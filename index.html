@@ -1665,7 +1665,7 @@
         const avail = getAvail(p);
         const isLow = avail <= Number(p.minimumStock || 0);
         const fillPct = avail > 0 ? Math.min(90, Math.max(15, Math.round((avail / Math.max(1, (p.minimumStock || 2) * 3)) * 100))) : 8;
-        const visualMark = `<div class="inventory-level-icon" role="img" aria-label="مستوى المخزون ${fillPct}%" style="--level:${fillPct}%">${p.image ? `<img src="${p.image}" alt="" />` : ''}<div class="inventory-level-fill"></div><span class="bidi-ltr">${fillPct}%</span></div>`
+        const visualMark = `${p.image ? `<img src="${p.image}" alt="${p.name}" class="w-11 h-11 rounded-xl object-cover border border-white/15 shrink-0" />` : ''}<div class="inventory-level-icon" role="img" aria-label="مستوى المخزون ${fillPct}%" style="--level:${fillPct}%"><div class="inventory-level-fill"></div><span class="bidi-ltr">${fillPct}%</span></div>`
 
         return `
           <div class="glass-card rounded-2xl p-3.5 space-y-2.5 ${isLow ? 'border-amber-400/40' : ''}">
@@ -2095,6 +2095,11 @@
         node.style.setProperty('color', '#e2e8f0', 'important');
         node.style.setProperty('display', 'inline-block', 'important');
       });
+      captureNode.querySelectorAll('.line-through').forEach(node => {
+        node.style.setProperty('text-decoration', 'line-through solid #94a3b8', 'important');
+        node.style.setProperty('text-decoration-line', 'line-through', 'important');
+        node.style.setProperty('text-decoration-thickness', '1px', 'important');
+      });
       captureNode.style.width = width + 'px'; captureNode.style.maxWidth = 'none';
       captureNode.style.height = 'auto'; captureNode.style.minHeight = '0';
       captureNode.style.margin = '0'; captureNode.style.transform = 'none';
@@ -2129,8 +2134,13 @@
     }
 
     function previewImageFileName() {
-      const id = String(activePreviewShareContext && activePreviewShareContext.id || 'preview').replace(/[^a-z0-9_-]/gi, '_').slice(0,70);
-      return 'VALERIAN-' + (id || 'preview') + '.png';
+      const context = activePreviewShareContext || {};
+      const body = document.getElementById('previewSheetBody');
+      const content = body ? body.innerText : '';
+      const signature = Array.from(content).reduce((hash, ch) => ((hash * 31) + ch.charCodeAt(0)) >>> 0, 2166136261).toString(36);
+      const stamp = Date.now().toString(36);
+      const id = String(context.kind || 'preview').replace(/[^a-z0-9_-]/gi, '_').slice(0,24);
+      return 'VALERIAN-' + id + '-' + signature + '-' + stamp + '.png';
     }
 
     async function downloadPreviewImage() {
@@ -2212,7 +2222,7 @@
           </div>
           <div class="text-left">
             <strong class="text-sky-200 font-black bidi-ltr block">${fmtEgp(p.offerPrice)}</strong>
-            <span class="text-[10px] text-slate-400 line-through bidi-ltr">${fmtEgp(p.price)}</span>
+            <span class="text-[10px] text-slate-400 line-through bidi-ltr" style="text-decoration-line:line-through!important;text-decoration-style:solid!important;text-decoration-color:#94a3b8!important;text-decoration-thickness:1px!important">${fmtEgp(p.price)}</span>
           </div>
         </div>
       `).join('');
@@ -2221,7 +2231,7 @@
     async function openOffersPosterPreview() {
       const offers = appState.products.filter(p => p.isOffer);
       if (!offers.length) return showToast('لا توجد عروض مفعلة لتوليد البوستر');
-      activePreviewShareContext = {kind:'offers',id:'offers-'+new Date().toISOString().slice(0,10),name:'عروض VALERIAN'};
+      activePreviewShareContext = {kind:'offers',id:'offers-'+offers.map(p=>[p.id,p.offerPrice,p.price,p.name].join(':')).join('|'),name:'عروض VALERIAN'};
       document.getElementById('previewSheetTitle').textContent = 'بوستر عروض VALERIAN الحصرية';
       document.getElementById('previewSheetBody').innerHTML = `
         <div class="loyalty-platinum-card rounded-3xl p-5 space-y-4">
