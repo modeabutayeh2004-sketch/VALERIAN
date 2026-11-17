@@ -102,3 +102,74 @@ grant execute on function public.valerian_sync_pull(bigint, integer) to authenti
 
 comment on table public.valerian_sync_changes is
   'Append-only per-user incremental sync journal. Existing valerian_state snapshots remain intact.';
+
+-- Stable bootstrap point: every device starts from the same immutable legacy snapshot
+-- and replays only journal entries created after the migration baseline.
+create table if not exists public.valerian_sync_baselines (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  base_state jsonb,
+  base_cursor bigint not null default 0,
+  created_at timestamptz not null default now()
+);
+alter table public.valerian_sync_baselines enable row level security;
+revoke all on public.valerian_sync_baselines from anon, authenticated;
+
+create or replace function public.valerian_sync_bootstrap()
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_state jsonb;
+  v_cursor bigint;
+  v_revision bigint := 0;
+  v_updated_at timestamptz;
+begin
+  if v_user is null then
+    raise exception 'Authentication required' using errcode = '42501';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtextextended(v_user::text, 731942));
+
+  select base_state, base_cursor
+    into v_state, v_cursor
+  from public.valerian_sync_baselines
+  where user_id = v_user;
+
+  if not found then
+    select state, revision, updated_at
+      into v_state, v_revision, v_updated_at
+    from public.valerian_state
+    where user_id = v_user;
+
+    select coalesce(max(seq), 0) into v_cursor
+    from public.valerian_sync_changes
+    where user_id = v_user;
+
+    insert into public.valerian_sync_baselines(user_id, base_state, base_cursor)
+    values (v_user, v_state, v_cursor)
+    on conflict (user_id) do nothing;
+
+    select base_state, base_cursor
+      into v_state, v_cursor
+    from public.valerian_sync_baselines
+    where user_id = v_user;
+  else
+    select revision, updated_at into v_revision, v_updated_at
+    from public.valerian_state where user_id = v_user;
+  end if;
+
+  return jsonb_build_object(
+    'ok', true,
+    'state', v_state,
+    'cursor', coalesce(v_cursor, 0),
+    'revision', coalesce(v_revision, 0),
+    'updated_at', v_updated_at
+  );
+end;
+$$;
+
+revoke all on function public.valerian_sync_bootstrap() from public, anon;
+grant execute on function public.valerian_sync_bootstrap() to authenticated;
