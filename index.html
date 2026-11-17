@@ -2037,7 +2037,7 @@
         itemsSummary:inv.itemsSummary||((inv.items||[]).map(x=>x.productName+' ('+x.qty+')').join('، ')||'فاتورة استيراد')
       }));
       return {
-        ...defaultEmptySchema,
+        ...defaultSchema(),
         ...raw,
         products,
         imports,
