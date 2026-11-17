@@ -6820,13 +6820,15 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       };
       const savedRefresh=refreshAllViews;
       refreshAllViews=function(...args){
-        const result=savedRefresh.apply(this,args);
+        // The original ERP document is now a hidden data engine behind V5.
+        // Do not repaint its legacy POS/catalog/reports DOM after each transaction.
+        // The visible V5 chassis receives the state event and updates its active screen.
         setTimeout(()=>emit('valerian:state-changed',{source:'refresh'}),0);
-        return result;
+        return undefined;
       };
       const findOrder=id=>state.orders.findIndex(o=>String(o.id)===String(id));
       window.ValerianEngine=Object.freeze({
-        version:'19.65',
+        version:'19.66',
         ready,
         getSnapshot:snapshot,
         subscribe:callback=>{
@@ -6867,9 +6869,18 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           return {...result,status:window.ValerianEngine.cloudStatus()};
         },
         syncCloud:async()=>{
-          await cloudSyncNow(true);
+          await ready;
+          try{await valDurableWritePromise;await valIdbFlush();}catch(_){}
+          const deadline=Date.now()+20000;
+          for(let attempt=0;attempt<3&&Date.now()<deadline;attempt++){
+            while(cloudSaveInFlight&&Date.now()<deadline) await new Promise(resolve=>setTimeout(resolve,100));
+            if(!cloudDirty||cloudConflict||!cloudReady||!navigator.onLine) break;
+            clearTimeout(cloudSaveTimer);
+            await cloudSyncNow(true);
+          }
+          while(cloudSaveInFlight&&Date.now()<deadline) await new Promise(resolve=>setTimeout(resolve,100));
           const status=window.ValerianEngine.cloudStatus();
-          return {ok:status.connected&&!status.dirty&&!status.conflict,status};
+          return {ok:status.connected&&!status.dirty&&!status.conflict,durableSaved:!valDurableWriteError,status};
         },
         createOrder:async payload=>{
           await ready;
@@ -6912,7 +6923,10 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           if(openingQty>0)addInventoryMovement(id,'OPENING_BALANCE',openingQty,'OPEN-'+Date.now(),'رصيد افتتاحي مسجل من واجهة VALERIAN V5');
           logAudit('PRODUCT_CREATED','إضافة المنتج '+name+' من واجهة VALERIAN V5'+(openingQty?' برصيد افتتاحي '+openingQty:''));
           if(!saveState()){state=before;refreshAllViews();throw new Error(window.__valerianLastSaveError?.message||'تعذر حفظ المنتج.');}
-          refreshAllViews();return {ok:true,product:structuredClone(product),snapshot:snapshot()};
+          await valDurableWritePromise;
+          try{await valIdbFlush();}catch(_){}
+          refreshAllViews();
+          return {ok:true,product:structuredClone(product),durableSaved:!valDurableWriteError,localSaveError:valDurableWriteError?String(valDurableWriteError.message||valDurableWriteError):'',snapshot:snapshot()};
         },
         adjustStock:async payload=>{
           await ready;
