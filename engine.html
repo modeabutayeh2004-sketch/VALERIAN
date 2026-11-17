@@ -6711,6 +6711,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         if(!applied)throw new Error('تعذر تطبيق نقطة البداية السحابية.');
       }
       await valSyncWriteCursor(Number(data.cursor||0));
+      cloudRevision=Number(data.revision||0);
       cloudIncrementalBase=structuredClone(state);
       cloudIncrementalReady=true;
       if(!base){
