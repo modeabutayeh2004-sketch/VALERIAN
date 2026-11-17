@@ -6115,23 +6115,24 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const idx=Number(document.getElementById('customerProfileIndex').value);
       const form=document.querySelector('#customerProfileModal form');
       if(!form||!form.reportValidity()) return;
-      saveCustomerProfile({preventDefault(){}});
-      setTimeout(()=>{if(document.getElementById('customerProfileModal')?.classList.contains('hidden')&&state.customers?.[idx])printCustomerFullProfile(idx);},220);
+      const saved=saveCustomerProfile({preventDefault(){}});
+      if(saved!==true) return;
+      printCustomerFullProfile(idx);
     }
     function saveCustomerProfile(e){
-      e.preventDefault(); const idx=Number(document.getElementById('customerProfileIndex').value),c=state.customers[idx]; if(!c)return;
+      e.preventDefault(); const idx=Number(document.getElementById('customerProfileIndex').value),c=state.customers[idx]; if(!c)return false;
       const name=document.getElementById('customerProfileName').value.trim(),oldPhone=String(c.phone||''),phone=document.getElementById('customerProfilePhone').value.trim().replace(/[\s()-]/g,'');
-      if(!name||!phone||!/^[0-9+]{6,20}$/.test(phone)){showToast('أدخل اسمًا ورقم هاتف صحيحًا.','error');return;}
+      if(!name||!phone||!/^[0-9+]{6,20}$/.test(phone)){showToast('أدخل اسمًا ورقم هاتف صحيحًا.','error');return false;}
       if(state.customers.some((x,i)=>i!==idx&&String(x.phone||'').replace(/[\s()-]/g,'')===phone)){showToast('رقم الهاتف مستخدم لدى عميل آخر.','error');return;}
       const before=structuredClone(state);
-      if(phone!==oldPhone){if(!confirm('سيتم ربط الطلبات والمعاملات التاريخية برقم الهاتف الجديد. هل تريد المتابعة؟'))return;
+      if(phone!==oldPhone){if(!confirm('سيتم ربط الطلبات والمعاملات التاريخية برقم الهاتف الجديد. هل تريد المتابعة؟'))return false;
         (state.orders||[]).forEach(o=>{if(String(o.phone||'')===oldPhone)o.phone=phone;});
         ['paymentTransactions','refundTransactions','returnRecords'].forEach(k=>(state[k]||[]).forEach(t=>{if(String(t.customerPhone||'')===oldPhone)t.customerPhone=phone;}));
       }
       Object.assign(c,{name,phone,address:document.getElementById('customerProfileAddress').value.trim(),fragrancePreferences:document.getElementById('customerProfilePreferences').value.trim(),favoriteNotes:document.getElementById('customerProfileFavoriteNotes').value.trim(),avoidNotes:document.getElementById('customerProfileAvoidNotes').value.trim(),usageOccasions:document.getElementById('customerProfileOccasions').value.trim(),profileNotes:document.getElementById('customerProfileNotes').value.trim(),profileUpdatedAt:new Date().toISOString()});
       logAudit('CUSTOMER_PROFILE_UPDATED','تحديث ملف وتفضيلات العميل '+name+' ('+phone+')');
-      if(!saveState()){state=before;refreshAllViews();return;}
-      closeModal('customerProfileModal');refreshAllViews();showToast('تم حفظ ملف العميل وتفضيلاته.','success');
+      if(!saveState()){state=before;refreshAllViews();return false;}
+      closeModal('customerProfileModal');refreshAllViews();showToast('تم حفظ ملف العميل وتفضيلاته.','success');return true;
     }
     function setInventoryPane(key){
       document.querySelectorAll('#tab-inventory .inventory-pane').forEach(el=>el.classList.toggle('hidden',el.id!=='inventoryPane-'+key));
