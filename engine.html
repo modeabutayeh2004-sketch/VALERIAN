@@ -7002,11 +7002,13 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           const before=(state.supplierPayments||[]).length;confirmSupplierPayment();
           return {ok:(state.supplierPayments||[]).length>before,snapshot:snapshot()};
         },
-        deliverOrder:async orderId=>{
+        deliverOrder:async payload=>{
           await ready;
+          const orderId=typeof payload==='object'?payload.orderId:payload;
+          const method=normalizePaymentMethod(typeof payload==='object'?payload.method:'نقدي');
           const idx=findOrder(orderId);if(idx<0)throw new Error('الطلب غير موجود.');
           if(state.orders[idx].stockDeducted)return {ok:false,error:'الطلب مسجل بالفعل كطلب تم تسليمه.',snapshot:snapshot()};
-          pendingDeliveryOrderIndex=idx;el('deliveryConfirmMethod').value='نقدي';
+          pendingDeliveryOrderIndex=idx;el('deliveryConfirmMethod').value=method;
           const before=JSON.stringify(state.orders[idx]);confirmCollectAndDeliver();
           return {ok:JSON.stringify(state.orders[idx])!==before&&!!state.orders[idx].stockDeducted,snapshot:snapshot()};
         },
