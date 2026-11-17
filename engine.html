@@ -6616,6 +6616,148 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     let cloudSaveInFlight = false, cloudPollInFlight = false, cloudRetryTimer = null, cloudRetryDelay = 3000;
     const hadLocalValerianState = !!localStorage.getItem(STORAGE_KEY);
 
+    // V20 incremental journal client. Legacy snapshot sync remains available until
+    // the additive Supabase migration has been installed and bootstrap succeeds.
+    let cloudIncrementalReady=false, cloudIncrementalBase=null, cloudIncrementalQueue=Promise.resolve();
+    const VAL_SYNC_OUTBOX_KEY='val_sync_outbox_v1', VAL_SYNC_CURSOR_KEY='val_sync_cursor_v1';
+    const VAL_SYNC_ID_ARRAYS=new Set([
+      'products','imports','purchases','supplierInvoices','supplierPayments','customers','orders',
+      'expenses','inventoryMovements','packagingPurchases','packagingMovements','operatingSupplies',
+      'operatingSupplyInvoices','operatingSupplyMovements','paymentTransactions','cashbookAdjustments',
+      'cashbookOpenings','cashbookTransfers','refundTransactions','returnRecords','shipments',
+      'auditLog','offers','stockTransfers'
+    ]);
+    function valSyncJson(value){try{return JSON.stringify(value===undefined?null:value);}catch(_){return '';}}
+    function valSyncClone(value){return value===undefined?null:structuredClone(value);}
+    function valSyncNewId(){return (crypto?.randomUUID?.()||('xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&3|8)).toString(16);}))).toLowerCase();}
+    function valSyncBuildPatch(before,after){
+      const ops=[],keys=new Set([...Object.keys(before||{}),...Object.keys(after||{})]);
+      for(const key of keys){
+        const a=before?.[key],b=after?.[key];
+        if(valSyncJson(a)===valSyncJson(b))continue;
+        if(Array.isArray(a)&&Array.isArray(b)&&VAL_SYNC_ID_ARRAYS.has(key)&&a.every(x=>x&&x.id!=null)&&b.every(x=>x&&x.id!=null)){
+          const oldMap=new Map(a.map(x=>[String(x.id),x])),newMap=new Map(b.map(x=>[String(x.id),x]));
+          for(const [id,item] of newMap)if(!oldMap.has(id)||valSyncJson(oldMap.get(id))!==valSyncJson(item))ops.push({op:'upsert',key,id,value:valSyncClone(item)});
+          for(const id of oldMap.keys())if(!newMap.has(id))ops.push({op:'delete',key,id});
+        }else if(key==='settings'&&a&&b&&typeof a==='object'&&typeof b==='object'&&!Array.isArray(a)&&!Array.isArray(b)){
+          const subkeys=new Set([...Object.keys(a),...Object.keys(b)]);
+          for(const sub of subkeys)if(valSyncJson(a[sub])!==valSyncJson(b[sub]))ops.push({op:'set',key:'settings.'+sub,value:valSyncClone(b[sub])});
+        }else ops.push({op:'set',key,value:valSyncClone(b)});
+      }
+      return ops.length?{version:1,ops}:null;
+    }
+    function valSyncApplyPatch(source,patch){
+      const next=structuredClone(source||{});
+      if(!patch||patch.version!==1||!Array.isArray(patch.ops))throw new Error('صيغة تغيير سحابي غير معروفة.');
+      for(const item of patch.ops){
+        if(item.op==='set'){
+          if(String(item.key).startsWith('settings.')){const sub=String(item.key).slice(9);next.settings=next.settings||{};if(item.value===null)delete next.settings[sub];else next.settings[sub]=valSyncClone(item.value);}
+          else if(item.value===null)delete next[item.key];else next[item.key]=valSyncClone(item.value);
+        }else if(item.op==='upsert'){
+          if(!Array.isArray(next[item.key]))next[item.key]=[];
+          const idx=next[item.key].findIndex(x=>String(x?.id)===String(item.id));
+          if(idx<0)next[item.key].push(valSyncClone(item.value));else next[item.key][idx]=valSyncClone(item.value);
+        }else if(item.op==='delete'){
+          if(Array.isArray(next[item.key]))next[item.key]=next[item.key].filter(x=>String(x?.id)!==String(item.id));
+        }else throw new Error('عملية تغيير سحابي غير مدعومة.');
+      }
+      return next;
+    }
+    async function valSyncReadOutbox(){
+      const row=await valIdbGet('appstate',VAL_SYNC_OUTBOX_KEY);
+      return Array.isArray(row?.items)?row.items:[];
+    }
+    async function valSyncWriteOutbox(items){
+      await valIdbTx('appstate','readwrite',os=>os.put({items,updatedAt:Date.now()},VAL_SYNC_OUTBOX_KEY));
+    }
+    async function valSyncReadCursor(){
+      const row=await valIdbGet('appstate',VAL_SYNC_CURSOR_KEY);
+      return Math.max(0,Number(row?.cursor||0));
+    }
+    async function valSyncWriteCursor(cursor){
+      await valIdbTx('appstate','readwrite',os=>os.put({cursor:Number(cursor)||0,updatedAt:Date.now()},VAL_SYNC_CURSOR_KEY));
+    }
+    function valCaptureIncrementalChanges(){
+      if(!cloudIncrementalReady||cloudApplyingRemote||!cloudIncrementalBase)return;
+      const current=structuredClone(state),patch=valSyncBuildPatch(cloudIncrementalBase,current);
+      if(!patch)return;
+      cloudIncrementalBase=current;
+      cloudIncrementalQueue=cloudIncrementalQueue.then(async()=>{
+        const items=await valSyncReadOutbox();
+        items.push({change_id:valSyncNewId(),patch,created_at:new Date().toISOString()});
+        await valSyncWriteOutbox(items);
+        cloudDirty=true;
+        setCloudStatus('تغييرات جزئية محفوظة محلياً — بانتظار رفعها','#a16207');
+      }).catch(err=>{
+        cloudDirty=true;cloudIncrementalReady=false;
+        setCloudStatus('تعذر حفظ طابور المزامنة الجزئية محلياً: '+cloudErrorMessage(err),'#b91c1c');
+        console.error('VALERIAN incremental outbox failed',err);
+      });
+    }
+    async function valIncrementalBootstrap(){
+      const {data,error}=await cloudClient.rpc('valerian_sync_bootstrap');
+      if(error)throw error;
+      if(!data?.ok)throw new Error('تعذر تثبيت نقطة بداية المزامنة الجزئية.');
+      const base= data.state ? normalizeState(data.state) : null;
+      if(base){
+        const hydrated=await valHydrateImageState(base,{storeIncoming:true,strict:false});
+        const applied=await applyCloudState(hydrated);
+        if(!applied)throw new Error('تعذر تطبيق نقطة البداية السحابية.');
+      }
+      await valSyncWriteCursor(Number(data.cursor||0));
+      cloudIncrementalBase=structuredClone(state);
+      cloudIncrementalReady=true;
+      if(!base){
+        const seed={version:1,ops:Object.keys(state).map(key=>({op:'set',key,value:valSyncClone(state[key])}))};
+        const items=await valSyncReadOutbox();
+        if(!items.length){items.push({change_id:valSyncNewId(),patch:seed,created_at:new Date().toISOString()});await valSyncWriteOutbox(items);}
+      }
+      return true;
+    }
+    async function valIncrementalPush(){
+      await cloudIncrementalQueue;
+      let items=await valSyncReadOutbox();
+      while(items.length){
+        const batch=items.slice(0,100);
+        const {data,error}=await cloudClient.rpc('valerian_sync_push',{p_changes:batch});
+        if(error)throw error;
+        if(!data?.ok)throw new Error('رفضت السحابة تسجيل دفعة التغييرات.');
+        const ids=new Set(batch.map(x=>x.change_id));
+        items=items.filter(x=>!ids.has(x.change_id));
+        await valSyncWriteOutbox(items);
+      }
+    }
+    async function valIncrementalPull(){
+      let cursor=await valSyncReadCursor(),rounds=0;
+      while(rounds++<10){
+        const {data,error}=await cloudClient.rpc('valerian_sync_pull',{p_after_seq:cursor,p_limit:200});
+        if(error)throw error;
+        if(!data?.ok||!Array.isArray(data.changes))throw new Error('تعذر قراءة سجل التغييرات السحابي.');
+        if(!data.changes.length)break;
+        let next=structuredClone(state);
+        for(const row of data.changes)next=valSyncApplyPatch(next,row.patch);
+        cloudApplyingRemote=true;
+        try{
+          state=normalizeState(next);
+          persistLocal(state);
+          await valQueueDurableState(state);await valDurableWritePromise;await valIdbFlush();
+          refreshAllViews();
+          cursor=Number(data.cursor||cursor);
+          await valSyncWriteCursor(cursor);
+          cloudIncrementalBase=structuredClone(state);
+        }finally{cloudApplyingRemote=false;}
+        if(data.changes.length<200)break;
+      }
+    }
+    async function valIncrementalSync(){
+      if(!cloudIncrementalReady)throw new Error('المزامنة الجزئية لم تُهيأ بعد.');
+      await valIncrementalPush();
+      // Do not pull over newer local edits. They are queued and pushed first.
+      if(!(await valSyncReadOutbox()).length){
+        await valIncrementalPull();
+      }
+    }
+
     function setCloudStatus(label, color) {
       const el = document.getElementById('cloudStatusPill');
       if (el) { el.textContent = label; el.style.background = color || '#0f172a'; }
