@@ -95,20 +95,35 @@
       box-shadow: 0 20px 45px rgba(0, 0, 0, 0.65);
     }
 
-    /* Subtle Perfume Essence Level Wave */
-    .bottle-card { position: relative; overflow: hidden; }
+    /* VALERIAN Liquid Metrics — recognizable bottle silhouette with a live liquid level */
+    .bottle-card { position: relative; overflow: hidden; isolation: isolate; }
+    .bottle-card::before {
+      content: ""; position: absolute; z-index: 0; left: 12px; bottom: 8px;
+      width: 44px; height: 76%; opacity: .82; pointer-events: none;
+      background: center / 100% 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 120'%3E%3Cpath d='M24 3h16v17l8 9v79q0 8-8 8H24q-8 0-8-8V29l8-9z' fill='%23cbd5e1' fill-opacity='.035' stroke='%23dbeafe' stroke-opacity='.72' stroke-width='2.2'/%3E%3Cpath d='M24 11h16M18 34h28' stroke='%23e2e8f0' stroke-opacity='.42' stroke-width='1.5'/%3E%3C/svg%3E");
+      filter: drop-shadow(0 0 7px rgba(125,211,252,.16));
+    }
     .water-fill {
-      position: absolute; bottom: 0; left: 0; right: 0;
-      background: linear-gradient(180deg, rgba(186, 230, 253, 0.14) 0%, rgba(56, 189, 248, 0.32) 100%);
-      border-top: 1px solid rgba(186, 230, 253, 0.42);
-      transition: height 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+      position: absolute; z-index: 1; left: 20px; right: auto; bottom: 13px;
+      width: 28px; height: 66%; border: 0; border-radius: 0;
+      clip-path: polygon(24% 0,76% 0,76% 15%,94% 25%,94% 100%,6% 100%,6% 25%,24% 15%);
+      background: linear-gradient(to top, rgba(14,165,233,.58) 0%, rgba(56,189,248,.40) var(--level, 8%), rgba(56,189,248,.025) var(--level, 8%), rgba(56,189,248,.025) 100%);
+      transition: background 1.15s cubic-bezier(.22,1,.36,1);
       pointer-events: none;
-      animation: waveBreathe 5s ease-in-out infinite alternate;
+      filter: drop-shadow(0 0 5px rgba(56,189,248,.22));
     }
-    @keyframes waveBreathe {
-      0% { transform: translateY(0px) scaleY(1); }
-      100% { transform: translateY(-2.5px) scaleY(1.02); }
+    .water-fill::after {
+      content: ""; position: absolute; left: 0; right: 0; top: calc(100% - var(--level, 8%));
+      height: 3px; background: rgba(186,230,253,.8); border-radius: 50%;
+      box-shadow: 0 0 8px rgba(125,211,252,.45);
     }
+    #heroWaterFill { left: 26px; width: 42px; height: 78%; bottom: 10px; }
+    .bottle-content { position: relative; z-index: 2; }
+    @media (prefers-reduced-motion: no-preference) {
+      .water-fill { animation: liquidShimmer 4.5s ease-in-out infinite alternate; }
+      @keyframes liquidShimmer { from { filter: drop-shadow(0 0 3px rgba(56,189,248,.16)); } to { filter: drop-shadow(0 0 9px rgba(56,189,248,.38)); } }
+    }
+    @media (prefers-reduced-motion: reduce) { .water-fill { transition: none; animation: none; } }
 
     /* Bottom Sheet & Modal Transitions */
     .sheet-backdrop {
@@ -1021,10 +1036,10 @@
       const decFill = decStock > 0 ? Math.min(85, Math.max(18, Math.round((decStock / 50) * 100))) : 8;
       const resFill = pendingCount > 0 ? Math.min(82, Math.max(18, Math.round((pendingCount / 10) * 100))) : 8;
 
-      if (document.getElementById('heroWaterFill')) document.getElementById('heroWaterFill').style.height = `${salesFill}%`;
-      if (document.getElementById('kpiWaterOrig')) document.getElementById('kpiWaterOrig').style.height = `${origFill}%`;
-      if (document.getElementById('kpiWaterDec')) document.getElementById('kpiWaterDec').style.height = `${decFill}%`;
-      if (document.getElementById('kpiWaterRes')) document.getElementById('kpiWaterRes').style.height = `${resFill}%`;
+      if (document.getElementById('heroWaterFill')) document.getElementById('heroWaterFill').style.setProperty('--level', `${salesFill}%`);
+      if (document.getElementById('kpiWaterOrig')) document.getElementById('kpiWaterOrig').style.setProperty('--level', `${origFill}%`);
+      if (document.getElementById('kpiWaterDec')) document.getElementById('kpiWaterDec').style.setProperty('--level', `${decFill}%`);
+      if (document.getElementById('kpiWaterRes')) document.getElementById('kpiWaterRes').style.setProperty('--level', `${resFill}%`);
     }
 
     function renderHome() {
