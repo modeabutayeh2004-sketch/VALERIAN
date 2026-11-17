@@ -322,8 +322,7 @@
           <path class="continuous-line" d="M 178,52 C 268,54 316,96 364,174 L 395,222 L 372,256 L 315,170 C 276,112 238,76 178,52 L 162,72 C 232,96 276,144 328,224 L 389,316 L 368,348 L 162,72 C 245,175 315,270 376,368 L 400,404 L 424,368 L 400,334 L 376,368 C 386,352 398,334 411,316 L 472,224 C 524,144 568,96 638,72 L 432,348 L 411,316 C 465,245 545,145 622,52 C 532,54 484,96 436,174 L 378,264 L 400,298 L 485,170 C 524,112 562,76 622,52 C 440,145 215,310 112,438 L 138,492 L 164,438 C 182,438 195,465 184,492 L 210,438 L 234,492 M 192,474 L 225,474 C 242,474 252,455 256,438 L 256,492 L 296,492 C 312,492 318,465 322,438 L 362,438 M 322,465 L 354,465 M 322,492 L 364,492 C 382,492 388,465 390,438 L 390,492 M 390,438 C 424,438 426,466 394,466 L 432,492 C 445,492 454,465 456,438 L 456,492 C 472,492 486,465 504,438 L 530,492 M 488,474 L 521,474 C 538,474 548,455 554,438 L 554,492 L 604,438 L 604,492 C 565,522 285,532 184,544 L 618,544"/>
         </svg>
       </div>
-      <button class="splash-enter-btn" onclick="dismissSplash()">دخول النظام ⚡</button>
-    </div>
+</div>
   </div>
 
   <div class="ambient-silk-bg"></div>
@@ -2132,7 +2131,20 @@
       if(!company)return showToast('اختر شركة الشحن أولاً.');
       try{const r=await runEngine('updateOrderShippingDetails',{orderId,company,tracking});if(r?.ok){document.getElementById('mobileShippingEditor')?.remove();renderMoreTracking();showToast('تم حفظ شركة الشحن ورقم التتبع.');}}catch(err){reportError(err);}
     };
-    function mobileBrandHeader(){try{if(!engine&&frame?.contentWindow?.ValerianEngine)engine=frame.contentWindow.ValerianEngine;return engine?.getBrandHeaderHtml?.()||'<div style="text-align:center;font:900 20px Georgia,serif;letter-spacing:3px;color:#172033;padding:8px 0 14px;border-bottom:2px solid #64748b">VALERIAN</div>';}catch(_){return '<div style="text-align:center;font:900 20px Georgia,serif;letter-spacing:3px;color:#172033;padding:8px 0 14px;border-bottom:2px solid #64748b">VALERIAN</div>';}}
+    function mobileBrandHeader(){
+      const fallback='<div dir="ltr" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:2px 0 12px;border-bottom:1px solid rgba(203,213,225,.32);color:#e2e8f0;font-family:Arial,sans-serif"><span style="font-size:22px;font-weight:900;letter-spacing:3px;color:#e2e8f0">VALERIAN</span></div>';
+      try{
+        if(!engine&&frame?.contentWindow?.ValerianEngine)engine=frame.contentWindow.ValerianEngine;
+        let html=engine?.getBrandHeaderHtml?.();
+        if(!html)return fallback;
+        html=html.replace('background:#fff;color:#172033','background:transparent;color:#e2e8f0')
+          .replace('border-bottom:1px solid #cbd5e1','border-bottom:1px solid rgba(203,213,225,.32)')
+          .replace('color:#172033;">VALERIAN','color:#e2e8f0;">VALERIAN')
+          .replace('color:#64748b;margin-top','color:#aebdce;margin-top')
+          .replace('object-fit:contain!important;flex:0 0','object-fit:contain!important;filter:grayscale(1) brightness(0) invert(1)!important;flex:0 0');
+        return html;
+      }catch(_){return fallback;}
+    }
     window.printMobileWaybill=function(orderId){
       const o=appState.orders.find(x=>String(x.id)===String(orderId));if(!o)return showToast('الطلب غير موجود.');
       const rows=(o.items||[]).map(x=>'<tr><td>'+escapeHtmlMobile(x.name||x.productName||'منتج')+'</td><td>'+escapeHtmlMobile(x.size||'')+'</td><td>'+Number(x.qty||0)+'</td></tr>').join('');
@@ -2642,6 +2654,8 @@
     document.addEventListener('visibilitychange', onSplashVisibilityChange);
     initSplashParticles();
     splashAnimationFrame = requestAnimationFrame(animateSplashParticles);
+    // Play the complete brand intro, then enter the application automatically.
+    window.setTimeout(dismissSplash, 4300);
 
     renderAllViews();
   </script>
@@ -3268,7 +3282,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
     };
 
     if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
-      window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=valerian-41',{scope:'./',updateViaCache:'none'}).catch(err=>console.warn('VALERIAN V20 offline registration failed',err)));
+      window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=valerian-42',{scope:'./',updateViaCache:'none'}).catch(err=>console.warn('VALERIAN V20 offline registration failed',err)));
     }
     frame.addEventListener('load',()=>connectEngine().catch(reportError));
     if(frame.contentWindow?.ValerianEngine)connectEngine().catch(reportError);
