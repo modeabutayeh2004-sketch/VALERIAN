@@ -1,6 +1,6 @@
 /* VALERIAN V20.7 — offline application shell */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-24-shipping-company-ready-fix';
+const CACHE_NAME = 'valerian-app-shell-v20-25-shipping-runtime-diagnostics';
 const APP_SHELL = ['./', './index.html', './engine.html?v=20261117-shipping-company-ready-fix-2', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
