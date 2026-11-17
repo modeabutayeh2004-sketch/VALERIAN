@@ -581,6 +581,7 @@
         </div>
 
         <div id="more-reports" class="more-view hidden space-y-4">
+          <button onclick="openMobileReportsPreview()" class="w-full py-3 rounded-full silver-btn text-xs font-black">معاينة التقرير وطباعته / تنزيله</button>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5">
             <div class="glass-card rounded-2xl p-3.5">
               <span class="text-[10px] text-slate-400">مبيعات مسلّمة</span>
@@ -2615,6 +2616,33 @@
         const r=await runEngine('updateProduct',{id,name,price:Number(price),minimumStock:Number(minimumStock),notes,isOffer,offerPrice});
         if(r.ok)showToast('تم تحديث بيانات المنتج وحفظها في محرك الأعمال.');
       }catch(err){reportError(err);}
+    };
+    window.openMobileReportsPreview=function(){
+      const delivered=appState.orders.filter(o=>o.stockDeducted||String(o.status||'').includes('تم التسليم'));
+      const sales=delivered.reduce((sum,o)=>sum+Math.max(0,Number(o.grandTotal||0)-Number(o.returnedValue||0)),0);
+      const deposits=appState.orders.filter(o=>!o.stockDeducted&&!String(o.status||'').includes('مرتجع')).reduce((sum,o)=>sum+Number(o.depositAmount||0),0);
+      const expenses=appState.expenses.reduce((sum,x)=>sum+Number(x.amount||0),0);
+      const cogs=delivered.reduce((sum,o)=>sum+(o.items||[]).reduce((lineSum,item)=>{
+        const qty=Math.max(0,Number(item.qty||0)-Number(item.returnedQty||0));
+        const unitCost=Number(item.unitCostAtSale??appState.products.find(p=>p.id===item.id)?.averageCost??0);
+        return lineSum+qty*unitCost;
+      },0),0);
+      const net=sales-cogs-expenses;
+      activePreviewShareContext={kind:'report',id:'report-'+new Date().toISOString().slice(0,10),name:'تقرير VALERIAN'};
+      document.getElementById('previewSheetTitle').textContent='تقرير VALERIAN للأداء';
+      document.getElementById('previewSheetBody').innerHTML=`
+        <div class="loyalty-platinum-card rounded-3xl p-5 space-y-4 text-right">
+          <div class="text-center border-b border-slate-300/20 pb-3"><div class="brand-serif text-xl font-black silver-text">VALERIAN</div><div class="text-xs text-slate-200 mt-1">تقرير أداء النشاط — ${new Date().toLocaleDateString('ar-EG')}</div></div>
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <div class="rounded-xl bg-white/10 p-3"><span class="block text-slate-300">المبيعات المسلّمة</span><strong class="block text-lg text-white bidi-ltr">${fmtEgp(sales)}</strong></div>
+            <div class="rounded-xl bg-white/10 p-3"><span class="block text-slate-300">عربون الحجوزات</span><strong class="block text-lg text-white bidi-ltr">${fmtEgp(deposits)}</strong></div>
+            <div class="rounded-xl bg-white/10 p-3"><span class="block text-slate-300">المصروفات</span><strong class="block text-lg text-white bidi-ltr">${fmtEgp(expenses)}</strong></div>
+            <div class="rounded-xl bg-white/10 p-3"><span class="block text-slate-300">تكلفة البضاعة المباعة</span><strong class="block text-lg text-white bidi-ltr">${fmtEgp(cogs)}</strong></div>
+          </div>
+          <div class="rounded-xl border border-slate-200/30 p-4 text-center"><span class="block text-xs text-slate-300">صافي الربح التقديري</span><strong class="block text-2xl font-black silver-text bidi-ltr">${fmtEgp(net)}</strong></div>
+          <p class="text-[9px] text-slate-300 leading-5">هذا تقرير تشغيلي تقديري وفق البيانات المسجلة في محرك VALERIAN، ولا يشمل أي عمليات غير مسجلة.</p>
+        </div>`;
+      openSheet('previewModalSheet');
     };
     window.saveLoyaltySettings=async function(){
       try{
