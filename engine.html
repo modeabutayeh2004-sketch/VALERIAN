@@ -2518,7 +2518,7 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
   <label style="display:block;font-size:12px;font-weight:800;margin:10px 0 5px">البريد الإلكتروني</label><input id="cloudEmail" type="email" autocomplete="username" style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:11px;direction:ltr" placeholder="you@example.com">
   <label style="display:block;font-size:12px;font-weight:800;margin:10px 0 5px">كلمة المرور</label><input id="cloudPassword" type="password" autocomplete="current-password" style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:11px;direction:ltr" placeholder="••••••••">
   <div style="display:flex;gap:8px;margin-top:14px"><button onclick="cloudSignIn()" style="flex:1;background:#0f172a;color:white;border-radius:10px;padding:11px;font-weight:800">تسجيل الدخول</button><button onclick="cloudSignUp()" style="flex:1;background:#7c3aed;color:white;border-radius:10px;padding:11px;font-weight:800">إنشاء حساب</button></div>
-  <button id="cloudSyncNow" onclick="valManualCloudSync(event)" style="display:none;width:100%;margin-top:10px;background:#059669;color:white;border-radius:10px;padding:11px;font-weight:800">مزامنة الآن</button>
+  <button id="cloudSyncNow" type="button" style="display:none;width:100%;margin-top:10px;background:#059669;color:white;border-radius:10px;padding:11px;font-weight:800">مزامنة الآن</button>
   <button id="cloudLogout" onclick="cloudSignOut()" style="display:none;width:100%;margin-top:8px;background:#fee2e2;color:#991b1b;border-radius:10px;padding:10px;font-weight:800">تسجيل الخروج من هذا الجهاز</button>
   <p id="cloudMessage" role="status" style="font-size:12px;line-height:1.7;margin-top:12px;color:#475569">الحالة: لم يتم الاتصال بعد.</p>
   <details id="cloudDiagnostics" style="margin-top:8px;font-size:11px;color:#475569"><summary style="cursor:pointer;font-weight:800">سجل تشخيص المزامنة</summary><pre id="cloudDiagnosticsLog" dir="rtl" style="white-space:pre-wrap;max-height:150px;overflow:auto;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px;margin-top:6px">لم يتم تنفيذ أي محاولة بعد.</pre></details>
@@ -6750,6 +6750,17 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         if(button){button.disabled=false;button.textContent='مزامنة الآن';}
       }
     }
+
+    // Bind inside the engine's private IIFE: inline HTML handlers cannot see these scoped functions.
+    (function bindCloudSyncButton(){
+      const button=document.getElementById('cloudSyncNow');
+      if(!button)return;
+      button.removeAttribute('onclick');
+      if(button.dataset.valSyncBound==='1')return;
+      button.dataset.valSyncBound='1';
+      button.addEventListener('click',valManualCloudSync);
+      valCloudDiagnostic('تم ربط زر المزامنة بمحرك VALERIAN الداخلي.');
+    })();
 
     async function cloudSyncNow(manual) {
       if(!cloudClient || !cloudUser || !cloudReady || cloudConflict) {
