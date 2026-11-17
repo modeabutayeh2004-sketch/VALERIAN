@@ -2215,6 +2215,21 @@
       openSheet('previewModalSheet');
     };
 
+    // VALERIAN_CUSTOMER_PROFILE_PREVIEW_DELEGATE: route the customer-list action to its in-app preview.
+    document.addEventListener('click', function(event) {
+      const button = event.target && event.target.closest ? event.target.closest('[data-action="customer-profile-preview"]') : null;
+      if (!button) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      const phone = String(button.getAttribute('data-customer-phone') || '');
+      if (typeof window.printMobileCustomerProfile === 'function') {
+        window.printMobileCustomerProfile(phone);
+      } else {
+        showToast('تعذر فتح معاينة ملف العميل. حدّث الصفحة وحاول مرة أخرى.');
+      }
+    }, true);
+
     function openDigitalLoyaltyCard(phone) {
       const c = appState.customers.find(x => x.phone === phone);
       if (!c) return;
