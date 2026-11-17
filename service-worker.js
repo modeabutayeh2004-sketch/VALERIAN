@@ -1,7 +1,7 @@
 /* VALERIAN V20.7 — offline application shell */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-19-shipping-customer-finance-3';
-const APP_SHELL = ['./', './index.html', './engine.html?v=20261117-shipping-customer-finance-3', './manifest.webmanifest', './assets/valerian-icon.jpg'];
+const CACHE_NAME = 'valerian-app-shell-v20-20-premium-modals-shipping-brand-1';
+const APP_SHELL = ['./', './index.html', './engine.html?v=20261117-premium-modals-shipping-brand-1', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
