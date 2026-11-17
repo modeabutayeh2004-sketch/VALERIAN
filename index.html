@@ -1533,7 +1533,6 @@
 
       grid.innerHTML = list.map(p => {
         const avail = getAvail(p);
-        const stockLevelPercent=getProductStockLevelPercent(p);
         const price = p.isOffer && p.offerPrice ? p.offerPrice : p.price;
         const thumbHtml = p.image
           ? `<div class="mt-2 h-24 rounded-2xl overflow-hidden border border-white/10 bg-black/30">
@@ -1973,7 +1972,7 @@
     }
 
     function populateImportSheet() {
-      const origs = appState.products.filter(p => p.category !== 'تقسيم');
+      const origs = appState.products.filter(p => !isDecantCategory(p));
       document.getElementById('impFormProduct').innerHTML = origs.length
         ? origs.map(p => `<option value="${p.id}">${p.name}</option>`).join('')
         : `<option value="">أضف صنفاً أولاً في المخزون</option>`;
@@ -2637,7 +2636,7 @@
         out.innerHTML = top ? `🏆 <strong>أبرز صنف مسجل:</strong> ${top.name} (متاح: ${getAvail(top)}).` : 'لا توجد بيانات كافية.';
       }
       if (topic === 'profit') {
-        const decs = appState.products.filter(p => p.category === 'تقسيم');
+        const decs = appState.products.filter(p => isDecantCategory(p));
         out.innerHTML = `💎 <strong>أصناف التقسيم المسجلة:</strong> ${decs.length} صنف جاهز لتحقيق هوامش ربح مرتفعة.`;
       }
       if (topic === 'restock') {
