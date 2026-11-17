@@ -2610,6 +2610,7 @@
         const badge=document.getElementById('dbStatusBadge');
         if(badge)badge.textContent='متصل بمحرك الأعمال V19';
         renderVisibleScreen();
+        if(typeof populateMobileShippingCompanySelect==='function')populateMobileShippingCompanySelect();
         lastSync=Date.now();
       }catch(err){console.error('VALERIAN V5 sync failed',err);showToast('تعذر تحديث واجهة V5 من محرك البيانات.');}
     }
