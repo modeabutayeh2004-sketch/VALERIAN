@@ -1703,9 +1703,9 @@
                   <strong class="font-black text-sky-300 bidi-ltr">${p.category === 'تقسيم' ? (p.size || '') : (p.decantMlAvailable || 0) + ' ml'}</strong>
                 </div>
               </div>
-              <div class="grid grid-cols-2 gap-2">
+              <div class="grid grid-cols-3 gap-1.5">
                 <button onclick="editMobileProduct('${p.id}')" class="py-2 rounded-xl border border-white/15 bg-white/5 text-slate-100 text-[10px] font-extrabold">تعديل البيانات ✎</button>
-                <button onclick="permanentlyDeleteInventoryProduct('${encodeURIComponent(String(p.id))}')" class="py-2 rounded-xl bg-rose-500/15 border border-rose-300/30 text-rose-200 text-[10px] font-extrabold">🗑 حذف نهائي</button>
+                <button onclick="permanentlyDeleteInventoryProduct('${encodeURIComponent(String(p.id))}')" class="py-2 px-1 rounded-xl bg-rose-500/20 border-2 border-rose-300/50 text-rose-100 text-[10px] font-black">🗑 حذف</button>
                 <button onclick="toggleInventoryProductAvailability('${encodeURIComponent(String(p.id))}')" class="py-2 rounded-xl ${p.disabledForSales === true ? 'bg-emerald-500/15 border border-emerald-300/35 text-emerald-200' : 'bg-amber-500/15 border border-amber-300/35 text-amber-100'} text-[10px] font-extrabold">${p.disabledForSales === true ? '▶ إعادة التفعيل' : '⏸ تعطيل البيع'}</button>
               </div>
             </div>
@@ -2795,21 +2795,14 @@
       const id=decodeURIComponent(String(encodedId||''));
       const product=appState.products.find(p=>String(p.id)===id);
       if(!product)return showToast('المنتج غير موجود في المخزون.');
-      const confirmed=window.confirm('تحذير: حذف نهائي للمنتج «'+product.name+'». لن يمكن استعادته. ستظل الفواتير والحركات التاريخية المسجلة كما هي. هل أنت متأكد؟');
-      if(!confirmed)return;
-      const typed=window.prompt('للتأكيد النهائي اكتب: حذف');
-      if(typed!=='حذف')return showToast('تم إلغاء الحذف النهائي.');
+      if(!window.confirm('تحذير: حذف نهائي للمنتج «'+product.name+'». لن يمكن استعادته. ستظل الفواتير والحركات التاريخية المسجلة كما هي. هل أنت متأكد؟'))return;
+      if(window.prompt('للتأكيد النهائي اكتب كلمة: حذف')!=='حذف')return showToast('تم إلغاء الحذف النهائي.');
       try{
-        const frame=document.getElementById('valerianEngineFrame');
-        const api=frame?.contentWindow?.ValerianEngine;
-        if(!api)throw new Error('محرك البيانات غير متاح الآن. أعد تحميل الصفحة وحاول مجددًا.');
-        await api.ready;
-        if(typeof api.permanentlyDeleteProduct!=='function')throw new Error('نسخة محرك البيانات لا تدعم الحذف النهائي بعد. حدّث الصفحة.');
-        const result=await api.permanentlyDeleteProduct(id);
+        const result=await runEngine('permanentlyDeleteProduct',id);
         if(result?.ok!==true)throw new Error(result?.error||'لم يتم حذف المنتج.');
-        appState=result.snapshot||api.getSnapshot();
-        renderInventoryScreen();
-        showToast('تم حذف المنتج نهائيًا من قائمة المنتجات. تم الاحتفاظ بالسجلات التاريخية.');
+        syncFromEngine(result.snapshot);
+        renderInventoryList('all');
+        showToast('تم حذف المنتج نهائيًا من المخزون مع الاحتفاظ بالسجلات التاريخية.');
       }catch(err){console.error('VALERIAN permanent product deletion failed',err);showToast(String(err?.message||'تعذر حذف المنتج نهائيًا.'));}
     };
     window.toggleInventoryProductAvailability=async function(encodedId){
@@ -2818,29 +2811,11 @@
       if(!product)return showToast('المنتج غير موجود في المخزون.');
       const disabling=product.disabledForSales!==true;
       try{
-        // Resolve the real engine from its iframe directly. Do not depend on
-        // window.ValerianUI, which the initial V5 shell defines before the
-        // engine adapter has connected.
-        const frame=document.getElementById('valerianEngineFrame');
-        if(!frame)throw new Error('تعذر العثور على محرك البيانات.');
-        let api=frame.contentWindow?.ValerianEngine;
-        if(!api){
-          await new Promise((resolve,reject)=>{
-            let attempts=0;
-            const timer=setInterval(()=>{
-              api=frame.contentWindow?.ValerianEngine;
-              if(api){clearInterval(timer);resolve();}
-              else if(++attempts>=100){clearInterval(timer);reject(new Error('محرك البيانات لم يستجب. أعد تحميل الصفحة وحاول مرة أخرى.'));}
-            },150);
-          });
-        }
-        await api.ready;
-        if(typeof api.toggleProductSalesAvailability!=='function')throw new Error('نسخة محرك البيانات لا تدعم تعطيل المنتجات. حدّث الصفحة من جديد.');
-        const result=await api.toggleProductSalesAvailability(id);
-        if(result?.ok!==true)return;
-        appState=result.snapshot||api.getSnapshot();
-        renderInventoryScreen();
-        showToast(disabling?'تم تعطيل المنتج عن البيع والحجز مع الاحتفاظ به في المخزون.':'تمت إعادة إتاحة المنتج للبيع والحجز.');
+        const result=await runEngine('toggleProductSalesAvailability',id);
+        if(result?.ok!==true)throw new Error(result?.error||'لم يتم حفظ حالة المنتج.');
+        syncFromEngine(result.snapshot);
+        renderInventoryList('all');
+        showToast(disabling?'تم تعطيل المنتج عن البيع والحجز، واختفى من كتالوج الصفحة الرئيسية.':'تمت إعادة إتاحة المنتج للبيع والحجز.');
       }catch(err){console.error('VALERIAN product availability toggle failed',err);showToast(String(err?.message||'تعذر تغيير حالة المنتج.'));}
     };
     window.editMobileProduct=function(id){
