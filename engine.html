@@ -6271,12 +6271,13 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         await valDownloadStateBackup('valerian_before_full_reset');
         clearTimeout(valIdb.flushTimer);await valIdbFlush();
         const fresh=valFreshActivityState();
+        // Prepare the local stores first. If either local write fails, the cloud is untouched.
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(fresh));
+        await valQueueDurableState(fresh);await valDurableWritePromise;await valIdbFlush();
         const freshCloudSnapshot=await valBuildCloudSyncState(fresh);
         const {data,error}=await cloudClient.rpc('valerian_save_state',{p_state:freshCloudSnapshot,p_expected_revision:cloudRevision});
         if(error||!data?.[0]?.ok)throw new Error(error?.message||'رفضت السحابة الحفظ بسبب وجود إصدار أحدث أو تعارض. لم تُحذف البيانات.');
         state=fresh;
-        localStorage.setItem(STORAGE_KEY,JSON.stringify(fresh));
-        await valQueueDurableState(fresh);await valDurableWritePromise;await valIdbFlush();
         await valClearUnreferencedImages(fresh);
         cloudRevision=Number(data[0].current_revision);cloudDirty=false;cloudConflict=false;clearTimeout(cloudSaveTimer);
         refreshAllViews();loadSettingsToUI();
