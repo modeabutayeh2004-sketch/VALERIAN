@@ -1914,9 +1914,9 @@
           <div class="text-[11px] text-slate-300">${o.address}</div>
           <div class="flex items-center justify-between pt-2 border-t border-white/[0.08]">
             <span class="text-[10px] text-slate-400">مدفوع: <strong class="text-white bidi-ltr">${fmtEgp(o.depositAmount)}</strong></span>
-            ${!String(o.status).includes('مرتجع')
+            ${!(o.items||[]).every(i=>Number(i.returnedQty||0)>=Number(i.qty||0))
               ? `<button onclick="processMobileReturn('${o.id}')" class="px-3 py-1.5 rounded-full bg-rose-500/20 border border-rose-400/40 text-rose-200 text-[10px] font-extrabold">تسجيل مرتجع ↩️</button>`
-              : `<span class="text-[10px] font-bold text-rose-300">تم تسجيل المرتجع</span>`}
+              : `<span class="text-[10px] font-bold text-rose-300">اكتمل إرجاع الطلب</span>`}
           </div>
         </div>
       `).join('');
