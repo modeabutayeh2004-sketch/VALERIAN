@@ -6748,6 +6748,71 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     v1931PrintObserver.observe(document.body,{childList:true,subtree:true});
     setTimeout(installTablePrintTools,300);
 
+
+    /* VALERIAN V5 integration boundary — the core ERP remains the source of truth. */
+    (function installValerianEngineBridge(){
+      const snapshot=()=>structuredClone(state);
+      const el=id=>{const node=document.getElementById(id);if(!node)throw new Error('Missing engine control: '+id);return node;};
+      const emit=(type,detail={})=>window.dispatchEvent(new CustomEvent(type,{detail}));
+      window.ValerianEngine=Object.freeze({
+        version:'19.65',
+        getSnapshot:snapshot,
+        subscribe:callback=>{
+          if(typeof callback!=='function')throw new TypeError('callback must be a function');
+          const handler=event=>callback(snapshot(),event.detail||{});
+          window.addEventListener('valerian:state-changed',handler);
+          return ()=>window.removeEventListener('valerian:state-changed',handler);
+        },
+        refresh:()=>{refreshAllViews();emit('valerian:state-changed',{source:'refresh'});return snapshot();},
+        createOrder:payload=>{
+          if(!payload||!Array.isArray(payload.items)||!payload.items.length)throw new Error('Order requires at least one item.');
+          const count=state.orders.length;
+          cart=payload.items.map(item=>{
+            const product=state.products.find(p=>String(p.id)===String(item.id));
+            if(!product)throw new Error('Unknown product: '+item.id);
+            const qty=Math.floor(Number(item.qty||0));
+            if(!Number.isSafeInteger(qty)||qty<=0)throw new Error('Invalid quantity for '+product.name);
+            return {...product,price:Number(product.isOffer&&product.offerPrice?product.offerPrice:product.price),qty};
+          });
+          posOrderMode=payload.mode==='direct'?'direct':'reservation';
+          usePointsFlag=!!payload.usePoints;
+          depositManuallyEdited=true;
+          el('posCustomerPhone').value=String(payload.customer?.phone||'').trim();
+          el('posCustomerName').value=String(payload.customer?.name||'').trim();
+          el('posCustomerAddress').value=String(payload.customer?.address||'').trim();
+          el('posShippingFee').value=String(Math.max(0,Number(payload.shipping||0)));
+          el('posDiscount').value=String(Math.max(0,Number(payload.discount||0)));
+          el('posPaymentMethod').value=String(payload.paymentMethod||'غير محدد');
+          el('posDepositAmount').value=String(payload.deposit==null?'':Math.max(0,Number(payload.deposit)));
+          completeOrder(false);
+          const created=state.orders.length>count;
+          if(!created)return {ok:false,error:window.__valerianLastSaveError?.message||'The engine rejected the order.',snapshot:snapshot()};
+          return {ok:true,order:structuredClone(state.orders[0]),snapshot:snapshot()};
+        },
+        adjustStock:payload=>{
+          if(!payload)throw new Error('Adjustment payload is required.');
+          const kind=['product','packaging','supply'].includes(payload.kind)?payload.kind:'product';
+          openStockAdjustmentModal(kind,String(payload.id||''));
+          el('stockAdjReasonType').value=payload.reasonType==='COUNT_SHORTAGE'?'COUNT_SHORTAGE':'WASTAGE';
+          el('stockAdjQty').value=String(payload.quantity||0);
+          el('stockAdjReason').value=String(payload.reason||'');
+          const before=JSON.stringify(state);
+          saveStockAdjustment({preventDefault(){}});
+          return {ok:JSON.stringify(state)!==before,snapshot:snapshot()};
+        },
+        produceDecants:payload=>{
+          if(!payload)throw new Error('Production payload is required.');
+          openDecantProductionModal();
+          el('decantProductionProduct').value=String(payload.productId||'');
+          el('decantProductionQty').value=String(payload.quantity||0);
+          const before=(state.decantProductionLog||[]).length;
+          produceDecants({preventDefault(){}});
+          return {ok:(state.decantProductionLog||[]).length>before,snapshot:snapshot()};
+        }
+      });
+      emit('valerian:engine-ready',{version:'19.65'});
+    })();
+
 </script>
 \n<!-- VALERIAN CLOUD CONNECTOR (V18.3) -->
 <div id="cloudStatusPill" style="display:none" aria-hidden="true">غير متصل</div>
