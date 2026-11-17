@@ -1,7 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const mainPath = path.join(process.cwd(), 'android/app/src/main/java/com/valerian/business/MainActivity.java');
+const root = process.cwd();
+const packageDir = path.join(root, 'android/app/src/main/java/com/valerian/business');
+fs.mkdirSync(packageDir, {recursive:true});
+fs.copyFileSync(path.join(root, 'android-native/NativeFileBridge.java'), path.join(packageDir, 'NativeFileBridge.java'));
+const mainPath = path.join(packageDir, 'MainActivity.java');
 if (!fs.existsSync(mainPath)) throw new Error('Capacitor MainActivity.java was not generated.');
 let source = fs.readFileSync(mainPath, 'utf8');
 if (!source.includes('ValerianNative')) {
@@ -12,7 +16,7 @@ if (!source.includes('ValerianNative')) {
     '    getBridge().getWebView().addJavascriptInterface(new NativeFileBridge(this), "ValerianNative");\\n' +
     '  }\\n' +
     '}');
-  if (!source.includes('ValerianNative')) throw new Error('Could not safely patch MainActivity.java.');
+  if (!source.includes('ValerianNative')) throw new Error('Could not safely patch MainActivity.java: ' + source);
   fs.writeFileSync(mainPath, source);
 }
 console.log('VALERIAN native file and print bridge installed.');
