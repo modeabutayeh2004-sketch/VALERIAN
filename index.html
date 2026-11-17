@@ -100,8 +100,8 @@
     .water-fill {
       position: absolute; z-index: 0; left: 0; right: 0; bottom: 0;
       width: auto; height: var(--level, 0%); max-height: 100%;
-      border: 0; border-radius: 50% 50% 22px 22px / 7px 7px 22px 22px;
-      clip-path: inset(0 round 0 0 22px 22px);
+      border: 0; border-radius: inherit;
+      clip-path: none;
       background: linear-gradient(180deg, rgba(125,211,252,.30), rgba(14,165,233,.18));
       box-shadow: 0 -1px 5px rgba(56,189,248,.07);
       transition: height .65s cubic-bezier(.22,1,.36,1);
