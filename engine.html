@@ -7061,7 +7061,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           const averageCost=Number(payload?.averageCost??product.averageCost??product.totalCost??0),stock=Number(payload?.stock??product.stock);
           const productType=String(payload?.productType??product.productType??'عطور'),category=String(payload?.category??product.category??'غير محدد');
           const stockUnit=String(payload?.stockUnit??product.stockUnit??'مل'),size=String(payload?.size??product.size??'');
-          const isDecantable=productType==='عطور'&&(payload?.isDecantable===undefined?!!product.isDecantable:!!payload.isDecantable);
+          const isDecantable=productType==='عطور'&&category!=='تقسيم'&&(payload?.isDecantable===undefined?!!product.isDecantable:!!payload.isDecantable);
           const decantSizeMl=Number(payload?.decantSizeMl??product.decantSizeMl??product.decantSize??10),decantBottleCost=Number(payload?.decantBottleCost??product.decantBottleCost??15);
           if(!name)throw new Error('اسم المنتج مطلوب.');
           if(!Number.isFinite(price)||price<=0||!Number.isFinite(averageCost)||averageCost<0||price+0.0001<averageCost)throw new Error('راجع سعر البيع والتكلفة؛ يجب ألا يقل سعر البيع عن التكلفة.');

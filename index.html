@@ -2673,6 +2673,10 @@
     };
     function toggleEditDecantFields(){
       const perfume=document.getElementById('editProdType')?.value==='عطور';
+      const category=document.getElementById('editProdCategory');
+      const splitOption=category?.querySelector('option[value="تقسيم"]');
+      if(splitOption)splitOption.disabled=!perfume;
+      if(!perfume&&category?.value==='تقسيم')category.value='للجنسين';
       const wrap=document.getElementById('editProdDecantable')?.closest('label');
       const sizeWrap=document.getElementById('editProdDecantSize')?.closest('.grid');
       if(wrap)wrap.classList.toggle('hidden',!perfume);
