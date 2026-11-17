@@ -6915,24 +6915,34 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           await ready;
           const name=String(payload?.name||'').trim(),category=String(payload?.category||'غير محدد'),size=String(payload?.size||'100 مل').trim();
           const productType=String(payload?.productType||'عطور'),stockUnit=String(payload?.stockUnit||'مل');
-          const isDecantable=productType==='عطور'&&payload?.isDecantable===true;
+          const isPerfume=productType==='عطور',isDecantable=isPerfume&&payload?.isDecantable===true;
           const price=Number(payload?.price||0),cost=Number(payload?.averageCost||payload?.cost||0),openingQty=Math.floor(Number(payload?.stock||0));
+          const decantSize=Number(payload?.decantSizeMl||10),bottleCost=Math.max(0,Number(payload?.decantBottleCost??15));
           if(!name||!Number.isFinite(price)||price<=0||!Number.isFinite(cost)||cost<0||!Number.isSafeInteger(openingQty)||openingQty<0)throw new Error('راجع اسم المنتج والسعر والتكلفة والرصيد الافتتاحي.');
-          if(category==='تقسيم')throw new Error('إضافة منتج تقسيم تتطلب ربطه بزجاجة أصلية وحجم تقسيم من شاشة المنتج المتقدمة. أضف الزجاجة الأصلية أولاً.');
+          if(category==='تقسيم')throw new Error('إضافة منتج تقسيم تتطلب ربطه بزجاجة أصلية. فعّل خيار التقسيم في منتج العطر الأصلي بدلاً من ذلك.');
           if(price+0.0001<cost)throw new Error('سعر البيع لا يجوز أن يقل عن متوسط تكلفة المنتج.');
+          const volumeMl=isPerfume?getBottleVolumeMl({size}):0;
+          if(isDecantable&&(!volumeMl||!Number.isFinite(decantSize)||decantSize<=0||decantSize>volumeMl))throw new Error('حجم التقسيم يجب أن يكون أكبر من صفر ولا يتجاوز حجم العطر الأصلي.');
+          if(!Number.isFinite(bottleCost)||bottleCost<0)throw new Error('تكلفة عبوة التقسيم غير صحيحة.');
           const barcode=String(payload.barcode||('622'+Date.now().toString().slice(-9)));
           if(state.products.some(p=>String(p.barcode||'')===barcode))throw new Error('رقم الباركود مستخدم بالفعل.');
           const before=structuredClone(state),id='prod_'+Date.now();
-          const isPerfume=productType==='عطور';
-          const product={id,name,productType,category,size,barcode,price,totalCost:cost,averageCost:cost,stock:openingQty,reservedStock:0,minimumStock:2,notes:'',scentProfile:'',isOffer:false,offerPrice:0,lastPurchaseUnitCost:cost,replacementCost:cost,productPackagingCost:0,productTaxRate:0,productProfitMargin:40,productCalculator:{foreignUnitPrice:0,exchangeRate:1,importCost:0,packagingCost:0,taxRate:0,profitMargin:40},image:String(payload.image||''),isDecantable,parentId:'',decantSize:0,decantBottleCost:0,emptyContainersStock:0,legacyStockNeedsReview:false,volumeMlPerBottle:isPerfume?getBottleVolumeMl({size}):0,decantMlAvailable:0,stockUnit:isPerfume?'زجاجة أصلية':stockUnit};
+          const product={id,name,productType,category,size,barcode,price,totalCost:cost,averageCost:cost,stock:openingQty,reservedStock:0,minimumStock:2,notes:'',scentProfile:'',isOffer:false,offerPrice:0,lastPurchaseUnitCost:cost,replacementCost:cost,productPackagingCost:0,productTaxRate:0,productProfitMargin:40,productCalculator:{foreignUnitPrice:0,exchangeRate:1,importCost:0,packagingCost:0,taxRate:0,profitMargin:40},image:String(payload.image||''),isDecantable,parentId:'',decantSize:0,decantBottleCost:0,emptyContainersStock:0,legacyStockNeedsReview:false,volumeMlPerBottle:volumeMl,decantMlAvailable:0,stockUnit:isPerfume?'زجاجة أصلية':stockUnit};
           state.products.unshift(product);
           if(openingQty>0)addInventoryMovement(id,'OPENING_BALANCE',openingQty,'OPEN-'+Date.now(),'رصيد افتتاحي مسجل من واجهة VALERIAN V5');
+          if(isDecantable){
+            const decantCost=Number(((cost/volumeMl)*decantSize+bottleCost).toFixed(2));
+            const decantPrice=Number((decantCost*1.4).toFixed(2));
+            const decant={id:'dec_'+id+'_'+decantSize,name:`تقسيم ${name} (${formatNumber(decantSize,2)} مل)`,productType,category:'تقسيم',size:`${formatNumber(decantSize,2)} مل`,barcode:'D'+Date.now().toString().slice(-10),price:decantPrice,totalCost:decantCost,averageCost:decantCost,stock:0,reservedStock:0,minimumStock:2,notes:'تقسيم مرتبط بالزجاجة الأصلية: '+name,scentProfile:'',isOffer:false,offerPrice:0,lastPurchaseUnitCost:decantCost,replacementCost:decantCost,productPackagingCost:0,productTaxRate:0,productProfitMargin:40,productCalculator:{foreignUnitPrice:0,exchangeRate:1,importCost:0,packagingCost:bottleCost,taxRate:0,profitMargin:40},image:String(payload.image||''),isDecantable:true,parentId:id,decantSize,decantBottleCost:bottleCost,emptyContainersStock:0,legacyStockNeedsReview:false,volumeMlPerBottle:0,decantMlAvailable:0,stockUnit:'عبوة تقسيم جاهزة'};
+            state.products.unshift(decant);
+            logAudit('DECANT_SKU_CREATED','إنشاء صنف تقسيم مرتبط بالمنتج '+name+' بحجم '+decantSize+' مل');
+          }
           logAudit('PRODUCT_CREATED','إضافة المنتج '+name+' من واجهة VALERIAN V5'+(openingQty?' برصيد افتتاحي '+openingQty:''));
           if(!saveState()){state=before;refreshAllViews();throw new Error(window.__valerianLastSaveError?.message||'تعذر حفظ المنتج.');}
           await valDurableWritePromise;
           try{await valIdbFlush();}catch(_){}
           refreshAllViews();
-          return {ok:true,product:structuredClone(product),durableSaved:!valDurableWriteError,localSaveError:valDurableWriteError?String(valDurableWriteError.message||valDurableWriteError):'',snapshot:snapshot()};
+          return {ok:true,product:structuredClone(product),decantProduct:structuredClone(state.products.find(p=>p.parentId===id&&p.category==='تقسيم')||null),durableSaved:!valDurableWriteError,localSaveError:valDurableWriteError?String(valDurableWriteError.message||valDurableWriteError):'',snapshot:snapshot()};
         },
         adjustStock:async payload=>{
           await ready;
