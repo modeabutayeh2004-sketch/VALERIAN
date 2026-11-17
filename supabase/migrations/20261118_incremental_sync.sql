@@ -34,6 +34,8 @@ begin
   if v_user is null then
     raise exception 'Authentication required' using errcode = '42501';
   end if;
+  perform pg_advisory_xact_lock(hashtextextended(v_user::text, 731942));
+
   if p_changes is null or jsonb_typeof(p_changes) <> 'array' then
     raise exception 'p_changes must be a JSON array';
   end if;
