@@ -290,8 +290,11 @@
           </div>
         </div>
 
-        <!-- Settings Action Only -->
+        <!-- Cloud and Settings Actions -->
         <div class="flex items-center gap-2">
+          <button id="v5CloudHeaderButton" onclick="openCloudPanel()" aria-label="السحابة والمزامنة" class="h-9 rounded-full glass-pill flex items-center gap-1.5 px-3 text-[10px] font-extrabold text-emerald-200 hover:text-white">
+            <span aria-hidden="true">☁</span><span>السحابة</span>
+          </button>
           <button onclick="openSheet('settingsSheet')" aria-label="الإعدادات" class="w-9 h-9 rounded-full glass-pill flex items-center justify-center text-slate-300 hover:text-white">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
@@ -2009,6 +2012,29 @@
     renderAllViews();
   </script>
 
+  <!-- V20 Cloud access is rendered in the visible V5 shell; authentication and sync remain owned by the original ERP engine. -->
+  <div id="v5CloudModal" class="fixed inset-0 z-[13000] hidden items-center justify-center bg-slate-950/80 p-4" dir="rtl" onclick="if(event.target===this)closeCloudPanel()">
+    <section class="w-full max-w-md rounded-3xl border border-white/15 bg-[#0b1720] p-5 text-white shadow-2xl">
+      <div class="flex items-center justify-between gap-3">
+        <div><div class="text-[9px] font-black tracking-[.24em] text-emerald-300">VALERIAN ECOSYSTEM</div><h2 class="mt-1 text-xl font-black">السحابة والمزامنة</h2></div>
+        <button type="button" onclick="closeCloudPanel()" class="h-9 w-9 rounded-full border border-white/10 bg-white/5 text-xl text-slate-300">×</button>
+      </div>
+      <p class="mt-2 text-xs leading-6 text-slate-400">استخدم نفس حساب VALERIAN CLOUD لربط بيانات محرك الأعمال بين أجهزتك.</p>
+      <label for="v5CloudEmail" class="mt-4 block text-xs font-extrabold text-slate-200">البريد الإلكتروني</label>
+      <input id="v5CloudEmail" type="email" autocomplete="username" placeholder="you@example.com" class="mt-1 w-full rounded-xl border border-white/15 bg-black/30 px-3 py-3 text-left text-sm text-white outline-none focus:border-emerald-400" dir="ltr">
+      <label for="v5CloudPassword" class="mt-3 block text-xs font-extrabold text-slate-200">كلمة المرور</label>
+      <input id="v5CloudPassword" type="password" autocomplete="current-password" placeholder="••••••••" class="mt-1 w-full rounded-xl border border-white/15 bg-black/30 px-3 py-3 text-left text-sm text-white outline-none focus:border-emerald-400" dir="ltr">
+      <div class="mt-4 grid grid-cols-2 gap-2">
+        <button type="button" onclick="v5CloudSignIn()" class="rounded-xl bg-white px-3 py-3 text-xs font-extrabold text-slate-950">تسجيل الدخول</button>
+        <button type="button" onclick="v5CloudSignUp()" class="rounded-xl bg-violet-700 px-3 py-3 text-xs font-extrabold text-white">إنشاء حساب</button>
+      </div>
+      <button id="v5CloudSyncBtn" type="button" onclick="v5CloudSyncNow()" class="mt-2 hidden w-full rounded-xl bg-emerald-700 px-3 py-3 text-xs font-extrabold text-white">مزامنة الآن</button>
+      <button id="v5CloudLogoutBtn" type="button" onclick="v5CloudSignOut()" class="mt-2 hidden w-full rounded-xl bg-rose-950/50 px-3 py-3 text-xs font-extrabold text-rose-200">تسجيل الخروج من هذا الجهاز</button>
+      <p id="v5CloudMessage" role="status" aria-live="polite" class="mt-4 rounded-xl border border-white/10 bg-white/5 p-3 text-xs leading-6 text-slate-300">جارٍ تجهيز اتصال السحابة…</p>
+      <p class="mt-3 text-[10px] leading-5 text-slate-500">لن يتم دمج البيانات أو استبدالها بصمت. اقرأ رسالة اختيار مصدر البيانات جيدًا قبل التأكيد.</p>
+    </section>
+  </div>
+
   <!-- The V5 luxury interface is the visible application. The original ERP runs
        in a same-origin hidden frame and remains the sole owner of business data. -->
   <iframe id="valerianEngineFrame" title="VALERIAN business engine" aria-hidden="true"
@@ -2018,7 +2044,7 @@
   (function(){
     'use strict';
     const frame=document.getElementById('valerianEngineFrame');
-    let engine=null, unsubscribe=null, lastSync=0;
+    let engine=null, unsubscribe=null, lastSync=0, cloudStatusBound=false;
     const defaultSchema=defaultEmptySchema();
     const parseMl=value=>{const m=String(value||'').match(/[0-9]+(?:\.[0-9]+)?/);return m?Number(m[0]):100;};
     function project(raw){
@@ -2068,6 +2094,16 @@
         lastSync=Date.now();
       }catch(err){console.error('VALERIAN V5 sync failed',err);showToast('تعذر تحديث واجهة V5 من محرك البيانات.');}
     }
+    function paintCloudStatus(status){
+      const s=status||{}, label=String(s.label||s.message||'').replace(/^الحالة:\\s*/,'');
+      const connected=!!s.connected, authenticated=!!s.authenticated, online=s.online!==false;
+      const message=document.getElementById('v5CloudMessage');
+      if(message)message.textContent=label||(connected?'المزامنة السحابية مفعّلة.':authenticated?'تم تسجيل الدخول، لكن المزامنة لم تكتمل بعد.':'لم يتم تسجيل الدخول إلى السحابة بعد.');
+      document.getElementById('v5CloudSyncBtn')?.classList.toggle('hidden',!connected);
+      document.getElementById('v5CloudLogoutBtn')?.classList.toggle('hidden',!authenticated);
+      const button=document.getElementById('v5CloudHeaderButton');
+      if(button){button.classList.toggle('text-emerald-200',connected);button.classList.toggle('text-amber-200',!connected);button.title=label||'إعدادات حساب VALERIAN CLOUD';}
+    }
     function engineReady(){
       if(!frame.contentWindow||!frame.contentWindow.ValerianEngine)return false;
       engine=frame.contentWindow.ValerianEngine;
@@ -2079,6 +2115,11 @@
       syncFromEngine();
       if(unsubscribe)unsubscribe();
       unsubscribe=engine.subscribe(()=>syncFromEngine());
+      if(!cloudStatusBound&&frame.contentWindow?.addEventListener){
+        frame.contentWindow.addEventListener('valerian:cloud-status',event=>paintCloudStatus(event.detail||{}));
+        cloudStatusBound=true;
+      }
+      if(engine.cloudStatus)paintCloudStatus(engine.cloudStatus());
       window.ValerianUI={
         getState:()=>structuredClone(appState),
         hydrate:()=>syncFromEngine(),
@@ -2089,6 +2130,53 @@
       return true;
     }
     function reportError(err){console.error(err);showToast(String(err?.message||err||'تعذر تنفيذ العملية في محرك الأعمال.'));}
+    async function getCloudEngine(){
+      if(!engine)await connectEngine();
+      if(!engine?.cloudSignIn)throw new Error('واجهة اتصال السحابة غير جاهزة في محرك الأعمال.');
+      return engine;
+    }
+    window.openCloudPanel=async function(){
+      const modal=document.getElementById('v5CloudModal');
+      modal?.classList.remove('hidden');modal?.classList.add('flex');
+      const message=document.getElementById('v5CloudMessage');
+      if(message)message.textContent='جارٍ الاتصال بمحرك الأعمال وفحص حالة السحابة…';
+      try{const e=await getCloudEngine();paintCloudStatus(e.cloudStatus());}
+      catch(err){if(message)message.textContent=String(err?.message||err);}
+    };
+    window.closeCloudPanel=function(){
+      const modal=document.getElementById('v5CloudModal');
+      modal?.classList.add('hidden');modal?.classList.remove('flex');
+    };
+    window.v5CloudSignIn=async function(){
+      const email=document.getElementById('v5CloudEmail').value.trim();
+      const password=document.getElementById('v5CloudPassword').value;
+      if(!email||!password){paintCloudStatus({label:'أدخل البريد الإلكتروني وكلمة المرور.',online:navigator.onLine});return;}
+      try{
+        const e=await getCloudEngine();
+        const result=await e.cloudSignIn({email,password});
+        paintCloudStatus(result.status||e.cloudStatus());
+        if(result.authenticated)document.getElementById('v5CloudPassword').value='';
+        if(result.ok&&result.synced)showToast('تم تسجيل الدخول وتفعيل مزامنة VALERIAN CLOUD.');
+      }catch(err){paintCloudStatus({label:String(err?.message||err),online:navigator.onLine});}
+    };
+    window.v5CloudSignUp=async function(){
+      const email=document.getElementById('v5CloudEmail').value.trim();
+      const password=document.getElementById('v5CloudPassword').value;
+      try{
+        const e=await getCloudEngine();
+        const result=await e.cloudSignUp({email,password});
+        paintCloudStatus(result.status||{label:result.message,online:navigator.onLine});
+        if(result.authenticated)document.getElementById('v5CloudPassword').value='';
+      }catch(err){paintCloudStatus({label:String(err?.message||err),online:navigator.onLine});}
+    };
+    window.v5CloudSignOut=async function(){
+      try{const e=await getCloudEngine();const result=await e.cloudSignOut();paintCloudStatus(result.status||e.cloudStatus());}
+      catch(err){paintCloudStatus({label:String(err?.message||err),online:navigator.onLine});}
+    };
+    window.v5CloudSyncNow=async function(){
+      try{const e=await getCloudEngine();const result=await e.syncCloud();paintCloudStatus(result.status||e.cloudStatus());}
+      catch(err){paintCloudStatus({label:String(err?.message||err),online:navigator.onLine});}
+    };
     async function runEngine(method,payload){
       if(!engine)await connectEngine();
       const result=await engine[method](payload);
