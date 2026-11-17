@@ -2518,9 +2518,10 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
   <label style="display:block;font-size:12px;font-weight:800;margin:10px 0 5px">البريد الإلكتروني</label><input id="cloudEmail" type="email" autocomplete="username" style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:11px;direction:ltr" placeholder="you@example.com">
   <label style="display:block;font-size:12px;font-weight:800;margin:10px 0 5px">كلمة المرور</label><input id="cloudPassword" type="password" autocomplete="current-password" style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:11px;direction:ltr" placeholder="••••••••">
   <div style="display:flex;gap:8px;margin-top:14px"><button onclick="cloudSignIn()" style="flex:1;background:#0f172a;color:white;border-radius:10px;padding:11px;font-weight:800">تسجيل الدخول</button><button onclick="cloudSignUp()" style="flex:1;background:#7c3aed;color:white;border-radius:10px;padding:11px;font-weight:800">إنشاء حساب</button></div>
-  <button id="cloudSyncNow" onclick="cloudSyncNow(true)" style="display:none;width:100%;margin-top:10px;background:#059669;color:white;border-radius:10px;padding:11px;font-weight:800">مزامنة الآن</button>
+  <button id="cloudSyncNow" onclick="valManualCloudSync(event)" style="display:none;width:100%;margin-top:10px;background:#059669;color:white;border-radius:10px;padding:11px;font-weight:800">مزامنة الآن</button>
   <button id="cloudLogout" onclick="cloudSignOut()" style="display:none;width:100%;margin-top:8px;background:#fee2e2;color:#991b1b;border-radius:10px;padding:10px;font-weight:800">تسجيل الخروج من هذا الجهاز</button>
   <p id="cloudMessage" role="status" style="font-size:12px;line-height:1.7;margin-top:12px;color:#475569">الحالة: لم يتم الاتصال بعد.</p>
+  <details id="cloudDiagnostics" style="margin-top:8px;font-size:11px;color:#475569"><summary style="cursor:pointer;font-weight:800">سجل تشخيص المزامنة</summary><pre id="cloudDiagnosticsLog" dir="rtl" style="white-space:pre-wrap;max-height:150px;overflow:auto;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px;margin-top:6px">لم يتم تنفيذ أي محاولة بعد.</pre></details>
   <p style="font-size:11px;color:#64748b;margin-top:10px">تنبيه: أول ربط سيطلب منك اختيار البيانات التي نعتمدها. لن يتم دمج البيانات أو استبدالها بصمت.</p>
  </div>
 </div>
@@ -6727,6 +6728,29 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       cloudSaveTimer=setTimeout(()=>cloudSyncNow(false),500);
     }
 
+    function valCloudDiagnostic(message){
+      const node=document.getElementById('cloudDiagnosticsLog');
+      if(!node)return;
+      const stamp=new Date().toLocaleTimeString('ar-EG');
+      const prior=node.textContent==='لم يتم تنفيذ أي محاولة بعد.'?'':node.textContent+'\\n';
+      node.textContent=(prior+'['+stamp+'] '+message).slice(-5000);
+    }
+    async function valManualCloudSync(event){
+      try{
+        event?.preventDefault?.();
+        const button=document.getElementById('cloudSyncNow');
+        if(button){button.disabled=true;button.textContent='بدأت المزامنة…';}
+        setCloudStatus('تم استلام ضغطة زر المزامنة — جارٍ تشغيل العملية…','#a16207');
+        valCloudDiagnostic('تم استلام ضغطة زر مزامنة الآن.');
+        await new Promise(resolve=>setTimeout(resolve,0));
+        try{await cloudSyncNow(true);}
+        catch(err){valCloudDiagnostic('استثناء غير معالج: '+(err?.stack||err?.message||String(err)));setCloudStatus('خطأ في تشغيل المزامنة: '+cloudErrorMessage(err),'#b91c1c');}
+      }finally{
+        const button=document.getElementById('cloudSyncNow');
+        if(button){button.disabled=false;button.textContent='مزامنة الآن';}
+      }
+    }
+
     async function cloudSyncNow(manual) {
       if(!cloudClient || !cloudUser || !cloudReady || cloudConflict) {
         if(manual) setCloudStatus('المزامنة غير جاهزة أو يوجد تعارض يحتاج مراجعة','#b91c1c');
@@ -7339,7 +7363,34 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           await valDurableWritePromise;try{await valIdbFlush();}catch(_){}
           refreshAllViews();return {ok:true,snapshot:snapshot()};
         },
-        exportSnapshot:snapshot
+        exportSnapshot:snapshot,
+        restoreSnapshot:async parsed=>{
+          await ready;
+          if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw new Error('ملف JSON غير صالح.');
+          const required=['products','orders','customers','expenses'];
+          if(required.some(k=>!Array.isArray(parsed[k])))throw new Error('الملف لا يحتوي أقسام VALERIAN الأساسية.');
+          if(parsed.products.some(p=>!p||typeof p.id!=='string'||typeof p.name!=='string')||parsed.orders.some(o=>!o||typeof o.id!=='string'||!Array.isArray(o.items)))throw new Error('بعض سجلات المنتجات أو الطلبات غير صالحة.');
+          const portable=await valHydrateImageState(parsed,{storeIncoming:false,strict:true});
+          const counts={products:portable.products.length,orders:portable.orders.length,customers:portable.customers.length,expenses:portable.expenses.length};
+          if(!confirm('تم التحقق من ملف النسخة الاحتياطية.\\nالمنتجات: '+counts.products+'\\nالطلبات: '+counts.orders+'\\nالعملاء: '+counts.customers+'\\nالمصروفات: '+counts.expenses+'\\n\\nسيتم استبدال بيانات هذا الجهاز. هل تريد المتابعة؟'))return {ok:false,cancelled:true};
+          const before=structuredClone(state);
+          try{await valDownloadStateBackup('valerian_before_restore');}
+          catch(err){throw new Error('تعذر إنشاء نسخة أمان قبل الاستعادة؛ لم تتغير البيانات. '+(err?.message||err));}
+          try{
+            const restored=await valHydrateImageState(parsed,{storeIncoming:true,strict:true});
+            state=normalizeState(restored);
+            if(!saveState())throw new Error('تعذر حفظ البيانات المستعادة على الجهاز.');
+            await valIdbFlush();
+            await valDurableWritePromise;
+            refreshAllViews();
+            emit('valerian:state-changed',{source:'json-restore'});
+            return {ok:true,counts};
+          }catch(err){
+            state=before;try{persistLocal(before);await valIdbFlush();}catch(rollbackError){console.error('JSON restore rollback failed',rollbackError);}
+            refreshAllViews();
+            throw err;
+          }
+        }
       });
       emit('valerian:engine-ready',{version:'19.67'});
     })();
