@@ -6569,7 +6569,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       } else {
         cloudRevision=Number(row.revision||0);
         const localMatchesCloud = valComparableStateJson(normalizeState(state)) === valComparableStateJson(normalizeState(row.state));
-        if(hadLocalValerianState && !localMatchesCloud){
+        const localHasBusinessData = ['products','orders','customers','imports','expenses','inventoryMovements'].some(key=>Array.isArray(state[key])&&state[key].length>0);
+        if((hadLocalValerianState || localHasBusinessData) && !localMatchesCloud){
           const useLocal=confirm('وجدنا بيانات محلية تختلف عن النسخة السحابية.\n\nموافق: رفع بيانات هذا الجهاز واستبدال النسخة السحابية.\nإلغاء: تحميل النسخة السحابية واستبدال البيانات المحلية.\n\nتأكد من وجود نسخة احتياطية قبل الاختيار.');
           if(useLocal){
             let cloudSnapshot;try{cloudSnapshot=await valBuildCloudSyncState(state);}catch(assetErr){setCloudStatus('لم نرفع البيانات: '+assetErr.message,'#b91c1c');return;}
