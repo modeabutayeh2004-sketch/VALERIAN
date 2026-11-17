@@ -1,7 +1,7 @@
 /* VALERIAN V20.7 — offline application shell */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-48-transparent-card-logo-fix';
-const APP_SHELL = ['./', './index.html', './engine.html?v=20261117-transparent-card-logo-48', './manifest.webmanifest', './assets/valerian-icon.jpg'];
+const CACHE_NAME = 'valerian-app-shell-v20-49-preview-export-alignment';
+const APP_SHELL = ['./', './index.html', './engine.html?v=20261117-preview-export-alignment-49', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
