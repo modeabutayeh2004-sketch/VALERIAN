@@ -5365,7 +5365,9 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         const template=String(state.settings.invoiceWhatsAppMsg||'مرحباً {customer}، مرفق فاتورتكم رقم {order} من ڤاليريان. شكراً لثقتكم بنا.');
         const message=(order.type==='loyalty_card'
           ? `مرحباً ${String(order.name||'عميلنا')}، مرفق كارت نقاط الولاء الخاص بكم من ڤاليريان. شكراً لثقتكم بنا.`
-          : template.replace(/\{customer\}/g,String(order.name||'عميلنا')).replace(/\{order\}/g,String(order.id||'')).replace(/\{total\}/g,formatCurrency(Number(order.grandTotal||0))).replace(/\{remaining\}/g,formatCurrency(Number(order.remainingAmount||0))));
+          : order.type==='customer_profile'
+            ? `مرحباً ${String(order.name||'عميلنا')}، مرفق ملفكم الشخصي وتفضيلاتكم العطرية وسجل تعاملاتكم من ڤاليريان. يسعدنا خدمتكم دائمًا.`
+            : template.replace(/\{customer\}/g,String(order.name||'عميلنا')).replace(/\{order\}/g,String(order.id||'')).replace(/\{total\}/g,formatCurrency(Number(order.grandTotal||0))).replace(/\{remaining\}/g,formatCurrency(Number(order.remainingAmount||0))));
         // Native file sharing hands the actual PNG to Android's share sheet; WhatsApp
         // receives the attachment when the user chooses WhatsApp and the customer chat.
         if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
@@ -6145,8 +6147,9 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const html=`<div class="customer-print-sheet" dir="rtl"><div class="customer-print-head"><h2>ملف العميل</h2><div class="customer-print-name">${escapeHTML(c.name||'عميل')}</div><div class="muted">تاريخ الطباعة: ${new Date().toLocaleString('ar-EG')}</div></div><h3>بيانات وتفضيلات العميل</h3><table class="w-full text-right text-xs v1916-table"><tbody>${profile}</tbody></table><h3>سجل الطلبات (${orders.length})</h3><table class="w-full text-right text-xs v1916-table"><thead><tr><th>رقم الطلب</th><th>التاريخ</th><th>المنتجات</th><th>الحالة</th><th>الإجمالي</th></tr></thead><tbody>${orderRows}</tbody></table><div class="customer-print-foot">تم استخراج هذا الملف من نظام VALERIAN.</div></div>`;
       pendingOffersBlob=null;pendingOffersFiles=null;pendingPreviewImageBlob=null;pendingInvoiceShareOrder=null;
       pendingCustomerImageShare={id:'customer-profile-'+String(c.phone||idx),name:String(c.name||'عميلنا'),phone:String(c.phone||''),type:'customer_profile'};
-      document.getElementById('invoiceWhatsAppBtn')?.classList.toggle('hidden',!pendingCustomerImageShare.phone);
-      document.getElementById('invoiceOpenWhatsAppBtn')?.classList.toggle('hidden',!pendingCustomerImageShare.phone);
+      const customerDownloadBtn=document.getElementById('previewSaveImageBtn');if(customerDownloadBtn){customerDownloadBtn.classList.remove('hidden');customerDownloadBtn.textContent='⬇️ تنزيل صورة ملف العميل';}
+      const customerWhatsAppBtn=document.getElementById('invoiceWhatsAppBtn');if(customerWhatsAppBtn){customerWhatsAppBtn.classList.toggle('hidden',!pendingCustomerImageShare.phone);customerWhatsAppBtn.textContent='🟢 مشاركة ملف العميل على واتساب';}
+      const customerOpenWhatsAppBtn=document.getElementById('invoiceOpenWhatsAppBtn');if(customerOpenWhatsAppBtn){customerOpenWhatsAppBtn.classList.toggle('hidden',!pendingCustomerImageShare.phone);customerOpenWhatsAppBtn.textContent='💬 فتح محادثة العميل';}
       document.getElementById('genericShareImageBtn')?.classList.remove('hidden');
       pendingPrintHtml=html;
       document.getElementById('printPreviewBody').innerHTML=v1946EnsureBrandHeader(html);
