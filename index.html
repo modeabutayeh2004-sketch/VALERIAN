@@ -2789,8 +2789,6 @@
         ? 'تعطيل بيع وحجز «'+product.name+'»؟ سيظل المنتج موجودًا في المخزون وسجلاته ولن يتم حذفه.'
         : 'إعادة إتاحة «'+product.name+'» للبيع والحجز؟';
       if(!window.confirm(question))return;
-      const button=document.querySelector('[onclick="toggleInventoryProductAvailability(\\''+encodeURIComponent(id)+'\\')"]');
-      if(button)button.disabled=true;
       try{
         if(!window.ValerianUI?.toggleProductSalesAvailability)throw new Error('محرك إدارة المنتجات لم يجهز بعد.');
         const result=await window.ValerianUI.toggleProductSalesAvailability(id);
