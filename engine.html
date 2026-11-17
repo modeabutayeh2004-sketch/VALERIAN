@@ -2170,6 +2170,15 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
         </div>
       </div>
 
+      <section id="productAvailabilityManager" class="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div><h3 class="font-extrabold text-sm">⏯️ إدارة إتاحة المنتجات للبيع والحجز</h3><p class="text-xs text-slate-500 mt-1">عطّل المنتج مؤقتًا دون حذفه أو التأثير على رصيده وسجلاته، ويمكن إتاحته مجددًا في أي وقت.</p></div>
+          <div class="flex gap-2 text-[11px] font-extrabold"><span class="rounded-full bg-emerald-50 text-emerald-700 px-3 py-1" id="availabilityEnabledCount">متاح: 0</span><span class="rounded-full bg-amber-50 text-amber-800 px-3 py-1" id="availabilityDisabledCount">معطّل: 0</span></div>
+        </div>
+        <input id="productAvailabilitySearch" type="search" oninput="renderProductAvailabilityManager()" placeholder="ابحث باسم المنتج لتعطيله أو إعادة إتاحته..." class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-xs outline-none focus:border-brand-500">
+        <div id="productAvailabilityCards" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2"></div>
+      </section>
+
       <div id="legacyDecantWarning" class="hidden rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 font-bold">⚠️ توجد أرصدة تقسيم قديمة بوحدات غير مؤكدة. افتح كل منتج تقسيم من زر «مراجعة / تعديل»، راجع عدد العبوات الجاهزة فعليًا والعبوات الفارغة، ثم احفظ لتفعيل البيع والتجهيز.</div>
       <div class="inventory-subnav" role="tablist" aria-label="أقسام المخزون">
         <button type="button" class="active" data-inv-pane="stock" onclick="setInventoryPane('stock')">📦 أرصدة المنتجات</button>
@@ -4812,7 +4821,31 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const printBtn=document.getElementById('inventoryProductDetailsPrint');if(printBtn)printBtn.onclick=()=>v1931PrintElement('inventoryProductDetailsContent','تفاصيل المنتج '+p.name); const applyBtn=document.getElementById('inventoryProductDetailsApplyPrice');if(applyBtn){const hasSuggestion=(state.imports||[]).some(inv=>(inv.items||[]).some(it=>String(it.productId)===String(p.id)&&Number(it.suggestedRetailPrice||0)>0));applyBtn.disabled=!hasSuggestion;applyBtn.style.opacity=hasSuggestion?'1':'.45';applyBtn.onclick=()=>applyLatestImportPrice(p.id);}
       openModal('inventoryProductDetailsModal');
     }
+    function renderProductAvailabilityManager() {
+      const host=document.getElementById('productAvailabilityCards');
+      if(!host)return;
+      const products=(state.products||[]).filter(p=>!p.archived);
+      const enabled=products.filter(p=>p.disabledForSales!==true).length;
+      const disabled=products.length-enabled;
+      const enabledEl=document.getElementById('availabilityEnabledCount');
+      const disabledEl=document.getElementById('availabilityDisabledCount');
+      if(enabledEl)enabledEl.textContent='متاح: '+enabled;
+      if(disabledEl)disabledEl.textContent='معطّل: '+disabled;
+      const query=String(document.getElementById('productAvailabilitySearch')?.value||'').trim().toLocaleLowerCase();
+      const shown=products.filter(p=>!query||String(p.name||'').toLocaleLowerCase().includes(query)||String(p.barcode||'').toLocaleLowerCase().includes(query));
+      host.innerHTML=shown.length?shown.map(p=>{
+        const off=p.disabledForSales===true;
+        const id=String(p.id).replaceAll('\\\\','\\\\\\\\').replaceAll("'","\\\\'");
+        return `<article class="rounded-xl border ${off?'border-amber-200 bg-amber-50/50':'border-slate-200 bg-white'} p-3 flex items-center gap-3 min-w-0">
+          ${p.image?`<img src="${p.image}" alt="" class="w-14 h-14 rounded-lg object-contain bg-white border shrink-0">`:'<div class="w-14 h-14 rounded-lg bg-slate-100 flex items-center justify-center text-xl shrink-0">🧴</div>'}
+          <div class="min-w-0 flex-1"><div class="font-extrabold text-xs truncate">${escapeHTML(p.name||'منتج')}</div><div class="text-[10px] text-slate-500 mt-1">${escapeHTML(p.category||'')}</div><div class="text-[10px] font-bold mt-1 ${off?'text-amber-800':'text-emerald-700'}">${off?'⏸️ معطّل عن البيع والحجز':'● متاح للبيع والحجز'}</div></div>
+          <button type="button" onclick="toggleProductSalesAvailability('${id}')" class="shrink-0 rounded-lg px-3 py-2 text-[10px] font-extrabold ${off?'bg-emerald-600 text-white':'bg-amber-100 text-amber-900'}">${off?'إعادة إتاحة':'تعطيل'}</button>
+        </article>`;
+      }).join(''):'<div class="col-span-full text-center text-xs text-slate-400 py-5">لا توجد منتجات مطابقة للبحث.</div>';
+    }
+
     function renderInventory() {
+      renderProductAvailabilityManager();
       const lowStock=(state.products||[]).filter(p=>!p.archived&&!p.legacyStockNeedsReview&&Number(p.minimumStock??2)>0&&getAvailableStock(p)<=Number(p.minimumStock??2)).sort((a,b)=>getAvailableStock(a)-getAvailableStock(b));
       const lowBanner=document.getElementById('lowStockAlertBanner');
       if(lowBanner){
