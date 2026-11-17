@@ -7010,6 +7010,21 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           const before=JSON.stringify(state.orders[idx]);markAsReturned(idx);
           return {ok:JSON.stringify(state.orders[idx])!==before,snapshot:snapshot()};
         },
+        settleRefund:async payload=>{
+          await ready;
+          const idx=findOrder(payload?.orderId);if(idx<0)throw new Error('الطلب غير موجود.');
+          const order=state.orders[idx],outstanding=Math.max(0,Number(order.refundLiability||0));
+          if(!outstanding)throw new Error('لا يوجد مبلغ مستحق للعميل على هذا الطلب.');
+          const amount=Number(payload?.amount??outstanding),method=normalizePaymentMethod(payload?.method||'نقدي');
+          if(!Number.isFinite(amount)||amount<=0||amount>outstanding+0.0001)throw new Error('أدخل مبلغ تسوية صحيحاً لا يتجاوز المستحق.');
+          pendingRefundOrderIndex=idx;
+          el('refundAmountInput').value=String(amount);
+          el('refundPaymentMethodSelect').value=method;
+          const before=Number(order.refundedAmount||0);
+          confirmCustomerRefund();
+          const updated=Number(order.refundedAmount||0)>before;
+          return {ok:updated,error:updated?'':(window.__valerianLastSaveError?.message||'لم يتم اعتماد التسوية.'),snapshot:snapshot()};
+        },
         exportSnapshot:snapshot
       });
       emit('valerian:engine-ready',{version:'19.65'});
