@@ -2208,8 +2208,7 @@
         const esc=v=>escapeHtmlMobile(v===undefined||v===null||v===''?'—':v);
         const metric=(label,value)=>'<div style="background:rgba(255,255,255,.065);border:1px solid rgba(203,213,225,.18);border-radius:13px;padding:12px 10px;min-width:0"><div style="font-size:10px;color:#aebdce;margin-bottom:6px">'+label+'</div><div style="font-size:16px;line-height:1.35;font-weight:900;color:#f8fafc;overflow-wrap:anywhere">'+value+'</div></div>';
         const detail=(label,value)=>'<div style="display:flex;gap:12px;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid rgba(203,213,225,.13)"><span style="flex:0 0 37%;font-size:11px;color:#aebdce">'+label+'</span><span style="flex:1;text-align:left;font-size:12px;line-height:1.6;color:#f1f5f9;font-weight:700;overflow-wrap:anywhere">'+esc(value)+'</span></div>';
-        const orderCards=orders.map((o,n)=>'<div style="border:1px solid rgba(203,213,225,.17);background:rgba(255,255,255,.045);border-radius:13px;padding:12px;margin-top:9px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><b style="font-size:12px;color:#f8fafc">طلب #'+esc(o.id)+'</b><span style="font-size:10px;color:#b9c7d6">'+esc(o.date||'—')+'</span></div><div style="font-size:11px;line-height:1.7;color:#dbe4ee;margin-top:7px">'+esc((o.items||[]).map(x=>(x.name||'منتج')+' × '+(x.qty||1)).join('، ')||'—')+'</div><div style="display:flex;justify-content:space-between;gap:10px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(203,213,225,.12)"><span style="font-size:10px;color:#aebdce">'+esc(o.status||'—')+'</span><b style="font-size:12px;color:#e2e8f0">'+fmtEgp(Math.max(0,Number(o.grandTotal||0)-Number(o.returnedValue||0)))+'</b></div></div>').join('')||'<div style="padding:18px;text-align:center;color:#aebdce;font-size:12px">لا توجد طلبات مسجلة لهذا العميل حتى الآن.</div>';
-        const logo='<div dir="ltr" style="width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:4px 0 12px;font-family:Arial,Tahoma,sans-serif"><div style="font-family:Georgia,serif;font-size:25px;font-weight:700;letter-spacing:4px;color:#e2e8f0;text-shadow:0 2px 8px rgba(0,0,0,.45)">VALERIAN</div><div style="font-size:9px;font-weight:700;letter-spacing:2px;color:#aebdce">THE ART OF FRAGRANCE</div></div>';
+        const logo='<div dir="ltr" style="width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:2px 0 12px;font-family:Arial,Tahoma,sans-serif"><div style="display:flex;align-items:center;justify-content:center;gap:9px;height:32px"><img src="./assets/valerian-icon.jpg" alt="" style="display:block;width:30px;height:30px;flex:0 0 30px;object-fit:contain;border:0;border-radius:0;background:transparent"><span style="display:block;height:30px;line-height:30px;font-family:Georgia,serif;font-size:24px;font-weight:700;letter-spacing:3px;color:#e2e8f0;white-space:nowrap">VALERIAN</span></div><div style="font-size:9px;line-height:12px;font-weight:700;letter-spacing:2px;color:#aebdce">THE ART OF FRAGRANCE</div></div>';
         const html='<div dir="rtl" style="width:100%;max-width:680px;margin:0 auto;box-sizing:border-box;padding:16px;background:linear-gradient(145deg,#1e293b 0%,#0b1622 55%,#02080c 100%);border:1px solid rgba(203,213,225,.34);border-radius:22px;color:#f8fafc;font-family:Arial,Tahoma,sans-serif;font-size:13px;line-height:1.5;overflow:hidden;box-shadow:0 14px 34px rgba(0,0,0,.28)"><div style="background:none!important;border:0!important;box-shadow:none!important;border-radius:0;padding:0;margin:0 0 14px;text-align:center">'+logo+'</div><div style="text-align:center;padding:5px 4px 16px;border-bottom:1px solid rgba(203,213,225,.22)"><div style="font-size:9px;letter-spacing:2px;color:#b9c7d6;font-weight:800">CUSTOMER PROFILE</div><div style="font-size:23px;line-height:1.35;font-weight:900;color:#fff;margin-top:5px">'+esc(c.name)+'</div><div dir="ltr" style="font-size:12px;color:#cbd5e1;margin-top:4px;letter-spacing:.5px">'+esc(c.phone)+'</div><div style="display:inline-block;margin-top:10px;padding:5px 12px;border:1px solid rgba(203,213,225,.35);border-radius:30px;font-size:10px;color:#e2e8f0">عضوية VALERIAN • '+new Date().toLocaleDateString('ar-EG')+'</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0">'+metric('إجمالي المشتريات',fmtEgp(c.totalSpent)) +metric('عدد الطلبات',esc(c.ordersCount||orders.length))+metric('رصيد نقاط الولاء',Number(c.points||0)+' نقطة')+metric('قيمة النقاط',fmtEgp(Number(c.points||0)*Number(appState.settings.pointValue||0)))+'</div><section style="margin-top:16px"><div style="display:flex;align-items:center;gap:9px;margin-bottom:5px"><span style="width:4px;height:18px;border-radius:4px;background:#cbd5e1"></span><b style="font-size:13px;color:#f8fafc">بيانات وتفضيلات العميل</b></div>'+detail('رقم الهاتف',c.phone)+detail('العنوان',c.address)+detail('مستحقات المرتجعات',fmtEgp(c.debtToCustomer))+detail('العطور المفضلة',c.fragrancePreferences)+detail('النوتات المفضلة',c.favoriteNotes)+detail('النوتات غير المفضلة',c.avoidNotes)+detail('المناسبات والاستخدامات',c.usageOccasions)+detail('ملاحظات',c.profileNotes)+'</section><div style="text-align:center;border-top:1px solid rgba(203,213,225,.2);margin-top:18px;padding-top:12px;color:#9eacbc;font-size:9px;letter-spacing:.3px">VALERIAN · THE ART OF FRAGRANCE</div></div>';
         activePreviewShareContext={kind:'customer_profile',id:'customer-profile-'+String(c.phone||''),phone:String(c.phone||''),name:String(c.name||'عميلنا')};
         document.getElementById('previewSheetTitle').textContent='معاينة ملف العميل';
@@ -2237,9 +2236,9 @@
       activePreviewShareContext = {kind:'loyalty',id:'loyalty-'+String(c.phone||''),phone:String(c.phone||''),name:String(c.name||''),points:Number(c.points||0)};
       document.getElementById('previewSheetTitle').textContent = 'بطاقة ولاء VALERIAN البلاتينية';
       document.getElementById('previewSheetBody').innerHTML = `
-        <div class="loyalty-platinum-card rounded-3xl p-6 text-center space-y-4 relative overflow-hidden">
-          <div class="brand-serif text-xl font-black tracking-widest silver-text">VALERIAN</div>
-          <div class="text-[10px] tracking-widest text-sky-200 font-bold">PLATINUM LOYALTY MEMBERSHIP</div>
+        <div class="loyalty-platinum-card rounded-3xl p-6 text-center relative overflow-hidden" style="box-sizing:border-box;width:100%;margin:0 auto">
+          <div style="display:flex;align-items:center;justify-content:center;gap:9px;height:32px;direction:ltr;margin:0 auto 5px"><img src="./assets/valerian-icon.jpg" alt="" style="display:block;width:30px;height:30px;flex:0 0 30px;object-fit:contain;border:0;border-radius:0;background:transparent"><span style="display:block;height:30px;line-height:30px;font-family:Georgia,serif;font-size:24px;font-weight:700;letter-spacing:3px;color:#e2e8f0;white-space:nowrap">VALERIAN</span></div>
+          <div style="font-size:10px;line-height:14px;letter-spacing:2px;color:#bae6fd;font-weight:700;margin-bottom:16px">PLATINUM LOYALTY MEMBERSHIP</div>
           <div>
             <div class="text-lg font-black text-white">${c.name}</div>
             <div class="text-xs text-slate-300 bidi-ltr mt-0.5">${c.phone}</div>
@@ -2274,7 +2273,9 @@
       const capture = await loadPreviewCaptureLibrary();
       if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
       const rect = source.getBoundingClientRect();
-      const width = Math.ceil(Math.max(source.scrollWidth, rect.width));
+      // Match the live preview's rendered width exactly. Using scrollWidth here
+      // widened the export clone and changed line wrapping/vertical positions.
+      const width = Math.ceil(rect.width || source.offsetWidth || source.scrollWidth);
       const height = Math.ceil(Math.max(source.scrollHeight, rect.height));
       const captureNode = source.cloneNode(true);
       // html2canvas can paint background-clip:text as a rectangular gradient.
@@ -2305,7 +2306,9 @@
       captureNode.style.margin = '0'; captureNode.style.transform = 'none';
       captureNode.style.boxSizing = 'border-box'; captureNode.style.overflow = 'visible';
       const captureHost = document.createElement('div');
-      captureHost.style.cssText = 'position:fixed;left:-10000px;top:0;z-index:-1;width:'+width+'px;background:#02080c;direction:rtl;';
+      // Keep the clone at the same viewport origin instead of far off-screen:
+      // off-screen placement can alter bidi/layout measurements on Android WebView.
+      captureHost.style.cssText = 'position:fixed;left:0;top:0;z-index:-1;opacity:0;pointer-events:none;width:'+width+'px;max-width:'+width+'px;background:#02080c;direction:rtl;overflow:visible;';
       captureHost.appendChild(captureNode); document.body.appendChild(captureHost);
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       if (!width || !height) throw new Error('تعذر تحديد أبعاد المعاينة.');
@@ -2331,7 +2334,7 @@
       let canvas;
       try {
         canvas = await capture(captureNode, {scale,backgroundColor:null,useCORS:true,allowTaint:false,logging:false,
-          scrollX:0,scrollY:0,width,height,windowWidth:width,windowHeight:height,imageTimeout:10000});
+          scrollX:0,scrollY:0,width,height,windowWidth:Math.max(document.documentElement.clientWidth,window.innerWidth||0),windowHeight:Math.max(document.documentElement.clientHeight,window.innerHeight||0),imageTimeout:10000});
       } finally { captureHost.remove(); }
       // Paint a true horizontal strike through the center of each old price
       // after html2canvas has finished, so it cannot drift onto the new price.
