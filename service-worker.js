@@ -1,6 +1,6 @@
 /* VALERIAN V20.7 — offline application shell */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-51-fixed-square-card-dimensions';
+const CACHE_NAME = 'valerian-app-shell-v20-52-a4-customer-profile';
 const APP_SHELL = ['./', './index.html', './engine.html?v=20261117-fixed-square-card-dimensions-51', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
