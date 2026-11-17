@@ -7157,16 +7157,35 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           refreshAllViews();return {ok:true,snapshot:snapshot()};
         },
         updateCustomerProfile:async payload=>{
-          await ready;const oldPhone=String(payload?.oldPhone||''),idx=state.customers.findIndex(c=>String(c.phone)===oldPhone);if(idx<0)throw new Error('ملف العميل غير موجود.');
-          const name=String(payload?.name||'').trim(),phone=String(payload?.phone||'').trim().replace(/[\\s()-]/g,'');
-          if(!name||!phone||!/^[0-9+]{6,20}$/.test(phone))throw new Error('أدخل اسمًا ورقم هاتف صحيحًا.');
-          if(state.customers.some((c,i)=>i!==idx&&String(c.phone||'').replace(/[\\s()-]/g,'')===phone))throw new Error('رقم الهاتف مستخدم لدى عميل آخر.');
-          const before=structuredClone(state),c=state.customers[idx];
-          if(phone!==oldPhone){(state.orders||[]).forEach(o=>{if(String(o.phone||'')===oldPhone)o.phone=phone;});['paymentTransactions','refundTransactions','returnRecords'].forEach(k=>(state[k]||[]).forEach(x=>{if(String(x.customerPhone||'')===oldPhone)x.customerPhone=phone;}));}
-          Object.assign(c,{name,phone,address:String(payload.address||'').trim(),fragrancePreferences:String(payload.fragrancePreferences||'').trim(),favoriteNotes:String(payload.favoriteNotes||'').trim(),avoidNotes:String(payload.avoidNotes||'').trim(),usageOccasions:String(payload.usageOccasions||'').trim(),profileNotes:String(payload.profileNotes||'').trim(),profileUpdatedAt:new Date().toISOString()});
-          logAudit('CUSTOMER_PROFILE_UPDATED','تحديث ملف العميل '+name+' ('+phone+')');
-          if(!saveState()){state=before;refreshAllViews();throw new Error('تعذر حفظ ملف العميل.');}
-          refreshAllViews();return {ok:true,snapshot:snapshot()};
+          await ready;
+          const normalizePhone=value=>String(value||'').trim().replace(/[\\s()-]/g,'');
+          const oldPhone=normalizePhone(payload?.oldPhone),newPhone=normalizePhone(payload?.phone);
+          const idx=state.customers.findIndex(customer=>normalizePhone(customer.phone)===oldPhone);
+          if(!oldPhone||idx<0)throw new Error('لم يتم العثور على ملف العميل الأصلي. أعد فتح التعديل من قائمة العملاء وحاول مرة أخرى.');
+          const name=String(payload?.name||'').trim();
+          if(!name||!newPhone||!/^[0-9+]{6,20}$/.test(newPhone))throw new Error('أدخل اسمًا ورقم هاتف صحيحًا.');
+          if(state.customers.some((customer,i)=>i!==idx&&normalizePhone(customer.phone)===newPhone))throw new Error('رقم الهاتف مستخدم لدى عميل آخر.');
+          const before=structuredClone(state),customer=state.customers[idx],storedOldPhone=String(customer.phone||'');
+          if(newPhone!==normalizePhone(storedOldPhone)){
+            (state.orders||[]).forEach(order=>{if(normalizePhone(order.phone)===normalizePhone(storedOldPhone))order.phone=newPhone;});
+            ['paymentTransactions','refundTransactions','returnRecords'].forEach(key=>(state[key]||[]).forEach(item=>{if(normalizePhone(item.customerPhone)===normalizePhone(storedOldPhone))item.customerPhone=newPhone;}));
+          }
+          Object.assign(customer,{
+            name,phone:newPhone,
+            address:String(payload?.address||'').trim(),
+            fragrancePreferences:String(payload?.fragrancePreferences||'').trim(),
+            favoriteNotes:String(payload?.favoriteNotes||'').trim(),
+            avoidNotes:String(payload?.avoidNotes||'').trim(),
+            usageOccasions:String(payload?.usageOccasions||'').trim(),
+            profileNotes:String(payload?.profileNotes||'').trim(),
+            profileUpdatedAt:new Date().toISOString()
+          });
+          logAudit('CUSTOMER_PROFILE_UPDATED','تحديث ملف العميل '+name+' ('+newPhone+')');
+          if(!saveState()){state=before;refreshAllViews();throw new Error('تعذر حفظ ملف العميل في التخزين المحلي.');}
+          try{await valDurableWritePromise;await valIdbFlush();}
+          catch(error){state=before;refreshAllViews();throw new Error('لم يكتمل الحفظ الدائم لبيانات العميل: '+String(error?.message||error));}
+          refreshAllViews();
+          return {ok:true,snapshot:snapshot()};
         },
         paySupplierInvoice:async payload=>{
           await ready;
