@@ -4386,7 +4386,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const grid = document.getElementById('posProductsGrid');
       const q = posSearchEl.value.trim().toLowerCase();
       const filtered = state.products.filter(p => {
-        if (p.archived) return false;
+        if (p.archived || p.disabledForSales === true) return false;
         const matchCat = posCategory === 'all' || (posCategory === 'تقسيم' ? p.category === 'تقسيم' : p.category === posCategory);
         const matchType = posProductType === 'all' || String(p.productType||'عطور') === posProductType;
         const matchText = !q || p.name.toLowerCase().includes(q) || p.barcode.includes(q);
@@ -4419,7 +4419,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
 
     function addToCart(id) {
       const p = state.products.find(x => x.id === id);
-      if (!p || getAvailableStock(p) <= 0) { showToast('عذراً، لا توجد كمية متاحة بعد خصم الحجوزات', 'error'); return; }
+      if (!p || p.archived || p.disabledForSales === true) { showToast('هذا المنتج معطّل عن البيع والحجز حالياً.', 'error'); return; }
+      if (getAvailableStock(p) <= 0) { showToast('عذراً، لا توجد كمية متاحة بعد خصم الحجوزات', 'error'); return; }
       const actualPrice = (p.isOffer && p.offerPrice) ? p.offerPrice : p.price;
       const exist = cart.find(i => i.id === id);
       if (exist) {
@@ -4824,16 +4825,16 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const legacyWarning=document.getElementById('legacyDecantWarning');
       if(legacyWarning) legacyWarning.classList.toggle('hidden',!state.products.some(p=>p.legacyStockNeedsReview));
       document.getElementById('inventoryTableBody').innerHTML = state.products.map(p => `
-        <tr class="hover:bg-slate-50">
+        <tr class="hover:bg-slate-50 ${p.disabledForSales ? 'bg-amber-50/50' : ''}">
           <td class="py-3 px-4 font-bold text-slate-900 flex items-center gap-2">
             ${p.image ? `<img src="${p.image}" class="product-thumb">` : ''}
-            <span>${p.name}</span>
+            <span>${p.name}${p.disabledForSales ? '<small class="block text-amber-700 font-extrabold mt-1">⏸️ معطّل عن البيع والحجز</small>' : ''}</span>
           </td>
           <td class="py-3 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${p.category === 'تقسيم' ? 'bg-brand-100 text-brand-800' : 'bg-slate-100 text-slate-700'}">${p.category}</span></td>
           <td class="py-3 px-3 font-extrabold ${getAvailableStock(p) > 0 ? 'text-emerald-700' : 'text-rose-600'}">${getPhysicalStockLabel(p)} ${p.legacyStockNeedsReview ? '<span class="block text-rose-700">⚠️ رصيد قديم يحتاج مراجعة قبل البيع</span>' : ''} ${Number(p.minimumStock??2)>0&&getAvailableStock(p)<=Number(p.minimumStock??2)?`<span class="block mt-1 text-rose-700 text-[10px]">⚠️ ${getAvailableStock(p)<=0?'نفد المخزون المتاح':'قرب النفاذ — حد التنبيه '+formatNumber(p.minimumStock??2,0)}</span>`:''}</td>
           <td class="py-3 px-3 font-bold">${formatCurrency(p.price)}${p.priceReviewRequired?'<span class="price-warning">⚠️ يحتاج مراجعة السعر</span>':''}</td>
           <td class="py-3 px-3"><b>آخر شراء: ${formatCurrency(p.lastPurchaseUnitCost??p.averageCost??p.totalCost??0)}</b><span class="block text-[10px] text-slate-500">متوسط التكلفة: ${formatCurrency(p.averageCost??p.totalCost??0)}</span><span class="block text-[10px] text-slate-400">${p.lastPurchaseDate?new Date(p.lastPurchaseDate).toLocaleDateString('ar-EG'):'لا توجد فاتورة شراء محفوظة'}${p.lastPurchaseSupplier?' — '+escapeHTML(p.lastPurchaseSupplier):''}${p.lastPurchaseInvoiceId?' — '+escapeHTML(p.lastPurchaseInvoiceId):''}</span></td>
-          <td class="py-3 px-3 flex flex-wrap gap-1"><button onclick="openInventoryProductDetails('${p.id}')" class="px-2 py-1 rounded bg-violet-100 text-violet-800 font-bold">تفاصيل</button><button onclick="openProductModalForEdit('${p.id}')" class="px-2 py-1 rounded bg-slate-100 font-bold">مراجعة / تعديل</button></td>
+          <td class="py-3 px-3 flex flex-wrap gap-1"><button onclick="openInventoryProductDetails('${p.id}')" class="px-2 py-1 rounded bg-violet-100 text-violet-800 font-bold">تفاصيل</button><button onclick="openProductModalForEdit('${p.id}')" class="px-2 py-1 rounded bg-slate-100 font-bold">مراجعة / تعديل</button>${!p.archived ? `<button onclick="toggleProductSalesAvailability('${String(p.id).replace(/'/g,"\\'")}')" class="px-2 py-1 rounded ${p.disabledForSales?'bg-emerald-100 text-emerald-800':'bg-amber-100 text-amber-800'} font-bold">${p.disabledForSales?'إعادة إتاحة':'تعطيل البيع والحجز'}</button>` : ''}</td>
         </tr>
       `).join('');
 
@@ -5708,7 +5709,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
 
     function renderOffersPage() {
       const grid = document.getElementById('offersDisplayGrid');
-      const offers = state.products.filter(p => !p.archived && p.isOffer);
+      const offers = state.products.filter(p => !p.archived && p.disabledForSales !== true && p.isOffer);
       grid.innerHTML = offers.length ? offers.map(p => `
         <div class="bg-white rounded-2xl border-2 border-brand-200 p-4 flex flex-col justify-between space-y-3 shadow-sm relative overflow-hidden">
           <div class="absolute top-2 left-2 bg-brand-600 text-white px-2.5 py-0.5 rounded-full text-[9px] font-extrabold">عرض حصري ✨</div>
@@ -5865,6 +5866,28 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       }
     }
 
+    function toggleProductSalesAvailability(id) {
+      const product = state.products.find(p => String(p.id) === String(id));
+      if (!product || product.archived) return;
+      const disabling = product.disabledForSales !== true;
+      const promptText = disabling
+        ? 'سيتم إخفاء المنتج من البيع والحجز فقط، مع بقائه في المخزون وسجلاته دون حذف. ويمكن إعادة إتاحته في أي وقت. هل تريد المتابعة؟'
+        : 'سيتم إعادة إظهار المنتج في البيع والحجز. هل تريد المتابعة؟';
+      if (!confirm(promptText)) return;
+      product.disabledForSales = disabling;
+      if (disabling) {
+        if (Array.isArray(cart)) {
+          for (let i = cart.length - 1; i >= 0; i--) if (String(cart[i].id) === String(product.id)) cart.splice(i, 1);
+          renderCart();
+        }
+        product.isOffer = false;
+      }
+      logAudit(disabling ? 'PRODUCT_SALES_DISABLED' : 'PRODUCT_SALES_ENABLED',
+        (disabling ? 'تعطيل البيع والحجز للمنتج ' : 'إعادة إتاحة المنتج للبيع والحجز ') + product.name);
+      if (!saveState()) return;
+      refreshAllViews();
+      showToast(disabling ? 'تم تعطيل المنتج عن البيع والحجز مع الاحتفاظ به في المخزون.' : 'تمت إعادة إتاحة المنتج للبيع والحجز.', 'success');
+    }
     function deleteProduct(id) {
       const product = state.products.find(p => p.id === id);
       if (!product) return;
