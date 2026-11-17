@@ -2052,7 +2052,7 @@
         customers:(raw.customers||[]).map(c=>({...c,points:Number(c.points||0),totalSpent:Number(c.totalSpent||0),debtToCustomer:Number(c.debtToCustomer||0)})),
         expenses:raw.expenses||[],
         settings:{...defaultSchema.settings,...(raw.settings||{})},
-        packagingInventory:raw.packagingInventory||defaultSchema.packagingInventory
+        packagingInventory:{...defaultSchema.packagingInventory,...(raw.packagingInventory||{})}
       };
     }
     function syncFromEngine(){
@@ -2159,7 +2159,8 @@
       const reason=document.getElementById('adjReason').value.trim();
       if(!reason)return showToast('يرجى كتابة سبب التسوية');
       try{
-        const r=await runEngine('adjustStock',{kind:'product',id,quantity:qty,reason,reasonType:'WASTAGE'});
+        const reasonType=document.getElementById('adjType').value==='SHORTAGE'?'COUNT_SHORTAGE':'WASTAGE';
+        const r=await runEngine('adjustStock',{kind:'product',id,quantity:qty,reason,reasonType});
         if(r.ok){closeSheet('stockAdjustSheet');showToast('تم تسجيل التسوية في سجل حركات المخزون الأصلي.');}
       }catch(err){reportError(err);}
     };
