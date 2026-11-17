@@ -2172,41 +2172,7 @@
     window.printMobileWaybill=function(orderId){
       const o=appState.orders.find(x=>String(x.id)===String(orderId));if(!o)return showToast('الطلب غير موجود.');
       const rows=(o.items||[]).map(x=>'<tr><td>'+escapeHtmlMobile(x.name||x.productName||'منتج')+'</td><td>'+escapeHtmlMobile(x.size||'')+'</td><td>'+Number(x.qty||0)+'</td></tr>').join('');
-      const html='<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>بوليصة شحن '+escapeHtmlMobile(o.id)+'</title><style>@page{size:A5 portrait;margin:9mm}*{box-sizing:border-box}body{font-family:Arial,Tahoma,sans-serif;color:#111;margin:0;font-size:12px}.sheet{border:2px solid #111;padding:16px;border-radius:8px}.brand{text-align:center;font-family:Georgia,serif;font-size:22px;letter-spacing:4px;font-weight:bold;border-bottom:2px solid #111;padding-bottom:10px}.title{text-align:center;background:#e8edf2;padding:9px;font-size:17px;font-weight:bold;margin:12px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.field{border:1px solid #bbb;padding:9px;min-height:45px}.wide{grid-column:1/-1}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border:1px solid #999;padding:8px;text-align:right}th{background:#eee}.cod{margin-top:12px;border:2px dashed #222;padding:12px;font-size:17px;font-weight:bold;text-align:center}.foot{text-align:center;margin-top:18px;font-size:10px}</style></head><body><main class="sheet">'+mobileBrandHeader()+'<div class="title">بوليصة شحن وتوصيل</div><div class="grid"><div class="field"><b>رقم الطلب:</b><br>'+escapeHtmlMobile(o.id)+'</div><div class="field"><b>التاريخ:</b><br>'+escapeHtmlMobile(o.date||'—')+'</div><div class="field"><b>اسم العميل:</b><br>'+escapeHtmlMobile(o.name||'—')+'</div><div class="field"><b>رقم الهاتف:</b><br>'+escapeHtmlMobile(o.phone||'—')+'</div><div class="field wide"><b>العنوان:</b><br>'+escapeHtmlMobile(o.address||'—')+'</div><div class="field"><b>شركة الشحن:</b><br>'+escapeHtmlMobile(o.shippingCompany||'غير محددة')+'</div><div class="field"><b>رقم التتبع:</b><br>'+escapeHtmlMobile(o.trackingNumber||'—')+'</div></div><table><thead><tr><th>الصنف</th><th>الحجم</th><th>الكمية</th></tr></thead><tbody>'+rows+'</tbody></table><div class="cod">المطلوب تحصيله عند الاستلام: '+fmtEgp(Math.max(0,Number(o.remainingAmount||0)))+'</div><div class="foot">يرجى التأكد من بيانات المستلم ومحتويات الشحنة — VALERIAN</div></main><script>window.onload=()=>setTimeout(()=>window.print(),350)<\/script><div id="valDiagDock" style="position:fixed;left:10px;bottom:90px;z-index:99999;font-family:Arial,sans-serif;direction:rtl">
-<button id="valDiagToggle" type="button" style="background:#102b38;color:#dff7ff;border:1px solid #6ca6ba;border-radius:18px;padding:9px 13px;font-weight:bold;box-shadow:0 4px 20px #0009">فحص النظام</button>
-<div id="valDiagPanel" style="display:none;width:min(92vw,440px);max-height:65vh;overflow:auto;background:#06131cf2;color:#e5f5fa;border:1px solid #6ca6ba;border-radius:14px;padding:12px;margin-top:8px;box-shadow:0 10px 35px #000b">
-<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>تشخيص VALERIAN</b><button id="valDiagCopy" type="button" style="padding:6px 10px;background:#dcecf2;color:#10212a;border-radius:8px">نسخ التقرير</button></div>
-<div id="valDiagState" style="font-size:12px;line-height:1.9;margin:8px 0;white-space:pre-wrap"></div>
-<pre id="valDiagLog" style="white-space:pre-wrap;overflow-wrap:anywhere;font:11px/1.7 monospace;background:#02080c;padding:8px;border-radius:8px;max-height:34vh;overflow:auto">بانتظار أحداث التشغيل…</pre>
-</div></div>
-<script>
-(function(){
- const $=id=>document.getElementById(id),diag=window.__VALERIAN_DIAG;
- const state=()=>{
-  const frame=$('valerianEngineFrame'),w=frame?.contentWindow,eng=w?.ValerianEngine;
-  let cloud='غير متاح';
-  try{cloud=eng?.cloudStatus?JSON.stringify(eng.cloudStatus()):'cloudStatus غير متاح';}catch(e){cloud='cloudStatus error: '+e.message;}
-  return [
-   'الصفحة: '+location.href,
-   'المتصفح: '+navigator.userAgent,
-   'الواجهة: '+(typeof window.importMobileJson)+' / '+(typeof window.exportMobileJson),
-   'زر المزامنة: '+(!!$('v5CloudSyncBtn')),
-   'iframe: '+(frame?'موجود':'مفقود')+' | '+(frame?.contentDocument?.readyState||'لا يوجد document'),
-   'محرك الأعمال: '+(eng?'موجود':'غير موجود'),
-   'جاهزية المحرك: '+(eng?.ready?'promise موجودة':'غير متاحة'),
-   'حالة السحابة: '+cloud,
-   'آخر تحديث للصفحة: '+new Date().toLocaleString('ar-EG')
-  ].join('\\n');
- };
- function refresh(){ $('valDiagState').textContent=state();$('valDiagLog').textContent=(diag?.logs||[]).slice(-35).map(x=>'['+x.time+'] '+x.type+' — '+x.detail).join('\\n')||'لا توجد أخطاء مسجلة حتى الآن.';}
- $('valDiagToggle').addEventListener('click',()=>{const p=$('valDiagPanel');p.style.display=p.style.display==='none'?'block':'none';refresh();});
- $('valDiagCopy').addEventListener('click',async()=>{refresh();const report=$('valDiagState').textContent+'\\n\\n'+$('valDiagLog').textContent;try{await navigator.clipboard.writeText(report);$('valDiagCopy').textContent='تم النسخ';}catch(e){const t=document.createElement('textarea');t.value=report;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();$('valDiagCopy').textContent='تم النسخ';}});
- window.addEventListener('load',()=>{diag?.push('PAGE LOAD','load event fired');refresh();});
- const frame=$('valerianEngineFrame');frame?.addEventListener('load',()=>{diag?.push('ENGINE IFRAME LOAD','iframe load event');setTimeout(refresh,300);});
- setInterval(()=>{if($('valDiagPanel').style.display!=='none')refresh();},1200);
- diag?.push('DIAGNOSTICS','Diagnostic panel installed');
-})();
-</script>
+      const html='<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>بوليصة شحن '+escapeHtmlMobile(o.id)+'</title><style>@page{size:A5 portrait;margin:9mm}*{box-sizing:border-box}body{font-family:Arial,Tahoma,sans-serif;color:#111;margin:0;font-size:12px}.sheet{border:2px solid #111;padding:16px;border-radius:8px}.brand{text-align:center;font-family:Georgia,serif;font-size:22px;letter-spacing:4px;font-weight:bold;border-bottom:2px solid #111;padding-bottom:10px}.title{text-align:center;background:#e8edf2;padding:9px;font-size:17px;font-weight:bold;margin:12px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.field{border:1px solid #bbb;padding:9px;min-height:45px}.wide{grid-column:1/-1}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border:1px solid #999;padding:8px;text-align:right}th{background:#eee}.cod{margin-top:12px;border:2px dashed #222;padding:12px;font-size:17px;font-weight:bold;text-align:center}.foot{text-align:center;margin-top:18px;font-size:10px}</style></head><body><main class="sheet">'+mobileBrandHeader()+'<div class="title">بوليصة شحن وتوصيل</div><div class="grid"><div class="field"><b>رقم الطلب:</b><br>'+escapeHtmlMobile(o.id)+'</div><div class="field"><b>التاريخ:</b><br>'+escapeHtmlMobile(o.date||'—')+'</div><div class="field"><b>اسم العميل:</b><br>'+escapeHtmlMobile(o.name||'—')+'</div><div class="field"><b>رقم الهاتف:</b><br>'+escapeHtmlMobile(o.phone||'—')+'</div><div class="field wide"><b>العنوان:</b><br>'+escapeHtmlMobile(o.address||'—')+'</div><div class="field"><b>شركة الشحن:</b><br>'+escapeHtmlMobile(o.shippingCompany||'غير محددة')+'</div><div class="field"><b>رقم التتبع:</b><br>'+escapeHtmlMobile(o.trackingNumber||'—')+'</div></div><table><thead><tr><th>الصنف</th><th>الحجم</th><th>الكمية</th></tr></thead><tbody>'+rows+'</tbody></table><div class="cod">المطلوب تحصيله عند الاستلام: '+fmtEgp(Math.max(0,Number(o.remainingAmount||0)))+'</div><div class="foot">يرجى التأكد من بيانات المستلم ومحتويات الشحنة — VALERIAN</div></main><script>window.onload=()=>setTimeout(()=>window.print(),350)<\/script>
 </body></html>';
       if(window.ValerianNative&&typeof window.ValerianNative.printHtml==='function'){
         window.ValerianNative.printHtml(html,'VALERIAN-Waybill-'+String(o.id),false);
@@ -3442,5 +3408,40 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
   })();
   </script>
 
+<div id="valDiagDock" style="position:fixed;left:10px;bottom:90px;z-index:99999;font-family:Arial,sans-serif;direction:rtl">
+<button id="valDiagToggle" type="button" style="background:#102b38;color:#dff7ff;border:1px solid #6ca6ba;border-radius:18px;padding:9px 13px;font-weight:bold;box-shadow:0 4px 20px #0009">فحص النظام</button>
+<div id="valDiagPanel" style="display:none;width:min(92vw,440px);max-height:65vh;overflow:auto;background:#06131cf2;color:#e5f5fa;border:1px solid #6ca6ba;border-radius:14px;padding:12px;margin-top:8px;box-shadow:0 10px 35px #000b">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>تشخيص VALERIAN</b><button id="valDiagCopy" type="button" style="padding:6px 10px;background:#dcecf2;color:#10212a;border-radius:8px">نسخ التقرير</button></div>
+<div id="valDiagState" style="font-size:12px;line-height:1.9;margin:8px 0;white-space:pre-wrap"></div>
+<pre id="valDiagLog" style="white-space:pre-wrap;overflow-wrap:anywhere;font:11px/1.7 monospace;background:#02080c;padding:8px;border-radius:8px;max-height:34vh;overflow:auto">بانتظار أحداث التشغيل…</pre>
+</div></div>
+<script>
+(function(){
+ const $=id=>document.getElementById(id),diag=window.__VALERIAN_DIAG;
+ const state=()=>{
+  const frame=$('valerianEngineFrame'),w=frame?.contentWindow,eng=w?.ValerianEngine;
+  let cloud='غير متاح';
+  try{cloud=eng?.cloudStatus?JSON.stringify(eng.cloudStatus()):'cloudStatus غير متاح';}catch(e){cloud='cloudStatus error: '+e.message;}
+  return [
+   'الصفحة: '+location.href,
+   'المتصفح: '+navigator.userAgent,
+   'الواجهة: '+(typeof window.importMobileJson)+' / '+(typeof window.exportMobileJson),
+   'زر المزامنة: '+(!!$('v5CloudSyncBtn')),
+   'iframe: '+(frame?'موجود':'مفقود')+' | '+(frame?.contentDocument?.readyState||'لا يوجد document'),
+   'محرك الأعمال: '+(eng?'موجود':'غير موجود'),
+   'جاهزية المحرك: '+(eng?.ready?'promise موجودة':'غير متاحة'),
+   'حالة السحابة: '+cloud,
+   'آخر تحديث للصفحة: '+new Date().toLocaleString('ar-EG')
+  ].join('\\n');
+ };
+ function refresh(){ $('valDiagState').textContent=state();$('valDiagLog').textContent=(diag?.logs||[]).slice(-35).map(x=>'['+x.time+'] '+x.type+' — '+x.detail).join('\\n')||'لا توجد أخطاء مسجلة حتى الآن.';}
+ $('valDiagToggle').addEventListener('click',()=>{const p=$('valDiagPanel');p.style.display=p.style.display==='none'?'block':'none';refresh();});
+ $('valDiagCopy').addEventListener('click',async()=>{refresh();const report=$('valDiagState').textContent+'\\n\\n'+$('valDiagLog').textContent;try{await navigator.clipboard.writeText(report);$('valDiagCopy').textContent='تم النسخ';}catch(e){const t=document.createElement('textarea');t.value=report;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();$('valDiagCopy').textContent='تم النسخ';}});
+ window.addEventListener('load',()=>{diag?.push('PAGE LOAD','load event fired');refresh();});
+ const frame=$('valerianEngineFrame');frame?.addEventListener('load',()=>{diag?.push('ENGINE IFRAME LOAD','iframe load event');setTimeout(refresh,300);});
+ setInterval(()=>{if($('valDiagPanel').style.display!=='none')refresh();},1200);
+ diag?.push('DIAGNOSTICS','Diagnostic panel installed');
+})();
+</script>
 </body>
 </html>
