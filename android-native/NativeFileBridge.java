@@ -56,6 +56,35 @@ public final class NativeFileBridge {
     }
 
     @JavascriptInterface
+    public void printHtml(String html, String jobName, boolean thermal) {
+        activity.runOnUiThread(() -> {
+            try {
+                if (html == null || html.trim().isEmpty()) throw new IllegalArgumentException("محتوى البوليصة فارغ");
+                WebView printView = new WebView(activity);
+                printView.getSettings().setJavaScriptEnabled(false);
+                printView.setWebViewClient(new WebViewClient() {
+                    @Override public void onPageFinished(WebView view, String url) {
+                        try {
+                            PrintManager manager = (PrintManager) activity.getSystemService(Context.PRINT_SERVICE);
+                            String title = (jobName == null || jobName.trim().isEmpty()) ? "VALERIAN" : jobName;
+                            PrintAttributes.Builder attrs = new PrintAttributes.Builder()
+                                .setColorMode(PrintAttributes.COLOR_MODE_COLOR)
+                                .setMinMargins(PrintAttributes.Margins.NO_MARGINS);
+                            if (thermal) attrs.setMediaSize(new PrintAttributes.MediaSize("VALERIAN_80MM", "80mm", 3150, 12000));
+                            manager.print(title, view.createPrintDocumentAdapter(title), attrs.build());
+                        } catch (Exception e) {
+                            Toast.makeText(activity, "تعذرت الطباعة: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
+                printView.loadDataWithBaseURL("https://localhost/", html, "text/html", "UTF-8", null);
+            } catch (Exception e) {
+                Toast.makeText(activity, "تعذرت الطباعة: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    @JavascriptInterface
     public void printImage(String base64, String jobName, boolean thermal) {
         activity.runOnUiThread(() -> {
             try {
