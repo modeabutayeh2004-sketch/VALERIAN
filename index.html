@@ -2043,7 +2043,17 @@
         box.innerHTML = renderEmptyPlaceholder('🧾', 'سجل الطلبات فارغ', 'ستظهر هنا كافة الفواتير والحجوزات المسبقة فور إنشائها من الكاشير.');
         return;
       }
-      box.innerHTML = appState.orders.map(o => `
+      const newestFirstOrders = [...appState.orders].sort((a,b) => {
+        const timeOf = order => {
+          const raw = order?.createdAt || order?.date || order?.deliveredAt || '';
+          const parsed = Date.parse(raw);
+          if (Number.isFinite(parsed)) return parsed;
+          const digits = String(order?.id || '').match(/(\\d+)$/);
+          return digits ? Number(digits[1]) : 0;
+        };
+        return timeOf(b) - timeOf(a);
+      });
+      box.innerHTML = newestFirstOrders.map(o => `
         <div class="glass-card rounded-2xl p-3.5 space-y-2.5 text-xs">
           <div class="flex items-center justify-between">
             <div>
