@@ -1,7 +1,7 @@
 /* VALERIAN V20.7 — offline application shell */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-54-restore-natural-portrait-profile';
-const APP_SHELL = ['./', './index.html', './engine.html?v=20261117-54-restore-natural-portrait-profile', './manifest.webmanifest', './assets/valerian-icon.jpg'];
+const CACHE_NAME = 'valerian-app-shell-v20-55-restore-original-customer-profile';
+const APP_SHELL = ['./', './index.html', './engine.html?v=20261117-55-restore-original-customer-profile', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
