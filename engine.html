@@ -7083,8 +7083,12 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           if(!Number.isSafeInteger(startOrder)||startOrder<1)throw new Error('رقم أول طلب مؤهل يجب أن يكون 1 أو أكثر.');
           if(!Number.isFinite(pointValue)||pointValue<0)throw new Error('قيمة النقطة يجب أن تكون صفراً أو أكثر.');
           state.settings={...(state.settings||{}),loyaltyPercentage:percentage,loyaltyStartOrder:startOrder,pointValue};
-          // Recalculate displayed balances from delivered purchases using the newly selected earn rate.
-          // The monetary redemption value remains independently controlled by pointValue.
+          // Rebuild customer balances from delivered purchases immediately after settings change.
+          // This makes the earn percentage effective on the purchase history, while pointValue only
+          // changes the monetary value of each point and never rewrites the number of points.
+          (state.customers||[]).forEach(customer=>{
+            customer.points=calculateCurrentLoyaltyPoints(customer.phone);
+          });
           logAudit('LOYALTY_SETTINGS_UPDATED','تحديث إعدادات برنامج الولاء والنقاط');
           if(!saveState()){state.settings=before;refreshAllViews();throw new Error('تعذر حفظ إعدادات النقاط.');}
           await valDurableWritePromise;try{await valIdbFlush();}catch(_){}
