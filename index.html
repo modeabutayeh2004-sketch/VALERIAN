@@ -1664,15 +1664,16 @@
       container.innerHTML = items.map(p => {
         const avail = getAvail(p);
         const isLow = avail <= Number(p.minimumStock || 0);
-        const fillPct = avail > 0 ? Math.min(90, Math.max(15, Math.round((avail / Math.max(1, (p.minimumStock || 2) * 3)) * 100))) : 8;
-        const visualMark = `${p.image ? `<img src="${p.image}" alt="${p.name}" class="w-11 h-11 rounded-xl object-cover border border-white/15 shrink-0" />` : ''}<div class="inventory-level-icon" role="img" aria-label="مستوى المخزون ${fillPct}%" style="--level:${fillPct}%"><div class="inventory-level-fill"></div><span class="bidi-ltr">${fillPct}%</span></div>`
+        const fillPct = avail > 0 ? Math.min(100, Math.max(0, Math.round((avail / Math.max(1, (p.minimumStock || 2) * 3)) * 100))) : 0;
 
         return `
-          <div class="glass-card rounded-2xl p-3.5 space-y-2.5 ${isLow ? 'border-amber-400/40' : ''}">
+          <div class="glass-card bottle-card relative rounded-2xl p-3.5 space-y-2.5 overflow-hidden ${isLow ? 'border-amber-400/40' : ''}">
+            <div class="water-fill" aria-hidden="true" style="--level:${fillPct}%"></div>
             <div class="relative z-10 space-y-2.5">
               <div class="flex items-start justify-between gap-2">
                 <div class="flex items-center gap-2.5">
-                  ${visualMark}
+                  ${p.image ? `<img src="${p.image}" alt="${p.name}" class="w-11 h-11 rounded-xl object-cover border border-white/15 shrink-0" />` : `<div class="w-11 h-11 rounded-xl bg-white/5 border border-white/15 shrink-0 flex items-center justify-center text-[9px] text-slate-400">V</div>`}
+
                   <div>
                     <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full ${p.category === 'تقسيم' ? 'bg-sky-400/20 text-sky-200' : 'bg-slate-200/15 text-slate-200'}">${p.category}</span>
                     <h3 class="text-xs font-extrabold text-white mt-1">${p.name}</h3>
@@ -2240,7 +2241,10 @@
             <div class="text-xs font-extrabold text-sky-200 mt-1">✨ عروض النخبة لفترة محدودة ✨</div>
           </div>
           <div class="space-y-2.5">
-            ${offers.map(p => `
+            ${offers.map(p => {
+              const regularPrice = Math.max(Number(p.price) || 0, Number(p.offerPrice) || 0);
+              const discountedPrice = Math.min(Number(p.price) || 0, Number(p.offerPrice) || 0);
+              return `
               <div class="bg-white/5 rounded-2xl p-3 border border-slate-300/20 flex items-center gap-3 text-xs">
                 ${p.image ? `<img src="${p.image}" alt="${p.name}" class="w-20 h-20 rounded-xl object-contain bg-white/10 shrink-0">` : `<div class="w-20 h-20 rounded-xl bg-white/5 flex items-center justify-center text-slate-500 text-[9px] shrink-0">VALERIAN</div>`}
                 <div class="flex-1 min-w-0">
@@ -2248,11 +2252,15 @@
                   <span class="text-[10px] text-slate-300 bidi-ltr">${p.size}</span>
                 </div>
                 <div class="text-left">
-                  <strong class="text-sm font-black text-white bidi-ltr block" style="text-decoration:none!important;border:0!important;box-shadow:none!important">${fmtEgp(p.offerPrice)}</strong>
-                  <span class="text-[10px] text-slate-400 line-through bidi-ltr">${fmtEgp(p.price)}</span>
+                  <strong class="text-sm font-black text-white bidi-ltr block" style="text-decoration:none!important;border:0!important;box-shadow:none!important">${fmtEgp(discountedPrice)}</strong>
+                  <span class="offer-old-price text-[10px] text-slate-400 bidi-ltr" style="position:relative;display:inline-block;white-space:nowrap;padding:0 1px">
+                    <span>${fmtEgp(regularPrice)}</span>
+                    <i aria-hidden="true" style="position:absolute;left:0;right:0;top:50%;height:1.5px;background:#cbd5e1;transform:translateY(-50%);display:block"></i>
+                  </span>
                 </div>
               </div>
-            `).join('')}
+              `;
+            }).join('')}
           </div>
         </div>
       `;
