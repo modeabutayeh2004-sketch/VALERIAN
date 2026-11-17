@@ -3045,6 +3045,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       });
       merged.products.forEach(p => {
         p.archived = !!p.archived;
+        if(!p.productType) p.productType='عطور';
         if (!Number.isFinite(Number(p.minimumStock))) p.minimumStock = 2;
         else p.minimumStock = Math.max(0, Math.floor(Number(p.minimumStock)));
         if (typeof p.reservedStock !== 'number') p.reservedStock = 0;
@@ -3057,10 +3058,14 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           // Legacy V13/V14 decant stock has ambiguous units; preserve it but block sales until explicitly verified.
           if (typeof p.legacyStockNeedsReview !== 'boolean') p.legacyStockNeedsReview = Number(input?.schemaVersion || 13) < 15;
           p.stockUnit = 'عبوة تقسيم جاهزة';
-        } else {
+        } else if (p.productType === 'عطور') {
           if (typeof p.volumeMlPerBottle !== 'number' || p.volumeMlPerBottle <= 0) p.volumeMlPerBottle = Number(String(p.size || '').match(/\d+(?:\.\d+)?/)?.[0] || 100);
           if (typeof p.decantMlAvailable !== 'number') p.decantMlAvailable = 0;
           p.stockUnit = 'زجاجة أصلية';
+        } else {
+          p.volumeMlPerBottle = 0;
+          p.decantMlAvailable = 0;
+          p.stockUnit = String(p.stockUnit || 'وحدة');
         }
       });
       // Backfill product-specific fields for every product, regardless of whether shared packaging inventory already exists.
