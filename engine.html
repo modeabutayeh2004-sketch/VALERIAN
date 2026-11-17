@@ -6742,10 +6742,18 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       let writeSucceeded = false;
       try {
         const snapshot=await valBuildCloudSyncState(sourceSnapshot);
-        setCloudStatus('جارٍ حفظ البيانات والصور على السحابة…','#a16207');
+        const payloadBytes=new Blob([JSON.stringify(snapshot)]).size;
+        const payloadLabel=payloadBytes>=1048576?(payloadBytes/1048576).toFixed(2)+' MB':Math.max(1,Math.round(payloadBytes/1024))+' KB';
+        setCloudStatus('جارٍ حفظ البيانات على السحابة — حجم النسخة '+payloadLabel+'…','#a16207');
         const {data,error}=await cloudClient.rpc('valerian_save_state',{p_state:snapshot,p_expected_revision:expected});
         if(error){
-          cloudDirty=true; setCloudStatus('تعذر الحفظ السحابي: '+cloudErrorMessage(error)+' — سنعيد المحاولة','#b91c1c');
+          cloudDirty=true;
+          const errorText=cloudErrorMessage(error);
+          if(/statement timeout|canceling statement/i.test(errorText)){
+            setCloudStatus('تجاوزت قاعدة البيانات مهلة الحفظ. حجم النسخة '+payloadLabel+'؛ أوقفنا الإعادة التلقائية لحماية الاتصال.','#b91c1c');
+            return;
+          }
+          setCloudStatus('تعذر الحفظ السحابي: '+errorText+' — سنعيد المحاولة','#b91c1c');
           scheduleCloudRetry(); return;
         }
         if(!data?.[0]?.ok){
