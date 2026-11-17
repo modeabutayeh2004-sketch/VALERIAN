@@ -6453,38 +6453,56 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const head = document.getElementById('cloudHeaderStatus');
       if(head){const offline=!navigator.onLine||String(label||'').includes('غير متصل')||String(label||'').includes('لا يوجد إنترنت');const hasIssue=String(label||'').includes('فشل')||String(label||'').includes('تعذر')||String(label||'').includes('تعارض');head.textContent=offline?'● أوفلاين':(hasIssue?'● مشكلة مزامنة':(cloudReady?'● أونلاين':'● أونلاين — سجّل الدخول'));head.style.color=offline?'#92400e':(hasIssue?'#b91c1c':(cloudReady?'#047857':'#0369a1'));head.style.background=offline?'#fffbeb':(hasIssue?'#fef2f2':(cloudReady?'#ecfdf5':'#eff6ff'));head.title=label||'';}
       const msg = document.getElementById('cloudMessage');
-      if (msg && label) msg.textContent = 'الحالة: ' + label; const settingsStatus=document.getElementById('settingsCloudStatus'); if(settingsStatus&&label)settingsStatus.textContent='الحالة الحالية: '+label;
+      if (msg && label) msg.textContent = 'الحالة: ' + label;
+      const settingsStatus=document.getElementById('settingsCloudStatus');
+      if(settingsStatus&&label)settingsStatus.textContent='الحالة الحالية: '+label;
+      try {
+        window.dispatchEvent(new CustomEvent('valerian:cloud-status',{detail:{
+          label:String(label||''),connected:!!cloudReady,authenticated:!!cloudUser,
+          email:String(cloudUser?.email||''),online:!!navigator.onLine,
+          dirty:!!cloudDirty,conflict:!!cloudConflict
+        }}));
+      } catch (_) {}
     }
     function openCloudPanel() { if(typeof switchTab==='function' && currentTab!=='settings') switchTab('settings'); const panel=document.getElementById('cloudPanel'); if(panel)panel.style.display='block'; document.getElementById('cloudPanel')?.scrollIntoView({behavior:'smooth',block:'center'}); }
     function closeCloudPanel() { const panel=document.getElementById('cloudPanel'); if(panel)panel.style.display='none'; }
     function cloudErrorMessage(err) { return err?.message || err?.error_description || 'حدث خطأ غير معروف'; }
 
-    async function cloudSignIn() {
-      if (!cloudClient) { const ok=await loadSupabaseLibrary(); if(!ok || !cloudClient){setCloudStatus('البرنامج يعمل محليًا؛ المزامنة تحتاج اتصالًا بالإنترنت.','#a16207');return;} }
-      const email=document.getElementById('cloudEmail').value.trim(), password=document.getElementById('cloudPassword').value;
-      if (!email || !password) { setCloudStatus('أدخل البريد الإلكتروني وكلمة المرور','#b91c1c'); return; }
+    async function cloudSignIn(credentials) {
+      if (!cloudClient) { const ok=await loadSupabaseLibrary(); if(!ok || !cloudClient){const message='البرنامج يعمل محليًا؛ المزامنة تحتاج اتصالًا بالإنترنت.';setCloudStatus(message,'#a16207');return {ok:false,authenticated:false,message};} }
+      const email=String(credentials?.email ?? document.getElementById('cloudEmail')?.value ?? '').trim();
+      const password=String(credentials?.password ?? document.getElementById('cloudPassword')?.value ?? '');
+      if (!email || !password) { const message='أدخل البريد الإلكتروني وكلمة المرور';setCloudStatus(message,'#b91c1c');return {ok:false,authenticated:false,message}; }
       setCloudStatus('جارٍ تسجيل الدخول…','#a16207');
       const {data,error}=await cloudClient.auth.signInWithPassword({email,password});
-      if(error){setCloudStatus('فشل الدخول: '+cloudErrorMessage(error),'#b91c1c');return;}
+      if(error){const message='فشل الدخول: '+cloudErrorMessage(error);setCloudStatus(message,'#b91c1c');return {ok:false,authenticated:false,message};}
       await initializeValerianCloud(data.user);
+      return {ok:!!cloudReady,authenticated:!!cloudUser,synced:!!cloudReady,message:(document.getElementById('cloudMessage')?.textContent||'').replace(/^الحالة:\\s*/,'')};
     }
-    async function cloudSignUp() {
-      if (!cloudClient) { const ok=await loadSupabaseLibrary(); if(!ok || !cloudClient){setCloudStatus('البرنامج يعمل محليًا؛ المزامنة تحتاج اتصالًا بالإنترنت.','#a16207');return;} }
-      const email=document.getElementById('cloudEmail').value.trim(), password=document.getElementById('cloudPassword').value;
-      if (!email || password.length < 8) { setCloudStatus('أدخل بريدك وكلمة مرور لا تقل عن 8 أحرف','#b91c1c'); return; }
+    async function cloudSignUp(credentials) {
+      if (!cloudClient) { const ok=await loadSupabaseLibrary(); if(!ok || !cloudClient){const message='البرنامج يعمل محليًا؛ المزامنة تحتاج اتصالًا بالإنترنت.';setCloudStatus(message,'#a16207');return {ok:false,authenticated:false,message};} }
+      const email=String(credentials?.email ?? document.getElementById('cloudEmail')?.value ?? '').trim();
+      const password=String(credentials?.password ?? document.getElementById('cloudPassword')?.value ?? '');
+      if (!email || password.length < 8) { const message='أدخل بريدك وكلمة مرور لا تقل عن 8 أحرف';setCloudStatus(message,'#b91c1c');return {ok:false,authenticated:false,message}; }
       setCloudStatus('جارٍ إنشاء الحساب…','#a16207');
       const {data,error}=await cloudClient.auth.signUp({email,password});
-      if(error){setCloudStatus('تعذر إنشاء الحساب: '+cloudErrorMessage(error),'#b91c1c');return;}
-      if(data.session && data.user) await initializeValerianCloud(data.user);
-      else setCloudStatus('تم إنشاء الحساب. افتح رسالة تأكيد البريد ثم ارجع وسجّل الدخول.','#a16207');
+      if(error){const message='تعذر إنشاء الحساب: '+cloudErrorMessage(error);setCloudStatus(message,'#b91c1c');return {ok:false,authenticated:false,message};}
+      if(data.session && data.user) {
+        await initializeValerianCloud(data.user);
+        return {ok:!!cloudReady,authenticated:!!cloudUser,synced:!!cloudReady,message:(document.getElementById('cloudMessage')?.textContent||'').replace(/^الحالة:\\s*/,'')};
+      }
+      const message='تم إنشاء الحساب. افتح رسالة تأكيد البريد ثم ارجع وسجّل الدخول.';
+      setCloudStatus(message,'#a16207');
+      return {ok:true,authenticated:false,synced:false,message};
     }
     async function cloudSignOut() {
-      if (!cloudClient) return;
-      if (cloudDirty && !confirm('هناك تغييرات محلية لم يتم تأكيد مزامنتها. تسجيل الخروج قد يتركها على هذا الجهاز فقط. هل تريد المتابعة؟')) return;
+      if (!cloudClient) return {ok:false};
+      if (cloudDirty && !confirm('هناك تغييرات محلية لم يتم تأكيد مزامنتها. تسجيل الخروج قد يتركها على هذا الجهاز فقط. هل تريد المتابعة؟')) return {ok:false,cancelled:true};
       await cloudClient.auth.signOut(); cloudUser=null; cloudReady=false; cloudConflict=false;
       if(cloudChannel) await cloudClient.removeChannel(cloudChannel); cloudChannel=null;
       document.getElementById('cloudSyncNow').style.display='none'; document.getElementById('cloudLogout').style.display='none';
       setCloudStatus('تم تسجيل الخروج','#475569');
+      return {ok:true};
     }
     async function applyCloudState(remoteState) {
       cloudApplyingRemote=true;
@@ -6783,6 +6801,30 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           return ()=>window.removeEventListener('valerian:state-changed',handler);
         },
         refresh:()=>{refreshAllViews();emit('valerian:state-changed',{source:'refresh'});return snapshot();},
+        cloudStatus:()=>({
+          connected:!!cloudReady,authenticated:!!cloudUser,email:String(cloudUser?.email||''),
+          online:!!navigator.onLine,dirty:!!cloudDirty,conflict:!!cloudConflict,
+          label:(document.getElementById('cloudMessage')?.textContent||'').replace(/^الحالة:\\s*/,'')
+        }),
+        cloudSignIn:async credentials=>{
+          await ready;
+          const result=await cloudSignIn(credentials);
+          return {...result,status:window.ValerianEngine.cloudStatus()};
+        },
+        cloudSignUp:async credentials=>{
+          await ready;
+          const result=await cloudSignUp(credentials);
+          return {...result,status:window.ValerianEngine.cloudStatus()};
+        },
+        cloudSignOut:async()=>{
+          const result=await cloudSignOut();
+          return {...result,status:window.ValerianEngine.cloudStatus()};
+        },
+        syncCloud:async()=>{
+          await cloudSyncNow(true);
+          const status=window.ValerianEngine.cloudStatus();
+          return {ok:status.connected&&!status.dirty&&!status.conflict,status};
+        },
         createOrder:async payload=>{
           await ready;
           if(!payload||!Array.isArray(payload.items)||!payload.items.length)throw new Error('Order requires at least one item.');
