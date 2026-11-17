@@ -4,7 +4,7 @@ import sharp from 'sharp';
 
 const root=process.cwd();
 const res=path.join(root,'android/app/src/main/res');
-const icon=fs.readFileSync(path.join(root,'assets/valerian-icon.jpg'));
+const icon=fs.readFileSync(path.join(root,'assets/valerian-icon.svg'));
 const sizes={mdpi:48,hdpi:72,xhdpi:96,xxhdpi:144,xxxhdpi:192};
 
 for(const [density,size] of Object.entries(sizes)){
