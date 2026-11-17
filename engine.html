@@ -5906,7 +5906,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const promptText = disabling
         ? 'سيتم إخفاء المنتج من البيع والحجز فقط، مع بقائه في المخزون وسجلاته دون حذف. ويمكن إعادة إتاحته في أي وقت. هل تريد المتابعة؟'
         : 'سيتم إعادة إظهار المنتج في البيع والحجز. هل تريد المتابعة؟';
-      if (!confirm(promptText)) return;
+      if (!confirm(promptText)) return false;
       product.disabledForSales = disabling;
       if (disabling) {
         if (Array.isArray(cart)) {
@@ -5916,9 +5916,10 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       }
       logAudit(disabling ? 'PRODUCT_SALES_DISABLED' : 'PRODUCT_SALES_ENABLED',
         (disabling ? 'تعطيل البيع والحجز للمنتج ' : 'إعادة إتاحة المنتج للبيع والحجز ') + product.name);
-      if (!saveState()) return;
+      if (!saveState()) return false;
       refreshAllViews();
       showToast(disabling ? 'تم تعطيل المنتج عن البيع والحجز مع الاحتفاظ به في المخزون.' : 'تمت إعادة إتاحة المنتج للبيع والحجز.', 'success');
+      return true;
     }
     function deleteProduct(id) {
       const product = state.products.find(p => p.id === id);
@@ -6913,6 +6914,11 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           };
         },
         refresh:()=>{refreshAllViews();emit('valerian:state-changed',{source:'refresh'});return snapshot();},
+        toggleProductSalesAvailability:async id=>{
+          await ready;
+          const ok=toggleProductSalesAvailability(String(id));
+          return {ok:ok===true,snapshot:snapshot()};
+        },
         cloudStatus:()=>({
           connected:!!cloudReady,authenticated:!!cloudUser,email:String(cloudUser?.email||''),
           online:!!navigator.onLine,dirty:!!cloudDirty,conflict:!!cloudConflict,
@@ -6953,6 +6959,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           cart=payload.items.map(item=>{
             const product=state.products.find(p=>String(p.id)===String(item.id));
             if(!product)throw new Error('Unknown product: '+item.id);
+            if(product.archived||product.disabledForSales===true)throw new Error('المنتج '+product.name+' غير متاح للبيع أو الحجز حاليًا.');
             const qty=Math.floor(Number(item.qty||0));
             if(!Number.isSafeInteger(qty)||qty<=0)throw new Error('Invalid quantity for '+product.name);
             return {...product,price:Number(product.isOffer&&product.offerPrice?product.offerPrice:product.price),qty};
