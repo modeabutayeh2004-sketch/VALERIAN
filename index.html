@@ -528,7 +528,7 @@
         <div class="flex gap-2">
           <button onclick="renderInventoryList('all')" id="invFilterAll" class="flex-1 py-2 rounded-full text-xs font-extrabold silver-btn">الكل</button>
           <button onclick="renderInventoryList('original')" id="invFilterOrig" class="flex-1 py-2 rounded-full text-xs font-bold glass-pill text-slate-200">زجاجات أصلية</button>
-          <button onclick="renderInventoryList('decant')" id="invFilterDec" class="flex-1 py-2 rounded-full text-xs font-bold glass-pill text-slate-200">تقسيم جاهز</button>
+          <button onclick="renderInventoryList('decant')" id="invFilterDec" class="flex-1 py-2 rounded-full text-xs font-bold glass-pill text-slate-200">التقسيمات</button>
         </div>
 
         <div id="inventoryCardsContainer" data-slot="inventory-cards-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
@@ -992,6 +992,8 @@
 
     const fmtEgp = (n) => `${Math.round(Number(n || 0)).toLocaleString('en-US')} EGP`;
     const getAvail = (p) => Math.max(0, Number(p.stock || 0) - Number(p.reservedStock || 0));
+    const isDecantCategory = p => ['تقسيم','تقسيمات','decant','decants'].includes(String(p?.category||'').trim().toLowerCase());
+    const isCatalogActive = p => !p?.archived && p?.disabledForSales !== true && p?.disabledForSales !== 'true' && p?.disabledForSales !== 1;
 
     window.ValerianUI = {
       getState: () => structuredClone(appState),
@@ -1146,10 +1148,10 @@
       }
 
       const carousel = document.getElementById('topDemandCarousel');
-      if (!appState.products.some(p => !p.archived && p.disabledForSales !== true)) {
+      if (!appState.products.some(isCatalogActive)) {
         carousel.innerHTML = renderEmptyPlaceholder('🧴', 'لا توجد عطور مضافة في الكتالوج بعد', 'ابدأ بإضافة أصنافك أو اربط قاعدة البيانات لعرض بطاقات العطور هنا.', '+ إضافة أول صنف', "openSheet('quickAddProductSheet')");
       } else {
-        const homeCatalogProducts = appState.products.filter(p => !p.archived && p.disabledForSales !== true);
+        const homeCatalogProducts = appState.products.filter(isCatalogActive);
         carousel.innerHTML = homeCatalogProducts.slice(0, 6).map(p => {
           const displayPrice = p.isOffer && p.offerPrice ? p.offerPrice : p.price;
           const imgBlock = p.image
@@ -1398,8 +1400,8 @@
       const grid = document.getElementById('posCatalogGrid');
 
       const list = appState.products.filter(p => {
-        const matchAvailable = p.disabledForSales !== true;
-        const matchCat = currentPosCat === 'all' || (currentPosCat === 'عروض' ? p.isOffer : p.category === currentPosCat);
+        const matchAvailable = isCatalogActive(p);
+        const matchCat = currentPosCat === 'all' || (currentPosCat === 'عروض' ? p.isOffer : (currentPosCat === 'تقسيم' || currentPosCat === 'تقسيمات' ? isDecantCategory(p) : p.category === currentPosCat));
         const matchType = type === 'all' || p.productType === type;
         const matchQ = !q || p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.includes(q));
         return matchAvailable && matchCat && matchType && matchQ;
@@ -1656,7 +1658,7 @@
       });
 
       const container = document.getElementById('inventoryCardsContainer');
-      const items = appState.products.filter(p => !p.archived && (tier === 'all' || (tier === 'decant' ? p.category === 'تقسيم' : p.category !== 'تقسيم')));
+      const items = appState.products.filter(p => !p.archived && (tier === 'all' || (tier === 'decant' ? isDecantCategory(p) : !isDecantCategory(p))));
 
       if (!items.length) {
         container.innerHTML = renderEmptyPlaceholder('🧪', 'المخزون فارغ حالياً', 'أضف الزجاجات الأصلية أو عبوات التقسيم لبدء التتبع الحي.', '+ إضافة صنف للمخزون', "openSheet('quickAddProductSheet')");
@@ -2493,7 +2495,7 @@
        in a same-origin hidden frame and remains the sole owner of business data. -->
   <iframe id="valerianEngineFrame" title="VALERIAN business engine" aria-hidden="true"
     style="position:fixed;left:-20px;top:-20px;width:2px;height:2px;border:0;opacity:0;pointer-events:none;z-index:-1"
-    src="./engine.html"></iframe>
+    src="./engine.html?v=20261117-inventory-fix-2"></iframe>
   <script id="valerianV5EngineAdapter">
   (function(){
     'use strict';
