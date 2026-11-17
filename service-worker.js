@@ -1,7 +1,7 @@
 /* VALERIAN V20.7 — offline application shell */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-63-fix-customer-save-bridge';
-const APP_SHELL = ['./', './index.html', './engine.html?v=20261117-63-fix-customer-save-bridge', './manifest.webmanifest', './assets/valerian-icon.jpg'];
+const CACHE_NAME = 'valerian-app-shell-v20-64-fix-shipping-and-native-waybill-print';
+const APP_SHELL = ['./', './index.html', './engine.html?v=20261117-64-fix-shipping-and-native-waybill-print', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
