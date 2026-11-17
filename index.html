@@ -2096,10 +2096,12 @@
         node.style.setProperty('color', '#e2e8f0', 'important');
         node.style.setProperty('display', 'inline-block', 'important');
       });
+      // Do not rely on CSS text-decoration in html2canvas: Android capture
+      // can move the strike to the baseline/underline position. Draw it onto
+      // the final bitmap using the measured old-price element bounds instead.
       captureNode.querySelectorAll('.line-through').forEach(node => {
-        node.style.setProperty('text-decoration', 'line-through solid #94a3b8', 'important');
-        node.style.setProperty('text-decoration-line', 'line-through', 'important');
-        node.style.setProperty('text-decoration-thickness', '1px', 'important');
+        node.style.setProperty('text-decoration', 'none', 'important');
+        node.style.setProperty('text-decoration-line', 'none', 'important');
       });
       captureNode.style.width = width + 'px'; captureNode.style.maxWidth = 'none';
       captureNode.style.height = 'auto'; captureNode.style.minHeight = '0';
@@ -2123,12 +2125,33 @@
         }
         if(!img.naturalWidth||!img.naturalHeight)throw new Error('إحدى صور المستند غير متاحة للتصدير.');
       }));
+      const captureBounds = captureNode.getBoundingClientRect();
+      const oldPriceStrikeRects = [...captureNode.querySelectorAll('.offer-old-price')].map(node => {
+        const r = node.getBoundingClientRect();
+        return {left:r.left-captureBounds.left,right:r.right-captureBounds.left,midY:r.top-captureBounds.top+(r.height/2)};
+      }).filter(r => r.right > r.left);
       const scale = Math.max(3, Math.min(5, (window.devicePixelRatio || 2) * 2, 9000 / Math.max(width, height)));
       let canvas;
       try {
         canvas = await capture(captureNode, {scale,backgroundColor:null,useCORS:true,allowTaint:false,logging:false,
           scrollX:0,scrollY:0,width,height,windowWidth:width,windowHeight:height,imageTimeout:10000});
       } finally { captureHost.remove(); }
+      // Paint a true horizontal strike through the center of each old price
+      // after html2canvas has finished, so it cannot drift onto the new price.
+      if (canvas && oldPriceStrikeRects.length) {
+        const ctx = canvas.getContext('2d');
+        ctx.save();
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.lineWidth = Math.max(2, scale * 1.25);
+        ctx.lineCap = 'butt';
+        oldPriceStrikeRects.forEach(r => {
+          ctx.beginPath();
+          ctx.moveTo(r.left * scale, r.midY * scale);
+          ctx.lineTo(r.right * scale, r.midY * scale);
+          ctx.stroke();
+        });
+        ctx.restore();
+      }
       const blob = await new Promise(resolve => canvas && canvas.toBlob(resolve, 'image/png'));
       if (!blob || !blob.size) throw new Error('تعذر إنشاء ملف الصورة.');
       return blob;
