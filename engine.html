@@ -7154,6 +7154,10 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           state.orders[idx].shippingStatus=state.orders[idx].shippingStatus||'تم التسليم لشركة الشحن';if(!state.orders[idx].shippingDispatchedAt)state.orders[idx].shippingDispatchedAt=new Date().toISOString();
           logAudit('ORDER_SHIPPING_DETAILS_UPDATED','تحديث بيانات شحن الطلب '+state.orders[idx].id+': '+company+' — '+(tracking||'بدون رقم تتبع'));
           if(!saveState()){state.orders[idx]=before;throw new Error('تعذر حفظ بيانات الشحنة.');}
+          try{await valDurableWritePromise;if(valDurableWriteError)throw valDurableWriteError;}
+          catch(err){state.orders[idx]=before;saveState();throw new Error('لم يكتمل الحفظ الدائم لبيانات الشحنة: '+String(err?.message||err));}
+          const saved=state.orders[idx];
+          if(saved.shippingCompany!==company||saved.trackingNumber!==tracking)throw new Error('لم يتم تأكيد تطابق بيانات الشحنة بعد الحفظ.');
           refreshAllViews();return {ok:true,snapshot:snapshot()};
         },
         createCustomerProfile:async payload=>{
