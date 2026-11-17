@@ -5949,14 +5949,21 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     function permanentlyDeleteProduct(id) {
       const index=state.products.findIndex(p=>String(p.id)===String(id));
       if(index<0)return {ok:false,error:'المنتج غير موجود.'};
-      const product=state.products[index];
-      state.products.splice(index,1);
-      if(Array.isArray(cart)){for(let n=cart.length-1;n>=0;n--)if(String(cart[n].id)===String(id))cart.splice(n,1);renderCart();}
-      logAudit('PRODUCT_PERMANENTLY_DELETED','حذف نهائي لبيانات المنتج '+product.name+' مع الاحتفاظ بالسجلات التاريخية');
-      if(!saveState())return {ok:false,error:'تعذر حفظ الحذف في قاعدة البيانات.'};
+      const before=structuredClone(state),product=state.products[index];
+      // A parent perfume and its generated decant SKU form one inventory relationship.
+      const relatedIds=new Set([String(id)]);
+      state.products.forEach(p=>{if(String(p.parentId||'')===String(id))relatedIds.add(String(p.id));});
+      state.products=state.products.filter(p=>!relatedIds.has(String(p.id)));
+      if(Array.isArray(cart)){for(let n=cart.length-1;n>=0;n--)if(relatedIds.has(String(cart[n].id)))cart.splice(n,1);renderCart();}
+      logAudit('PRODUCT_PERMANENTLY_DELETED','حذف نهائي للمنتج '+product.name+' والأصناف التابعة له مع الاحتفاظ بالفواتير والحركات التاريخية');
+      if(!saveState()){
+        state=before;
+        refreshAllViews();
+        return {ok:false,error:window.__valerianLastSaveError?.message||'تعذر حفظ الحذف في قاعدة البيانات.'};
+      }
       refreshAllViews();
-      showToast('تم حذف المنتج نهائيًا من قائمة المنتجات مع الاحتفاظ بالسجلات التاريخية.','success');
-      return {ok:true};
+      showToast('تم حذف المنتج نهائيًا من المخزون مع الاحتفاظ بالسجلات التاريخية.','success');
+      return {ok:true,deletedCount:relatedIds.size};
     }
     function deleteProduct(id) {
       const product = state.products.find(p => p.id === id);
