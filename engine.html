@@ -3170,6 +3170,20 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       });
     }
     function valIdbGet(store,key){return valIdbTx(store,'readonly',os=>os.get(key));}
+    function valIdbGetMany(store,keys){
+      return new Promise((resolve,reject)=>{
+        const out={};
+        if(!keys.length){resolve(out);return;}
+        const tx=valIdb.db.transaction(store,'readonly'),os=tx.objectStore(store);
+        keys.forEach(key=>{
+          const request=os.get(key);
+          request.onsuccess=()=>{if(request.result!==undefined)out[key]=request.result;};
+        });
+        tx.oncomplete=()=>resolve(out);
+        tx.onerror=()=>reject(tx.error||new Error('IndexedDB read failed'));
+        tx.onabort=()=>reject(tx.error||new Error('IndexedDB read aborted'));
+      });
+    }
     function valIdbPutMany(store,obj){return valIdbTx(store,'readwrite',os=>{Object.keys(obj).forEach(k=>os.put(obj[k],k));});}
     function valIdbDeleteMany(store,keys){return valIdbTx(store,'readwrite',os=>{keys.forEach(k=>os.delete(k));});}
     function valIdbClear(store){return valIdbTx(store,'readwrite',os=>{os.clear();});}
@@ -3300,18 +3314,37 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       await window.__valImgReady;
       clearTimeout(valIdb.flushTimer);
       try{await valIdbFlush();}catch(_){}
-      let stored={};
-      try{if(await valIdbDb())stored=await valIdbGetAll('images');}catch(e){throw new Error('تعذر قراءة مخزن صور IndexedDB: '+(e?.message||e));}
-      const copy=structuredClone(sourceState),assets={},missing=[];
+      const copy=structuredClone(sourceState),assets={},missing=[],unresolved=[];
+      let db=null;
       valWalkImages(copy,(owner,key)=>{
         const id=valImageAssetId(owner,key);if(!id)return;
         const value=owner[key];
-        if(value===VAL_IMG_PH){const image=valIdb.cache[id]||stored[id];if(typeof image==='string'&&image.startsWith('data:')&&image!==VAL_IMG_PH){owner[key]=image;assets[id]=image;}else missing.push(id);return;}
-        if(typeof value==='string'&&value.startsWith('data:')){assets[id]=value;return;}
+        if(value===VAL_IMG_PH){
+          const image=valIdb.cache[id];
+          if(typeof image==='string'&&image.startsWith('data:')&&image!==VAL_IMG_PH){
+            owner[key]=image;
+            if(storeIncoming)assets[id]=image;
+          }else unresolved.push({owner,key,id});
+          return;
+        }
+        if(typeof value==='string'&&value.startsWith('data:')&&storeIncoming)assets[id]=value;
       });
+      if(unresolved.length){
+        try{
+          db=await valIdbDb();
+          const stored=db?await valIdbGetMany('images',[...new Set(unresolved.map(x=>x.id))]):{};
+          unresolved.forEach(item=>{
+            const image=valIdb.cache[item.id]||stored[item.id];
+            if(typeof image==='string'&&image.startsWith('data:')&&image!==VAL_IMG_PH){
+              item.owner[item.key]=image;
+              if(storeIncoming)assets[item.id]=image;
+            }else missing.push(item.id);
+          });
+        }catch(e){throw new Error('تعذر قراءة مخزن صور IndexedDB: '+(e?.message||e));}
+      }
       if(missing.length&&strict)throw new Error('صور مطلوبة غير موجودة في هذا الجهاز: '+[...new Set(missing)].join('، ')+'. لم نكمل العملية حتى لا نفقد مراجع الصور.');
       if(storeIncoming&&Object.keys(assets).length){
-        const db=await valIdbDb();
+        db=db||await valIdbDb();
         if(db){await valIdbPutMany('images',assets);Object.assign(valIdb.cache,assets);valIdb.ready=true;}
         else { Object.assign(valIdb.cache,assets); valIdb.ready=false; }
       }
@@ -3321,7 +3354,9 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       return await valHydrateImageState(sourceState,{storeIncoming:true,strict:true});
     }
     async function valBuildCloudSyncState(sourceState=state){
-      const portable=await valHydrateImageState(sourceState,{storeIncoming:true,strict:true});
+      // Outbound cloud snapshots already live locally; resolve image references without
+      // redundantly writing every product image back into IndexedDB on each sale.
+      const portable=await valHydrateImageState(sourceState,{storeIncoming:false,strict:true});
       const json=JSON.stringify(portable);
       const bytes=new Blob([json]).size;
       // Stay below common PostgREST request-body limits; never silently omit assets.
@@ -6555,7 +6590,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       if(!cloudReady || cloudApplyingRemote || cloudConflict) return;
       cloudDirty=true; setCloudStatus('تغييرات بانتظار المزامنة','#a16207');
       clearTimeout(cloudSaveTimer);
-      cloudSaveTimer=setTimeout(()=>cloudSyncNow(false),1200);
+      cloudSaveTimer=setTimeout(()=>cloudSyncNow(false),500);
     }
 
     async function cloudSyncNow(manual) {
@@ -6796,9 +6831,20 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         getSnapshot:snapshot,
         subscribe:callback=>{
           if(typeof callback!=='function')throw new TypeError('callback must be a function');
-          const handler=event=>callback(snapshot(),event.detail||{});
+          let timer=null, latestDetail={};
+          const handler=event=>{
+            latestDetail=event.detail||{};
+            if(timer!==null)return;
+            timer=setTimeout(()=>{
+              timer=null;
+              callback(snapshot(),latestDetail);
+            },0);
+          };
           window.addEventListener('valerian:state-changed',handler);
-          return ()=>window.removeEventListener('valerian:state-changed',handler);
+          return ()=>{
+            window.removeEventListener('valerian:state-changed',handler);
+            if(timer!==null){clearTimeout(timer);timer=null;}
+          };
         },
         refresh:()=>{refreshAllViews();emit('valerian:state-changed',{source:'refresh'});return snapshot();},
         cloudStatus:()=>({
