@@ -7264,7 +7264,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         cloudStatus:()=>({
           connected:!!cloudReady,authenticated:!!cloudUser,email:String(cloudUser?.email||''),
           online:!!navigator.onLine,dirty:!!cloudDirty,conflict:!!cloudConflict,
-          label:(document.getElementById('cloudMessage')?.textContent||'').replace(/^الحالة:\s*/,'')
+          label:(document.getElementById('cloudMessage')?.textContent||'').replace(/^الحالة:\s*/,''),
+          incremental:{mode:cloudSyncDiagnostics.mode,bootstrap:cloudSyncDiagnostics.bootstrap,ready:!!cloudIncrementalReady,cursor:cloudSyncDiagnostics.cursor,outboxCount:cloudSyncDiagnostics.outboxCount,lastPushCount:cloudSyncDiagnostics.lastPushCount,lastPullCount:cloudSyncDiagnostics.lastPullCount,lastAttempt:cloudSyncDiagnostics.lastAttempt,lastSuccess:cloudSyncDiagnostics.lastSuccess,lastError:cloudSyncDiagnostics.lastError}
         }),
         cloudDiagnostics:()=>({...cloudSyncDiagnostics,incrementalReady:!!cloudIncrementalReady,localGeneration:cloudIncrementalGeneration,dirty:!!cloudDirty,conflict:!!cloudConflict,online:!!navigator.onLine,log:document.getElementById('cloudDiagnosticsLog')?.textContent||'لا يوجد سجل تشخيص داخلي'}),
         cloudSignIn:async credentials=>{
