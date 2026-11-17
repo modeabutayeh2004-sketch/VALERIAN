@@ -174,7 +174,7 @@
     .money-action-panel{width:100%;max-width:430px;border:1px solid rgba(226,232,240,.22);border-radius:28px;background:linear-gradient(155deg,rgba(18,34,47,.98),rgba(3,10,16,.99));box-shadow:0 28px 90px rgba(0,0,0,.72),inset 0 1px 0 rgba(255,255,255,.12);padding:22px;animation:moneyPanelIn .32s cubic-bezier(.2,.8,.2,1);}
     .money-action-field{width:100%;border:1px solid rgba(203,213,225,.18);border-radius:15px;background:rgba(255,255,255,.055);padding:13px 14px;color:#f8fafc;font-size:14px;font-weight:800;outline:none;}
     .money-action-field:focus{border-color:rgba(186,230,253,.65);box-shadow:0 0 0 3px rgba(186,230,253,.09);}
-    .money-action-label{display:block;margin:0 0 7px;color:#aab8c5;font-size:11px;font-weight:800;}
+    .money-action-label{display:block;margin:0 0 7px;color:#aab8c5;font-size:11px;font-weight:800;}.money-method-choice{border:1px solid rgba(203,213,225,.18);border-radius:14px;background:rgba(255,255,255,.045);padding:12px 8px;color:#dbe5ed;font-size:11px;font-weight:800}.money-method-choice.selected{border-color:rgba(186,230,253,.8);background:rgba(186,230,253,.13);color:#e0f2fe;box-shadow:0 0 0 1px rgba(186,230,253,.2) inset}
     @keyframes moneyPanelIn{from{opacity:0;transform:translateY(22px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
     @media(min-width:600px){#moneyActionModal{align-items:center}.money-action-panel{border-radius:30px}}
 
@@ -377,7 +377,7 @@
       </div>
       <div class="space-y-3">
         <div><label class="money-action-label" for="moneyActionAmount">المبلغ المراد تسويته</label><input id="moneyActionAmount" class="money-action-field bidi-ltr" type="number" min="0.01" step="0.01" inputmode="decimal"></div>
-        <div><label class="money-action-label" for="moneyActionMethod">وسيلة الدفع / الرد</label><select id="moneyActionMethod" class="money-action-field"><option value="نقدي">نقدي</option><option value="تحويل بنكي">تحويل بنكي</option><option value="محفظة إلكترونية">محفظة إلكترونية</option><option value="بطاقة">بطاقة</option><option value="أخرى">أخرى</option></select></div>
+        <div><label class="money-action-label" for="moneyActionMethod">وسيلة الدفع / الرد</label><input type="hidden" id="moneyActionMethod" value="نقدي"><div id="moneyActionMethodChoices" class="grid grid-cols-2 gap-2"><button type="button" data-money-method="نقدي" class="money-method-choice selected">💵 نقدي</button><button type="button" data-money-method="تحويل بنكي" class="money-method-choice">🏦 تحويل بنكي</button><button type="button" data-money-method="محفظة إلكترونية" class="money-method-choice">📱 محفظة إلكترونية</button><button type="button" data-money-method="بطاقة" class="money-method-choice">💳 بطاقة</button><button type="button" data-money-method="أخرى" class="money-method-choice col-span-2">⋯ أخرى</button></div></div>
       </div>
       <div id="moneyActionError" class="hidden rounded-xl border border-rose-300/20 bg-rose-500/10 px-3 py-2 text-[11px] text-rose-200"></div>
       <div class="grid grid-cols-2 gap-3 pt-1"><button type="button" onclick="closeMoneyActionModal()" class="py-3 rounded-full glass-pill text-xs font-bold text-slate-300">إلغاء</button><button id="moneyActionConfirm" type="button" onclick="confirmMoneyAction()" class="py-3 rounded-full silver-btn text-xs font-black">تأكيد العملية</button></div>
@@ -807,6 +807,7 @@
           <div class="grid grid-cols-2 gap-2">
             <input id="chkName" type="text" placeholder="اسم العميل *" class="glass-pill rounded-xl px-3 py-2 text-xs text-white focus:outline-none" />
             <input id="chkAddress" type="text" placeholder="العنوان *" class="glass-pill rounded-xl px-3 py-2 text-xs text-white focus:outline-none" />
+          <div class="pt-1"><label for="chkShippingCompany" class="block text-[11px] font-bold text-slate-200 mb-1">شركة الشحن</label><select id="chkShippingCompany" class="w-full rounded-xl px-3 py-2 bg-slate-900/80 border border-white/15 text-white text-xs"><option value="">بدون شركة شحن / يحدد لاحقًا</option></select></div>
           </div>
 
           <div id="chkLoyaltyBox" class="hidden rounded-xl bg-slate-200/15 border border-slate-300/30 p-2.5 flex items-center justify-between gap-2">
@@ -2015,27 +2016,44 @@
       showToast('تم تسليم الحجز وخصم المخزون الفعلي ✅');
     }
 
-    function renderMoreTracking() {
-      const box = document.getElementById('moreTrackingContainer');
-      if (!appState.orders.length) {
-        box.innerHTML = renderEmptyPlaceholder('🚚', 'لا توجد شحنات قيد التتبع', 'تظهر هنا حالات الشحن والمرتجعات المرتبطة بالطلبات.');
-        return;
-      }
-      box.innerHTML = appState.orders.map(o => `
-        <div class="glass-card rounded-2xl p-3.5 space-y-2 text-xs">
-          <div class="flex justify-between">
-            <strong class="text-white">${o.name} (<span class="bidi-ltr">${o.id}</span>)</strong>
-            <span class="text-[10px] text-sky-300 font-bold bidi-ltr">${o.shippingCompany || '—'} • ${o.trackingNumber || '—'}</span>
-          </div>
-          <div class="text-[11px] text-slate-300">${o.address}</div>
-          <div class="flex items-center justify-between pt-2 border-t border-white/[0.08]">
-            <span class="text-[10px] text-slate-400">مدفوع: <strong class="text-white bidi-ltr">${fmtEgp(o.depositAmount)}</strong></span>
-            ${!(o.items||[]).every(i=>Number(i.returnedQty||0)>=Number(i.qty||0))
-              ? `<button onclick="processMobileReturn('${o.id}')" class="px-3 py-1.5 rounded-full bg-rose-500/20 border border-rose-400/40 text-rose-200 text-[10px] font-extrabold">تسجيل مرتجع ↩️</button>`
-              : `<span class="text-[10px] font-bold text-rose-300">اكتمل إرجاع الطلب</span>`}
-          </div>
-        </div>
-      `).join('');
+    function populateMobileShippingCompanySelect(){
+      const select=document.getElementById('chkShippingCompany');if(!select)return;
+      const current=select.value,names=[...new Set([...(appState.shippingCompanies||[]),...(appState.orders||[]).map(o=>o.shippingCompany||'')].map(x=>String(x||'').trim()).filter(Boolean))];
+      select.innerHTML='<option value="">بدون شركة شحن / يحدد لاحقًا</option>'+names.map(n=>'<option value="'+escapeHtmlMobile(n)+'">'+escapeHtmlMobile(n)+'</option>').join('');
+      if(names.includes(current))select.value=current;
+    }
+    function escapeHtmlMobile(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+    window.addMobileShippingCompany=async function(){
+      const input=document.getElementById('mobileNewShippingCompany'),name=String(input?.value||'').trim().replace(/\s+/g,' ');
+      if(!name)return showToast('اكتب اسم شركة الشحن أولاً.');
+      try{const r=await runEngine('addShippingCompany',name);if(!r?.ok)return;if(input)input.value='';renderMoreTracking();populateMobileShippingCompanySelect();showToast('تمت إضافة شركة الشحن وحفظها.');}catch(err){reportError(err);}
+    };
+    window.openMobileShippingEditor=function(orderId){
+      const order=appState.orders.find(o=>String(o.id)===String(orderId));if(!order)return;
+      const names=[...new Set([...(appState.shippingCompanies||[]),String(order.shippingCompany||'')].map(x=>String(x||'').trim()).filter(Boolean))];
+      let root=document.getElementById('mobileShippingEditor');if(!root){root=document.createElement('div');root.id='mobileShippingEditor';document.body.appendChild(root);}
+      root.className='fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/80';
+      root.innerHTML=`<section class="w-full max-w-md rounded-3xl border border-white/15 bg-[#07131d] p-5 space-y-4" dir="rtl"><div class="flex justify-between items-center"><h3 class="font-black text-white">بيانات شحنة الطلب</h3><button type="button" onclick="document.getElementById('mobileShippingEditor').remove()" class="text-slate-300">✕</button></div><p class="text-xs text-slate-300">الطلب ${escapeHtmlMobile(order.id)} — ${escapeHtmlMobile(order.name)}</p><label class="block text-xs text-slate-300">شركة الشحن<select id="mobileShippingCompanyValue" class="mt-2 w-full rounded-xl bg-slate-900 border border-white/15 text-white p-3"><option value="">اختر شركة الشحن</option>${names.map(n=>'<option value="'+escapeHtmlMobile(n)+'">'+escapeHtmlMobile(n)+'</option>').join('')}</select></label><label class="block text-xs text-slate-300">رقم البوليصة / التتبع<input id="mobileShippingTrackingValue" value="${escapeHtmlMobile(order.trackingNumber||'')}" class="mt-2 w-full rounded-xl bg-slate-900 border border-white/15 text-white p-3" placeholder="رقم التتبع"></label><div class="flex gap-2"><button type="button" onclick="document.getElementById('mobileShippingEditor').remove()" class="flex-1 rounded-xl border border-white/15 py-3 text-slate-200">إلغاء</button><button type="button" onclick="saveMobileShippingDetails('${String(order.id).replace(/'/g,"\\'")}')" class="flex-1 rounded-xl bg-slate-100 text-slate-950 py-3 font-black">حفظ البيانات</button></div></section>`;
+      root.querySelector('#mobileShippingCompanyValue').value=order.shippingCompany||'';
+    };
+    window.saveMobileShippingDetails=async function(orderId){
+      const company=document.getElementById('mobileShippingCompanyValue')?.value||'',tracking=document.getElementById('mobileShippingTrackingValue')?.value.trim()||'';
+      if(!company)return showToast('اختر شركة الشحن أولاً.');
+      try{const r=await runEngine('updateOrderShippingDetails',{orderId,company,tracking});if(r?.ok){document.getElementById('mobileShippingEditor')?.remove();renderMoreTracking();showToast('تم حفظ شركة الشحن ورقم التتبع.');}}catch(err){reportError(err);}
+    };
+    window.printMobileWaybill=function(orderId){
+      const o=appState.orders.find(x=>String(x.id)===String(orderId));if(!o)return showToast('الطلب غير موجود.');
+      const rows=(o.items||[]).map(x=>'<tr><td>'+escapeHtmlMobile(x.name||x.productName||'منتج')+'</td><td>'+escapeHtmlMobile(x.size||'')+'</td><td>'+Number(x.qty||0)+'</td></tr>').join('');
+      const html='<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>بوليصة شحن '+escapeHtmlMobile(o.id)+'</title><style>@page{size:A5 portrait;margin:9mm}*{box-sizing:border-box}body{font-family:Arial,Tahoma,sans-serif;color:#111;margin:0;font-size:12px}.sheet{border:2px solid #111;padding:16px;border-radius:8px}.brand{text-align:center;font-family:Georgia,serif;font-size:22px;letter-spacing:4px;font-weight:bold;border-bottom:2px solid #111;padding-bottom:10px}.title{text-align:center;background:#e8edf2;padding:9px;font-size:17px;font-weight:bold;margin:12px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.field{border:1px solid #bbb;padding:9px;min-height:45px}.wide{grid-column:1/-1}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border:1px solid #999;padding:8px;text-align:right}th{background:#eee}.cod{margin-top:12px;border:2px dashed #222;padding:12px;font-size:17px;font-weight:bold;text-align:center}.foot{text-align:center;margin-top:18px;font-size:10px}</style></head><body><main class="sheet"><div class="brand">VALERIAN</div><div class="title">بوليصة شحن وتوصيل</div><div class="grid"><div class="field"><b>رقم الطلب:</b><br>'+escapeHtmlMobile(o.id)+'</div><div class="field"><b>التاريخ:</b><br>'+escapeHtmlMobile(o.date||'—')+'</div><div class="field"><b>اسم العميل:</b><br>'+escapeHtmlMobile(o.name||'—')+'</div><div class="field"><b>رقم الهاتف:</b><br>'+escapeHtmlMobile(o.phone||'—')+'</div><div class="field wide"><b>العنوان:</b><br>'+escapeHtmlMobile(o.address||'—')+'</div><div class="field"><b>شركة الشحن:</b><br>'+escapeHtmlMobile(o.shippingCompany||'غير محددة')+'</div><div class="field"><b>رقم التتبع:</b><br>'+escapeHtmlMobile(o.trackingNumber||'—')+'</div></div><table><thead><tr><th>الصنف</th><th>الحجم</th><th>الكمية</th></tr></thead><tbody>'+rows+'</tbody></table><div class="cod">المطلوب تحصيله عند الاستلام: '+fmtEgp(Math.max(0,Number(o.remainingAmount||0)))+'</div><div class="foot">يرجى التأكد من بيانات المستلم ومحتويات الشحنة — VALERIAN</div></main><script>window.onload=()=>setTimeout(()=>window.print(),350)<\/script></body></html>';
+      const w=window.open('','_blank');if(!w){showToast('اسمح بفتح نافذة الطباعة من إعدادات المتصفح.');return;}w.document.open();w.document.write(html);w.document.close();
+    };
+    function renderMoreTracking(){
+      const box=document.getElementById('moreTrackingContainer');if(!box)return;
+      const companies=Array.isArray(appState.shippingCompanies)?appState.shippingCompanies:[];
+      const manager=`<div class="glass-card rounded-2xl p-4 mb-3 space-y-3"><div class="flex items-center justify-between"><strong class="text-white text-sm">🚚 شركات الشحن</strong><span class="text-[10px] text-slate-400">${companies.length} شركة مسجلة</span></div><div class="flex gap-2"><input id="mobileNewShippingCompany" class="min-w-0 flex-1 rounded-xl glass-pill px-3 py-2 text-xs text-white" maxlength="80" placeholder="اسم شركة الشحن الجديدة"><button onclick="addMobileShippingCompany()" class="rounded-xl silver-btn px-4 text-xs font-black">＋ إضافة</button></div><div class="flex flex-wrap gap-2">${companies.map(n=>'<span class="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-slate-200">'+escapeHtmlMobile(n)+'</span>').join('')||'<span class="text-[10px] text-slate-400">لم تتم إضافة شركات بعد.</span>'}</div></div>`;
+      if(!appState.orders.length){box.innerHTML=manager+renderEmptyPlaceholder('🚚','لا توجد شحنات قيد التتبع','ستظهر هنا الطلبات وشركات الشحن والمرتجعات.');populateMobileShippingCompanySelect();return;}
+      box.innerHTML=manager+appState.orders.map(o=>`<div class="glass-card rounded-2xl p-3.5 space-y-3 text-xs"><div class="flex justify-between gap-2"><strong class="text-white">${escapeHtmlMobile(o.name)} (<span class="bidi-ltr">${escapeHtmlMobile(o.id)}</span>)</strong><span class="text-[10px] text-sky-300 font-bold">${escapeHtmlMobile(o.shippingCompany||'لم تحدد شركة')}</span></div><div class="text-[11px] text-slate-300">${escapeHtmlMobile(o.address||'—')}</div><div class="flex justify-between text-[10px] text-slate-400"><span>التتبع: <b class="text-white">${escapeHtmlMobile(o.trackingNumber||'—')}</b></span><span>المدفوع: <b class="text-white">${fmtEgp(o.depositAmount)}</b></span></div><div class="grid grid-cols-2 gap-2"><button onclick="openMobileShippingEditor('${String(o.id).replace(/'/g,"\\'")}')" class="rounded-xl border border-white/15 py-2 text-slate-100">شركة الشحن / التتبع ✎</button><button onclick="printMobileWaybill('${String(o.id).replace(/'/g,"\\'")}')" class="rounded-xl silver-btn py-2 font-black">طباعة بوليصة 🖨️</button>${!(o.items||[]).every(i=>Number(i.returnedQty||0)>=Number(i.qty||0))?'<button onclick="processMobileReturn(\''+String(o.id).replace(/'/g,"\\'")+'\')" class="col-span-2 rounded-xl bg-rose-500/15 border border-rose-300/25 py-2 text-rose-200 font-bold">تسجيل مرتجع ↩️</button>':'<span class="col-span-2 text-center text-rose-300">اكتمل إرجاع الطلب</span>'}</div></div>`).join('');
+      populateMobileShippingCompanySelect();
     }
 
     function processMobileReturn(orderId) {
@@ -2059,34 +2077,34 @@
       showToast(`تم استرداد المخزون وتسجيل ${fmtEgp(o.depositAmount)} كالتزام للعميل`);
     }
 
-    function renderCrmMobile() {
-      const box = document.getElementById('moreCrmContainer');
-      const q = (document.getElementById('crmSearchMobile')?.value || '').trim().toLowerCase();
-      const list = appState.customers.filter(c => !q || c.name.toLowerCase().includes(q) || c.phone.includes(q));
-      if (!list.length) {
-        box.innerHTML = renderEmptyPlaceholder('👑', 'قاعدة العملاء فارغة', 'يتم إنشاء ملف العميل ونقاط الولاء تلقائياً برقم الهاتف عند إتمام أول طلب.');
-        return;
-      }
-      box.innerHTML = list.map(c => `
-        <div class="glass-card rounded-2xl p-4 space-y-2.5 text-xs">
-          <div class="flex items-start justify-between">
-            <div>
-              <strong class="text-sm font-black text-white">${c.name}</strong>
-              <span class="text-[11px] text-slate-400 block bidi-ltr mt-0.5">${c.phone}</span>
-            </div>
-            <div class="text-left">
-              <span class="px-2.5 py-1 rounded-full bg-slate-200/15 text-slate-100 font-black text-[11px] bidi-ltr">👑 ${c.points} pts</span>
-              <span class="text-[9px] text-emerald-300 block mt-1 bidi-ltr">= ${fmtEgp(c.points * appState.settings.pointValue)}</span>
-            </div>
-          </div>
-          ${c.debtToCustomer > 0 ? `<div class="rounded-xl bg-rose-500/15 border border-rose-400/30 px-3 py-1.5 text-[10px] text-rose-200 font-bold">دين مرتجعات مستحق للعميل: <span class="bidi-ltr">${fmtEgp(c.debtToCustomer)}</span></div>` : ''}
-          <div class="flex items-center justify-between pt-2 border-t border-white/[0.08]">
-            <span class="text-[10px] text-slate-400">مشتريات: <strong class="text-white bidi-ltr">${fmtEgp(c.totalSpent)}</strong></span>
-            <button onclick="openDigitalLoyaltyCard('${c.phone}')" class="px-3.5 py-1.5 rounded-full silver-btn text-[10px] font-black">بطاقة الولاء 🎟️</button>
-          </div>
-        </div>
-      `).join('');
+    function renderCrmMobile(){
+      const box=document.getElementById('moreCrmContainer');if(!box)return;
+      const q=(document.getElementById('crmSearchMobile')?.value||'').trim().toLowerCase(),list=(appState.customers||[]).filter(c=>!q||String(c.name||'').toLowerCase().includes(q)||String(c.phone||'').includes(q));
+      if(!list.length){box.innerHTML=renderEmptyPlaceholder('👑','قاعدة العملاء فارغة','يتم إنشاء ملف العميل ونقاط الولاء تلقائياً عند إتمام أول طلب.');return;}
+      box.innerHTML=list.map(c=>`<div class="glass-card rounded-2xl p-4 space-y-3 text-xs"><div class="flex items-start justify-between"><div><strong class="text-sm font-black text-white">${escapeHtmlMobile(c.name)}</strong><span class="text-[11px] text-slate-400 block bidi-ltr mt-1">${escapeHtmlMobile(c.phone)}</span><span class="text-[10px] text-slate-400 block mt-1">${escapeHtmlMobile(c.address||'لا يوجد عنوان مسجل')}</span></div><div class="text-left"><span class="px-2.5 py-1 rounded-full bg-slate-200/15 text-slate-100 font-black text-[11px]">${Number(c.points||0)} نقطة</span><span class="text-[9px] text-emerald-300 block mt-1">${fmtEgp(Number(c.points||0)*Number(appState.settings.pointValue||0))}</span></div></div>${Number(c.debtToCustomer||0)>0?'<div class="rounded-xl bg-rose-500/15 border border-rose-400/30 px-3 py-1.5 text-[10px] text-rose-200 font-bold">مستحقات العميل: '+fmtEgp(c.debtToCustomer)+'</div>':''}<div class="flex justify-between items-center border-t border-white/[.08] pt-3"><span class="text-[10px] text-slate-400">إجمالي المشتريات: <b class="text-white">${fmtEgp(c.totalSpent)}</b></span><span class="text-[10px] text-slate-400">الطلبات: <b class="text-white">${Number(c.ordersCount||0)}</b></span></div><div class="grid grid-cols-3 gap-2"><button onclick="editMobileCustomer('${String(c.phone).replace(/'/g,"\\'")}')" class="rounded-xl border border-white/15 py-2 text-slate-100">تعديل ✎</button><button onclick="printMobileCustomerProfile('${String(c.phone).replace(/'/g,"\\'")}')" class="rounded-xl silver-btn py-2 font-black">طباعة الملف 🖨️</button><button onclick="openDigitalLoyaltyCard('${String(c.phone).replace(/'/g,"\\'")}')" class="rounded-xl border border-sky-200/20 py-2 text-sky-200">بطاقة الولاء</button></div></div>`).join('');
     }
+    window.editMobileCustomer=function(phone){
+      const c=(appState.customers||[]).find(x=>String(x.phone)===String(phone));if(!c)return;
+      let root=document.getElementById('mobileCustomerEditor');if(!root){root=document.createElement('div');root.id='mobileCustomerEditor';document.body.appendChild(root);}
+      const fields=[['name','اسم العميل',c.name],['phone','رقم الهاتف',c.phone],['address','العنوان',c.address],['fragrancePreferences','العطور المفضلة',c.fragrancePreferences],['favoriteNotes','النوتات المفضلة',c.favoriteNotes],['avoidNotes','النوتات غير المفضلة',c.avoidNotes],['usageOccasions','المناسبات والاستخدامات',c.usageOccasions],['profileNotes','ملاحظات إضافية',c.profileNotes]];
+      root.className='fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/80';
+      root.innerHTML=`<section class="w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-3xl border border-white/15 bg-[#07131d] p-5 space-y-3" dir="rtl"><div class="flex justify-between items-center"><h3 class="font-black text-white text-lg">تعديل ملف العميل</h3><button onclick="document.getElementById('mobileCustomerEditor').remove()" class="text-slate-300">✕</button></div><p class="text-[10px] text-slate-400">سيتم حفظ التعديلات في قاعدة البيانات وربط الطلبات التاريخية عند تغيير الهاتف.</p>${fields.map(([k,label,value])=>'<label class="block text-xs text-slate-300">'+label+'<input data-customer-field="'+k+'" value="'+escapeHtmlMobile(value||'')+'" class="mt-1 w-full rounded-xl bg-slate-900 border border-white/15 p-3 text-white"></label>').join('')}<div class="flex gap-2 pt-2"><button onclick="document.getElementById('mobileCustomerEditor').remove()" class="flex-1 rounded-xl border border-white/15 py-3 text-slate-200">إلغاء</button><button onclick="saveMobileCustomerProfile('${String(phone).replace(/'/g,"\\'")}')" class="flex-1 rounded-xl bg-slate-100 text-slate-950 py-3 font-black">حفظ التعديلات</button></div></section>`;
+    };
+    window.saveMobileCustomerProfile=async function(oldPhone){
+      const root=document.getElementById('mobileCustomerEditor');if(!root)return;const payload={oldPhone};
+      root.querySelectorAll('[data-customer-field]').forEach(el=>payload[el.dataset.customerField]=el.value.trim());
+      if(!payload.name||!payload.phone)return showToast('اسم العميل ورقم الهاتف مطلوبان.');
+      try{const r=await runEngine('updateCustomerProfile',payload);if(r?.ok){root.remove();renderCrmMobile();showToast('تم تحديث ملف العميل وربط بياناته بنجاح.');}}catch(err){reportError(err);}
+    };
+    window.printMobileCustomerProfile=function(phone){
+      const c=(appState.customers||[]).find(x=>String(x.phone)===String(phone));if(!c)return showToast('بيانات العميل غير موجودة.');
+      const orders=(appState.orders||[]).filter(o=>String(o.phone)===String(c.phone)).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+      const rows=orders.map(o=>'<tr><td>'+escapeHtmlMobile(o.id)+'</td><td>'+escapeHtmlMobile(o.date||'—')+'</td><td>'+escapeHtmlMobile((o.items||[]).map(x=>(x.name||'منتج')+' × '+(x.qty||1)).join('، '))+'</td><td>'+escapeHtmlMobile(o.status||'—')+'</td><td>'+fmtEgp(Math.max(0,Number(o.grandTotal||0)-Number(o.returnedValue||0)))+'</td></tr>').join('')||'<tr><td colspan="5">لا توجد طلبات مسجلة لهذا العميل.</td></tr>';
+      const fields=[['رقم الهاتف',c.phone],['العنوان',c.address],['عدد الطلبات',c.ordersCount||orders.length],['إجمالي المشتريات',fmtEgp(c.totalSpent)],['رصيد نقاط الولاء',Number(c.points||0)+' نقطة'],['قيمة النقاط',fmtEgp(Number(c.points||0)*Number(appState.settings.pointValue||0))],['مستحقات المرتجعات',fmtEgp(c.debtToCustomer)],['العطور المفضلة',c.fragrancePreferences],['النوتات المفضلة',c.favoriteNotes],['النوتات غير المفضلة',c.avoidNotes],['المناسبات والاستخدامات',c.usageOccasions],['ملاحظات',c.profileNotes]];
+      const profile=fields.map(([k,v])=>'<tr><th>'+escapeHtmlMobile(k)+'</th><td>'+escapeHtmlMobile(v||'—')+'</td></tr>').join('');
+      const html='<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ملف العميل '+escapeHtmlMobile(c.name)+'</title><style>@page{size:A4 portrait;margin:12mm}body{font-family:Arial,Tahoma,sans-serif;color:#17212b;font-size:11px}.head{text-align:center;border-bottom:2px solid #17212b;padding-bottom:12px;margin-bottom:15px}.brand{font:bold 25px Georgia;letter-spacing:4px}.name{font-size:18px;font-weight:bold;margin-top:7px}h3{margin:18px 0 8px;background:#edf1f5;padding:8px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #cbd5e1;padding:7px;text-align:right}th{width:28%;background:#f8fafc}.foot{text-align:center;margin-top:20px;color:#64748b;font-size:9px}</style></head><body><div class="head"><div class="brand">VALERIAN</div><div class="name">'+escapeHtmlMobile(c.name)+'</div><div>ملف العميل • تاريخ الطباعة: '+new Date().toLocaleString('ar-EG')+'</div></div><h3>بيانات وتفضيلات العميل</h3><table>'+profile+'</table><h3>سجل الطلبات ('+orders.length+')</h3><table><thead><tr><th>رقم الطلب</th><th>التاريخ</th><th>المنتجات</th><th>الحالة</th><th>الإجمالي</th></tr></thead><tbody>'+rows+'</tbody></table><div class="foot">تم استخراج هذا الملف من نظام VALERIAN.</div><script>window.onload=()=>setTimeout(()=>window.print(),350)<\/script></body></html>';
+      const w=window.open('','_blank');if(!w){showToast('اسمح بفتح نافذة الطباعة من إعدادات المتصفح.');return;}w.document.open();w.document.write(html);w.document.close();
+    };
 
     function openDigitalLoyaltyCard(phone) {
       const c = appState.customers.find(x => x.phone === phone);
@@ -2540,7 +2558,7 @@
        in a same-origin hidden frame and remains the sole owner of business data. -->
   <iframe id="valerianEngineFrame" title="VALERIAN business engine" aria-hidden="true"
     style="position:fixed;left:-20px;top:-20px;width:2px;height:2px;border:0;opacity:0;pointer-events:none;z-index:-1"
-    src="./engine.html?v=20261117-premium-finance-2"></iframe>
+    src="./engine.html?v=20261117-shipping-customer-finance-3"></iframe>
   <script id="valerianV5EngineAdapter">
   (function(){
     'use strict';
@@ -2782,7 +2800,8 @@
           discount:totals.discount,
           usePoints:redeemPointsActive,
           deposit,
-          paymentMethod:document.getElementById('chkPaymentMethod')?.value||'نقدي'
+          paymentMethod:document.getElementById('chkPaymentMethod')?.value||'نقدي',
+          shippingCompany:document.getElementById('chkShippingCompany')?.value||''
         });
         if(!r.ok)return;
         mobileCart=[];redeemPointsActive=false;updateFloatingCart();closeSheet('checkoutSheet');
@@ -2848,13 +2867,14 @@
       document.getElementById('moneyActionParty').textContent=party;
       document.getElementById('moneyActionDue').textContent=fmtEgp(due);
       const amount=document.getElementById('moneyActionAmount');amount.value=due.toFixed(2);amount.max=String(due);
-      document.getElementById('moneyActionMethod').value='نقدي';
+      document.getElementById('moneyActionMethod').value='نقدي';document.querySelectorAll('[data-money-method]').forEach(b=>b.classList.toggle('selected',b.dataset.moneyMethod==='نقدي'));
       document.getElementById('moneyActionError').classList.add('hidden');
       document.getElementById('moneyActionConfirm').disabled=false;
       document.getElementById('moneyActionConfirm').textContent='تأكيد العملية';
       document.getElementById('moneyActionModal').classList.remove('hidden');
       setTimeout(()=>amount.focus(),80);
     };
+    document.addEventListener('click',event=>{const b=event.target.closest('[data-money-method]');if(!b)return;document.getElementById('moneyActionMethod').value=b.dataset.moneyMethod;document.querySelectorAll('[data-money-method]').forEach(x=>x.classList.toggle('selected',x===b));});
     window.confirmMoneyAction=async function(){
       if(!pendingMoneyAction)return;
       const {type,id,due}=pendingMoneyAction,raw=document.getElementById('moneyActionAmount').value,amount=Number(raw),method=document.getElementById('moneyActionMethod').value;
