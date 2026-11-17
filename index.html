@@ -98,9 +98,10 @@
     /* VALERIAN Liquid Metrics — a direct, honest level indicator (no decorative bottle). */
     .bottle-card { position: relative; overflow: hidden; isolation: isolate; }
     .water-fill {
-      position: absolute; z-index: 0; left: 10px; right: 10px; bottom: 0;
+      position: absolute; z-index: 0; left: 0; right: 0; bottom: 0;
       width: auto; height: var(--level, 0%); max-height: 100%;
-      border: 0; border-radius: 7px 7px 0 0;
+      border: 0; border-radius: 50% 50% 22px 22px / 7px 7px 22px 22px;
+      clip-path: inset(0 round 0 0 22px 22px);
       background: linear-gradient(180deg, rgba(125,211,252,.30), rgba(14,165,233,.18));
       box-shadow: 0 -1px 5px rgba(56,189,248,.07);
       transition: height .65s cubic-bezier(.22,1,.36,1);
@@ -888,7 +889,7 @@
         <div class="grid grid-cols-3 gap-2 pt-2">
           <button onclick="shareViaWhatsApp()" class="py-3 rounded-full bg-emerald-500 text-[#02080c] text-[10px] font-black">واتساب 🟢</button>
           <button onclick="downloadPreviewImage()" class="py-3 rounded-full silver-btn text-[10px] font-black">تنزيل الصورة ⬇️</button>
-          <button onclick="window.print()" class="py-3 rounded-full glass-pill text-[10px] font-black">طباعة 🖨️</button>
+          <button onclick="printPreviewImage()" class="py-3 rounded-full glass-pill text-[10px] font-black">طباعة 🖨️</button>
         </div>
       </div>
     </div>
@@ -1393,7 +1394,7 @@
 
         return `
           <div class="glass-card rounded-3xl p-3 flex flex-col justify-between bottle-card">
-            <div class="water-fill" style="--level: 40%;"></div>
+            <div class="water-fill" style="--level: ${Math.max(0,Math.min(100,Math.round((avail/Math.max(1,Number(p.stockCapacity||p.initialStock||p.maxStock||p.stock||1)))*100)))}%;"></div>
             <div class="bottle-content relative z-10 flex flex-col justify-between h-full">
               <div>
                 <div class="flex items-center justify-between gap-1">
@@ -2066,7 +2067,9 @@
       captureHost.appendChild(captureNode); document.body.appendChild(captureHost);
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       if (!width || !height) throw new Error('تعذر تحديد أبعاد المعاينة.');
-      const scale = Math.max(1, Math.min(2, window.devicePixelRatio || 1.5, 3600 / Math.max(width, height)));
+      const imageNodes=[...captureNode.querySelectorAll('img')];
+      await Promise.all(imageNodes.map(img=>{img.loading='eager';if(img.complete&&img.naturalWidth)return Promise.resolve();return new Promise(resolve=>{img.onload=resolve;img.onerror=resolve;setTimeout(resolve,12000);});}));
+      const scale = Math.max(2, Math.min(4, (window.devicePixelRatio || 2) * 2, 6000 / Math.max(width, height)));
       let canvas;
       try {
         canvas = await capture(captureNode, {scale,backgroundColor:null,useCORS:true,allowTaint:false,logging:false,
@@ -2153,8 +2156,9 @@
         return;
       }
       box.innerHTML = offers.map(p => `
-        <div class="glass-card rounded-2xl p-3.5 flex items-center justify-between text-xs">
-          <div>
+        <div class="glass-card rounded-2xl p-3.5 flex items-center gap-3 text-xs">
+          ${p.image ? `<img src="${p.image}" alt="${p.name}" crossorigin="anonymous" class="w-16 h-16 rounded-xl object-contain bg-white/5 border border-white/10 shrink-0">` : `<div class="w-16 h-16 rounded-xl bg-white/5 flex items-center justify-center text-slate-500 text-[9px] shrink-0">VALERIAN</div>`}
+          <div class="flex-1 min-w-0">
             <strong class="text-white font-extrabold">${p.name}</strong>
             <div class="text-[10px] text-slate-400 bidi-ltr mt-0.5">${p.size}</div>
           </div>
@@ -2179,8 +2183,9 @@
           </div>
           <div class="space-y-2.5">
             ${offers.map(p => `
-              <div class="bg-white/5 rounded-2xl p-3 border border-slate-300/20 flex items-center justify-between text-xs">
-                <div>
+              <div class="bg-white/5 rounded-2xl p-3 border border-slate-300/20 flex items-center gap-3 text-xs">
+                ${p.image ? `<img src="${p.image}" alt="${p.name}" crossorigin="anonymous" class="w-20 h-20 rounded-xl object-contain bg-white/10 shrink-0">` : `<div class="w-20 h-20 rounded-xl bg-white/5 flex items-center justify-center text-slate-500 text-[9px] shrink-0">VALERIAN</div>`}
+                <div class="flex-1 min-w-0">
                   <strong class="text-white font-extrabold block">${p.name}</strong>
                   <span class="text-[10px] text-slate-300 bidi-ltr">${p.size}</span>
                 </div>
@@ -2658,10 +2663,32 @@
       set('editProdStock',p.stock);set('editProdMin',p.minimumStock??2);set('editProdNotes',p.notes||'');
       set('editProdDecantSize',p.decantSizeMl||p.decantSize||10);set('editProdDecantCost',p.decantBottleCost||15);set('editProdOfferPrice',p.offerPrice||'');
       document.getElementById('editProdDecantable').checked=!!p.isDecantable;
+      toggleEditDecantFields();
       document.getElementById('editProdOffer').checked=!!p.isOffer;
       const img=document.getElementById('editProdImagePreview');img.src=p.image||'';img.classList.toggle('hidden',!p.image);
       document.getElementById('editProdImage').value='';
       openSheet('editProductSheet');
+    };
+    function toggleEditDecantFields(){
+      const perfume=document.getElementById('editProdType')?.value==='عطور';
+      const wrap=document.getElementById('editProdDecantable')?.closest('label');
+      const sizeWrap=document.getElementById('editProdDecantSize')?.closest('.grid');
+      if(wrap)wrap.classList.toggle('hidden',!perfume);
+      if(sizeWrap)sizeWrap.classList.toggle('hidden',!perfume);
+      const check=document.getElementById('editProdDecantable');
+      if(check){check.disabled=!perfume;if(!perfume)check.checked=false;}
+    }
+    document.getElementById('editProdType')?.addEventListener('change',toggleEditDecantFields);
+    window.printPreviewImage=async function(){
+      try{
+        showToast('جارٍ تجهيز نسخة الطباعة عالية الدقة...');
+        const blob=await createPreviewImageBlob(),url=URL.createObjectURL(blob);
+        const frame=document.createElement('iframe');
+        frame.style.cssText='position:fixed;width:1px;height:1px;right:0;bottom:0;border:0;opacity:0;';
+        document.body.appendChild(frame);
+        frame.onload=()=>{try{frame.contentWindow.focus();frame.contentWindow.print();}catch(err){showToast('تعذر فتح نافذة الطباعة: '+err.message);}setTimeout(()=>{frame.remove();URL.revokeObjectURL(url);},60000);};
+        frame.srcdoc='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>@page{margin:8mm}html,body{margin:0;padding:0;background:#fff}img{display:block;width:100%;height:auto;max-height:calc(100vh - 16mm);object-fit:contain;page-break-inside:avoid}</style></head><body><img src="'+url+'" onload="setTimeout(()=>print(),250)"></body></html>';
+      }catch(err){console.error(err);showToast('تعذرت طباعة صورة المعاينة: '+String(err.message||err));}
     };
     window.saveEditedProduct=async function(){
       const id=document.getElementById('editProdId').value,button=document.getElementById('saveEditProductBtn');
