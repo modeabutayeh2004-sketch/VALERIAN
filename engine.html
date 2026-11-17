@@ -3378,14 +3378,26 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       return await valHydrateImageState(sourceState,{storeIncoming:true,strict:true});
     }
     async function valBuildCloudSyncState(sourceState=state){
-      // Outbound cloud snapshots already live locally; resolve image references without
-      // redundantly writing every product image back into IndexedDB on each sale.
-      const portable=await valHydrateImageState(sourceState,{storeIncoming:false,strict:true});
-      const json=JSON.stringify(portable);
-      const bytes=new Blob([json]).size;
-      // Stay below common PostgREST request-body limits; never silently omit assets.
-      if(bytes>7*1024*1024)throw new Error('حجم البيانات مع الصور تجاوز 7 ميجابايت ('+(bytes/1024/1024).toFixed(2)+' MB). لم نرفع نسخة ناقصة. نحتاج نقل الصور إلى مخزن ملفات سحابي مخصص قبل مزامنة هذا الحجم.');
-      return portable;
+      // Cloud stores business records only. Product photos and the brand logo remain
+      // on this device in IndexedDB and are represented by tiny local-only placeholders.
+      const cloudCopy=structuredClone(sourceState);
+      valWalkImages(cloudCopy,(owner,key)=>{ owner[key]=VAL_IMG_PH; });
+      return cloudCopy;
+    }
+    function valMergeLocalImagesIntoCloudState(remoteState){
+      const copy=structuredClone(remoteState), localAssets=new Map();
+      valWalkImages(state,(owner,key)=>{
+        const id=valImageAssetId(owner,key); if(!id)return;
+        const value=owner[key], cached=valIdb.cache[id];
+        if(typeof value==='string'&&value.startsWith('data:')&&value!==VAL_IMG_PH)localAssets.set(id,value);
+        else if(typeof cached==='string'&&cached.startsWith('data:')&&cached!==VAL_IMG_PH)localAssets.set(id,cached);
+      });
+      // Never accept image bytes from the cloud. Restore only matching local assets.
+      valWalkImages(copy,(owner,key)=>{
+        const id=valImageAssetId(owner,key);
+        owner[key]=id&&localAssets.has(id)?localAssets.get(id):VAL_IMG_PH;
+      });
+      return copy;
     }
     function valComparableStateJson(st){
       return JSON.stringify(st,(k,v)=>((k==='image'||k==='logo')&&typeof v==='string'&&v.startsWith('data:'))?VAL_IMG_PH:v);
@@ -6655,11 +6667,12 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     async function applyCloudState(remoteState) {
       cloudApplyingRemote=true;
       try {
-        const hydrated=await valHydrateImageState(remoteState,{storeIncoming:true,strict:true});
+        const localImageSafeState=valMergeLocalImagesIntoCloudState(remoteState);
+        const hydrated=await valHydrateImageState(localImageSafeState,{storeIncoming:false,strict:false});
         state=normalizeState(hydrated);persistLocal(state);
         clearTimeout(valIdb.flushTimer);await valIdbFlush();
         refreshAllViews();return true;
-      } catch(e){console.error('Cloud state/image apply failed',e);setCloudStatus('لم نطبق تحديث السحابة لحماية الصور والبيانات: '+(e?.message||e),'#b91c1c');return false;}
+      } catch(e){console.error('Cloud state apply failed',e);setCloudStatus('لم نطبق تحديث السحابة لحماية البيانات المحلية: '+(e?.message||e),'#b91c1c');return false;}
       finally { cloudApplyingRemote=false; }
     }
     async function initializeValerianCloud(user) {
@@ -6755,34 +6768,28 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       if(!cloudReady || !cloudUser || !navigator.onLine || cloudConflict || cloudDirty || cloudSaveInFlight || cloudPollInFlight) return;
       cloudPollInFlight=true;
       try {
-        const {data:row,error}=await cloudClient.from('valerian_state').select('state,revision,updated_at').eq('user_id',cloudUser.id).maybeSingle();
-        if(error){setCloudStatus('تعذر فحص تحديثات الجهاز الآخر: '+cloudErrorMessage(error),'#b91c1c');return;}
-        const incoming=Number(row?.revision||0);
+        // Cheap revision-only check: never download the full JSON business state unless
+        // another device has actually advanced the revision.
+        const {data:meta,error:metaError}=await cloudClient.from('valerian_state').select('revision,updated_at').eq('user_id',cloudUser.id).maybeSingle();
+        if(metaError){setCloudStatus('تعذر فحص إصدار السحابة: '+cloudErrorMessage(metaError),'#b91c1c');return;}
+        const incoming=Number(meta?.revision||0);
         if(incoming<=cloudRevision) return;
-        // Re-check after awaiting the network: a local edit may have happened during the request.
         if(cloudDirty || cloudSaveInFlight){cloudConflict=true;setCloudStatus('وصل تحديث من الجهاز الآخر بالتزامن مع تعديل محلي. لم نستبدل أي بيانات.','#b91c1c');return;}
-        const applied=await applyCloudState(row.state);if(applied){cloudRevision=incoming;setCloudStatus('تمت مزامنة تحديث من الجهاز الآخر مع الصور','#047857');}
+        const {data:row,error}=await cloudClient.from('valerian_state').select('state,revision').eq('user_id',cloudUser.id).maybeSingle();
+        if(error){setCloudStatus('تعذر تحميل التحديث الجديد: '+cloudErrorMessage(error),'#b91c1c');return;}
+        if(Number(row?.revision||0)<=cloudRevision)return;
+        const applied=await applyCloudState(row.state);
+        if(applied){cloudRevision=Number(row.revision);setCloudStatus('تمت مزامنة تحديث جديد؛ الصور محفوظة محلياً','#047857');}
       } catch(err) {
         setCloudStatus('تعذر فحص تحديثات الجهاز الآخر: '+cloudErrorMessage(err),'#b91c1c');
       } finally { cloudPollInFlight=false; }
     }
 
     function subscribeCloudChanges() {
-      if(!cloudClient || !cloudUser || !cloudReady) return;
-      if(cloudChannel) { cloudClient.removeChannel(cloudChannel); cloudChannel=null; }
-      cloudChannel=cloudClient.channel('valerian-state-'+cloudUser.id)
-       .on('postgres_changes',{event:'UPDATE',schema:'public',table:'valerian_state',filter:'user_id=eq.'+cloudUser.id},payload=>{
-         const incoming=Number(payload.new?.revision||0);
-         if(incoming<=cloudRevision) return;
-         // Ignore our own realtime echo while the corresponding CAS write is in flight.
-         if(cloudSaveInFlight) return;
-         if(cloudDirty){cloudConflict=true;setCloudStatus('وصل تحديث من الجهاز الآخر مع وجود تعديلات محلية. لم نستبدل أي بيانات.','#b91c1c');return;}
-         applyCloudState(payload.new.state).then(applied=>{if(applied){cloudRevision=incoming;setCloudStatus('تم استلام تحديث من الجهاز الآخر مع الصور','#047857');}});
-       })
-       .subscribe(status=>{
-         if(status==='SUBSCRIBED') setCloudStatus(cloudDirty?'متصل — توجد تغييرات بانتظار المزامنة':'متصل — المزامنة مفعّلة','#047857');
-         else if(status==='CHANNEL_ERROR' || status==='TIMED_OUT') setCloudStatus('قناة التحديث المباشر غير مستقرة — الفحص الدوري ما زال يعمل','#a16207');
-       });
+      // Realtime row-change payloads include the entire JSON state and can be very large.
+      // Use revision-only polling instead; the full state is fetched only when revision changes.
+      if(cloudChannel && cloudClient){cloudClient.removeChannel(cloudChannel);cloudChannel=null;}
+      if(cloudReady)setCloudStatus('متصل — فحص تحديثات خفيف مفعّل','#047857');
     }
     window.addEventListener('online',()=>{
       if(!cloudClient) loadSupabaseLibrary();
@@ -6793,7 +6800,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     window.addEventListener('offline',()=>{if(cloudReady)setCloudStatus('غير متصل — التغييرات محفوظة محلياً مؤقتاً','#a16207');});
     window.addEventListener('beforeunload',e=>{if(cloudDirty||valDurableWriteError){e.preventDefault();e.returnValue='';}});
     window.addEventListener('focus',()=>pollCloudChanges());
-    setInterval(()=>pollCloudChanges(),7000);
+    setInterval(()=>pollCloudChanges(),60000);
 
     // V18.3: removed duplicate subscription and duplicate lifecycle listeners.
     if(navigator.onLine) { loadSupabaseLibrary(); setTimeout(()=>{valLoadLib('QRCode');valLoadLib('html2canvas');},4000); }
