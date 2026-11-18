@@ -3872,6 +3872,22 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       </div>
     </div>
 
+    <!-- SHEET: OPERATING SUPPLIES WRITEOFF -->
+    <div id="v5SupplyWriteoffSheet" class="fixed inset-0 z-[70] hidden sheet-backdrop flex items-end justify-center" onclick="if(event.target===this)closeSheet('v5SupplyWriteoffSheet')">
+      <div class="sheet-panel w-full max-w-md rounded-t-3xl p-5 space-y-4 max-h-[90dvh] overflow-y-auto no-scrollbar">
+        <div class="w-10 h-1 rounded-full bg-slate-300/30 mx-auto"></div>
+        <div class="flex items-center justify-between"><div><h3 class="text-base font-black">تسجيل هالك / عجز جرد</h3><p class="text-[10px] text-slate-400 mt-1">خصم موثق من رصيد المستلزمات</p></div><button type="button" onclick="closeSheet('v5SupplyWriteoffSheet')" class="glass-pill rounded-full w-9 h-9">✕</button></div>
+        <form onsubmit="saveOperatingSupplyWriteoffFromScreen(event)" class="space-y-3 text-xs">
+          <input id="v5SupplyWriteoffId" type="hidden">
+          <div id="v5SupplyWriteoffLabel" class="v5-supply-card rounded-xl p-3 text-xs font-black"></div>
+          <div><label class="block text-slate-300 font-bold mb-1">نوع الخصم</label><select id="v5SupplyWriteoffType" class="v5-supply-input w-full rounded-xl p-3"><option value="WASTAGE">هالك / تالف</option><option value="COUNT_SHORTAGE">عجز جرد</option></select></div>
+          <div><label class="block text-slate-300 font-bold mb-1">الكمية *</label><input id="v5SupplyWriteoffQty" required type="number" min="0.001" step="0.001" class="v5-supply-input w-full rounded-xl p-3"></div>
+          <div><label class="block text-slate-300 font-bold mb-1">السبب *</label><textarea id="v5SupplyWriteoffReason" required rows="2" maxlength="300" class="v5-supply-input w-full rounded-xl p-3" placeholder="اكتب سبب الهالك أو فرق الجرد"></textarea></div>
+          <div class="grid grid-cols-2 gap-2"><button type="button" onclick="closeSheet('v5SupplyWriteoffSheet')" class="glass-pill rounded-full py-3 text-xs font-bold">إلغاء</button><button id="v5SupplyWriteoffSaveBtn" type="submit" class="silver-btn rounded-full py-3 text-xs font-black">تأكيد الخصم</button></div>
+        </form>
+      </div>
+    </div>
+
     <!-- SHEET: FULL PRODUCT EDITOR -->
     <div id="editProductSheet" class="fixed inset-0 z-[60] hidden sheet-backdrop flex items-end justify-center" onclick="if(event.target===this)closeSheet('editProductSheet')">
       <div class="sheet-panel w-full max-w-md rounded-t-3xl p-5 space-y-4 max-h-[94dvh] overflow-y-auto no-scrollbar">
@@ -4917,7 +4933,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           <div class="grid grid-cols-2 gap-2"><div class="v5-supply-stat rounded-xl p-2"><span class="v5-supply-muted text-[9px] block">متوسط تكلفة الوحدة</span><b class="text-xs font-black bidi-ltr block mt-1">${fmtEgp(x.averageUnitCost||0)}</b></div><div class="v5-supply-stat rounded-xl p-2"><span class="v5-supply-muted text-[9px] block">حد إعادة الطلب</span><b class="text-xs font-black block mt-1">${min.toLocaleString('en-US')}</b></div></div>
           ${low?'<div class="v5-supply-warning rounded-lg px-2.5 py-2 text-[10px] font-bold">⚠️ الرصيد عند حد إعادة الطلب أو أقل</div>':''}
           <div class="grid grid-cols-3 gap-2"><label class="col-span-1"><span class="v5-supply-muted text-[9px] block mb-1">لكل طلب</span><input id="v5-os-order-${escapeHtmlMobile(id)}" type="number" min="0" step="0.001" value="${Number(x.recipePerOrder||0)}" class="v5-supply-input w-full rounded-lg p-2 text-xs"></label><label class="col-span-1"><span class="v5-supply-muted text-[9px] block mb-1">لكل وحدة</span><input id="v5-os-unit-${escapeHtmlMobile(id)}" type="number" min="0" step="0.001" value="${Number(x.recipePerUnit||0)}" class="v5-supply-input w-full rounded-lg p-2 text-xs"></label><label class="col-span-1"><span class="v5-supply-muted text-[9px] block mb-1">حد التنبيه</span><input id="v5-os-min-${escapeHtmlMobile(id)}" type="number" min="0" step="0.001" value="${min}" class="v5-supply-input w-full rounded-lg p-2 text-xs"></label></div>
-          <div class="grid grid-cols-2 gap-2"><button type="button" onclick="saveOperatingSupplyRecipeFromScreen('${encodeURIComponent(id)}')" class="glass-pill rounded-full py-2.5 text-[10px] font-black">حفظ الاستهلاك</button><button type="button" onclick="writeOffOperatingSupplyFromScreen('${encodeURIComponent(id)}')" class="v5-supply-danger rounded-full py-2.5 text-[10px] font-black">هالك / عجز جرد</button></div>
+          <div class="grid grid-cols-2 gap-2"><button type="button" onclick="saveOperatingSupplyRecipeFromScreen('${encodeURIComponent(id)}')" class="glass-pill rounded-full py-2.5 text-[10px] font-black">حفظ الاستهلاك</button><button type="button" onclick="openOperatingSupplyWriteoffFromScreen('${encodeURIComponent(id)}')" class="v5-supply-danger rounded-full py-2.5 text-[10px] font-black">هالك / عجز جرد</button></div>
         </article>`;
       }).join(''):'<div class="v5-supply-card rounded-2xl p-5 text-center col-span-full"><div class="text-2xl mb-2">🧰</div><b class="text-sm font-black block">لا توجد مستلزمات مسجلة حتى الآن</b><p class="v5-supply-muted text-[10px] mt-1">ابدأ بإضافة أول مستلزم من زر «إضافة / شراء مستلزم تغليف».</p></div>';
       const bottleBox=document.getElementById('v5SupplyBottleSizes');
@@ -4942,13 +4958,22 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       try{const result=await runEngine('updateOperatingSupplyRecipe',payload);if(!result?.ok)throw new Error(result?.error||'تعذر حفظ إعداد الاستهلاك.');showToast('تم حفظ إعدادات استهلاك '+(result.supplyName||'المستلزم')+'.');}
       catch(err){showToast(String(err?.message||'تعذر حفظ إعداد الاستهلاك.'));}
     };
-    window.writeOffOperatingSupplyFromScreen=async function(encodedId){
+    window.openOperatingSupplyWriteoffFromScreen=function(encodedId){
       const id=decodeURIComponent(String(encodedId||'')),supply=(appState.operatingSupplies||[]).find(x=>String(x.id)===id);if(!supply)return showToast('المستلزم غير موجود.');
-      const quantity=Number(prompt('أدخل كمية الهالك / العجز من '+supply.name+' ('+supply.unit+'):')||0);
-      if(!Number.isFinite(quantity)||quantity<=0)return;
-      const reason=String(prompt('اكتب سبب الخصم:')||'').trim();if(!reason)return showToast('يجب كتابة سبب الخصم.');
-      try{const result=await runEngine('adjustStock',{kind:'supply',id,quantity,reason,reasonType:'WASTAGE'});if(!result?.ok)throw new Error(result?.error||'لم يتم اعتماد الخصم.');showToast('تم تسجيل الهالك وتحديث رصيد المستلزم.');}
+      document.getElementById('v5SupplyWriteoffId').value=id;
+      document.getElementById('v5SupplyWriteoffLabel').textContent=supply.name+' — الرصيد '+Number(supply.quantity||0)+' '+(supply.unit||'قطعة');
+      document.getElementById('v5SupplyWriteoffQty').value='';
+      document.getElementById('v5SupplyWriteoffReason').value='';
+      openSheet('v5SupplyWriteoffSheet');
+    };
+    window.saveOperatingSupplyWriteoffFromScreen=async function(event){
+      event.preventDefault();
+      const payload={id:document.getElementById('v5SupplyWriteoffId').value,quantity:Number(document.getElementById('v5SupplyWriteoffQty').value),reason:document.getElementById('v5SupplyWriteoffReason').value.trim(),reasonType:document.getElementById('v5SupplyWriteoffType').value};
+      if(!payload.id||!Number.isFinite(payload.quantity)||payload.quantity<=0||!payload.reason)return showToast('أدخل كمية صحيحة وسبب الخصم.');
+      const button=document.getElementById('v5SupplyWriteoffSaveBtn');if(button){button.disabled=true;button.textContent='جارٍ التسجيل...';}
+      try{const result=await runEngine('writeOffOperatingSupply',payload);if(!result?.ok)throw new Error(result?.error||'لم يتم اعتماد الخصم.');closeSheet('v5SupplyWriteoffSheet');showToast('تم تسجيل الهالك وتحديث رصيد المستلزم.');}
       catch(err){showToast(String(err?.message||'تعذر تسجيل الهالك.'));}
+      finally{if(button){button.disabled=false;button.textContent='تأكيد الخصم';}}
     };
 
     function renderInventoryScreen() {
