@@ -857,10 +857,59 @@
     function openModal(id) { if (id === 'purchaseModal') { document.querySelector('#purchaseModal form')?.reset(); populatePurchaseSelect(); } document.getElementById(id).classList.remove('hidden'); if (id === 'logoModal') drawLogoCrop(); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     function showToast(msg, type = 'success') {
-      const container = document.getElementById('toastContainer');
+      let container = document.getElementById('toastContainer');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'toastContainer';
+        document.body.appendChild(container);
+      } else if (container.parentElement !== document.body) {
+        document.body.appendChild(container);
+      }
+      // Use fixed side insets instead of 50% + translate: the latter can clip
+      // on mobile when a transformed ancestor or a narrow visual viewport exists.
+      Object.assign(container.style, {
+        position: 'fixed',
+        top: 'calc(env(safe-area-inset-top, 0px) + 12px)',
+        left: '12px',
+        right: '12px',
+        bottom: 'auto',
+        width: 'auto',
+        maxWidth: '420px',
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        transform: 'none',
+        zIndex: '20000',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'stretch',
+        gap: '8px',
+        boxSizing: 'border-box',
+        pointerEvents: 'none',
+        direction: 'rtl'
+      });
       const el = document.createElement('div');
-      el.className = `w-full text-center px-5 py-3 rounded-xl border shadow-2xl text-sm font-extrabold text-white pointer-events-auto ${type === 'error' ? 'bg-rose-700 border-rose-800' : 'bg-slate-900 border-slate-700'}`;
-      el.textContent = msg;
+      el.className = 'text-center px-5 py-3 rounded-xl border shadow-2xl text-sm font-extrabold pointer-events-auto';
+      el.textContent = String(msg ?? '');
+      Object.assign(el.style, {
+        display: 'block',
+        width: '100%',
+        maxWidth: '100%',
+        minWidth: '0',
+        boxSizing: 'border-box',
+        overflowWrap: 'anywhere',
+        wordBreak: 'normal',
+        whiteSpace: 'normal',
+        textAlign: 'center',
+        direction: 'rtl',
+        lineHeight: '1.65',
+        color: '#29251f',
+        background: 'rgba(250,247,239,.97)',
+        border: '1px solid rgba(190,157,94,.72)',
+        borderRadius: '18px',
+        boxShadow: '0 12px 36px rgba(25,20,12,.22), inset 0 1px 0 rgba(255,255,255,.9)',
+        backdropFilter: 'blur(18px)',
+        WebkitBackdropFilter: 'blur(18px)'
+      });
       container.appendChild(el);
       setTimeout(() => el.remove(), 5200);
     }
