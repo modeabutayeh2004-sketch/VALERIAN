@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>VALERIAN V20.114 • Luxury Fragrance Business System</title><meta name="app-version" content="V20.114">
-  <meta name="theme-color" content="#02080c">
+  <title>VALERIAN V20.116 • Luxury Fragrance Business System</title><meta name="app-version" content="V20.116">
+  <meta name="theme-color" content="#171513">
   <link rel="manifest" href="./manifest.webmanifest">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -3528,6 +3528,57 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
  diag?.push('DIAGNOSTICS','Diagnostic panel installed');
 })();
 </script>
-<script id="valerianThemeController">(function(){const K='valerian-theme-preference-v2';function apply(v){v=v==='light'?'light':'dark';document.documentElement.setAttribute('data-valerian-theme',v);try{localStorage.setItem(K,v)}catch(_){}const b=document.getElementById('valerianThemeToggle'),l=document.getElementById('valerianThemeLabel');if(b)b.textContent=v==='dark'?'التبديل للوضع النهاري':'التبديل للوضع الليلي';if(l)l.textContent=v==='dark'?'ليلي • Petrol Navy':'نهاري • Pearl Mist';const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=v==='dark'?'#061a32':'#edf3f6'}window.toggleValerianTheme=()=>apply(document.documentElement.getAttribute('data-valerian-theme')==='dark'?'light':'dark');let saved='dark';try{saved=localStorage.getItem(K)||'dark'}catch(_){}apply(saved);document.addEventListener('DOMContentLoaded',()=>apply(saved))})();</script>
+<style id="valerianV20116OnyxPearlTheme">
+/* V20.116 — approved Onyx & Pearl & Champagne visual theme */
+/* Correct the actual dashboard parent shell (the navy panel in the user's screenshot). */
+html[data-valerian-theme="light"] .home-command-center{
+ background:linear-gradient(145deg,#fffdf8 0%,#f1e9dc 58%,#e8dece 100%)!important;
+ border:1px solid rgba(157,128,80,.34)!important;
+ box-shadow:0 16px 36px rgba(83,66,43,.12),inset 0 1px 0 rgba(255,255,255,.92)!important;
+}
+html[data-valerian-theme="dark"] .home-command-center{
+ background:linear-gradient(145deg,#3b3024 0%,#211d19 58%,#171513 100%)!important;
+ border:1px solid rgba(198,166,107,.32)!important;
+ box-shadow:0 18px 38px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,235,199,.08)!important;
+}
+
+:root{--vl-onyx:#171513;--vl-onyx-2:#211d19;--vl-pearl:#f5f0e7;--vl-pearl-2:#ebe3d6;--vl-champagne:#c6a66b;--vl-brass:#9d8050;--vl-ink:#342d25;--vl-muted:#817568}
+html[data-valerian-theme="dark"] body{background:#171513!important;color:#f7f1e7!important}
+html[data-valerian-theme="dark"] .ambient-silk-bg{background:radial-gradient(ellipse 86% 55% at 12% 4%,rgba(123,91,54,.22),transparent 63%),radial-gradient(ellipse 72% 58% at 92% 84%,rgba(87,54,72,.16),transparent 66%),linear-gradient(145deg,#29231d 0%,#171513 48%,#100f0e 100%)!important}
+html[data-valerian-theme="dark"] .glass-card,html[data-valerian-theme="dark"] .glass-pill{background:linear-gradient(150deg,rgba(57,48,39,.82),rgba(27,24,21,.94))!important;border-color:rgba(198,166,107,.25)!important;box-shadow:0 16px 36px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,235,199,.09)!important}
+html[data-valerian-theme="dark"] .glass-dock,html[data-valerian-theme="dark"] .sheet-panel{background:rgba(27,24,21,.96)!important;border-color:rgba(198,166,107,.28)!important}
+html[data-valerian-theme="dark"] .valerian-home-hero{background:linear-gradient(135deg,#3a3025,#211d19 60%,#171513)!important;border-color:rgba(198,166,107,.38)!important}
+html[data-valerian-theme="dark"] .valerian-shortcut{background:linear-gradient(145deg,rgba(87,70,49,.42),rgba(30,27,23,.82))!important;border-color:rgba(198,166,107,.28)!important}
+html[data-valerian-theme="dark"] .valerian-glass-icon{background:linear-gradient(145deg,rgba(230,204,155,.27),rgba(112,87,55,.18) 58%,rgba(16,14,12,.5))!important;border-color:rgba(226,197,143,.45)!important;box-shadow:inset 0 1px 2px rgba(255,239,208,.24),0 8px 18px rgba(0,0,0,.34)!important}
+html[data-valerian-theme="dark"] .silver-btn,html[data-valerian-theme="dark"] .splash-enter-btn{background:linear-gradient(135deg,#f4e4c1,#c6a66b 56%,#927448)!important;color:#211a12!important;box-shadow:0 8px 24px rgba(198,166,107,.2)!important}
+html[data-valerian-theme="dark"] .silver-text{background:linear-gradient(180deg,#fff0cf,#d5b77d 65%,#a9874e)!important;-webkit-background-clip:text!important;-webkit-text-fill-color:transparent!important}
+html[data-valerian-theme="dark"] .money-action-panel,html[data-valerian-theme="dark"] .v5-action-panel,html[data-valerian-theme="dark"] .v5-delete-panel{background:linear-gradient(150deg,#393025,#191613 68%,#100f0e)!important;border-color:rgba(198,166,107,.3)!important}
+html[data-valerian-theme="dark"] .money-action-field,html[data-valerian-theme="dark"] .v5-delete-input{background:rgba(0,0,0,.24)!important;border-color:rgba(198,166,107,.24)!important;color:#fff7e9!important}
+html[data-valerian-theme="dark"] .sheet-backdrop{background:rgba(10,8,6,.78)!important}
+html[data-valerian-theme="light"] body{background:#f2ede4!important;color:#342d25!important}
+html[data-valerian-theme="light"] .ambient-silk-bg{background:radial-gradient(ellipse 84% 54% at 10% 4%,rgba(220,195,151,.30),transparent 64%),radial-gradient(ellipse 74% 62% at 92% 84%,rgba(193,169,139,.20),transparent 66%),linear-gradient(145deg,#fbf8f1 0%,#f1eadf 52%,#e9e0d3 100%)!important}
+html[data-valerian-theme="light"] .glass-card,html[data-valerian-theme="light"] .glass-pill{background:linear-gradient(150deg,#fffdf8,#eee7db)!important;border-color:rgba(157,128,80,.24)!important;box-shadow:0 12px 28px rgba(83,66,43,.10),inset 0 1px 0 #fff!important}
+html[data-valerian-theme="light"] .glass-dock,html[data-valerian-theme="light"] .sheet-panel{background:rgba(250,247,240,.97)!important;border-color:rgba(157,128,80,.25)!important}
+html[data-valerian-theme="light"] .valerian-home-hero{background:linear-gradient(135deg,#fffdf8,#eee5d7 62%,#e8dece)!important;border-color:rgba(157,128,80,.32)!important;box-shadow:0 18px 42px rgba(83,66,43,.12),inset 0 1px 0 #fff!important}
+html[data-valerian-theme="light"] .valerian-shortcut{background:linear-gradient(145deg,#fffdf8,#eee6d9)!important;border-color:rgba(157,128,80,.27)!important;box-shadow:0 10px 24px rgba(83,66,43,.10),inset 0 1px 0 #fff!important}
+html[data-valerian-theme="light"] .valerian-glass-icon{background:linear-gradient(145deg,#fffaf0,#e8dcc7 58%,#d9c7a8)!important;border:1px solid rgba(157,128,80,.42)!important;box-shadow:inset 0 1px 2px #fff,0 7px 16px rgba(83,66,43,.15)!important;text-shadow:0 1px 3px rgba(75,57,31,.16)!important}
+html[data-valerian-theme="light"] .silver-btn,html[data-valerian-theme="light"] .splash-enter-btn{background:linear-gradient(135deg,#e8d7b5,#c6a66b 58%,#a18454)!important;color:#302619!important;box-shadow:0 8px 22px rgba(157,128,80,.2)!important}
+html[data-valerian-theme="light"] .silver-text{background:linear-gradient(180deg,#8d6c37,#b28d4d 62%,#70552e)!important;-webkit-background-clip:text!important;-webkit-text-fill-color:transparent!important}
+html[data-valerian-theme="light"] .money-action-panel,html[data-valerian-theme="light"] .v5-action-panel,html[data-valerian-theme="light"] .v5-delete-panel{background:linear-gradient(145deg,#fffdf8,#eee5d7)!important;color:#342d25!important;border-color:rgba(157,128,80,.3)!important}
+html[data-valerian-theme="light"] .money-action-field,html[data-valerian-theme="light"] .v5-delete-input{background:rgba(255,255,255,.72)!important;border-color:rgba(157,128,80,.28)!important;color:#342d25!important}
+html[data-valerian-theme="light"] .money-action-label{color:#786b59!important}
+html[data-valerian-theme="light"] .sheet-backdrop{background:rgba(68,54,35,.26)!important}
+html[data-valerian-theme="light"] .text-white,html[data-valerian-theme="light"] .text-slate-100,html[data-valerian-theme="light"] .text-slate-200{color:#443a2e!important}
+html[data-valerian-theme="light"] .text-slate-300,html[data-valerian-theme="light"] .text-slate-400,html[data-valerian-theme="light"] .text-slate-500{color:#786d5e!important}
+html[data-valerian-theme="light"] .inventory-level-icon{background:linear-gradient(145deg,#fffaf0,#e5d7bf)!important;border-color:rgba(157,128,80,.48)!important}
+html[data-valerian-theme="light"] .inventory-level-fill{background:linear-gradient(180deg,rgba(198,166,107,.78),rgba(157,128,80,.9))!important}
+html[data-valerian-theme="light"] .water-fill{background:linear-gradient(180deg,rgba(198,166,107,.62),rgba(157,128,80,.82))!important}
+html[data-valerian-theme="dark"] .inventory-level-icon{background:rgba(30,25,20,.9)!important;border-color:rgba(198,166,107,.48)!important}
+html[data-valerian-theme="dark"] .inventory-level-fill{background:linear-gradient(180deg,rgba(198,166,107,.62),rgba(111,83,46,.9))!important}
+html[data-valerian-theme="dark"] .water-fill{background:linear-gradient(180deg,rgba(198,166,107,.52),rgba(111,83,46,.86))!important}
+html[data-valerian-theme="light"] .nav-pill{color:#746957!important}
+html[data-valerian-theme="light"] .nav-pill.bg-slate-200\/20{background:rgba(198,166,107,.2)!important;color:#6c5129!important}
+</style>
+<script id="valerianThemeController">(function(){const K='valerian-theme-preference-v2';function apply(v){v=v==='light'?'light':'dark';document.documentElement.setAttribute('data-valerian-theme',v);try{localStorage.setItem(K,v)}catch(_){}const b=document.getElementById('valerianThemeToggle'),l=document.getElementById('valerianThemeLabel');if(b)b.textContent=v==='dark'?'التبديل للوضع النهاري':'التبديل للوضع الليلي';if(l)l.textContent=v==='dark'?'ليلي • Onyx Champagne':'نهاري • Pearl Champagne';const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=v==='dark'?'#171513':'#f2ede4'}window.toggleValerianTheme=()=>apply(document.documentElement.getAttribute('data-valerian-theme')==='dark'?'light':'dark');let saved='dark';try{saved=localStorage.getItem(K)||'dark'}catch(_){}apply(saved);document.addEventListener('DOMContentLoaded',()=>apply(saved))})();</script>
 </body>
 </html>
