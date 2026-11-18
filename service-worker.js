@@ -1,6 +1,6 @@
 /* VALERIAN V20.7 — offline application shell */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-104-startup-fix';
+const CACHE_NAME = 'valerian-app-shell-v20-105-stable-shell';
 const APP_SHELL = ['./', './index.html', './engine.html?v=20261118-102-authfix', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
