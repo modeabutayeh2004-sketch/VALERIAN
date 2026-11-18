@@ -3460,6 +3460,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       if(!cloudClient||!cloudUser||!navigator.onLine)return 0;
       await window.__valImgReady;clearTimeout(valIdb.flushTimer);await valIdbFlush();
       const uploads=[];
+      let uploaded=0,metadataChanged=false;
       valWalkImages(state,(owner,key)=>{
         const id=valImageAssetId(owner,key);if(!id)return;
         const value=owner[key],cached=valIdb.cache[id],pathKey=valImageStoragePathKey(key),removedKey=key+'Removed';
@@ -3470,12 +3471,10 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         const source=typeof value==='string'&&value.startsWith('data:')&&value!==VAL_IMG_PH?value:cached;
         if(typeof source==='string'&&source.startsWith('data:')&&source!==VAL_IMG_PH)uploads.push({owner,key,id,source,pathKey,removedKey});
       });
-      let uploaded=0,metadataChanged=false;
       for(const item of uploads){
         const blob=valImageDataToBlob(item.source),hash=await valImageSha256(blob);
         const ext=valImageExtension(blob.type),safeId=item.id.replace(/[^a-zA-Z0-9_-]/g,'_').slice(0,100)||'asset';
         const path=cloudUser.id+'/'+safeId+'-'+hash+'.'+ext;
-        const pathKey=valImageStoragePathKey(item.key);
         if(item.owner[item.pathKey]===path&&!item.owner[item.removedKey])continue;
         const {error}=await cloudClient.storage.from(VAL_IMAGE_BUCKET).upload(path,blob,{upsert:true,contentType:blob.type||'image/jpeg',cacheControl:'31536000'});
         if(error)throw new Error('تعذر رفع صورة '+item.id+' إلى التخزين السحابي: '+cloudErrorMessage(error));
