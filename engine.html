@@ -3439,7 +3439,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const assets={};let downloaded=0;
       for(const item of refs){
         const local=(typeof item.owner[item.key]==='string'&&item.owner[item.key].startsWith('data:')&&item.owner[item.key]!==VAL_IMG_PH)?item.owner[item.key]:valIdb.cache[item.id];
-        const hashMatch=/-([a-f0-9]{64})\\.[a-z0-9]+$/i.exec(String(item.path));
+        const hashMatch=/-([a-f0-9]{64})\.[a-z0-9]+$/i.exec(String(item.path));
         if(typeof local==='string'&&local.startsWith('data:')&&local!==VAL_IMG_PH){
           if(!hashMatch){item.owner[item.key]=local;continue;}
           try{
