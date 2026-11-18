@@ -6,6 +6,7 @@
   <!-- V19.57: high-resolution document images, native WhatsApp file sharing, customer loyalty card sharing -->
   <!-- V19.58: direct unsaved-number WhatsApp chat, stable phone line, remove repeated brand from report headings/footers -->
   <!-- V19.63: add IndexedDB full-state persistence beyond localStorage quota; stabilize loyalty-card alignment and logo hydration. -->
+  <!-- V20-100: performance pass — Realtime-first incremental sync, throttled legacy reconciliation, lighter polling. -->
   <!-- V19.64: retry IndexedDB initialization after transient failures, request persistent browser storage, and confirm durable commits before reporting success. -->
   <!-- V19.61: A4 portrait fit, higher-resolution preview export, pause global theme customization, streamlined customer CRM actions. -->
   <!-- V19.59: export the exact preview DOM; preserve Arabic shaping and bidi; align invoice phone row -->
@@ -6781,6 +6782,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     let cloudUser = null, cloudRevision = 0, cloudLegacyRevision = 0, cloudReady = false, cloudDirty = false, cloudConflict = false;
     let cloudSaveTimer = null, cloudChannel = null, cloudApplyingRemote = false;
     let cloudSaveInFlight = false, cloudPollInFlight = false, cloudRetryTimer = null, cloudRetryDelay = 3000;
+    // V20-100: legacy snapshot reconciliation is a recovery path, not the normal sync path.
+    let cloudIncrementalLegacyCheckAt = 0;
     let cloudIncrementalPullQueue=Promise.resolve(), cloudImageUploadQueue=Promise.resolve();
     const hadLocalValerianState = !!localStorage.getItem(STORAGE_KEY);
 
@@ -7301,18 +7304,31 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       try {
         if(cloudIncrementalReady){
           await valIncrementalPull('poll:'+source);
-          // Legacy compatibility: only fetch the full snapshot when an older client actually advanced it.
-          const {data:legacyMeta,error:legacyMetaError}=await cloudClient.from('valerian_state').select('revision').eq('user_id',cloudUser.id).maybeSingle();
-          if(legacyMetaError){setCloudStatus('تعذر فحص توافق النسخ القديمة: '+cloudErrorMessage(legacyMetaError),'#b91c1c');return;}
-          const legacyRevision=Number(legacyMeta?.revision||0);
-          if(legacyRevision>cloudLegacyRevision){
-            if(cloudDirty||cloudSaveInFlight){cloudConflict=true;setCloudStatus('وصل تعديل من نسخة قديمة بالتزامن مع تعديل محلي. لم نستبدل أي بيانات.','#b91c1c');return;}
-            const {data:legacyRow,error:legacyError}=await cloudClient.from('valerian_state').select('state,revision').eq('user_id',cloudUser.id).maybeSingle();
-            if(legacyError){setCloudStatus('تعذر تحميل تحديث النسخة القديمة: '+cloudErrorMessage(legacyError),'#b91c1c');return;}
-            const applied=await applyCloudState(legacyRow.state); if(!applied)return;
-            cloudLegacyRevision=Number(legacyRow.revision||legacyRevision); cloudIncrementalBase=valSyncCloudClone(state);
-            setCloudStatus('تم استقبال تحديث من نسخة VALERIAN قديمة — تم تحديث البيانات محلياً','#047857');
-          }else setCloudStatus('متصل — تم فحص سجل التغييرات الجزئي','#047857');
+          // V20-100: the Incremental Journal + Realtime path is now authoritative for migrated clients.
+          // Do not hit the legacy snapshot table on every poll: that added a second network round-trip
+          // to an otherwise successful incremental pull and was a measurable source of latency.
+          // Keep a throttled compatibility check for genuinely old clients as a recovery safety net.
+          const now=Date.now();
+          const legacyCheckDue=!cloudIncrementalLegacyCheckAt || (now-cloudIncrementalLegacyCheckAt)>=120000;
+          if(legacyCheckDue){
+            cloudIncrementalLegacyCheckAt=now;
+            const {data:legacyMeta,error:legacyMetaError}=await cloudClient.from('valerian_state').select('revision').eq('user_id',cloudUser.id).maybeSingle();
+            if(legacyMetaError){valCloudDiagnostic('تخطي فحص التوافق القديم مؤقتًا: '+cloudErrorMessage(legacyMetaError));}
+            else{
+              const legacyRevision=Number(legacyMeta?.revision||0);
+              if(legacyRevision>cloudLegacyRevision){
+                if(cloudDirty||cloudSaveInFlight){cloudConflict=true;setCloudStatus('وصل تعديل من نسخة قديمة بالتزامن مع تعديل محلي. لم نستبدل أي بيانات.','#b91c1c');return;}
+                const {data:legacyRow,error:legacyError}=await cloudClient.from('valerian_state').select('state,revision').eq('user_id',cloudUser.id).maybeSingle();
+                if(legacyError){valCloudDiagnostic('تعذر تحميل تحديث النسخة القديمة: '+cloudErrorMessage(legacyError));}
+                else{
+                  const applied=await applyCloudState(legacyRow.state); if(!applied)return;
+                  cloudLegacyRevision=Number(legacyRow.revision||legacyRevision); cloudIncrementalBase=valSyncCloudClone(state);
+                  setCloudStatus('تم استقبال تحديث من نسخة VALERIAN قديمة — تم تحديث البيانات محلياً','#047857');
+                }
+              }
+            }
+          }
+          setCloudStatus('متصل — المزامنة الجزئية + Realtime','#047857');
           return;
         }
         // Cheap revision-only check: never download the full JSON business state unless
@@ -7363,10 +7379,10 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     window.addEventListener('offline',()=>{if(cloudReady)setCloudStatus('غير متصل — التغييرات محفوظة محلياً مؤقتاً','#a16207');});
     window.addEventListener('beforeunload',e=>{if(cloudDirty||valDurableWriteError){e.preventDefault();e.returnValue='';}});
     window.addEventListener('focus',()=>pollCloudChanges('focus'));
-    // Realtime is the fast path; frequent cursor reconciliation is the recovery path.
-    // A Realtime subscription can silently disconnect on mobile/backgrounded browsers,
-    // so never rely on WebSocket delivery alone for cross-device updates.
-    setInterval(()=>{if(document.visibilityState!=='hidden')pollCloudChanges('interval');},12000);
+    // V20-100: Realtime is the primary delivery path. Keep a slower reconciliation heartbeat
+    // only as a safety net for browsers/background states where WebSocket delivery can be lost.
+    // This removes repeated network work without sacrificing recovery.
+    setInterval(()=>{if(document.visibilityState!=='hidden')pollCloudChanges('interval');},30000);
     document.addEventListener('visibilitychange',()=>{
       if(document.visibilityState==='visible'){
         clearTimeout(cloudRealtimeWakeTimer);
