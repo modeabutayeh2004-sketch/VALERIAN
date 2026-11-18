@@ -5424,7 +5424,7 @@ function previewPeriodicReportPrint() {
       // require well over 100 MB before the browser encodes the PNG.
       const maxPixels=isCard?12000000:16000000;
       const maxSide=8000;
-      const preferredScale=isCard?2.6:2.6;
+      const preferredScale=isCard?2.8:3.0;
       const scale=Math.max(1,Math.min(preferredScale,
         Math.sqrt(maxPixels/Math.max(1,cssWidth*cssHeight)),
         maxSide/Math.max(cssWidth,cssHeight)));
