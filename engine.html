@@ -6884,25 +6884,43 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const {data,error}=await cloudClient.rpc('valerian_sync_bootstrap');
       if(error)throw error;
       if(!data?.ok)throw new Error('تعذر تثبيت نقطة بداية المزامنة الجزئية.');
-      const base= data.state ? normalizeState(data.state) : null;
-      if(base){
+
+      // The server cursor is the immutable migration baseline, NOT the latest cursor.
+      // Preserve this device's durable cursor on every later login; otherwise every
+      // sign-in replays the entire journal since migration and reapplies the old base.
+      const storedCursorRow=await valIdbGet('appstate',VAL_SYNC_CURSOR_KEY);
+      const hasStoredCursor=!!storedCursorRow&&Number.isFinite(Number(storedCursorRow.cursor))&&Number(storedCursorRow.cursor)>=0;
+      const storedCursor=hasStoredCursor?Number(storedCursorRow.cursor):0;
+      const pendingBeforeBootstrap=await valSyncReadOutbox();
+      const base=data.state?normalizeState(data.state):null;
+      const applyBaseline=!!base&&!hasStoredCursor&&!pendingBeforeBootstrap.length;
+
+      if(applyBaseline){
         const hydrated=await valHydrateImageState(base,{storeIncoming:true,strict:false});
         const applied=await applyCloudState(hydrated);
         if(!applied)throw new Error('تعذر تطبيق نقطة البداية السحابية.');
+        valCloudDiagnostic('Bootstrap: تم تطبيق النسخة الأساسية لأول تهيئة لهذا الجهاز.');
+      }else if(base){
+        valCloudDiagnostic('Bootstrap: تم الاحتفاظ بالحالة المحلية وتجاوز إعادة تطبيق النسخة الأساسية؛ cursor المحلي='+storedCursor+'، outbox='+pendingBeforeBootstrap.length+'.');
       }
-      await valSyncWriteCursor(Number(data.cursor||0));
+
+      const effectiveCursor=hasStoredCursor?storedCursor:Number(data.cursor||0);
+      if(!hasStoredCursor)await valSyncWriteCursor(effectiveCursor);
       cloudRevision=Number(data.revision||0);
       cloudIncrementalBase=valSyncCloudClone(state);
       cloudIncrementalReady=true;
-      cloudSyncDiagnostics.mode='Incremental Journal';cloudSyncDiagnostics.bootstrap='نجح';cloudSyncDiagnostics.cursor=Number(data.cursor||0);cloudSyncDiagnostics.lastError='لا يوجد';
+      cloudSyncDiagnostics.mode='Incremental Journal';
+      cloudSyncDiagnostics.bootstrap='نجح';
+      cloudSyncDiagnostics.cursor=effectiveCursor;
+      cloudSyncDiagnostics.lastError='لا يوجد';
+
       if(!base){
         const seedState=valSyncCloudClone(state);
         const seed={version:1,ops:Object.keys(seedState).map(key=>({op:'set',key,value:valSyncClone(seedState[key])}))};
         const items=await valSyncReadOutbox();
         if(!items.length){items.push({change_id:valSyncNewId(),patch:seed,created_at:new Date().toISOString()});await valSyncWriteOutbox(items);}
       }
-      // Download cloud assets first, then upload any local-only originals. The journal
-      // carries only stable object paths; image bytes never enter the JSON change log.
+      // Download only missing/changed assets; image bytes never enter the journal.
       await valDownloadCloudImageAssets(state);
       await valUploadCloudImageAssets();
       cloudSyncDiagnostics.outboxCount=(await valSyncReadOutbox()).length;
