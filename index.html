@@ -4601,7 +4601,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
 (function(){
  const $=id=>document.getElementById(id),diag=window.__VALERIAN_DIAG;
  const state=()=>{
-  const frame=$('valerianEngineFrame'),w=frame?.contentWindow,eng=w?.ValerianEngine;
+  const eng=window.ValerianEngine;
   let cloud='غير متاح',syncDiag=null;
   try{cloud=eng?.cloudStatus?JSON.stringify(eng.cloudStatus()):'cloudStatus غير متاح';syncDiag=eng?.cloudDiagnostics?eng.cloudDiagnostics():null;}catch(e){cloud='cloudStatus error: '+e.message;}
   return [
@@ -4609,7 +4609,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
    'المتصفح: '+navigator.userAgent,
    'الواجهة: '+(typeof window.importMobileJson)+' / '+(typeof window.exportMobileJson),
    'زر المزامنة: '+(!!$('v5CloudSyncBtn')),
-   'iframe: '+(frame?'موجود':'مفقود')+' | '+(frame?.contentDocument?.readyState||'لا يوجد document'),
+   'وضع المحرك: '+(eng?'مضمّن داخل المستند':'لم يبدأ بعد'),
    'محرك الأعمال: '+(eng?'موجود':'غير موجود'),
    'جاهزية المحرك: '+(eng?.ready?'promise موجودة':'غير متاحة'),
    'إصدار التشخيص: V20-100',
@@ -4630,11 +4630,12 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
    'آخر تحديث للصفحة: '+new Date().toLocaleString('ar-EG')
   ].join('\\n');
  };
- function refresh(){ const frame=$('valerianEngineFrame'),eng=frame?.contentWindow?.ValerianEngine;let engineLog='';try{const d=eng?.cloudDiagnostics?.();if(d?.log)engineLog='سجل محرك المزامنة:\\n'+d.log;}catch(e){engineLog='تعذر قراءة سجل المحرك: '+e.message;}const pageLog=(diag?.logs||[]).slice(-35).map(x=>'['+x.time+'] '+x.type+' — '+x.detail).join('\\n');$('valDiagState').textContent=state();$('valDiagLog').textContent=[pageLog,engineLog].filter(Boolean).join('\\n\\n')||'لا توجد أحداث تشخيص مسجلة حتى الآن.';}
+ function refresh(){ const eng=window.ValerianEngine;let engineLog='';try{const d=eng?.cloudDiagnostics?.();if(d?.log)engineLog='سجل محرك المزامنة:\\n'+d.log;}catch(e){engineLog='تعذر قراءة سجل المحرك: '+e.message;}const pageLog=(diag?.logs||[]).slice(-35).map(x=>'['+x.time+'] '+x.type+' — '+x.detail).join('\\n');$('valDiagState').textContent=state();$('valDiagLog').textContent=[pageLog,engineLog].filter(Boolean).join('\\n\\n')||'لا توجد أحداث تشخيص مسجلة حتى الآن.';}
  $('valDiagToggle').addEventListener('click',()=>{const p=$('valDiagPanel');p.style.display=p.style.display==='none'?'block':'none';refresh();});
  $('valDiagCopy').addEventListener('click',async()=>{refresh();const report=$('valDiagState').textContent+'\\n\\n'+$('valDiagLog').textContent;try{await navigator.clipboard.writeText(report);$('valDiagCopy').textContent='تم النسخ';}catch(e){const t=document.createElement('textarea');t.value=report;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();$('valDiagCopy').textContent='تم النسخ';}});
  window.addEventListener('load',()=>{diag?.push('PAGE LOAD','load event fired');refresh();});
- const frame=$('valerianEngineFrame');frame?.addEventListener('load',()=>{diag?.push('ENGINE IFRAME LOAD','iframe load event');setTimeout(refresh,300);});
+ window.addEventListener('valerian:engine-ready',()=>{diag?.push('ENGINE READY','single-document engine ready');setTimeout(refresh,300);});
+ window.addEventListener('valerian:cloud-status',()=>setTimeout(refresh,100));
  setInterval(()=>{if($('valDiagPanel').style.display!=='none')refresh();},1200);
  diag?.push('DIAGNOSTICS','Diagnostic panel installed');
 })();
