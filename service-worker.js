@@ -1,7 +1,7 @@
 /* VALERIAN V20.7 — offline application shell */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-113-mobile-phase1';
-const APP_SHELL = ['./', './index.html', './engine.html?v=20261118-113-mobile-phase1', './manifest.webmanifest', './assets/valerian-icon.jpg'];
+const CACHE_NAME = 'valerian-app-shell-v20-114-phase1-redesign';
+const APP_SHELL = ['./', './index.html', './engine.html?v=20261118-114-phase1-redesign', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
