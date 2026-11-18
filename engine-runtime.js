@@ -4935,6 +4935,20 @@ function previewPeriodicReportPrint() {
           refreshAllViews();
           return {ok:true,supplyName:supply.name,snapshot:snapshot()};
         },
+        writeOffOperatingSupply:async payload=>{
+          await ready;
+          const id=String(payload?.id||''),supply=(state.operatingSupplies||[]).find(x=>String(x.id)===id);
+          const qty=Number(payload?.quantity),reason=String(payload?.reason||'').trim(),type=payload?.reasonType==='COUNT_SHORTAGE'?'COUNT_SHORTAGE':'WASTAGE';
+          if(!supply)throw new Error('المستلزم غير موجود.');
+          if(!Number.isFinite(qty)||qty<=0||qty>Number(supply.quantity||0)||!reason)throw new Error('الكمية تتجاوز الرصيد أو سبب الخصم غير مكتمل.');
+          const before=structuredClone(state),oldQty=Number(supply.quantity||0);
+          el('supplyWriteoffId').value=id;el('supplyWriteoffQty').value=String(qty);el('supplyWriteoffReason').value=reason;el('supplyWriteoffType').value=type;
+          saveOperatingSupplyWriteoff({preventDefault(){}});
+          if(Number(supply.quantity||0)!==oldQty-qty)throw new Error('لم يؤكد المحرك تسجيل خصم المستلزم.');
+          try{await valDurableWritePromise;if(valDurableWriteError)throw valDurableWriteError;await valIdbFlush();}
+          catch(err){state=before;saveState();throw new Error('لم يكتمل الحفظ الدائم لخصم المستلزم: '+String(err?.message||err));}
+          return {ok:true,snapshot:snapshot()};
+        },
         adjustStock:async payload=>{
           await ready;
           if(!payload)throw new Error('بيانات التسوية مطلوبة.');
