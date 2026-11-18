@@ -4901,6 +4901,40 @@ function previewPeriodicReportPrint() {
           refreshAllViews();
           return {ok:true,product:structuredClone(product),decantProduct:structuredClone(state.products.find(p=>p.parentId===id&&p.category==='تقسيم')||null),durableSaved:!valDurableWriteError,localSaveError:valDurableWriteError?String(valDurableWriteError.message||valDurableWriteError):'',snapshot:snapshot()};
         },
+        createOperatingSupplyInvoice:async payload=>{
+          await ready;
+          if(!payload)throw new Error('بيانات فاتورة المستلزمات مطلوبة.');
+          const beforeCount=(state.operatingSupplyInvoices||[]).length;
+          el('supplySupplier').value=String(payload.supplier||'').trim();
+          el('supplyName').value=String(payload.name||'').trim();
+          el('supplyCategory').value=String(payload.category||'أخرى');
+          el('supplyUnit').value=String(payload.unit||'').trim();
+          el('supplyQty').value=String(Number(payload.quantity||0));
+          el('supplyTotalCost').value=String(Number(payload.totalCost||0));
+          el('supplyPaid').value=String(Number(payload.paidAmount||0));
+          el('supplyMethod').value=normalizePaymentMethod(payload.paymentMethod||'نقدي');
+          saveOperatingSupplyInvoice({preventDefault(){}});
+          if((state.operatingSupplyInvoices||[]).length!==beforeCount+1)throw new Error('لم يعتمد المحرك فاتورة المستلزمات؛ راجع البيانات أو سجل الأخطاء.');
+          await valDurableWritePromise;
+          if(valDurableWriteError)throw new Error('لم يكتمل الحفظ الدائم: '+String(valDurableWriteError.message||valDurableWriteError));
+          await valIdbFlush();
+          return {ok:true,invoice:structuredClone(state.operatingSupplyInvoices[0]),snapshot:snapshot()};
+        },
+        updateOperatingSupplyRecipe:async payload=>{
+          await ready;
+          const supply=(state.operatingSupplies||[]).find(x=>String(x.id)===String(payload?.id||''));
+          if(!supply)throw new Error('المستلزم غير موجود.');
+          const perOrder=Number(payload?.recipePerOrder),perUnit=Number(payload?.recipePerUnit),minimum=Number(payload?.minimumStock);
+          if(![perOrder,perUnit,minimum].every(x=>Number.isFinite(x)&&x>=0))throw new Error('قيم الاستهلاك وحد التنبيه يجب أن تكون أرقامًا غير سالبة.');
+          const before=structuredClone(supply);
+          Object.assign(supply,{recipePerOrder:perOrder,recipePerUnit:perUnit,minimumStock:minimum});
+          logAudit('SUPPLY_RECIPE_UPDATED','تحديث استهلاك '+supply.name+' لكل طلب ووحدة');
+          if(!saveState()){Object.assign(supply,before);throw new Error('تعذر حفظ إعدادات استهلاك المستلزم.');}
+          try{await valDurableWritePromise;if(valDurableWriteError)throw valDurableWriteError;await valIdbFlush();}
+          catch(err){Object.assign(supply,before);saveState();throw new Error('لم يكتمل الحفظ الدائم لإعداد الاستهلاك: '+String(err?.message||err));}
+          refreshAllViews();
+          return {ok:true,supplyName:supply.name,snapshot:snapshot()};
+        },
         adjustStock:async payload=>{
           await ready;
           if(!payload)throw new Error('بيانات التسوية مطلوبة.');
