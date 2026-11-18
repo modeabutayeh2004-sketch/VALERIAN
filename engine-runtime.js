@@ -4940,9 +4940,16 @@ function previewPeriodicReportPrint() {
           const before=structuredClone(state),name=String(supply.name||'مستلزم');
           supply.archivedAt=new Date().toISOString();supply.active=false;supply.recipePerOrder=0;supply.recipePerUnit=0;
           logAudit('OPERATING_SUPPLY_ARCHIVED','حذف '+name+' من قائمة المستلزمات النشطة مع الاحتفاظ بالفواتير والحركات والرصيد التاريخي.');
-          if(!saveState()){state=before;throw new Error('تعذر حفظ حذف المستلزم.');}
-          try{await valDurableWritePromise;if(valDurableWriteError)throw valDurableWriteError;await valIdbFlush();}
-          catch(err){state=before;saveState();throw new Error('لم يكتمل الحفظ الدائم لحذف المستلزم: '+String(err?.message||err));}
+          if(!saveState()){state=before;throw new Error('تعذر تجهيز حفظ حذف المستلزم.');}
+          const deleteWrite=valDurableWritePromise;
+          try{
+            await deleteWrite;
+            if(valDurableWriteError)throw valDurableWriteError;
+            await valIdbFlush();
+          }catch(err){
+            state=before;saveState();
+            throw new Error('فشل تأكيد حفظ الحذف في قاعدة البيانات المحلية: '+String(err?.message||err));
+          }
           refreshAllViews();
           return {ok:true,supplyName:name,snapshot:snapshot()};
         },
