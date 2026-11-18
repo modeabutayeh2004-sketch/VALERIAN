@@ -7055,17 +7055,37 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     function openCloudPanel() { if(typeof switchTab==='function' && currentTab!=='settings') switchTab('settings'); const panel=document.getElementById('cloudPanel'); if(panel)panel.style.display='block'; document.getElementById('cloudPanel')?.scrollIntoView({behavior:'smooth',block:'center'}); }
     function closeCloudPanel() { const panel=document.getElementById('cloudPanel'); if(panel)panel.style.display='none'; }
     function cloudErrorMessage(err) { return err?.message || err?.error_description || 'حدث خطأ غير معروف'; }
+    function valCloudWithTimeout(promise,ms,label){
+      let timer;
+      return Promise.race([
+        Promise.resolve(promise),
+        new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(label+' — انتهت مهلة الانتظار بعد '+Math.round(ms/1000)+' ثانية. تحقق من الاتصال ثم أعد المحاولة.')),ms);})
+      ]).finally(()=>clearTimeout(timer));
+    }
 
     async function cloudSignIn(credentials) {
-      if (!cloudClient) { const ok=await loadSupabaseLibrary(); if(!ok || !cloudClient){const message='البرنامج يعمل محليًا؛ المزامنة تحتاج اتصالًا بالإنترنت.';setCloudStatus(message,'#a16207');return {ok:false,authenticated:false,message};} }
-      const email=String(credentials?.email ?? document.getElementById('cloudEmail')?.value ?? '').trim();
-      const password=String(credentials?.password ?? document.getElementById('cloudPassword')?.value ?? '');
-      if (!email || !password) { const message='أدخل البريد الإلكتروني وكلمة المرور';setCloudStatus(message,'#b91c1c');return {ok:false,authenticated:false,message}; }
-      setCloudStatus('جارٍ تسجيل الدخول…','#a16207');
-      const {data,error}=await cloudClient.auth.signInWithPassword({email,password});
-      if(error){const message='فشل الدخول: '+cloudErrorMessage(error);setCloudStatus(message,'#b91c1c');return {ok:false,authenticated:false,message};}
-      await initializeValerianCloud(data.user);
-      return {ok:!!cloudReady,authenticated:!!cloudUser,synced:!!cloudReady,message:(document.getElementById('cloudMessage')?.textContent||'').replace(/^الحالة:\s*/,'')};
+      try{
+        if (!cloudClient) {
+          const ok=await valCloudWithTimeout(loadSupabaseLibrary(),15000,'تحميل مكتبة المزامنة تأخر');
+          if(!ok || !cloudClient){const message='تعذر تجهيز اتصال المزامنة. تحقق من الإنترنت ثم أعد المحاولة.';setCloudStatus(message,'#b91c1c');return {ok:false,authenticated:false,message};}
+        }
+        const email=String(credentials?.email ?? document.getElementById('cloudEmail')?.value ?? '').trim();
+        const password=String(credentials?.password ?? document.getElementById('cloudPassword')?.value ?? '');
+        if (!email || !password) { const message='أدخل البريد الإلكتروني وكلمة المرور';setCloudStatus(message,'#b91c1c');return {ok:false,authenticated:false,message}; }
+        if(!navigator.onLine){const message='لا يوجد اتصال بالإنترنت. اتصل بالشبكة ثم أعد المحاولة.';setCloudStatus(message,'#b91c1c');return {ok:false,authenticated:false,message};}
+        setCloudStatus('جارٍ التحقق من بيانات الدخول…','#a16207');
+        const {data,error}=await valCloudWithTimeout(cloudClient.auth.signInWithPassword({email,password}),20000,'خادم تسجيل الدخول لم يرد');
+        if(error){const message='فشل الدخول: '+cloudErrorMessage(error);setCloudStatus(message,'#b91c1c');return {ok:false,authenticated:false,message};}
+        if(!data?.user){const message='خادم الدخول لم يرجع بيانات الحساب. أعد المحاولة.';setCloudStatus(message,'#b91c1c');return {ok:false,authenticated:false,message};}
+        setCloudStatus('تم تسجيل الدخول — جارٍ تجهيز المزامنة…','#a16207');
+        await valCloudWithTimeout(initializeValerianCloud(data.user),30000,'تهيئة بيانات المزامنة تأخرت');
+        return {ok:!!cloudReady,authenticated:!!cloudUser,synced:!!cloudReady,message:(document.getElementById('cloudMessage')?.textContent||'').replace(/^الحالة:\s*/,'')};
+      }catch(err){
+        const message='تعذر إكمال تسجيل الدخول: '+cloudErrorMessage(err);
+        setCloudStatus(message,'#b91c1c');
+        console.error('VALERIAN cloud sign-in failed:',err);
+        return {ok:false,authenticated:!!cloudUser,synced:!!cloudReady,message};
+      }
     }
     async function cloudSignUp(credentials) {
       if (!cloudClient) { const ok=await loadSupabaseLibrary(); if(!ok || !cloudClient){const message='البرنامج يعمل محليًا؛ المزامنة تحتاج اتصالًا بالإنترنت.';setCloudStatus(message,'#a16207');return {ok:false,authenticated:false,message};} }
