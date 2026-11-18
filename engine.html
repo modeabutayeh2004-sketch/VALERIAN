@@ -3139,14 +3139,28 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     }
     function roundMoney(value) { const n=Number(value||0); return Number.isFinite(n) ? Math.round(n) : 0; }
 
+    function removeKnownDemoSeed(input) {
+      const st=normalizeState(input);
+      const demo=[['p_1','Tom Ford Oud Wood','622111001',5400,15],['p_2','Chanel Coco Mademoiselle','622111002',4900,8],['p_dec_1','تقسيم Tom Ford Oud Wood (10 مل)','622999001',650,0]];
+      const exact=Array.isArray(st.products)&&st.products.length===3&&demo.every(([id,name,barcode,price,stock])=>st.products.some(p=>p.id===id&&p.name===name&&String(p.barcode||'')===barcode&&Number(p.price)===price&&Number(p.stock)===stock));
+      const activityKeys=['imports','purchases','supplierInvoices','supplierPayments','customers','orders','expenses','inventoryMovements','packagingPurchases','packagingMovements','operatingSupplies','operatingSupplyInvoices','operatingSupplyMovements','paymentTransactions','auditLog','returnRecords','refundTransactions'];
+      const hasActivity=activityKeys.some(k=>Array.isArray(st[k])&&st[k].length>0);
+      if(exact&&!hasActivity){st.products=[];st.auditLog=[];console.info('VALERIAN: removed untouched legacy demo inventory only.');return {state:st,changed:true};}
+      return {state:st,changed:false};
+    }
     function loadState() {
       try {
         const current = localStorage.getItem(STORAGE_KEY);
-        if (current) return normalizeState(JSON.parse(current));
+        if (current) {
+          const cleaned=removeKnownDemoSeed(JSON.parse(current));
+          if(cleaned.changed)localStorage.setItem(STORAGE_KEY,JSON.stringify(cleaned.state));
+          return cleaned.state;
+        }
         for (const legacyKey of LEGACY_STORAGE_KEYS) {
           const legacy = localStorage.getItem(legacyKey);
           if (!legacy) continue;
-          const migrated = normalizeState(JSON.parse(legacy));
+          const cleaned=removeKnownDemoSeed(JSON.parse(legacy));
+          const migrated = cleaned.state;
           migrated.auditLog.unshift({ id: 'AUD-MIG-' + Date.now(), date: new Date().toISOString(), action: 'MIGRATION', details: `تم ترحيل البيانات من ${legacyKey} إلى V18 مع الاحتفاظ بالمصدر.` });
           localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
           return migrated;
@@ -6794,7 +6808,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     }
     function initializeCloudClientIfNeeded(){
       if(cloudClient || !window.supabase?.createClient) return;
-      const valNativePreferences=window.Capacitor?.Plugins?.Preferences; const valAuthStorageCall=async(fn,fallback)=>{let timer;try{return await Promise.race([Promise.resolve().then(fn),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Native auth storage timeout')),1200);})]);}catch(_){return fallback();}finally{clearTimeout(timer);}}; const valAuthStorage={async getItem(key){return await valAuthStorageCall(async()=>{if(!valNativePreferences?.get)throw new Error('Preferences unavailable');const r=await valNativePreferences.get({key});if(r?.value==null)throw new Error('No native value');return r.value;},()=>{try{return window.localStorage.getItem(key);}catch(_){return null;}});},async setItem(key,value){try{window.localStorage.setItem(key,value);}catch(_){} await valAuthStorageCall(async()=>{if(!valNativePreferences?.set)throw new Error('Preferences unavailable');await valNativePreferences.set({key,value});return true;},()=>true);},async removeItem(key){try{window.localStorage.removeItem(key);}catch(_){} await valAuthStorageCall(async()=>{if(!valNativePreferences?.remove)throw new Error('Preferences unavailable');await valNativePreferences.remove({key});return true;},()=>true);}}; cloudClient=window.supabase.createClient(VALERIAN_CLOUD_URL,VALERIAN_CLOUD_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:valAuthStorage,storageKey:'valerian-v20-auth'}});
+      const valNativePreferences=window.Capacitor?.Plugins?.Preferences; const valAuthStorageCall=async(fn,fallback)=>{let timer;try{return await Promise.race([Promise.resolve().then(fn),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Native auth storage timeout')),1200);})]);}catch(_){return fallback();}finally{clearTimeout(timer);}}; const valAuthStorage={async getItem(key){return await valAuthStorageCall(async()=>{if(!valNativePreferences?.get)throw new Error('Preferences unavailable');const r=await valNativePreferences.get({key});if(r?.value==null)throw new Error('No native value');return r.value;},()=>{try{return window.localStorage.getItem(key);}catch(_){return null;}});},async setItem(key,value){try{window.localStorage.setItem(key,value);}catch(_){} await valAuthStorageCall(async()=>{if(!valNativePreferences?.set)throw new Error('Preferences unavailable');await valNativePreferences.set({key,value});return true;},()=>true);},async removeItem(key){try{window.localStorage.removeItem(key);}catch(_){} await valAuthStorageCall(async()=>{if(!valNativePreferences?.remove)throw new Error('Preferences unavailable');await valNativePreferences.remove({key});return true;},()=>true);}}; cloudClient=window.supabase.createClient(VALERIAN_CLOUD_URL,VALERIAN_CLOUD_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:valAuthStorage,storageKey:'valerian-v20-auth'},global:{fetch:(input,init={})=>{const requestUrl=typeof input==='string'?input:(input?.url||'unknown');const method=String(init?.method||input?.method||'GET').toUpperCase();return window.fetch(input,init).catch(err=>{const phase=window.__valCloudPhase||'تهيئة الاتصال';const platform=window.Capacitor?.getPlatform?.()||'web';console.error('VALERIAN Supabase fetch failed',{requestUrl,method,phase,platform,online:navigator.onLine},err);throw new TypeError('Failed to fetch ['+method+' '+requestUrl+'] — phase: '+phase+' — platform: '+platform);});}}});
       cloudClient.auth.getSession().then(({data})=>{if(data.session?.user) initializeValerianCloud(data.session.user); else setCloudStatus('اضغط للاتصال بالسحابة','#475569');}).catch(()=>setCloudStatus('المزامنة غير متاحة حاليًا — البيانات المحلية تعمل','#a16207'));
     }
     function loadOptionalLibrary(name){ return valLoadLib(name); }
@@ -6810,7 +6824,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     // the additive Supabase migration has been installed and bootstrap succeeds.
     let cloudIncrementalReady=false, cloudIncrementalBase=null, cloudIncrementalQueue=Promise.resolve(), cloudOutboxQueue=Promise.resolve(), cloudIncrementalGeneration=0;
     const cloudSyncDiagnostics={mode:'غير معروف',bootstrap:'لم يبدأ',phase:'idle',currentOperation:'لا يوجد',lastAttempt:'لم تبدأ محاولة',lastSuccess:'لا توجد مزامنة مؤكدة بعد',lastError:'لا يوجد',lastPollSkip:'',lastPushCount:0,lastPullCount:0,cursor:0,imageUploadAttempted:0,imageUploadSucceeded:0,imageUploadSkipped:0,imageUploadErrors:0,imageDownloadAttempted:0,imageDownloadSucceeded:0,imageDownloadErrors:0,realtimeStatus:'غير مشترك',lastRealtimeEvent:'لا يوجد'};
-    function valSyncPhase(phase,operation){cloudSyncDiagnostics.phase=phase;cloudSyncDiagnostics.currentOperation=operation||phase;valCloudDiagnostic('مرحلة المزامنة: '+phase+' — '+cloudSyncDiagnostics.currentOperation);}
+    function valSyncPhase(phase,operation){cloudSyncDiagnostics.phase=phase;cloudSyncDiagnostics.currentOperation=operation||phase;window.__valCloudPhase=phase+' — '+cloudSyncDiagnostics.currentOperation;valCloudDiagnostic('مرحلة المزامنة: '+phase+' — '+cloudSyncDiagnostics.currentOperation);}
     const VAL_SYNC_OUTBOX_KEY='val_sync_outbox_v1', VAL_SYNC_CURSOR_KEY='val_sync_cursor_v1';
     const VAL_SYNC_ID_ARRAYS=new Set([
       'products','imports','purchases','supplierInvoices','supplierPayments','customers','orders',
