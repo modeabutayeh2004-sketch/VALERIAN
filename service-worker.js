@@ -1,7 +1,7 @@
 /* VALERIAN V20.117 — single-document engine integration */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-117-single-document';
-const APP_SHELL = ['./', './index.html', './engine-runtime.js?v=single-doc-1', './manifest.webmanifest', './assets/valerian-icon.jpg'];
+const CACHE_NAME = 'valerian-app-shell-v20-118-toast-viewport';
+const APP_SHELL = ['./', './index.html', './engine-runtime.js?v=toast-viewport-2', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
