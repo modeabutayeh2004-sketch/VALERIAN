@@ -7252,8 +7252,16 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     window.addEventListener('offline',()=>{if(cloudReady)setCloudStatus('غير متصل — التغييرات محفوظة محلياً مؤقتاً','#a16207');});
     window.addEventListener('beforeunload',e=>{if(cloudDirty||valDurableWriteError){e.preventDefault();e.returnValue='';}});
     window.addEventListener('focus',()=>pollCloudChanges());
-    // WebSocket is primary; 5-minute cursor reconciliation is a recovery safety net.
-    setInterval(()=>pollCloudChanges(),300000);
+    // Realtime is the fast path; frequent cursor reconciliation is the recovery path.
+    // A Realtime subscription can silently disconnect on mobile/backgrounded browsers,
+    // so never rely on WebSocket delivery alone for cross-device updates.
+    setInterval(()=>{if(document.visibilityState!=='hidden')pollCloudChanges();},12000);
+    document.addEventListener('visibilitychange',()=>{
+      if(document.visibilityState==='visible'){
+        clearTimeout(cloudRealtimeWakeTimer);
+        cloudRealtimeWakeTimer=setTimeout(()=>pollCloudChanges(),150);
+      }
+    });
 
     // V18.3: removed duplicate subscription and duplicate lifecycle listeners.
     if(navigator.onLine) { loadSupabaseLibrary(); setTimeout(()=>{valLoadLib('QRCode');valLoadLib('html2canvas');},4000); }
