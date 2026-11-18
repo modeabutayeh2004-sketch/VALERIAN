@@ -1,9 +1,10 @@
 name: Build VALERIAN V20 browser preview
 on:
   push:
-    branches: [android/apk-v20]
+    branches: [android/apk-v20, work/v20-single-document-integration]
     paths:
       - 'index.html'
+      - 'engine-runtime.js'
       - 'engine.html'
       - 'service-worker.js'
       - 'manifest.webmanifest'
