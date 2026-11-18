@@ -4062,8 +4062,43 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
 
     function showToast(msg) {
       const box = document.getElementById('mobileToast');
-      box.firstElementChild.textContent = msg;
+      if (!box) return;
+      // Keep the toast attached to the viewport, outside transformed app panels.
+      if (box.parentElement !== document.body) document.body.appendChild(box);
+      const content = box.firstElementChild;
+      content.textContent = msg;
       box.classList.remove('hidden');
+      Object.assign(box.style, {
+        position: 'fixed',
+        top: 'calc(env(safe-area-inset-top, 0px) + 14px)',
+        left: '50%',
+        right: 'auto',
+        bottom: 'auto',
+        width: 'min(92vw, 420px)',
+        maxWidth: 'calc(100vw - 24px)',
+        transform: 'translateX(-50%)',
+        zIndex: '20000',
+        boxSizing: 'border-box',
+        padding: '0'
+      });
+      Object.assign(content.style, {
+        boxSizing: 'border-box',
+        width: '100%',
+        maxWidth: '100%',
+        minWidth: '0',
+        overflowWrap: 'anywhere',
+        whiteSpace: 'normal',
+        background: 'rgba(250, 247, 239, 0.97)',
+        color: '#29251f',
+        border: '1px solid rgba(190, 157, 94, 0.72)',
+        boxShadow: '0 12px 36px rgba(25, 20, 12, 0.22), inset 0 1px 0 rgba(255,255,255,0.9)',
+        backdropFilter: 'blur(18px)',
+        WebkitBackdropFilter: 'blur(18px)',
+        borderRadius: '18px',
+        padding: '14px 18px',
+        lineHeight: '1.65',
+        textAlign: 'center'
+      });
       clearTimeout(window._toastT);
       window._toastT = setTimeout(() => box.classList.add('hidden'), 3000);
     }
