@@ -7558,8 +7558,9 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           if(!product)throw new Error('المنتج غير موجود.');
           const name=String(payload?.name??product.name).trim(),price=Number(payload?.price??product.price),minimumStock=Math.floor(Number(payload?.minimumStock??product.minimumStock??2));
           const notes=String(payload?.notes??product.notes??''),isOffer=payload?.isOffer===undefined?!!product.isOffer:!!payload.isOffer,offerPrice=Number(payload?.offerPrice??product.offerPrice??0);
-          const averageCost=Number(payload?.averageCost??product.averageCost??product.totalCost??0),stock=Number(product.stock||0);
-          if(payload?.stock!==undefined&&Number(payload.stock)!==Number(product.stock||0))throw new Error('لا يمكن تعديل كمية العطر من شاشة تعديل البيانات. تُضاف الكميات عبر فواتير الاستيراد فقط.');
+          const averageCost=Number(payload?.averageCost??product.averageCost??product.totalCost??0),requestedStock=Number(payload?.stock??product.stock),perfumeSku=String(product.productType||'')==='عطور'||product.category==='تقسيم',stock=perfumeSku?Number(product.stock||0):requestedStock;
+          if(perfumeSku&&payload?.stock!==undefined&&Number(payload.stock)!==Number(product.stock||0))throw new Error('لا يمكن تعديل كمية العطر من شاشة تعديل البيانات. تُضاف الكميات عبر فواتير الاستيراد فقط.');
+          if(!Number.isSafeInteger(stock)||stock<0)throw new Error('كمية المخزون يجب أن تكون عددًا صحيحًا غير سالب.');
           const productType=String(payload?.productType??product.productType??'عطور'),category=String(payload?.category??product.category??'غير محدد');
           const stockUnit=String(payload?.stockUnit??product.stockUnit??'مل'),size=String(payload?.size??product.size??'');
           const isDecantable=productType==='عطور'&&category!=='تقسيم'&&(payload?.isDecantable===undefined?!!product.isDecantable:!!payload.isDecantable);
@@ -7569,8 +7570,9 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           if(!Number.isSafeInteger(minimumStock)||minimumStock<0||!Number.isSafeInteger(stock)||stock<0)throw new Error('الكمية وحد التنبيه يجب أن يكونا رقمين صحيحين غير سالبين.');
           if(isOffer&&(!Number.isFinite(offerPrice)||offerPrice<=0||offerPrice>=price))throw new Error('سعر العرض يجب أن يكون أكبر من صفر وأقل من سعر البيع.');
           if(isDecantable&&(!Number.isFinite(decantSizeMl)||decantSizeMl<=0||!Number.isFinite(decantBottleCost)||decantBottleCost<0))throw new Error('راجع بيانات التقسيم وتكلفة العبوة.');
-          const before=structuredClone(product),productsBefore=structuredClone(state.products),movementsBefore=structuredClone(state.inventoryMovements||[]);
+          const before=structuredClone(product),productsBefore=structuredClone(state.products),movementsBefore=structuredClone(state.inventoryMovements||[]),stockDelta=stock-Number(product.stock||0);
           Object.assign(product,{name,price,averageCost,totalCost:averageCost,stock,minimumStock,notes,isOffer,offerPrice:isOffer?offerPrice:0,productType,category,stockUnit,size,image:String(payload?.image??product.image??''),isDecantable,decantSize:decantSizeMl,decantSizeMl,decantBottleCost});
+          if(stockDelta)addInventoryMovement(product.id,'ADJUST',stockDelta,'PRODUCT_EDIT','تعديل كمية مخزون صنف غير عطري من شاشة تعديل المنتج');
           const existingDecant=state.products.find(p=>String(p.parentId||'')===String(product.id)&&p.category==='تقسيم'&&!p.archived);
           if(isDecantable){
             const volume=Math.max(1,getBottleVolumeMl(product)),unitCost=Number((averageCost/volume*decantSizeMl+decantBottleCost).toFixed(2));
