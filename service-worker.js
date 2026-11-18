@@ -1,6 +1,6 @@
 /* VALERIAN V20.117 — single-document engine integration */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-119-toast-kpi';
+const CACHE_NAME = 'valerian-app-shell-v20-120-main-toast-insets';
 const APP_SHELL = ['./', './index.html', './engine-runtime.js?v=toast-viewport-3', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
