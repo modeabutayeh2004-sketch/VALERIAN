@@ -378,6 +378,1064 @@ html[data-valerian-theme="light"] .glass-dock .nav-pill.bg-slate-200\/20{
 </style>
 </head>
 <body class="pb-28 selection:bg-sky-300/30 selection:text-white">
+<div id="valerian-legacy-engine-host" aria-hidden="true">
+
+
+  <!-- Top Navigation Header -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200/80 shadow-xs">
+    <div class="max-w-[1600px] mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <button onclick="openModal('logoModal')" title="تعديل الشعار وقصه" class="group relative w-11 h-11 rounded-xl border border-brand-200 bg-brand-50 flex items-center justify-center overflow-hidden shadow-xs hover:ring-2 hover:ring-brand-500 transition">
+          <img id="brandLogoImg" src="" alt="VALERIAN" class="w-full h-full object-cover hidden" />
+          <span id="brandLogoFallback" class="font-serif font-bold text-xl text-brand-600">V</span>
+        </button>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="brand-title text-lg sm:text-xl font-bold text-slate-900 leading-none">VALERIAN</h1><button id="cloudHeaderStatus" type="button" onclick="openCloudPanel()" class="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">● جارٍ فحص الاتصال</button>
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-brand-100 text-brand-700">استيراد وتوزيع وعطور التقسيم</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mt-0.5 hidden sm:block">محمد سليمان — نظام الإدارة والاستيراد والأرباح الحقيقية</p>
+        </div>
+      </div>
+
+      <!-- V19.15 unified workspace navigation -->
+      <nav class="v1916-desktop-nav" aria-label="مساحات العمل">
+        <button class="workspace-btn active" data-workspace="sales">🛍️ المبيعات</button>
+        <button class="workspace-btn" data-workspace="customers">👥 العملاء</button>
+        <button class="workspace-btn" data-workspace="delivery">🚚 التوصيل</button>
+        <button class="workspace-btn" data-workspace="inventory">📦 المخزون</button>
+        <button class="workspace-btn" data-workspace="finance">💰 المالية</button>
+        <button class="workspace-btn" data-workspace="settings">⚙️ الإعدادات</button>
+        <button class="workspace-btn intelligence-link" data-workspace="intelligence">✦ الذكاء والتحليل</button>
+      </nav>
+      <div class="flex items-center gap-2">
+        <span class="hidden sm:inline-flex text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-full px-2.5 py-1">● متصل بالنظام</span>
+      </div>
+    </div>
+    <nav id="workspaceSubnav" class="v1916-subnav" aria-label="أقسام مساحة العمل"></nav>
+<!-- V19.23: removed duplicate mobile workspace navigation; single responsive desktop-style navigation is used. -->
+  </header>
+
+  <div id="toastContainer" class="fixed top-[82px] left-1/2 -translate-x-1/2 z-[12000] flex flex-col gap-2 pointer-events-none w-[min(94vw,560px)] items-center" aria-live="polite"></div>
+
+  <!-- Main Container -->
+  <main class="max-w-[1600px] mx-auto px-3 sm:px-6 py-5">
+
+    <!-- TAB 1: POS & RESERVATIONS -->
+    <section id="tab-pos" class="tab-section grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div class="lg:col-span-7 xl:col-span-8 flex flex-col gap-4">
+        <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row gap-3">
+          <div class="relative flex-1">
+            <span class="absolute inset-y-0 right-3.5 flex items-center text-slate-400">🔍</span>
+            <input id="posSearchInput" type="text" placeholder="ابحث باسم العطر الأصلي أو عطور التقسيم..." class="w-full pr-10 pl-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+          </div>
+          <button onclick="switchTab('orders')" class="px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-bold text-slate-700 shrink-0">
+            🧾 إدارة الطلبات (<span id="ordersCountBadge">0</span>)
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2 overflow-x-auto pb-1 custom-scroll" id="posCategoryPills">
+          <button data-cat="all" class="cat-pill active px-4 py-2 rounded-xl text-xs font-bold border transition shrink-0 bg-brand-600 text-white">الكل</button>
+          <button data-cat="رجالي" class="cat-pill px-4 py-2 rounded-xl text-xs font-bold border transition shrink-0 bg-white text-slate-600">رجالي</button>
+          <button data-cat="نسائي" class="cat-pill px-4 py-2 rounded-xl text-xs font-bold border transition shrink-0 bg-white text-slate-600">نسائي</button>
+          <button data-cat="للجنسين" class="cat-pill px-4 py-2 rounded-xl text-xs font-bold border transition shrink-0 bg-white text-slate-600">للجنسين</button>
+          <button data-cat="تقسيم" class="cat-pill px-4 py-2 rounded-xl text-xs font-bold border transition shrink-0 bg-white text-slate-600">عطور التقسيم (Decants) 🧪</button>
+          <button data-cat="عروض" class="cat-pill px-4 py-2 rounded-xl text-xs font-bold border transition shrink-0 bg-white text-slate-600">عروض ✨</button>
+        </div>
+        <div class="flex items-center gap-2 overflow-x-auto pb-1 custom-scroll mt-2" id="posProductTypePills">
+          <span class="text-[10px] font-bold text-slate-500 shrink-0">نوع المنتج:</span>
+          <button data-cat="type:all" class="cat-pill active px-3 py-2 rounded-xl text-[11px] font-bold border shrink-0">كل الأنواع</button>
+          <button data-cat="type:عطور" class="cat-pill px-3 py-2 rounded-xl text-[11px] font-bold border shrink-0">عطور</button>
+          <button data-cat="type:مزيلات عرق" class="cat-pill px-3 py-2 rounded-xl text-[11px] font-bold border shrink-0">مزيلات عرق</button>
+          <button data-cat="type:مكملات غذائية" class="cat-pill px-3 py-2 rounded-xl text-[11px] font-bold border shrink-0">مكملات غذائية</button>
+          <button data-cat="type:شامبو" class="cat-pill px-3 py-2 rounded-xl text-[11px] font-bold border shrink-0">شامبو</button>
+          <button data-cat="type:كريمات" class="cat-pill px-3 py-2 rounded-xl text-[11px] font-bold border shrink-0">كريمات</button>
+          <button data-cat="type:عناية بالبشرة" class="cat-pill px-3 py-2 rounded-xl text-[11px] font-bold border shrink-0">عناية بالبشرة</button>
+          <button data-cat="type:عناية بالشعر" class="cat-pill px-3 py-2 rounded-xl text-[11px] font-bold border shrink-0">عناية بالشعر</button>
+          <button data-cat="type:مستحضرات تجميل" class="cat-pill px-3 py-2 rounded-xl text-[11px] font-bold border shrink-0">مستحضرات تجميل</button>
+          <button data-cat="type:منتجات أخرى" class="cat-pill px-3 py-2 rounded-xl text-[11px] font-bold border shrink-0">منتجات أخرى</button>
+        </div>
+
+        <div id="posProductsGrid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5"></div>
+      </div>
+
+      <div class="lg:col-span-5 xl:col-span-4">
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sticky top-20 flex flex-col gap-3.5">
+          <div>
+            <span class="text-xs font-bold text-slate-500 block mb-1">نوع العملية (الحجز المسبق لا يخصم المخزون الكامل فوراً)</span>
+            <div class="grid grid-cols-2 gap-2" id="orderModeSelector">
+              <button type="button" data-mode="reservation" class="order-mode-btn active py-2 px-2 rounded-xl border border-brand-600 bg-brand-50 text-brand-700 text-xs font-bold flex items-center justify-center gap-1">⏳ حجز مسبق</button>
+              <button type="button" data-mode="direct" class="order-mode-btn py-2 px-2 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-bold flex items-center justify-center gap-1">🏪 بيع مباشر</button>
+            </div>
+          </div>
+
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/70 space-y-2.5">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex-1">
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">رقم الهاتف (معرّف ID فريد) *</label>
+                <input id="posCustomerPhone" type="tel" placeholder="01xxxxxxxxx" oninput="handlePosPhoneLookup(this.value)" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs" />
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">استدعاء عميل</label>
+                <select id="posExistingCustomerSelect" onchange="selectExistingCustomer(this.value)" class="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold">
+                  <option value="">من العملاء السابقين...</option>
+                </select>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">اسم العميل *</label>
+                <input id="posCustomerName" type="text" placeholder="اسم العميل" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs" />
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">عنوان التوصيل *</label>
+                <input id="posCustomerAddress" type="text" placeholder="العنوان التفصيلي..." class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs" />
+              </div>
+            </div>
+            <div id="posShippingFields" class="grid grid-cols-2 gap-2">
+              <div><label class="block text-[11px] font-bold text-slate-600 mb-1">شركة الشحن (للبيع المباشر فقط؛ الحجز يحددها بعد التسليم للشحن)</label><input id="posShippingCompany" type="text" list="shippingCompanyOptions" maxlength="80" placeholder="اختر أو اكتب شركة الشحن" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs" /><datalist id="shippingCompanyOptions"></datalist></div>
+              <div><label class="block text-[11px] font-bold text-slate-600 mb-1">رقم بوليصة / تتبع (اختياري)</label><input id="posTrackingNumber" type="text" maxlength="80" placeholder="رقم الشحنة" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs" /></div>
+            </div>
+            <div id="customerPointsNotice" class="hidden text-[11px] font-extrabold text-brand-700 bg-brand-50 p-2 rounded-lg border border-brand-200 flex items-center justify-between">
+              <span id="customerPointsText"></span>
+              <button type="button" id="usePointsBtn" onclick="toggleUseCustomerPoints()" class="px-2 py-1 bg-brand-600 text-white rounded text-[10px] font-bold hidden">استخدام النقاط للخصم</button>
+            </div>
+            <div id="reservationDepositBox" class="pt-1 border-t border-slate-200">
+              <label class="block text-[11px] font-extrabold text-amber-800 mb-1">مبلغ الحجز المدفوع (ج.م) *</label>
+              <input id="posDepositAmount" type="number" min="0" step="1" value="0" oninput="depositManuallyEdited=true" class="w-full px-2.5 py-1.5 bg-amber-50 border border-amber-300 rounded-lg text-xs font-bold text-amber-900" />
+              <p class="text-[10px] text-amber-700 mt-1">اقتراح تلقائي 30٪ من إجمالي الطلب — يمكنك تعديل المبلغ يدويًا.</p>
+            </div>
+            <div class="pt-1 border-t border-slate-200">
+              <label class="block text-[11px] font-extrabold text-slate-700 mb-1">طريقة تحصيل المبلغ *</label>
+              <select id="posPaymentMethod" class="w-full px-2.5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold">
+                <option value="نقدي">نقدي</option><option value="تحويل بنكي">تحويل بنكي</option><option value="محفظة إلكترونية">محفظة إلكترونية</option><option value="بطاقة">بطاقة</option><option value="أخرى">أخرى</option>
+              </select>
+              <p class="text-[10px] text-slate-400 mt-1">سيتم حفظ طريقة الدفع مع حركة التحصيل في دفتر الخزنة.</p>
+            </div>
+          </div>
+
+          <div class="border-t border-b border-slate-100 py-2 max-h-[180px] overflow-y-auto custom-scroll space-y-2" id="posCartItems">
+            <div class="text-center py-6 text-slate-400 text-xs">السلة فارغة</div>
+          </div>
+
+          <div class="space-y-1.5 text-xs">
+            <div class="flex justify-between text-slate-600"><span>المجموع:</span><span id="cartSubtotal" class="font-bold">0 ج.م</span></div>
+            <div class="flex justify-between text-slate-600"><span>الشحن:</span><input id="posShippingFee" type="number" value="60" oninput="recalculateCart()" class="w-20 px-2 py-0.5 border rounded text-left font-bold" /></div>
+            <div class="flex justify-between text-slate-600"><span>الخصم:</span><input id="posDiscount" type="number" value="0" oninput="recalculateCart()" class="w-20 px-2 py-0.5 border rounded text-left font-bold" /></div>
+            <div id="pointsDiscountRow" class="hidden flex justify-between text-brand-700 font-bold"><span>خصم النقاط:</span><span id="cartPointsDiscountAmount">0 ج.م</span></div>
+            <div class="pt-2 border-t border-slate-200 flex items-center justify-between">
+              <span class="text-sm font-extrabold">الإجمالي الكامل</span>
+              <span id="cartGrandTotal" class="text-xl font-extrabold text-brand-600">0 ج.م</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button type="button" onclick="completeOrder(false)" class="py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-sm">حفظ الطلب</button>
+            <button type="button" onclick="completeOrder(true)" class="py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-sm flex items-center justify-center gap-1"><span>🖨️</span> معاينة وطباعة</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: ORDERS - RESERVED AND SOLD -->
+    <section id="tab-orders" class="tab-section hidden space-y-5">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+        <div><h2 class="text-lg font-extrabold">🧾 إدارة الطلبات</h2><p class="text-xs text-slate-500 mt-1">افصل الحجوزات المنتظرة عن الطلبات المباعة/المسلّمة، مع متابعة سريعة لكل طلب.</p></div>
+        <button onclick="switchTab('pos')" class="px-4 py-2 rounded-xl bg-brand-600 text-white text-xs font-bold">＋ إنشاء طلب جديد</button>
+      </div>
+      <div class="flex gap-2">
+        <button id="ordersReservedTab" onclick="setOrdersView('reserved')" class="px-4 py-2 rounded-xl bg-amber-100 text-amber-900 border border-amber-200 text-xs font-extrabold">⏳ المحجوز (<span id="reservedOrdersCount">0</span>)</button>
+        <button id="ordersSoldTab" onclick="setOrdersView('sold')" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 text-xs font-extrabold">✅ المباع (<span id="soldOrdersCount">0</span>)</button>
+      </div>
+      <div id="reservedOrdersPage" class="bg-white rounded-2xl border border-slate-200/80 overflow-hidden">
+        <div class="p-3 border-b bg-amber-50"><h3 class="font-extrabold text-amber-900">الطلبات المحجوزة — لم يتم التسليم بعد</h3></div>
+        <div class="overflow-x-auto"><table class="w-full text-right text-xs min-w-[850px]"><thead class="bg-slate-50"><tr><th class="p-3">رقم الطلب</th><th class="p-3">التاريخ</th><th class="p-3">العميل</th><th class="p-3">الإجمالي</th><th class="p-3">المدفوع</th><th class="p-3">المتبقي</th><th class="p-3">الحالة</th><th class="p-3">إجراءات</th></tr></thead><tbody id="reservedOrdersBody"></tbody></table></div>
+      </div>
+      <div id="soldOrdersPage" class="hidden bg-white rounded-2xl border border-slate-200/80 overflow-hidden">
+        <div class="p-3 border-b bg-emerald-50"><h3 class="font-extrabold text-emerald-900">الطلبات المباعة — تم تسليمها أو بيعها مباشرة</h3></div>
+        <div class="overflow-x-auto"><table class="w-full text-right text-xs min-w-[850px]"><thead class="bg-slate-50"><tr><th class="p-3">رقم الطلب</th><th class="p-3">التاريخ</th><th class="p-3">العميل</th><th class="p-3">الإجمالي</th><th class="p-3">المدفوع</th><th class="p-3">المتبقي</th><th class="p-3">الحالة</th><th class="p-3">إجراءات</th></tr></thead><tbody id="soldOrdersBody"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- TAB 2: IMPORT SHIPMENTS -->
+    <section id="tab-imports" class="tab-section hidden space-y-5">
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80">
+        <div>
+          <h2 class="text-base font-extrabold text-slate-900">🚢 شحنات الاستيراد الخارجية ومصاريف الشحن والجمارك</h2>
+          <p class="text-xs text-slate-500">حساب تكلفة الشحنات الواردة وتوزيعها بدقة على زجاجات العطور الأصلية</p>
+        </div>
+        <button onclick="openImportModal()" class="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-xs">+ تسجيل شحنة استيراد جديدة</button>
+      </div>
+
+      <div class="bg-white rounded-2xl border overflow-hidden">
+        <table class="w-full text-right text-xs">
+          <thead class="bg-slate-50 text-slate-500 font-bold border-b">
+            <tr>
+              <th class="py-3 px-4">رقم الفاتورة</th><th class="py-3 px-3">المورد</th><th class="py-3 px-3">الأصناف</th><th class="py-3 px-3">الإجمالي</th><th class="py-3 px-3">المدفوع</th><th class="py-3 px-3">المتبقي</th><th class="py-3 px-4">التاريخ / الإجراء</th>
+            </tr>
+          </thead>
+          <tbody id="importsTableBody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+
+    </section>
+
+    <!-- V19.20: Dedicated suppliers workspace tab -->
+    <section id="tab-suppliers" class="tab-section hidden space-y-5">
+      <div class="bg-white rounded-2xl border p-4"><h2 class="text-base font-extrabold">👤 الموردون وكشوف الحساب</h2><p class="text-xs text-slate-500 mt-1">فواتير الموردين، المدفوعات، الأرصدة المستحقة وكشف الحساب الزمني.</p></div>
+      <div id="supplierAccountsPanel" class="bg-white rounded-2xl border overflow-hidden scroll-mt-28"><div class="p-4 border-b"><h3 class="font-extrabold">حسابات الموردين — الفواتير والمبالغ المستحقة</h3><p class="text-[11px] text-slate-500 mt-1">سجّل سداد أي مبلغ متبقٍ دون إعادة إدخال فاتورة الشراء أو زيادة المخزون مرة أخرى.</p></div><div class="overflow-x-auto"><table class="w-full text-right text-xs min-w-[650px]"><thead class="bg-slate-50"><tr><th class="p-3">المورد</th><th class="p-3">رقم الفاتورة</th><th class="p-3">الإجمالي</th><th class="p-3">المدفوع</th><th class="p-3">المتبقي</th><th class="p-3">إجراء</th></tr></thead><tbody id="supplierInvoicesBody"></tbody></table></div></div>
+      <div class="bg-white rounded-2xl border overflow-hidden"><div class="p-4 border-b flex flex-wrap items-center justify-between gap-3"><div><h3 class="font-extrabold">كشف حساب المورد</h3><p class="text-[11px] text-slate-500 mt-1">تجميع الفواتير والمدفوعات حسب المورد مع رصيد مستحق واضح.</p></div><select id="supplierStatementSelect" onchange="renderSupplierStatement()" class="border rounded-xl px-3 py-2 text-xs min-w-48"><option value="">كل الموردين</option></select></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3"><div class="rounded-xl bg-slate-50 p-3"><div class="text-xs text-slate-500">إجمالي الفواتير</div><div id="supplierStatementInvoices" class="font-extrabold mt-1">0 ج.م</div></div><div class="rounded-xl bg-slate-50 p-3"><div class="text-xs text-slate-500">إجمالي المدفوعات</div><div id="supplierStatementPaid" class="finance-negative font-extrabold text-emerald-700 mt-1">0 ج.م</div></div><div class="rounded-xl bg-slate-50 p-3"><div class="text-xs text-slate-500">الرصيد المستحق</div><div id="supplierStatementDue" class="finance-negative font-extrabold text-rose-700 mt-1">0 ج.م</div></div></div><div class="overflow-x-auto"><table class="w-full text-right text-xs min-w-[650px]"><thead class="bg-slate-50"><tr><th class="p-3">التاريخ</th><th class="p-3">نوع الحركة</th><th class="p-3">المرجع</th><th class="p-3">مدين / فاتورة</th><th class="p-3">دائن / سداد</th><th class="p-3">الرصيد</th></tr></thead><tbody id="supplierStatementBody"></tbody></table></div></div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3"><div class="bg-white rounded-xl border p-4"><div class="text-xs text-slate-500 font-bold">إجمالي فواتير الموردين</div><div id="supplierTotalInvoices" class="text-xl font-extrabold mt-1">0 ج.م</div></div><div class="bg-white rounded-xl border p-4"><div class="text-xs text-slate-500 font-bold">إجمالي ما تم سداده</div><div id="supplierTotalPaid" class="finance-negative text-xl font-extrabold text-emerald-700 mt-1">0 ج.م</div></div><div class="bg-white rounded-xl border p-4"><div class="text-xs text-slate-500 font-bold">إجمالي المستحق للموردين</div><div id="supplierTotalDue" class="finance-negative text-xl font-extrabold text-rose-700 mt-1">0 ج.م</div></div></div>
+      <div class="bg-white rounded-2xl border overflow-hidden"><div class="p-4 border-b"><h3 class="font-extrabold">سجل مدفوعات الموردين</h3><p class="text-[11px] text-slate-500 mt-1">كل دفعة مسجلة تظهر هنا وفي دفتر الخزنة، ولا تضيف مخزونًا مرة أخرى.</p></div><div class="overflow-x-auto"><table class="w-full text-right text-xs min-w-[650px]"><thead class="bg-slate-50"><tr><th class="p-3">التاريخ</th><th class="p-3">المورد</th><th class="p-3">رقم الفاتورة</th><th class="p-3">وسيلة الدفع</th><th class="p-3">المبلغ</th><th class="p-3">البيان</th></tr></thead><tbody id="supplierPaymentsBody"></tbody></table></div></div>
+    </section>
+
+    <!-- TAB 3: CATALOG -->
+    <section id="tab-catalog" class="tab-section hidden space-y-5">
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80">
+        <div>
+          <h2 class="text-base font-extrabold text-slate-900">كتالوج العطور الأصلية وعطور التقسيم (Decants)</h2>
+          <p class="text-xs text-slate-500">صور مصغرة متناسقة تماماً مع صفحة المبيعات مع حماية أسعار العروض وتفاصيل التكلفة الحقيقية</p>
+        </div>
+        <button onclick="openProductModalForAdd()" class="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-xs">+ إضافة عطر أصلي / عطر تقسيم جديد</button>
+      </div>
+      <div id="catalogGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- TAB 4: INVENTORY -->
+    <section id="tab-inventory" class="tab-section hidden space-y-5">
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80">
+        <div>
+          <h2 class="text-base font-extrabold text-slate-900">إدارة المخزون وفواتير الشراء الخارجية</h2>
+          <p class="text-xs text-slate-500">الزجاجات الأصلية بالقطعة، السائل المفتوح بالمل، وعبوات التقسيم الجاهزة بالعبوة.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="openDecantProductionModal()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold">🧪 تجهيز عبوات تقسيم</button>
+          <button onclick="openStockAdjustmentModal()" class="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold">⚖️ تسوية / جرد المخزون</button>
+          <button onclick="openUnifiedPurchaseModal('product')" class="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold">+ فاتورة شراء موحدة</button>
+        </div>
+      </div>
+
+      <section id="productAvailabilityManager" class="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div><h3 class="font-extrabold text-sm">⏯️ إدارة إتاحة المنتجات للبيع والحجز</h3><p class="text-xs text-slate-500 mt-1">عطّل المنتج مؤقتًا دون حذفه أو التأثير على رصيده وسجلاته، ويمكن إتاحته مجددًا في أي وقت.</p></div>
+          <div class="flex gap-2 text-[11px] font-extrabold"><span class="rounded-full bg-emerald-50 text-emerald-700 px-3 py-1" id="availabilityEnabledCount">متاح: 0</span><span class="rounded-full bg-amber-50 text-amber-800 px-3 py-1" id="availabilityDisabledCount">معطّل: 0</span></div>
+        </div>
+        <input id="productAvailabilitySearch" type="search" oninput="renderProductAvailabilityManager()" placeholder="ابحث باسم المنتج لتعطيله أو إعادة إتاحته..." class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-xs outline-none focus:border-brand-500">
+        <div id="productAvailabilityCards" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2"></div>
+      </section>
+
+      <div id="legacyDecantWarning" class="hidden rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 font-bold">⚠️ توجد أرصدة تقسيم قديمة بوحدات غير مؤكدة. افتح كل منتج تقسيم من زر «مراجعة / تعديل»، راجع عدد العبوات الجاهزة فعليًا والعبوات الفارغة، ثم احفظ لتفعيل البيع والتجهيز.</div>
+      <div class="inventory-subnav" role="tablist" aria-label="أقسام المخزون">
+        <button type="button" class="active" data-inv-pane="stock" onclick="setInventoryPane('stock')">📦 أرصدة المنتجات</button>
+        <button type="button" data-inv-pane="purchases" onclick="setInventoryPane('purchases')">🧾 فواتير الشراء والاستيراد</button>
+        <button type="button" data-inv-pane="movements" onclick="setInventoryPane('movements')">🔄 سجل حركات المخزون</button>
+        <button type="button" data-inv-pane="supplies" onclick="setInventoryPane('supplies')">🧰 مستلزمات التشغيل والتغليف</button>
+      </div>
+      <div class="grid grid-cols-1 xl:grid-cols-12 gap-5 inventory-pane" id="inventoryPane-stock">
+        <div id="lowStockAlertBanner" class="hidden xl:col-span-12 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950">
+          <div class="flex items-center justify-between gap-3 flex-wrap"><div><h3 class="font-extrabold">⚠️ تنبيه المنتجات القريبة من النفاذ</h3><p id="lowStockAlertSummary" class="text-xs mt-1"></p></div><span id="lowStockAlertCount" class="rounded-full bg-amber-200 px-3 py-1 text-xs font-extrabold"></span></div>
+          <div id="lowStockAlertItems" class="mt-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2"></div>
+        </div>
+        <div class="xl:col-span-12 bg-white rounded-2xl border overflow-hidden">
+          <div class="px-4 py-3 border-b"><h3 class="text-sm font-extrabold">أرصدة المخزون: زجاجات أصلية، سائل مفتوح، وعبوات تقسيم جاهزة</h3></div>
+          <table class="w-full text-right text-xs">
+            <thead class="bg-slate-50 text-slate-500 font-bold border-b">
+              <tr><th class="py-3 px-4">اسم العطر</th><th class="py-3 px-3">النوع</th><th class="py-3 px-3">المخزون المتاح</th><th class="py-3 px-3">سعر البيع</th><th class="py-3 px-3">آخر تكلفة شراء</th><th class="py-3 px-3">إجراءات</th></tr>
+            </thead>
+            <tbody id="inventoryTableBody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="inventoryPane-purchases" class="inventory-pane hidden xl:col-span-12 bg-white rounded-2xl border overflow-hidden">
+          <div class="px-4 py-3 border-b"><h3 class="text-sm font-extrabold">سجل فواتير الشراء والاستيراد</h3><p class="text-xs text-slate-500">كل فاتورة شراء أو استيراد مع تكلفة الشراء الأخيرة.</p></div>
+          <div class="overflow-x-auto"><table class="w-full text-right text-xs min-w-[700px]"><thead class="bg-slate-50 text-slate-500 font-bold border-b"><tr><th class="py-2.5 px-3">التاريخ</th><th class="py-2.5 px-3">المورد</th><th class="py-2.5 px-3">نوع الفاتورة / الكمية</th><th class="py-2.5 px-3">الإجمالي</th></tr></thead><tbody id="purchasesTableBody" class="divide-y divide-slate-100"></tbody></table></div>
+        </div>
+      <div id="inventoryPane-supplies" class="inventory-pane hidden space-y-4">
+        <div class="bg-white rounded-2xl border p-4 flex flex-wrap items-center justify-between gap-3">
+          <div><h3 class="font-extrabold">🧰 مخزون مستلزمات التشغيل والتغليف</h3><p class="text-xs text-slate-500 mt-1">الزجاجات الفارغة المشتركة تظل في مخزون العبوات الحالي؛ هنا ندير الفوم والكرتون والشنط والاستيكرات وغيرها.</p></div>
+          <div class="flex flex-wrap gap-2"><button type="button" onclick="openUnifiedPurchaseModal()" class="px-4 py-2.5 rounded-xl bg-brand-600 text-white text-xs font-bold">＋ فاتورة شراء موحدة (عطور / زجاجات / مستلزمات)</button></div>
+        </div>
+        <div class="bg-white rounded-2xl border overflow-hidden"><div class="p-3 border-b"><b class="text-sm">📦 مخزون زجاجات التقسيم المشتركة حسب المقاس</b><p class="text-[11px] text-slate-500">شراء الزجاجات يتم من هذه الصفحة فقط، ولا يرتبط بمنتج عطر بعينه.</p></div><div class="overflow-x-auto"><table class="w-full text-right text-xs min-w-[650px]"><thead class="bg-slate-50"><tr><th class="p-3">المقاس</th><th class="p-3">الرصيد المتاح</th><th class="p-3">متوسط تكلفة الزجاجة</th><th class="p-3">آخر فاتورة</th><th class="p-3">إجراء</th></tr></thead><tbody id="sharedPackagingInventoryBody"></tbody></table></div></div>
+        <div class="bg-white rounded-2xl border overflow-hidden"><div class="p-3 border-b"><b class="text-sm">فواتير شراء زجاجات التقسيم</b></div><div class="overflow-x-auto"><table class="w-full text-right text-xs min-w-[650px]"><thead class="bg-slate-50"><tr><th class="p-3">التاريخ</th><th class="p-3">رقم الفاتورة</th><th class="p-3">المورد</th><th class="p-3">المقاس</th><th class="p-3">الكمية</th><th class="p-3">الإجمالي</th></tr></thead><tbody id="packagingPurchasesBody"></tbody></table></div></div>
+        <div class="bg-white rounded-2xl border overflow-hidden"><div class="p-3 border-b"><b class="text-sm">حركات زجاجات التقسيم</b></div><div class="overflow-x-auto"><table class="w-full text-right text-xs min-w-[650px]"><thead class="bg-slate-50"><tr><th class="p-3">التاريخ</th><th class="p-3">المقاس</th><th class="p-3">نوع الحركة</th><th class="p-3">الكمية</th><th class="p-3">الرصيد بعدها</th><th class="p-3">المرجع</th></tr></thead><tbody id="packagingMovementsBody"></tbody></table></div></div>
+        <div class="bg-white rounded-2xl border overflow-hidden"><div class="p-3 border-b"><b class="text-sm">الأرصدة والاستهلاك التلقائي لكل طلب</b><p class="text-[11px] text-slate-500">حدد كمية الاستهلاك الثابتة لكل طلب، وكمية إضافية لكل وحدة مباعة. لا يُخصم شيء عند الحجز؛ الخصم عند البيع المباشر أو التسليم.</p></div>
+          <div class="overflow-x-auto"><table class="w-full text-right text-xs min-w-[850px]"><thead class="bg-slate-50"><tr><th class="p-3">الصنف</th><th class="p-3">التصنيف / الوحدة</th><th class="p-3">الرصيد</th><th class="p-3">متوسط التكلفة</th><th class="p-3">لكل طلب</th><th class="p-3">لكل وحدة</th><th class="p-3">إجراءات</th></tr></thead><tbody id="operatingSuppliesBody"></tbody></table></div>
+        </div>
+        <div class="bg-white rounded-2xl border overflow-hidden"><div class="p-3 border-b"><b class="text-sm">فواتير شراء المستلزمات</b></div><div class="overflow-x-auto"><table class="w-full text-right text-xs min-w-[700px]"><thead class="bg-slate-50"><tr><th class="p-3">التاريخ</th><th class="p-3">رقم الفاتورة</th><th class="p-3">المورد</th><th class="p-3">الصنف</th><th class="p-3">الكمية</th><th class="p-3">الإجمالي</th></tr></thead><tbody id="operatingSupplyInvoicesBody"></tbody></table></div></div>
+        <div class="bg-white rounded-2xl border overflow-hidden"><div class="p-3 border-b"><b class="text-sm">حركات مستلزمات التشغيل</b></div><div class="overflow-x-auto"><table class="w-full text-right text-xs min-w-[700px]"><thead class="bg-slate-50"><tr><th class="p-3">التاريخ</th><th class="p-3">الصنف</th><th class="p-3">الحركة</th><th class="p-3">الكمية</th><th class="p-3">الرصيد بعدها</th><th class="p-3">المرجع</th></tr></thead><tbody id="operatingSupplyMovementsBody"></tbody></table></div></div>
+      </div>
+      <div id="inventoryPane-movements" class="inventory-pane hidden bg-white rounded-2xl border overflow-hidden">
+        <div class="px-4 py-3 border-b flex items-center justify-between"><h3 class="text-sm font-extrabold">سجل حركات المخزون</h3><span class="text-[10px] text-slate-500">آخر 100 حركة</span></div>
+        <div class="overflow-x-auto"><table class="w-full text-right text-xs"><thead class="bg-slate-50 text-slate-500"><tr><th class="p-3">التاريخ</th><th class="p-3">المنتج</th><th class="p-3">نوع الحركة</th><th class="p-3">الكمية</th><th class="p-3">الرصيد بعدها</th><th class="p-3">المرجع</th></tr></thead><tbody id="inventoryMovementsBody" class="divide-y"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- TAB 5: OFFERS -->
+    <section id="tab-offers" class="tab-section hidden space-y-5">
+      <div class="offers-workspace-banner rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3"><div><h2 class="text-lg font-extrabold text-violet-950">🎁 العروض وقائمة المنتجات المخصصة للطباعة والمشاركة</h2><p class="text-xs text-slate-600 mt-1">اختر المنتجات التي عليها عروض، ثم جهّز صورة عالية الجودة لإرسالها للعملاء أو اطبعها.</p></div><button type="button" onclick="openOffersPrintModal()" class="px-5 py-3 rounded-xl bg-violet-700 text-white font-extrabold text-sm">🖨️ اختيار المنتجات وطباعة / مشاركة العروض</button></div>
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80">
+        <div>
+          <h2 class="text-base font-extrabold text-slate-900">🎁 صفحة العروض والتخفيضات الاحترافية</h2>
+          <p class="text-xs text-slate-500">حدد المنتجات والخصومات بدقة للطباعة أو مشاركتها مع العملاء</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="openOffersPrintModal()" class="px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold flex items-center gap-1.5"><span>🖨️</span> طباعة صفحة العروض المخصصة</button>
+        </div>
+      </div>
+      <div id="offersDisplayGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+    </section>
+
+    <!-- TAB 6: SHIPMENTS & RETURNS -->
+    <section id="tab-tracking" class="tab-section hidden space-y-5">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 space-y-3">
+        <h2 class="text-base font-extrabold text-slate-900">إدارة التوصيل وشركات الشحن وتتبع الشحنات والمرتجعات</h2>
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+          <div class="font-bold text-xs">🚚 شركات الشحن المسجلة</div>
+          <div class="flex flex-wrap gap-2"><input id="newShippingCompanyName" type="text" maxlength="80" placeholder="اسم شركة الشحن أو المندوب" class="flex-1 min-w-56 px-3 py-2 border rounded-lg text-xs bg-white"><button type="button" onclick="addShippingCompany()" class="px-4 py-2 rounded-lg bg-violet-700 text-white text-xs font-bold">＋ إضافة شركة</button></div>
+          <div id="shippingCompaniesList" class="flex flex-wrap gap-2 text-xs"></div>
+          <p class="text-[10px] text-slate-500">الشركات المسجلة ستظهر كاختيارات عند إنشاء الطلب، مع الاحتفاظ بإمكانية كتابة اسم يدوي.</p>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl border border-slate-200/80 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-right text-xs">
+            <thead class="bg-slate-50 text-slate-500 font-bold border-b">
+              <tr>
+                <th class="py-3 px-4">رقم الطلب</th><th class="py-3 px-3">العميل والهاتف</th><th class="py-3 px-3">العنوان</th><th class="py-3 px-3">شركة الشحن / التتبع</th>
+                <th class="py-3 px-3">الحالة</th><th class="py-3 px-3">الإجمالي</th><th class="py-3 px-3">المدفوع</th><th class="py-3 px-3">المتبقي</th><th class="py-3 px-4 text-left">إجراءات والمرتجعات</th>
+              </tr>
+            </thead>
+            <tbody id="shipmentsTableBody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 7: CRM & DEBTS -->
+    <section id="tab-crm" class="tab-section hidden space-y-5">
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80">
+        <h2 class="text-base font-extrabold text-slate-900">قاعدة بيانات العملاء، النقاط الديناميكية المحسوبة بدقة، وديون المرتجعات (debtToCustomer)</h2>
+        <div class="flex flex-wrap items-center gap-2"><input id="crmSearchInput" type="text" oninput="renderCrmTable()" placeholder="بحث بالاسم أو الهاتف..." class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs" /><button id="loyaltyPrintAllBtn" type="button" onclick="printAllCustomerLoyaltySummary()" class="px-4 py-2.5 rounded-xl bg-violet-700 text-white text-xs font-extrabold">🎟️ طباعة / مشاركة كشف نقاط العملاء</button></div>
+      </div>
+      <div class="bg-white rounded-2xl border border-slate-200/80 overflow-hidden">
+        <table class="w-full text-right text-xs">
+          <thead class="bg-slate-50 text-slate-500 font-bold border-b">
+            <tr>
+              <th class="py-3 px-4">الهاتف (ID فريد)</th><th class="py-3 px-3">الاسم</th><th class="py-3 px-3">الطلبات</th>
+              <th class="py-3 px-3">إجمالي المشتريات</th><th class="py-3 px-3">رصيد النقاط (ديناميكي وقيمتها بالجنيه)</th><th class="py-3 px-3">دين علينا للعميل (مرتجعات)</th><th class="py-3 px-4 text-left">الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="crmTableBody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 8: REPORTS -->
+    <section id="tab-reports" class="tab-section hidden space-y-5">
+      <div class="flex flex-wrap gap-2 rounded-2xl border border-violet-100 bg-violet-50 p-3 mb-4">
+
+
+
+      <button type="button" onclick="openModal('expenseModal')" class="px-3 py-2 rounded-xl bg-emerald-700 text-white text-xs font-extrabold">＋ إضافة مصروف جديد</button>
+    </div>
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80">
+        <div>
+          <h2 class="text-base font-extrabold text-slate-900">📊 لوحة تقارير المبيعات، الحجوزات، المرتجعات والأرباح الحقيقية</h2>
+          <p class="text-xs text-slate-500">فصل المبيعات الكاملة عن مبالغ الحجز المعلقة والمرتجعات مع حساب الأرباح الصافية بدقة</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <select id="reportPeriodSelect" onchange="renderReportsDashboard()" class="px-3 py-2 border rounded-xl text-xs font-bold">
+            <option value="all">كل الفترات</option>
+            <option value="today">اليوم</option>
+            <option value="week">آخر 7 أيام</option>
+            <option value="month">الشهر الحالي</option>
+          </select>
+          <button onclick="previewPeriodicReportPrint()" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"><span>🖨️</span> خيارات التقرير</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="bg-white p-4 rounded-2xl border shadow-2xs"><span class="text-xs font-bold text-slate-500">المبيعات الكاملة (المسلمة فقط)</span><div id="repFullSales" class="finance-positive text-xl font-extrabold text-emerald-600 mt-1">0 ج.م</div></div>
+        <div class="bg-white p-4 rounded-2xl border shadow-2xs"><span class="text-xs font-bold text-slate-500">إيرادات الحجوزات المعلقة</span><div id="repReservations" class="finance-positive text-xl font-extrabold text-amber-600 mt-1">0 ج.م</div></div>
+        <div class="bg-white p-4 rounded-2xl border shadow-2xs"><span class="text-xs font-bold text-slate-500">إجمالي المرتجعات (ديون علينا)</span><div id="repReturns" class="finance-negative text-xl font-extrabold text-rose-600 mt-1">0 ج.م</div></div>
+        <div class="bg-white p-4 rounded-2xl border shadow-2xs"><span class="text-xs font-bold text-slate-500">المصروفات التشغيلية وإعلانات</span><div id="repExpenses" class="finance-negative text-xl font-extrabold text-slate-700 mt-1">0 ج.م</div></div>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs"><span class="text-xs font-bold text-slate-500">صافي الأرباح الحقيقية</span><div id="repNetProfit" class="finance-positive text-xl font-extrabold mt-1">0 ج.م</div></div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><div class="bg-white p-4 rounded-2xl border"><span class="text-xs font-bold text-slate-500">القيمة التقديرية للمخزون الحالي</span><div id="repInventoryValue" class="text-xl font-extrabold text-slate-800 mt-1">0 ج.م</div><p class="text-[10px] text-slate-400 mt-1">تقدير على أساس متوسط التكلفة المسجل والكميات المتاحة، وليس تقييمًا جرديًا معتمدًا.</p></div><div class="bg-white p-4 rounded-2xl border"><span class="text-xs font-bold text-slate-500">المستحقات الحالية للموردين</span><div id="repSupplierDue" class="text-xl font-extrabold text-rose-700 mt-1">0 ج.م</div><p class="text-[10px] text-slate-400 mt-1">إجمالي الفواتير ناقص المدفوعات المسجلة.</p></div></div>
+      <div class="bg-white rounded-2xl border overflow-hidden p-4 space-y-3">
+        <h3 class="text-sm font-extrabold text-slate-800">تفاصيل الحركات المالية للطلبات خلال الفترة المحددة</h3>
+        <table class="w-full text-right text-xs">
+          <thead class="bg-slate-50 text-slate-500 font-bold border-b">
+            <tr><th class="py-2.5 px-3">رقم الطلب</th><th class="py-2.5 px-3">التاريخ</th><th class="py-2.5 px-3">العميل</th><th class="py-2.5 px-3">نوع العملية / الحالة</th><th class="py-2.5 px-3">القيمة المحتسبة</th><th class="py-2.5 px-3">الربح التقريبي</th></tr>
+          </thead>
+          <tbody id="reportsTableBody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 9: EXPENSES -->
+    <section id="tab-expenses" class="tab-section hidden space-y-5">
+      <div class="flex flex-wrap gap-2 rounded-2xl border border-violet-100 bg-violet-50 p-3 mb-4">
+
+
+
+      <button type="button" onclick="openModal('expenseModal')" class="px-3 py-2 rounded-xl bg-emerald-700 text-white text-xs font-extrabold">＋ إضافة مصروف جديد</button>
+    </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white p-4 rounded-2xl border"><span class="text-xs font-bold text-slate-500">المصروفات التشغيلية والمرتجعات</span><div id="finTotalExpenses" class="finance-negative text-xl font-extrabold text-rose-600 mt-1">0 ج.م</div></div>
+        <div class="bg-white p-4 rounded-2xl border"><span class="text-xs font-bold text-slate-500">إيرادات النقدية الصافية (بعد المرتجعات)</span><div id="finTotalRevenue" class="finance-positive text-xl font-extrabold text-emerald-600 mt-1">0 ج.م</div></div>
+        <div class="bg-white p-4 rounded-2xl border"><span class="text-xs font-bold text-slate-500">صافي حركة النقد بعد المصروفات التشغيلية</span><div id="finNetProfit" class="finance-positive text-xl font-extrabold mt-1">0 ج.م</div></div>
+      </div>
+      <div class="bg-white rounded-2xl border overflow-hidden">
+        <div class="px-4 py-3 border-b flex items-center justify-between"><h3 class="text-sm font-extrabold">بنود المصروفات، الإعلانات، وتسويات المرتجعات</h3><button onclick="openModal('expenseModal')" class="px-3 py-1.5 rounded-lg bg-brand-600 text-white text-xs font-bold">+ مصروف / تسوية</button></div>
+        <table class="w-full text-right text-xs">
+          <thead class="bg-slate-50 text-slate-500 font-bold border-b"><tr><th class="py-2.5 px-3">التاريخ</th><th class="py-2.5 px-3">البند</th><th class="py-2.5 px-3">الوصف</th><th class="py-2.5 px-3">المبلغ</th><th class="py-2.5 px-3">وسيلة الدفع</th><th class="py-2.5 px-3"></th></tr></thead>
+          <tbody id="expensesTableBody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 11: CASHBOOK (V18.9) -->
+    <section id="tab-cashbook" class="tab-section hidden space-y-5">
+      <div class="flex flex-wrap gap-2 rounded-2xl border border-violet-100 bg-violet-50 p-3 mb-4">
+
+
+
+      <button type="button" onclick="openModal('expenseModal')" class="px-3 py-2 rounded-xl bg-emerald-700 text-white text-xs font-extrabold">＋ إضافة مصروف جديد</button>
+    </div>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-extrabold text-slate-900">🏦 دفتر حركة الخزنة</h2>
+          <p class="text-xs text-slate-500 mt-1">حسابات مستقلة لوسائل الدفع مع أرصدة افتتاحية وتحويلات داخلية ورصيد مرحّل حسب الفترة.</p>
+        </div>
+        <button onclick="renderCashBook()" class="px-3 py-2 rounded-lg bg-slate-900 text-white text-xs font-bold">↻ تحديث الكشف</button>
+      </div>
+      <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 leading-6">
+        <b>تنبيه محاسبي:</b> الأرصدة الختامية تقديرية وفق الحركات والأرصدة الافتتاحية التي تسجلها. راجع صحة الأرصدة الفعلية عند بدء الاستخدام؛ الحركات التاريخية التي لا تحتوي طريقة دفع ستظل ضمن «غير محدد».
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div class="bg-white rounded-2xl border p-4 space-y-2">
+          <h3 class="font-extrabold text-sm">الأرصدة الافتتاحية لكل وسيلة دفع</h3>
+          <p class="text-[11px] text-slate-500">سجّل الرصيد الفعلي لكل حساب في تاريخ بداية الدفتر. الأرصدة القديمة المحفوظة للخزنة النقدية يتم ترحيلها تلقائياً إلى النقدي.</p>
+          <div class="grid grid-cols-2 gap-2"><select id="cashOpeningMethod" onchange="renderCashBook()" class="border rounded-lg px-3 py-2 text-xs"><option>نقدي</option><option>تحويل بنكي</option><option>محفظة إلكترونية</option><option>بطاقة</option><option>أخرى</option></select><input id="cashOpeningAmount" type="number" min="0" step="0.01" placeholder="الرصيد الافتتاحي" class="border rounded-lg px-3 py-2 text-xs"></div>
+          <div class="grid grid-cols-2 gap-2"><input id="cashOpeningDate" type="date" class="border rounded-lg px-3 py-2 text-xs"><input id="cashOpeningNote" type="text" maxlength="160" placeholder="ملاحظة (اختياري)" class="border rounded-lg px-3 py-2 text-xs"></div>
+          <button onclick="saveCashOpeningBalance()" class="px-4 py-2 rounded-lg bg-brand-600 text-white text-xs font-bold">حفظ / تحديث رصيد الحساب</button>
+          <div id="cashOpeningStatus" class="text-[11px] text-slate-500"></div>
+        </div>
+        <div class="bg-white rounded-2xl border p-4 space-y-2">
+          <h3 class="font-extrabold text-sm">تحويل بين وسائل الدفع</h3>
+          <p class="text-[11px] text-slate-500">يسجل التحويل كمنصرف من الحساب المصدر ووارد للحساب المستلم، دون اعتباره إيراداً أو مصروفاً.</p>
+          <div class="grid grid-cols-2 gap-2"><select id="cashTransferFrom" class="border rounded-lg px-3 py-2 text-xs"><option>نقدي</option><option>تحويل بنكي</option><option>محفظة إلكترونية</option><option>بطاقة</option><option>أخرى</option></select><select id="cashTransferTo" class="border rounded-lg px-3 py-2 text-xs"><option>تحويل بنكي</option><option>نقدي</option><option>محفظة إلكترونية</option><option>بطاقة</option><option>أخرى</option></select></div>
+          <div class="grid grid-cols-2 gap-2"><input id="cashTransferAmount" type="number" min="0.01" step="0.01" placeholder="المبلغ" class="border rounded-lg px-3 py-2 text-xs"><input id="cashTransferDate" type="date" class="border rounded-lg px-3 py-2 text-xs"></div>
+          <input id="cashTransferNote" type="text" maxlength="160" placeholder="سبب / مرجع التحويل (إجباري)" class="w-full border rounded-lg px-3 py-2 text-xs">
+          <button onclick="addCashbookTransfer()" class="px-4 py-2 rounded-lg bg-slate-900 text-white text-xs font-bold">تسجيل التحويل</button>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl border p-4 space-y-2">
+        <h3 class="font-extrabold text-sm">تسوية / حركة يدوية لحساب</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2"><select id="cashAdjustDirection" class="border rounded-lg px-3 py-2 text-xs"><option value="IN">إيداع / وارد</option><option value="OUT">سحب / منصرف</option></select><select id="cashAdjustMethod" class="border rounded-lg px-3 py-2 text-xs"><option>نقدي</option><option>تحويل بنكي</option><option>محفظة إلكترونية</option><option>بطاقة</option><option>أخرى</option></select><input id="cashAdjustAmount" type="number" min="0.01" step="0.01" placeholder="المبلغ" class="border rounded-lg px-3 py-2 text-xs"><input id="cashAdjustDate" type="date" class="border rounded-lg px-3 py-2 text-xs"></div>
+        <input id="cashAdjustNote" type="text" maxlength="160" placeholder="سبب الحركة (إجباري)" class="w-full border rounded-lg px-3 py-2 text-xs">
+        <button onclick="addCashbookAdjustment()" class="px-4 py-2 rounded-lg bg-slate-900 text-white text-xs font-bold">تسجيل الحركة</button>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="bg-white p-4 rounded-2xl border"><div class="text-xs text-slate-500 font-bold">إجمالي المقبوضات</div><div id="cashBookIn" class="text-xl font-extrabold text-emerald-600 mt-1">0 ج.م</div></div>
+        <div class="bg-white p-4 rounded-2xl border"><div class="text-xs text-slate-500 font-bold">إجمالي المدفوعات</div><div id="cashBookOut" class="text-xl font-extrabold text-rose-600 mt-1">0 ج.م</div></div>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200"><div class="text-xs text-slate-500 font-bold">صافي الحركة خلال الفترة</div><div id="cashBookNet" class="finance-positive text-xl font-extrabold mt-1">0 ج.م</div></div>
+      </div>
+      <div class="bg-white rounded-2xl border overflow-hidden">
+        <div class="px-4 py-3 border-b"><h3 class="text-sm font-extrabold">أرصدة وسائل الدفع</h3><p class="text-[10px] text-slate-500 mt-1">يعرض رصيد بداية الفترة بعد ترحيل الحركات السابقة، ثم حركة الفترة والرصيد الختامي لكل حساب.</p></div>
+        <div class="overflow-x-auto"><table class="w-full text-right text-xs min-w-[650px]"><thead class="bg-slate-50 text-slate-500 font-bold"><tr><th class="p-3">الحساب</th><th class="p-3">الرصيد المرحّل</th><th class="p-3">الوارد</th><th class="p-3">المنصرف</th><th class="p-3">الرصيد الختامي</th></tr></thead><tbody id="paymentMethodBalancesBody" class="divide-y divide-slate-100"></tbody></table></div>
+      </div>
+      <div class="bg-white rounded-2xl border p-3 flex flex-wrap items-end gap-3">
+        <div><label class="block text-xs font-bold text-slate-600 mb-1">من تاريخ</label><input id="cashBookFrom" type="date" class="border rounded-lg px-3 py-2 text-xs" /></div>
+        <div><label class="block text-xs font-bold text-slate-600 mb-1">إلى تاريخ</label><input id="cashBookTo" type="date" class="border rounded-lg px-3 py-2 text-xs" /></div>
+        <button onclick="renderCashBook()" class="px-4 py-2 rounded-lg bg-brand-600 text-white text-xs font-bold">تطبيق الفترة</button>
+        <button onclick="clearCashBookDates()" class="px-4 py-2 rounded-lg border text-xs font-bold">كل الفترات</button>
+      </div>
+      <div class="bg-white rounded-2xl border overflow-hidden">
+        <div class="px-4 py-3 border-b flex items-center justify-between"><h3 class="text-sm font-extrabold">حركات الخزنة</h3><span id="cashBookCount" class="text-xs text-slate-500">0 حركة</span></div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-right text-xs min-w-[760px]">
+            <thead class="bg-slate-50 text-slate-500 font-bold border-b"><tr><th class="py-3 px-3">التاريخ</th><th class="py-3 px-3">البيان</th><th class="py-3 px-3">المرجع</th><th class="py-3 px-3">طريقة الدفع</th><th class="py-3 px-3">وارد</th><th class="py-3 px-3">منصرف</th><th class="py-3 px-3">صافي الحركة</th></tr></thead>
+            <tbody id="cashBookTableBody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- V19.15: read-only VALERIAN Intelligence workspace -->
+    <section id="tab-intelligence" class="tab-section hidden space-y-5">
+      <div class="v1916-ai-card">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div><div class="text-xs font-bold text-violet-200 tracking-widest">VALERIAN INTELLIGENCE</div><h2 class="text-2xl font-extrabold mt-1">مركز ذكاء الأعمال</h2><p class="text-xs text-violet-100 mt-2">تحليل مباشر لبيانات نشاطك — قراءة فقط، دون تعديل الأسعار أو المخزون أو الحسابات.</p></div>
+          <button onclick="renderValerianIntelligence()" class="px-4 py-2 rounded-xl bg-white text-indigo-900 text-xs font-extrabold">↻ تحديث التحليل</button>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2"><label class="text-xs font-bold text-slate-600">فترة التحليل</label><select id="intelPeriod" onchange="renderValerianIntelligence()" class="border rounded-xl px-3 py-2 text-xs font-bold"><option value="30">آخر 30 يومًا</option><option value="90">آخر 90 يومًا</option><option value="365">آخر 12 شهرًا</option><option value="all">كل البيانات</option></select><span id="intelDataQuality" class="text-[10px] text-slate-500"></span></div>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="v1916-metric"><div class="text-xs text-slate-500">صافي مبيعات الطلبات المسلّمة</div><div id="intelSales" class="text-xl font-extrabold mt-2">—</div></div>
+        <div class="v1916-metric"><div class="text-xs text-slate-500">ربح إجمالي تقديري بعد توزيع خصومات الطلب وقبل المصروفات</div><div id="intelGrossProfit" class="text-xl font-extrabold mt-2">—</div></div>
+        <div class="v1916-metric"><div class="text-xs text-slate-500">وحدات مباعة صافي المرتجعات</div><div id="intelUnits" class="text-xl font-extrabold mt-2">—</div></div>
+        <div class="v1916-metric"><div class="text-xs text-slate-500">منتجات بدون مبيعات بالفترة</div><div id="intelNoSales" class="text-xl font-extrabold mt-2">—</div></div>
+      </div>
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <div class="bg-white rounded-2xl border p-4"><h3 class="font-extrabold mb-3">🏆 الأكثر طلبًا</h3><div id="intelTopDemand"></div></div>
+        <div class="bg-white rounded-2xl border p-4"><h3 class="font-extrabold mb-3">💎 الأعلى ربحًا</h3><div id="intelTopProfit"></div></div>
+        <div class="bg-white rounded-2xl border p-4"><h3 class="font-extrabold mb-3">⚠️ الأقل ربحية / المنتجات الخاسرة</h3><div id="intelLowProfit"></div></div>
+        <div class="bg-white rounded-2xl border p-4"><h3 class="font-extrabold mb-3">🧊 منتجات لم تتحرك خلال الفترة</h3><div id="intelSlowItems"></div></div>
+      </div>
+      <div class="bg-white rounded-2xl border p-4"><h3 class="font-extrabold mb-3">🧠 ملاحظات واقتراحات مبنية على البيانات</h3><div id="intelRecommendations" class="space-y-2 text-xs"></div></div>
+      <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-[11px] leading-6 text-amber-900"><b>شفافية التحليل:</b> هذا الإصدار يقدم تحليلات حسابية محلية من سجلات البرنامج، وليس محادثة مع نموذج ذكاء اصطناعي خارجي. يتم توزيع صافي قيمة الطلب على المنتجات بنسبة قيمة كل بند، ثم خصم تكلفة الوحدة المحفوظة وقت البيع. عند غيابها يستخدم تكلفة المنتج الحالية ويضع علامة بأن التقدير أقل موثوقية. الشحن والمصروفات العامة لا تُحمّل على المنتج في هذا المؤشر. لا تُنفّذ أي توصية تلقائيًا.</div>
+    
+      <div class="bg-white rounded-2xl border border-violet-200 shadow-sm overflow-hidden mt-5" id="valerianAssistantChat">
+        <div class="p-4 bg-gradient-to-l from-violet-950 to-indigo-800 text-white flex flex-wrap items-center justify-between gap-3">
+          <div><div class="text-[10px] tracking-widest font-extrabold text-violet-200">VALERIAN INTELLIGENCE</div><h3 class="text-lg font-extrabold mt-1">محادثة مع بيانات نشاطك</h3><p class="text-xs text-violet-100 mt-1">اسأل بطريقتك عن المبيعات والطلبات والحجوزات والمنتجات والمخزون والعروض والعملاء والنقاط والموردين والمصروفات والشحن.</p></div>
+          <button type="button" onclick="clearValerianChat()" class="px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-xs font-bold">محادثة جديدة</button>
+        </div>
+        <div class="p-3 sm:p-4 space-y-3">
+          <div class="flex flex-wrap gap-2" id="valerianChatSuggestions">
+            <button type="button" class="px-3 py-2 rounded-full bg-violet-50 text-violet-800 text-[11px] font-bold" onclick="askValerian('ما أكثر المنتجات مبيعًا؟')">الأكثر مبيعًا</button>
+            <button type="button" class="px-3 py-2 rounded-full bg-violet-50 text-violet-800 text-[11px] font-bold" onclick="askValerian('ما أكثر المنتجات ربحًا؟')">الأكثر ربحًا</button>
+            <button type="button" class="px-3 py-2 rounded-full bg-violet-50 text-violet-800 text-[11px] font-bold" onclick="askValerian('ما المنتجات الراكدة؟')">المنتجات الراكدة</button>
+            <button type="button" class="px-3 py-2 rounded-full bg-violet-50 text-violet-800 text-[11px] font-bold" onclick="askValerian('حلل المصروفات')">تحليل المصروفات</button>
+            <button type="button" class="px-3 py-2 rounded-full bg-violet-50 text-violet-800 text-[11px] font-bold" onclick="askValerian('ما المنتجات التي تحتاج إعادة استيراد؟')">إعادة الاستيراد</button>
+          </div>
+          <div id="valerianChatMessages" class="min-h-[180px] max-h-[420px] overflow-y-auto rounded-xl bg-slate-50 border p-3 space-y-3" aria-live="polite">
+            <div class="max-w-[92%] rounded-2xl rounded-tr-sm bg-white border p-3 text-sm leading-7"><b class="text-violet-800">مساعد VALERIAN:</b><br>أهلًا بك. أستطيع تحليل البيانات المسجلة داخل البرنامج والإجابة عن أسئلة المبيعات والربحية والمخزون والعملاء والمصروفات. اسألني مثلًا: «ما أكثر المنتجات مبيعًا؟».</div>
+          </div>
+          <form class="flex gap-2" onsubmit="event.preventDefault();const i=document.getElementById('valerianChatInput');askValerian(i.value);i.value='';">
+            <input id="valerianChatInput" type="text" autocomplete="off" placeholder="اكتب سؤالك عن نشاطك..." class="min-w-0 flex-1 border rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-300" />
+            <button type="submit" class="px-5 py-3 rounded-xl bg-violet-700 hover:bg-violet-800 text-white text-sm font-extrabold">إرسال</button>
+          </form>
+          <p class="text-[10px] text-slate-500 leading-5">شفافية: المحادثة الحالية تستخدم محرك تحليل محليًا داخل البرنامج ولا ترسل بياناتك إلى خدمة خارجية. يحلل هذا المساعد سجلات البرنامج محليًا ويغطي موضوعات تشغيلية متعددة. لا يدّعي فهمًا توليديًا عامًا؛ ربط نموذج لغوي كامل يتطلب خادمًا آمنًا ومفتاحًا محفوظًا خارج ملف HTML.</p>
+        </div>
+      </div>
+</section>
+
+    <!-- TAB 10: SETTINGS & BACKUP -->
+    <section id="tab-settings" class="tab-section hidden space-y-5">
+      <div class="bg-white p-6 rounded-2xl border border-slate-200/80 space-y-6 max-w-4xl mx-auto">
+        <div class="border-b pb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-extrabold text-slate-900">⚙️ إعدادات النظام والنسخ الاحتياطي والأمان</h2>
+            <p class="text-xs text-slate-500">تصدير واستيراد بيانات النظام (JSON Backup) لضمان عدم ضياع أي بيانات للعملاء أو المبيعات أبداً</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="exportSystemJsonBackup()" class="px-4 py-2 bg-slate-900 text-white rounded-xl font-bold text-xs flex items-center gap-1.5"><span>💾</span> تصدير نسخة احتياطية (JSON)</button>
+            <label class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold text-xs cursor-pointer flex items-center gap-1.5">
+              <span>📂</span> استيراد نسخة احتياطية
+              <input type="file" accept=".json" onchange="importSystemJsonBackup(event)" class="hidden" />
+            </label>
+          </div>
+        </div>
+
+
+        <div class="rounded-xl border border-rose-200 bg-rose-50 p-4 space-y-2">
+          <div class="font-extrabold text-rose-800">🧹 بدء البرنامج من الصفر</div>
+          <p class="text-xs leading-6 text-rose-700">يمسح المنتجات والعملاء والطلبات والمشتريات والموردين والمصروفات وحركات المخزون والخزنة وسجلات التدقيق من هذا الحساب السحابي وكل الأجهزة المتزامنة. يحتفظ بإعدادات الشكل ونقاط الولاء ورسائل الفواتير. سيتم تنزيل نسخة احتياطية تلقائياً قبل المسح.</p>
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <span class="text-[11px] font-bold text-rose-700">⚠️ لا يمكن التراجع عن المسح بعد تأكيده.</span>
+            <button type="button" onclick="if(window.parent&&typeof window.parent.v5DeleteAllBusinessData==='function'){window.parent.v5DeleteAllBusinessData();}else{showToast('نافذة الحذف الآمن غير متاحة. أعد فتح التطبيق.','error');}" class="px-4 py-2.5 bg-rose-700 hover:bg-rose-800 text-white rounded-xl font-extrabold text-xs">مسح كل بيانات النشاط والبدء من جديد</button>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 flex flex-wrap items-center justify-between gap-3">
+          <div><h3 class="font-extrabold text-emerald-900">☁️ تسجيل الدخول والمزامنة</h3><p class="text-xs text-emerald-800 mt-1">إدارة حساب VALERIAN CLOUD ومزامنة بيانات الموبايل واللابتوب من هنا.</p><p id="settingsCloudStatus" class="text-[11px] font-bold mt-1">حالة الاتصال تظهر بجوار اسم VALERIAN أعلى الشاشة.</p></div>
+          <button type="button" onclick="openCloudPanel()" class="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-extrabold text-xs">فتح إعدادات الدخول والمزامنة</button>
+        </div>
+
+<div id="cloudPanel" style="display:block;position:static;inset:auto;z-index:auto;background:transparent;align-items:stretch;justify-content:stretch;padding:0;direction:rtl">
+ <div style="background:white;color:#0f172a;width:100%;max-height:none;overflow:visible;border:1px solid #dbeafe;border-radius:14px;padding:18px;box-shadow:0 2px 8px #0f172a0a">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="font-size:19px;font-weight:900">VALERIAN CLOUD</h2><button onclick="closeCloudPanel()" style="font-size:24px">×</button></div>
+  <p style="font-size:13px;color:#475569;margin:8px 0 14px">سجّل الدخول لربط بياناتك بين الموبايل واللابتوب. استخدم نفس الحساب على الجهازين.</p>
+  <label style="display:block;font-size:12px;font-weight:800;margin:10px 0 5px">البريد الإلكتروني</label><input id="cloudEmail" type="email" autocomplete="username" style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:11px;direction:ltr" placeholder="you@example.com">
+  <label style="display:block;font-size:12px;font-weight:800;margin:10px 0 5px">كلمة المرور</label><input id="cloudPassword" type="password" autocomplete="current-password" style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:11px;direction:ltr" placeholder="••••••••">
+  <div style="display:flex;gap:8px;margin-top:14px"><button onclick="cloudSignIn()" style="flex:1;background:#0f172a;color:white;border-radius:10px;padding:11px;font-weight:800">تسجيل الدخول</button><button onclick="cloudSignUp()" style="flex:1;background:#7c3aed;color:white;border-radius:10px;padding:11px;font-weight:800">إنشاء حساب</button></div>
+  <button id="cloudSyncNow" type="button" style="display:none;width:100%;margin-top:10px;background:#059669;color:white;border-radius:10px;padding:11px;font-weight:800">مزامنة الآن</button>
+  <button id="cloudLogout" onclick="cloudSignOut()" style="display:none;width:100%;margin-top:8px;background:#fee2e2;color:#991b1b;border-radius:10px;padding:10px;font-weight:800">تسجيل الخروج من هذا الجهاز</button>
+  <p id="cloudMessage" role="status" style="font-size:12px;line-height:1.7;margin-top:12px;color:#475569">الحالة: لم يتم الاتصال بعد.</p>
+  <details id="cloudDiagnostics" style="margin-top:8px;font-size:11px;color:#475569"><summary style="cursor:pointer;font-weight:800">سجل تشخيص المزامنة</summary><pre id="cloudDiagnosticsLog" dir="rtl" style="white-space:pre-wrap;max-height:150px;overflow:auto;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px;margin-top:6px">لم يتم تنفيذ أي محاولة بعد.</pre></details>
+  <p style="font-size:11px;color:#64748b;margin-top:10px">تنبيه: أول ربط سيطلب منك اختيار البيانات التي نعتمدها. لن يتم دمج البيانات أو استبدالها بصمت.</p>
+ </div>
+</div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
+          <div class="bg-slate-50 p-4 rounded-xl border space-y-3 hidden" aria-hidden="true">
+            <h3 class="font-extrabold text-slate-800 text-sm">🎨 تخصيص ألوان النظام</h3>
+            <div>
+              <label class="block font-bold mb-1">اللون الأساسي:</label>
+              <input id="setPrimaryColorInput" type="color" value="#8b5cf6" class="w-12 h-10 rounded border cursor-pointer" />
+            </div>
+          </div>
+
+          <div class="bg-slate-50 p-4 rounded-xl border space-y-3">
+            <h3 class="font-extrabold text-slate-800 text-sm">🧾 تخصيص ألوان فواتير الحجز</h3>
+            <div>
+              <label class="block font-bold mb-1">لون إيصال الحجز (قسم رجالي):</label>
+              <input id="setMaleReservationColor" type="color" value="#fef3c7" class="w-full h-9 rounded border cursor-pointer" />
+            </div>
+            <div>
+              <label class="block font-bold mb-1">لون إيصال الحجز (قسم نسائي):</label>
+              <input id="setFemaleReservationColor" type="color" value="#fce7f3" class="w-full h-9 rounded border cursor-pointer" />
+            </div>
+          </div>
+
+          <div class="bg-slate-50 p-4 rounded-xl border space-y-3">
+            <h3 class="font-extrabold text-slate-800 text-sm">👑 إعدادات نقاط الولاء وقيمتها</h3>
+            <div class="grid grid-cols-2 gap-2">
+              <div><label class="block font-bold mb-1">بدء النقاط من الطلب:</label><input id="setLoyaltyStartOrder" type="number" min="1" value="2" class="w-full px-2 py-1.5 border rounded-lg font-bold" /></div>
+              <div><label class="block font-bold mb-1">نسبة النقاط (%):</label><input id="setLoyaltyPercentage" type="number" step="0.5" value="5" class="w-full px-2 py-1.5 border rounded-lg font-bold" /></div>
+            </div>
+            <div><label class="block font-bold mb-1">قيمة النقطة الواحدة بالجنيه:</label><input id="setPointValue" type="number" step="0.1" value="1" class="w-full px-2 py-1.5 border rounded-lg font-bold" /></div>
+          </div>
+
+          <div class="bg-slate-50 p-4 rounded-xl border space-y-3">
+            <h3 class="font-extrabold text-slate-800 text-sm">📜 رسائل الفواتير والـ QR</h3>
+            <div><label class="block font-bold mb-1">رسالة إيصال الحجز:</label><textarea id="setInvoiceReservationMsg" rows="2" class="w-full px-2 py-1.5 border rounded-lg">شكراً لثقتكم في ڤاليريان — برجاء الاحتفاظ بهذا الإيصال.</textarea></div>
+            <div><label class="block font-bold mb-1">رسالة الفاتورة النهائية:</label><textarea id="setInvoiceFinalMsg" rows="2" class="w-full px-2 py-1.5 border rounded-lg">شكراً لاختياركم ڤاليريان — عطور أصلية 100%.</textarea></div>
+            <div class="pt-2 border-t border-slate-200"><label class="block font-bold mb-1">رسالة واتساب المرفقة بفاتورة العميل:</label><textarea id="setInvoiceWhatsAppMsg" rows="3" class="w-full px-2 py-1.5 border rounded-lg" placeholder="مرحباً {customer}، مرفق فاتورتكم رقم {order} من ڤاليريان. الإجمالي {total} والمتبقي {remaining}.">مرحباً {customer}، مرفق فاتورتكم رقم {order} من ڤاليريان. شكراً لثقتكم بنا.</textarea><p class="text-[10px] text-slate-500 leading-5 mt-1">متغيرات متاحة: {customer} اسم العميل، {order} رقم الطلب، {total} الإجمالي، {remaining} المتبقي.</p></div>
+            <div class="flex items-center gap-2 pt-1">
+              <input id="setEnableQr" type="checkbox" checked class="w-4 h-4 text-brand-600 rounded" />
+              <label for="setEnableQr" class="font-bold text-slate-800">تضمين رموز QR Code حقيقية بالفواتير</label>
+            </div>
+            <div class="pt-2"><label for="setInvoiceQrLinks" class="block font-bold mb-1">روابط صفحات VALERIAN التي تظهر في الفاتورة</label><textarea id="setInvoiceQrLinks" rows="4" dir="ltr" placeholder="Facebook | https://facebook.com/yourpage
+Instagram | https://instagram.com/yourpage
+Website | https://yourwebsite.com
+WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg text-left font-mono text-[11px]"></textarea><p class="text-[10px] text-slate-500 leading-5 mt-1">اكتب رابطًا واحدًا في كل سطر بالصيغة: الاسم | الرابط. كل رابط سيظهر كرمز QR مستقل قابل للمسح. استخدم روابط كاملة تبدأ بـ https:// أو http://. يُسمح بأربعة روابط كحد أقصى حتى تظل الفاتورة واضحة.</p></div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t">
+          <button onclick="saveComprehensiveSettings()" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold text-xs shadow-sm">حفظ كافة الإعدادات وتحديث النقاط فوراً</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <div id="inventoryProductDetailsModal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('inventoryProductDetailsModal')">
+    <div id="inventoryProductDetailsContent" class="bg-white rounded-2xl shadow-2xl w-full max-w-xl p-5 space-y-3" dir="rtl">
+      <div class="flex items-center justify-between gap-3"><h3 id="inventoryProductDetailsTitle" class="font-extrabold text-lg">تفاصيل المنتج</h3><button type="button" onclick="closeModal('inventoryProductDetailsModal')" class="text-xl">✕</button></div>
+      <div id="inventoryProductDetailsBody"></div>
+      <div class="flex justify-end gap-2"><button id="inventoryProductDetailsApplyPrice" type="button" class="px-4 py-2 rounded-lg bg-amber-600 text-white text-xs font-bold">استعادة السعر من آخر فاتورة</button><button id="inventoryProductDetailsPrint" type="button" class="px-4 py-2 rounded-lg bg-slate-800 text-white text-xs font-bold">طباعة التفاصيل</button><button type="button" onclick="closeModal('inventoryProductDetailsModal')" class="px-4 py-2 rounded-lg border text-xs font-bold">إغلاق</button></div>
+    </div>
+  </div>
+
+  <!-- Print Preview Modal -->
+  <div id="printPreviewModal" class="modal fixed inset-0 z-50 hidden bg-slate-900/80 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between border-b pb-3">
+        <h3 class="font-extrabold text-slate-900">🖨️ معاينة المستند قبل الطباعة</h3>
+        <button onclick="closeModal('printPreviewModal')">✕</button>
+      </div>
+      <div id="printPreviewBody" class="flex-1 overflow-y-auto custom-scroll p-3 bg-slate-50 rounded-xl border"></div>
+      <div class="flex flex-wrap items-center gap-2 pt-3 border-t">
+        <label class="text-xs font-bold">مقاس الطباعة</label>
+        <select id="printPaperSize" class="px-2 py-2 border rounded-lg text-xs" onchange="v1953SyncPrintPreviewSize()"><option value="80">حراري 80 مم</option><option value="58">حراري 58 مم</option><option value="a4">A4</option></select>
+        <button type="button" onclick="savePreviewImageDirect()" class="px-3 py-2 bg-slate-800 text-white rounded-lg font-bold text-xs" id="previewSaveImageBtn">⬇️ حفظ الصورة HD</button>
+        <button type="button" onclick="shareInvoiceToCustomerWhatsApp()" class="hidden px-3 py-2 bg-emerald-700 text-white rounded-lg font-bold text-xs" id="invoiceWhatsAppBtn">🟢 مشاركة للعميل على واتساب</button>
+        <button type="button" onclick="openCustomerWhatsAppChat()" class="hidden px-3 py-2 bg-emerald-600 text-white rounded-lg font-bold text-xs" id="invoiceOpenWhatsAppBtn">💬 فتح محادثة العميل مباشرة</button>
+        <button type="button" onclick="sharePreviewAsImage()" class="px-3 py-2 bg-emerald-600 text-white rounded-lg font-bold text-xs" id="genericShareImageBtn">📲 مشاركة صورة</button>
+        <button type="button" onclick="executeActualPrint()" class="px-3 py-2 bg-brand-600 text-white rounded-lg font-bold text-xs">🖨️ طباعة</button>
+        <button type="button" onclick="closeModal('printPreviewModal')" class="px-3 py-2 border rounded-lg font-bold text-xs">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logo Cropper Modal -->
+  <div id="logoModal" class="modal fixed inset-0 z-50 hidden bg-slate-900/70 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between border-b pb-3"><h3 class="font-extrabold">تعديل وقص شعار البراند</h3><button onclick="closeModal('logoModal')">✕</button></div>
+      <label class="block cursor-pointer border-2 border-dashed border-brand-300 bg-brand-50 rounded-xl p-4 text-center">
+        <span class="text-xs font-bold text-brand-700">اختر صورة الشعار</span>
+        <input type="file" accept="image/*" class="hidden" onchange="loadLogoForCrop(event)" />
+      </label>
+      <div class="flex flex-col items-center gap-3">
+        <canvas id="logoCropCanvas" width="160" height="160" class="rounded-xl border"></canvas>
+        <input id="logoZoomRange" type="range" min="0.5" max="3" step="0.05" value="1" oninput="drawLogoCrop()" class="w-full" />
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t">
+        <button onclick="saveCroppedLogo()" class="px-4 py-2 bg-brand-600 text-white rounded-xl text-xs font-bold">حفظ الشعار</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import Purchase Invoice Modal — V18.9 -->
+  <div id="importModal" class="modal fixed inset-0 z-50 hidden bg-slate-900/60 flex items-center justify-center p-3">
+    <div class="bg-white rounded-2xl max-w-3xl w-full p-5 space-y-4 shadow-xl max-h-[94vh] overflow-y-auto custom-scroll">
+      <div class="flex items-center justify-between border-b pb-3"><div><h3 class="font-extrabold">🚢 فاتورة استيراد وربطها بالمخزون والخزنة</h3><p class="text-[11px] text-slate-500 mt-1">اختر منتجًا موجودًا أو أضف منتجًا جديدًا للكتالوج من نفس الفاتورة. التكلفة الجديدة تحدّث متوسط التكلفة، ولا تغيّر سعر البيع الحالي إلا باختيارك.</p></div><button type="button" onclick="closeModal('importModal')">✕</button></div>
+      <form novalidate onsubmit="saveImportShipment(event)" class="space-y-3 text-xs">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+          <div><label class="block font-bold mb-1">المورد الخارجي *</label><input id="impSupplier" list="knownSuppliersList" onfocus="refreshSupplierDatalist()" required type="text" placeholder="اسم المورد / الشركة" class="w-full px-3 py-2 border rounded-xl" /></div>
+          <div><label class="block font-bold mb-1">سعر الصرف (ج.م) *</label><input id="impExchangeRate" required type="number" min="0.01" step="0.01" value="53" oninput="updateImportTotals()" class="w-full px-3 py-2 border rounded-xl" /></div>
+          <div><label class="block font-bold mb-1">تاريخ الفاتورة</label><input id="impInvoiceDate" type="date" class="w-full px-3 py-2 border rounded-xl" /></div>
+        </div>
+        <div class="border rounded-xl overflow-hidden">
+          <div class="flex items-center justify-between p-3 bg-slate-50"><b>أصناف الفاتورة</b><button type="button" onclick="addImportLine()" class="px-3 py-1.5 rounded-lg bg-brand-600 text-white font-bold">+ إضافة صنف</button></div>
+          <div class="overflow-x-auto"><table class="w-full min-w-[650px] text-right"><thead class="bg-white text-slate-500"><tr><th class="p-2">المنتج / بيانات المنتج الجديد</th><th class="p-2">الكمية</th><th class="p-2">سعر الوحدة (عملة أجنبية)</th><th class="p-2">الإجمالي (عملة أجنبية)</th><th class="p-2"></th></tr></thead><tbody id="importLinesBody"></tbody></table></div>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+          <div><label class="block font-bold mb-1">الشحن الدولي (ج.م)</label><input id="impShippingCost" type="number" min="0" step="0.01" value="0" oninput="updateImportTotals()" class="w-full px-3 py-2 border rounded-xl" /></div>
+          <div><label class="block font-bold mb-1">الجمارك والضرائب (ج.م)</label><input id="impCustomsCost" type="number" min="0" step="0.01" value="0" oninput="updateImportTotals()" class="w-full px-3 py-2 border rounded-xl" /></div>
+          <div class="rounded-xl bg-blue-50 p-3"><div class="text-slate-500">قيمة الأصناف (عملة أجنبية — بدون ج.م)</div><b id="impForeignTotal">0</b></div>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+          <div class="rounded-xl bg-slate-900 text-white p-3"><div class="text-slate-300">إجمالي التكلفة بالجنيه</div><b id="impGrandTotal" class="text-lg">0 ج.م</b></div>
+          <div><label class="block font-bold mb-1">المبلغ المدفوع الآن (ج.م)</label><input id="impPaidAmount" type="number" min="0" step="0.01" value="0" oninput="updateImportTotals()" class="w-full px-3 py-2 border rounded-xl" /></div>
+          <div><label class="block font-bold mb-1">وسيلة الدفع</label><select id="impPaymentMethod" class="w-full px-3 py-2 border rounded-xl"><option>نقدي</option><option>تحويل بنكي</option><option>محفظة إلكترونية</option><option>بطاقة</option><option>أخرى</option></select></div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2"><div class="rounded-xl bg-amber-50 p-3">المتبقي للمورد: <b id="impRemaining">0 ج.م</b></div><div><label class="block font-bold mb-1">ملاحظات</label><input id="impNotes" type="text" class="w-full px-3 py-2 border rounded-xl" /></div></div>
+        <p class="text-[11px] text-slate-500 leading-5">سيتم زيادة المخزون وتوزيع الشحن والجمارك على الأصناف بنسبة قيمة كل صنف. يُسجل في الخزنة المبلغ المدفوع فقط، والمتبقي يظهر كالتزام للمورد.</p>
+        <div class="flex justify-end gap-2 pt-2 border-t"><button id="saveImportInvoiceBtn" type="submit" class="px-5 py-2 bg-brand-600 text-white rounded-xl font-bold">اعتماد الفاتورة وتحديث المخزون والحسابات</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add / Edit Product Modal -->
+  <div id="customerProfileModal" class="modal fixed inset-0 z-50 hidden bg-slate-900/70 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-5 space-y-4 shadow-xl max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b pb-3"><div><h3 class="font-extrabold">ملف العميل وتفضيلاته العطرية</h3><p class="text-xs text-slate-500">سجل ما يحبه العميل وما لا يفضله لتقديم ترشيحات أدق.</p></div><button type="button" onclick="closeModal('customerProfileModal')">✕</button></div>
+      <form onsubmit="saveCustomerProfile(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+        <input type="hidden" id="customerProfileIndex">
+        <label class="font-bold">اسم العميل<input id="customerProfileName" required class="mt-1 w-full border rounded-xl p-2"></label>
+        <label class="font-bold">رقم الهاتف<input id="customerProfilePhone" required class="mt-1 w-full border rounded-xl p-2"></label>
+        <label class="font-bold sm:col-span-2">العنوان<input id="customerProfileAddress" class="mt-1 w-full border rounded-xl p-2"></label>
+        <label class="font-bold sm:col-span-2">العطور أو الأنواع التي يفضلها<textarea id="customerProfilePreferences" rows="2" placeholder="مثال: عطور شرقية، عود، روائح دافئة..." class="mt-1 w-full border rounded-xl p-2"></textarea></label>
+        <label class="font-bold">النوتات المفضلة<textarea id="customerProfileFavoriteNotes" rows="2" placeholder="عود، فانيليا، حمضيات..." class="mt-1 w-full border rounded-xl p-2"></textarea></label>
+        <label class="font-bold">النوتات غير المفضلة<textarea id="customerProfileAvoidNotes" rows="2" placeholder="روائح لا يفضلها أو تسبب له نفورًا..." class="mt-1 w-full border rounded-xl p-2"></textarea></label>
+        <label class="font-bold sm:col-span-2">الاستخدام والمناسبات<textarea id="customerProfileOccasions" rows="2" placeholder="يومي، عمل، مناسبات، صيف، شتاء..." class="mt-1 w-full border rounded-xl p-2"></textarea></label>
+        <label class="font-bold sm:col-span-2">ملاحظات إضافية<textarea id="customerProfileNotes" rows="2" class="mt-1 w-full border rounded-xl p-2"></textarea></label>
+        <div class="sm:col-span-2 flex justify-between items-center border-t pt-3"><div class="flex flex-wrap gap-2"><button type="button" onclick="printCustomerProfileFromModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-white font-bold">🖨️ طباعة</button></div><div class="flex gap-2"><button type="button" onclick="closeModal('customerProfileModal')" class="px-4 py-2 border rounded-xl font-bold">إلغاء</button><button class="px-5 py-2 rounded-xl bg-violet-700 text-white font-extrabold">حفظ الملف</button></div></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="productModal" class="modal fixed inset-0 z-50 hidden bg-slate-900/70 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto custom-scroll">
+      <div class="flex items-center justify-between border-b pb-3">
+        <h3 id="productModalTitle" class="font-extrabold text-slate-900">إضافة أو تعديل عطر أصلي / عطر تقسيم</h3>
+        <button onclick="closeModal('productModal')">✕</button>
+      </div>
+      <form onsubmit="saveProduct(event)" class="space-y-3 text-xs">
+        <input type="hidden" id="editProductId" />
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block font-bold mb-1">اسم العطر والبراند *</label><input id="prodName" required type="text" placeholder="مثال: Tom Ford Oud Wood" class="w-full px-3 py-2 border rounded-xl" /></div>
+          <div>
+            <label class="block font-bold mb-1">نوع المنتج *</label>
+            <select id="prodType" onchange="toggleDecantFields()" class="w-full px-3 py-2 border rounded-xl">
+              <option value="عطور">عطور</option><option value="مزيلات عرق">مزيلات عرق</option><option value="مكملات غذائية">مكملات غذائية</option><option value="شامبو">شامبو</option><option value="كريمات">كريمات</option><option value="عناية بالبشرة">عناية بالبشرة</option><option value="عناية بالشعر">عناية بالشعر</option><option value="مستحضرات تجميل">مستحضرات تجميل</option><option value="منتجات أخرى">منتجات أخرى</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold mb-1">الفئة المستهدفة / نوع العبوة *</label>
+            <select id="prodCategory" onchange="toggleDecantFields()" class="w-full px-3 py-2 border rounded-xl">
+              <option value="رجالي">رجالي</option><option value="نسائي">نسائي</option><option value="للجنسين">للجنسين</option><option value="تقسيم">تقسيم (عبوات جاهزة)</option><option value="عروض">عروض (قديم)</option><option value="أطفال">أطفال</option><option value="غير محدد">غير محدد</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="bg-slate-50 p-3 rounded-xl border space-y-2">
+          <label class="block font-bold text-slate-700">صورة العطر (مربعة متناسقة):</label>
+          <input type="file" accept="image/*" onchange="loadProductImageForCrop(event)" class="w-full text-xs" />
+          <div class="flex justify-center items-center gap-3">
+            <canvas id="prodCropCanvas" width="1000" height="1000" style="width:120px;height:120px" class="rounded-xl border bg-white"></canvas>
+            <div class="flex-1 space-y-1">
+              <label class="text-[10px] font-bold">تكبير الصورة (Zoom)</label>
+              <input id="prodZoomRange" type="range" min="0.5" max="3" step="0.05" value="1" oninput="drawProdCrop()" class="w-full" />
+            </div>
+          </div>
+        </div>
+
+        <!-- SPLIT DECANT SYSTEM CONFIGURATION -->
+        <div id="decantSection" class="bg-brand-50/50 p-3.5 rounded-xl border border-brand-200 space-y-2.5">
+          <div class="flex items-center gap-2">
+            <input id="prodIsDecantable" type="checkbox" onchange="toggleDecantFields()" class="w-4 h-4 text-brand-600 rounded" />
+            <label for="prodIsDecantable" class="font-extrabold text-brand-900">هذا العطر "قابل للتقسيم" (Decants System) 🧪</label>
+          </div>
+
+          <div id="decantConfigBox" class="hidden space-y-2.5 pt-2 border-t border-brand-200">
+            <div>
+              <label class="block font-bold mb-1 text-brand-800">اختر الزجاجة الأصلية المتاحة للتقسيم:</label>
+              <select id="prodParentDecantId" onchange="calculateRetailPrice()" class="w-full px-3 py-2 bg-white border rounded-xl font-bold"></select>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div><label class="block font-bold mb-1">حجم التقسيم المبيع (مل) *</label><input id="decantSizeMl" type="number" min="1" value="10" oninput="calculateRetailPrice()" class="w-full px-2 py-1.5 bg-white border rounded-lg font-bold" /></div>
+              <div><label class="block font-bold mb-1">متوسط تكلفة العبوة لهذا المقاس (ج.م)</label><input id="decantBottleCost" type="number" step="1" value="15" oninput="calculateRetailPrice()" class="w-full px-2 py-1.5 bg-white border rounded-lg font-bold" readonly /></div>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div><label class="block font-bold mb-1">مخزون العبوات المشتركة</label><input id="prodEmptyContainersStock" type="number" min="0" step="1" value="0" class="w-full px-2 py-1.5 bg-white border rounded-lg font-bold" disabled /></div>
+              <div class="text-[10px] text-slate-600 flex items-end">المخزون مشترك بين كل العطور حسب المقاس (10 مل مع 10 مل، و30 مل مع 30 مل). الإضافة من المخزون.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-slate-50 p-3.5 rounded-xl border space-y-2.5">
+          <h4 id="productCalculatorHeading" class="font-extrabold text-slate-800">حاسبة تكلفة واستيراد المنتج الأصلي</h4>
+          <div id="productImportCalcFields" class="space-y-2.5">
+          <div class="grid grid-cols-3 gap-2">
+            <div><label class="block font-bold mb-1">السعر بالعملة</label><input id="prodForeignPrice" type="number" step="0.01" value="120" oninput="calculateRetailPrice()" class="w-full px-2 py-1.5 border rounded-lg font-bold" /></div>
+            <div><label class="block font-bold mb-1">سعر الصرف</label><input id="prodExchangeRate" type="number" step="0.01" value="53" oninput="calculateRetailPrice()" class="w-full px-2 py-1.5 border rounded-lg font-bold" /></div>
+            <div><label class="block font-bold mb-1">تكاليف الاستيراد الموزعة (شحن / جمارك)</label><input id="prodImportCost" type="number" step="0.01" value="150" oninput="calculateRetailPrice()" class="w-full px-2 py-1.5 border rounded-lg font-bold" /></div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 pt-1">
+            <div><label class="block font-bold mb-1">التغليف</label><input id="prodPackagingCost" type="number" step="0.01" value="50" oninput="calculateRetailPrice()" class="w-full px-2 py-1.5 border rounded-lg font-bold" /></div>
+            <div><label class="block font-bold mb-1">الضرائب (%)</label><input id="prodTaxRate" type="number" step="0.1" value="14" oninput="calculateRetailPrice()" class="w-full px-2 py-1.5 border rounded-lg font-bold text-rose-600" /></div>
+            <div><label class="block font-bold mb-1">نسبة الربح (%)</label><input id="prodProfitMargin" type="number" step="0.1" value="40" oninput="calculateRetailPrice()" class="w-full px-2 py-1.5 border rounded-lg font-bold text-brand-700" /></div>
+          </div>
+          </div>
+          <div class="pt-2 border-t flex items-center justify-between font-extrabold text-sm">
+            <span>إجمالي التكلفة الفعلية (أو تكلفة الملي الواحد):</span><span id="prodTotalCostDisplay" class="text-slate-700">0 ج.م</span>
+          </div>
+          <div class="flex items-center justify-between gap-3 font-extrabold text-sm">
+            <span>السعر المقترح من الحاسبة:</span><span id="prodFinalCalculatedPrice" class="text-brand-700 text-base">0 ج.م</span>
+          </div>
+          <div class="pt-2 border-t">
+            <label for="prodRetailPrice" class="block font-extrabold mb-1 text-slate-800">سعر البيع المعتمد في الكتالوج (قابل للتعديل)</label>
+            <input id="prodRetailPrice" type="number" min="0" step="1" required class="w-full px-3 py-2 border border-emerald-300 rounded-xl font-extrabold text-lg text-emerald-800 bg-white" />
+            <p class="text-[10px] text-slate-500 mt-1">هذا هو السعر الذي سيظهر في المخزون والكتالوج والفواتير. عند تعديل منتج موجود يظهر هنا آخر سعر معتمد بعد الاستيراد.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div><label class="block font-bold mb-1">الحجم *</label><input id="prodSize" required type="text" value="100 مل" class="w-full px-3 py-2 border rounded-xl font-bold" /></div>
+          <div class="space-y-1"><label class="block font-bold mb-1">الباركود *</label><input id="prodBarcode" required type="text" value="622991" oninput="renderProductBarcodePreview()" class="w-full px-3 py-2 border rounded-xl font-mono" /><div class="flex flex-wrap gap-1"><button type="button" onclick="generateProductBarcode()" class="px-2 py-1 rounded-lg bg-violet-100 text-violet-800 font-bold">توليد باركود جديد</button><button type="button" onclick="printProductBarcodeLabel()" class="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 font-bold">طباعة ملصق</button></div><div id="productBarcodePreview" class="min-h-[62px] rounded-lg border border-dashed bg-white p-2 flex items-center justify-center overflow-hidden"><span class="text-[10px] text-slate-400">معاينة الباركود</span></div><p class="text-[9px] text-slate-500">يتم إنشاء باركود Code 128 حقيقي ويمكن قراءته بقارئ الباركود. لن نضيفه لفاتورة العميل حتى لا يزاحم تفاصيل الفاتورة.</p></div>
+          <div><label id="prodStockLabel" class="block font-bold mb-1">رصيد المخزون الحالي</label><input id="prodStock" type="number" min="0" value="0" readonly aria-readonly="true" class="w-full px-3 py-2 border rounded-xl font-bold bg-slate-100 text-slate-600 cursor-not-allowed" /><p class="text-[10px] text-slate-500 mt-1">الرصيد لا يُضاف أو يُخصم من بطاقة المنتج. الإضافة تتم من فاتورة استيراد/شراء أو مرتجع سليم، والنقص من المبيعات أو الهالك أو عجز الجرد.</p></div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div><label for="prodMinimumStock" class="block font-bold mb-1">حد تنبيه قرب النفاذ</label><input id="prodMinimumStock" type="number" min="0" step="1" value="2" class="w-full px-3 py-2 border border-amber-300 rounded-xl font-bold"><p class="text-[10px] text-slate-500 mt-1">يظهر تنبيه عندما يصبح المخزون المتاح مساويًا لهذا العدد أو أقل. اكتب 0 لإيقاف التنبيه لهذا المنتج.</p></div>
+        </div>
+        <div>
+          <label class="block font-bold mb-1">وصف العطر / تفاصيل العرض:</label>
+          <input id="prodNotes" type="text" placeholder="وصف العطر / تفاصيل العرض..." class="w-full px-3 py-2 border rounded-xl" />
+          <label class="block font-bold mt-2 mb-1">الطابع والنوتات العطرية (لتحليل تفضيلات العملاء)</label>
+          <textarea id="prodScentProfile" rows="2" placeholder="مثال: خشبي، عنبري، فانيليا، حمضي، منعش، مناسب للمساء..." class="w-full px-3 py-2 border rounded-xl"></textarea>
+        </div>
+        <div class="space-y-1 bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+          <div class="flex items-center gap-2">
+            <input id="prodIsOffer" type="checkbox" onchange="toggleOfferInputs()" class="w-4 h-4 text-brand-600 rounded" />
+            <label for="prodIsOffer" class="font-bold text-slate-900">إضافة المنتج لصفحة العروض والتخفيضات ✨</label>
+          </div>
+          <div id="offerPriceBox" class="hidden pt-2">
+            <label class="block font-bold mb-1 text-amber-900">سعر العرض الخاص (يُشترط ألا يقل عن إجمالي التكلفة):</label>
+            <input id="prodOfferPrice" type="number" step="0.01" class="w-full px-2.5 py-1.5 bg-white border border-amber-300 rounded-lg text-xs font-bold" />
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t">
+          <button type="button" onclick="closeModal('productModal')" class="px-4 py-2 border rounded-xl font-bold">إلغاء</button>
+          <button type="submit" class="px-5 py-2 bg-brand-600 text-white rounded-xl font-bold">حفظ المنتج</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Offers Print Selection Modal -->
+  <div id="offersPrintModal" class="modal fixed inset-0 z-50 hidden bg-slate-900/70 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between border-b pb-3"><h3 class="font-extrabold">تحديد المنتجات وتصميم العرض</h3><button onclick="closeModal('offersPrintModal')">✕</button></div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <label class="border-2 border-violet-300 bg-violet-50 rounded-xl p-3 cursor-pointer"><input type="radio" name="offersPrintLayout" value="premium" checked class="ml-2"><b class="text-sm">عرض فاخر</b><span class="block text-xs text-slate-600 mt-1">منتج واحد في الصفحة — صورة كبيرة جدًا</span></label>
+        <label class="border rounded-xl p-3 cursor-pointer"><input type="radio" name="offersPrintLayout" value="catalog" class="ml-2"><b class="text-sm">كتالوج العروض</b><span class="block text-xs text-slate-600 mt-1">حتى 4 منتجات في الصفحة — صور واضحة</span></label>
+      </div>
+      <div class="space-y-2 max-h-[250px] overflow-y-auto custom-scroll" id="offersPrintCheckboxList"></div>
+      <div class="flex justify-end gap-2 pt-2 border-t">
+        <button onclick="previewOffersPrint()" class="px-5 py-2 bg-brand-600 text-white rounded-xl font-bold text-xs">تجهيز المعاينة والطباعة 🖨️</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Decant Production Modal -->
+  <div id="decantProductionModal" class="modal fixed inset-0 z-50 hidden bg-slate-900/70 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between border-b pb-3"><h3 class="font-extrabold">🧪 تجهيز عبوات التقسيم من الزجاجة الأصلية</h3><button onclick="closeModal('decantProductionModal')">✕</button></div>
+      <form onsubmit="produceDecants(event)" class="space-y-3 text-xs">
+        <div><label class="block font-bold mb-1">منتج التقسيم الجاهز *</label><select id="decantProductionProduct" required onchange="updateDecantProductionInfo()" class="w-full px-3 py-2 border rounded-xl"></select></div>
+        <div class="grid grid-cols-2 gap-2"><div><label class="block font-bold mb-1">عدد العبوات المراد تجهيزها *</label><input id="decantProductionQty" type="number" min="1" step="1" value="5" required oninput="updateDecantProductionInfo()" class="w-full px-3 py-2 border rounded-xl font-bold" /></div><div class="bg-slate-50 rounded-xl p-2"><div class="text-slate-500">استهلاك السائل</div><div id="decantProductionMl" class="font-extrabold text-brand-700">0 مل</div></div></div>
+        <div id="decantProductionInfo" class="rounded-xl bg-amber-50 border border-amber-200 p-3 text-[11px] leading-6"></div>
+        <div class="flex justify-end gap-2 pt-2 border-t"><button type="submit" class="px-5 py-2 bg-emerald-600 text-white rounded-xl font-bold">تأكيد التجهيز وخصم الخامات</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Shared Decant Packaging Purchase Modal: accessed from Inventory > Supplies -->
+  <div id="emptyContainersModal" class="modal fixed inset-0 z-50 hidden bg-slate-900/70 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-xl max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b pb-3"><div><h3 class="font-extrabold">📦 فاتورة شراء زجاجات التقسيم</h3><p class="text-[11px] text-slate-500">الزجاجات مخزون مشترك حسب المقاس وتُستخدم مع جميع العطور.</p></div><button type="button" onclick="closeModal('emptyContainersModal')">✕</button></div>
+      <form onsubmit="receiveEmptyContainers(event)" class="space-y-3 text-xs">
+        <input type="hidden" id="emptyContainersProductId" />
+        <div><label class="block font-bold mb-1">مقاس الزجاجة *</label><select id="emptyContainersSize" required class="w-full px-3 py-2 border rounded-xl" onchange="updatePackagingPurchaseInfo()"></select></div>
+        <div class="rounded-xl bg-slate-50 p-3"><div id="emptyContainersProductName" class="font-extrabold text-sm">مخزون العبوات المشتركة</div><div id="emptyContainersCurrent" class="mt-1 text-emerald-700 font-bold"></div></div>
+        <div class="grid grid-cols-2 gap-2"><div><label class="block font-bold mb-1">الكمية المشتراة *</label><input id="emptyContainersQty" type="number" min="1" step="1" required value="50" class="w-full px-3 py-2 border rounded-xl font-bold" /></div><div><label class="block font-bold mb-1">إجمالي تكلفة الفاتورة (ج.م) *</label><input id="emptyContainersTotalCost" type="number" min="0.01" step="0.01" required value="0" class="w-full px-3 py-2 border rounded-xl" /></div></div>
+        <div><label class="block font-bold mb-1">المورد *</label><input id="emptyContainersSupplier" type="text" maxlength="120" required placeholder="اسم مورد الزجاجات" class="w-full px-3 py-2 border rounded-xl" /></div>
+        <div class="grid grid-cols-2 gap-2"><div><label class="block font-bold mb-1">المدفوع الآن (ج.م)</label><input id="emptyContainersPaid" type="number" min="0" step="0.01" value="0" class="w-full px-3 py-2 border rounded-xl" /></div><div><label class="block font-bold mb-1">وسيلة الدفع</label><select id="emptyContainersMethod" class="w-full px-3 py-2 border rounded-xl"><option>نقدي</option><option>تحويل بنكي</option><option>محفظة إلكترونية</option><option>بطاقة</option><option>أخرى</option></select></div></div>
+        <p class="text-[10px] text-slate-500">تُسجل كفاتورة شراء مستلزمات، وتُحدّث تكلفة العبوة المشتركة حسب المقاس، وحساب المورد والمدفوعات. لا تُسجل كمصروف تشغيلي فوري.</p>
+        <div class="flex justify-end gap-2 border-t pt-3"><button type="button" onclick="closeModal('emptyContainersModal')" class="px-4 py-2 border rounded-xl">إلغاء</button><button type="submit" class="px-5 py-2 bg-emerald-600 text-white rounded-xl font-bold">اعتماد فاتورة الزجاجات</button></div>
+      </form>
+    </div>
+  </div>
+  <!-- Stock Adjustment Modal -->
+  <div id="stockAdjustmentModal" class="modal fixed inset-0 z-50 hidden bg-slate-900/70 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-xl max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b pb-3"><div><h3 class="font-extrabold">⚖️ تسوية وجرد المخزون</h3><p class="text-[11px] text-slate-500 mt-1">جرد موحد للعطور والتقسيمات والزجاجات ومستلزمات التشغيل — لتسجيل الهالك أو العجز فقط.</p></div><button type="button" onclick="closeModal('stockAdjustmentModal')">✕</button></div>
+      <form onsubmit="saveStockAdjustment(event)" class="space-y-3 text-xs">
+        <div><label class="block font-bold mb-1">نوع المخزون *</label><select id="stockAdjKind" class="w-full border rounded-xl p-2" onchange="populateUnifiedStockAdjustmentItems()"><option value="packaging">زجاجات التقسيم الفارغة</option><option value="supply">مستلزمات التشغيل والتغليف</option></select></div><div><label class="block font-bold mb-1">الصنف *</label><select id="stockAdjProduct" required onchange="updateStockAdjustmentPreview()" class="w-full border rounded-xl p-2"></select></div>
+        <div class="grid grid-cols-2 gap-2"><div><label class="block font-bold mb-1">نوع النقص *</label><select id="stockAdjReasonType" class="w-full border rounded-xl p-2"><option value="WASTAGE">هالك / تالف</option><option value="COUNT_SHORTAGE">عجز جرد</option></select></div><div><label class="block font-bold mb-1">الكمية المراد خصمها *</label><input id="stockAdjQty" type="number" min="1" step="1" required value="1" oninput="updateStockAdjustmentPreview()" class="w-full border rounded-xl p-2"/></div></div>
+        <div class="rounded-xl bg-slate-50 border p-3 space-y-1"><div id="stockAdjCurrent" class="font-bold"></div><div id="stockAdjAfter" class="font-extrabold text-brand-700"></div><div id="stockAdjAvailable" class="text-slate-500"></div></div>
+        <div><label class="block font-bold mb-1">سبب التسوية *</label><input id="stockAdjReason" required maxlength="200" placeholder="مثال: نتيجة الجرد الفعلي / تلف / فرق رصيد افتتاحي" class="w-full border rounded-xl p-2"/></div>
+        <div class="rounded-lg bg-amber-50 border border-amber-200 p-3 text-amber-900 leading-5">زيادة المخزون لا تتم من هنا مطلقًا؛ تتم عبر فاتورة استيراد/شراء. هذه الشاشة لخصم الهالك أو عجز الجرد فقط، دون فاتورة شراء أو حركة خزنة. لا يمكن المساس بالمخزون المحجوز.</div>
+        <div class="flex justify-end gap-2 border-t pt-3"><button type="button" onclick="closeModal('stockAdjustmentModal')" class="px-4 py-2 border rounded-xl">إلغاء</button><button type="submit" class="px-5 py-2 bg-amber-600 text-white rounded-xl font-bold">اعتماد التسوية</button></div>
+      </form>
+    </div>
+  </div>
+
+    <!-- V19.30: operating supplies purchase and write-off -->
+    <div id="supplyPurchaseModal" class="modal fixed inset-0 z-50 hidden bg-slate-900/60 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-xl w-full p-5 space-y-4 shadow-xl max-h-[92vh] overflow-y-auto">
+        <div class="flex items-center justify-between"><h3 class="font-extrabold">فاتورة شراء مستلزمات تشغيل وتغليف</h3><button type="button" onclick="closeModal('supplyPurchaseModal')">✕</button></div>
+        <form onsubmit="saveOperatingSupplyInvoice(event)" class="space-y-3 text-xs">
+          <div><label class="block font-bold mb-1">اسم المورد *</label><input id="supplySupplier" list="knownSuppliersList" onfocus="refreshSupplierDatalist()" required maxlength="120" class="w-full border rounded-xl p-3" placeholder="اسم المورد"></div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><div><label class="block font-bold mb-1">اسم الصنف *</label><input id="supplyName" required maxlength="100" class="w-full border rounded-xl p-3" placeholder="مثال: شنطة تغليف صغيرة"></div><div><label class="block font-bold mb-1">التصنيف</label><select id="supplyCategory" class="w-full border rounded-xl p-3"><option>تغليف</option><option>فوم وحماية</option><option>كرتون</option><option>أدوات تشغيل</option><option>أخرى</option></select></div></div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3"><div><label class="block font-bold mb-1">وحدة القياس *</label><input id="supplyUnit" required maxlength="20" class="w-full border rounded-xl p-3" placeholder="قطعة / متر / لفة"></div><div><label class="block font-bold mb-1">الكمية *</label><input id="supplyQty" required type="number" min="0.001" step="0.001" class="w-full border rounded-xl p-3"></div><div><label class="block font-bold mb-1">إجمالي التكلفة *</label><input id="supplyTotalCost" required type="number" min="0.01" step="0.01" class="w-full border rounded-xl p-3"></div></div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><div><label class="block font-bold mb-1">المدفوع</label><input id="supplyPaid" type="number" min="0" step="0.01" value="0" class="w-full border rounded-xl p-3"></div><div><label class="block font-bold mb-1">وسيلة الدفع</label><select id="supplyMethod" class="w-full border rounded-xl p-3"><option>نقدي</option><option>تحويل بنكي</option><option>محفظة إلكترونية</option><option>بطاقة</option><option>أخرى</option></select></div></div>
+          <p class="text-[11px] text-slate-500">الفاتورة تضيف الكمية للمخزون وتُسجل المورد والمدفوع والمتبقي. لا تُسجل كمصروف تشغيلي فوري.</p>
+          <div class="flex justify-end gap-2"><button type="button" onclick="closeModal('supplyPurchaseModal')" class="px-4 py-2 border rounded-lg">إلغاء</button><button type="submit" class="px-4 py-2 bg-violet-700 text-white rounded-lg font-bold">اعتماد الفاتورة وإضافة المخزون</button></div>
+        </form>
+      </div>
+    </div>
+    <div id="supplyWriteoffModal" class="modal fixed inset-0 z-50 hidden bg-slate-900/60 flex items-center justify-center p-4"><div class="bg-white rounded-2xl max-w-md w-full p-5 space-y-3"><div class="flex justify-between items-center"><h3 class="font-extrabold">تسجيل هالك / عجز مستلزمات</h3><button type="button" onclick="closeModal('supplyWriteoffModal')">✕</button></div><form onsubmit="saveOperatingSupplyWriteoff(event)" class="space-y-3 text-xs"><input id="supplyWriteoffId" type="hidden"><div id="supplyWriteoffLabel" class="font-bold text-slate-700"></div><div><label class="block font-bold mb-1">نوع النقص</label><select id="supplyWriteoffType" class="w-full border rounded-xl p-3"><option value="WASTAGE">هالك / تالف</option><option value="COUNT_SHORTAGE">عجز جرد</option></select></div><div><label class="block font-bold mb-1">الكمية *</label><input id="supplyWriteoffQty" type="number" min="0.001" step="0.001" required class="w-full border rounded-xl p-3"></div><div><label class="block font-bold mb-1">السبب *</label><textarea id="supplyWriteoffReason" required maxlength="300" class="w-full border rounded-xl p-3" rows="2"></textarea></div><div class="flex justify-end gap-2"><button type="button" onclick="closeModal('supplyWriteoffModal')" class="px-4 py-2 border rounded-lg">إلغاء</button><button type="submit" class="px-4 py-2 bg-rose-600 text-white rounded-lg font-bold">تأكيد الخصم</button></div></form></div></div>
+
+  <datalist id="knownSuppliersList"></datalist>
+  <!-- V19.36 Unified local purchase invoice -->
+  <div id="unifiedPurchaseModal" class="modal fixed inset-0 z-[60] hidden bg-slate-900/70 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-5 space-y-4 shadow-xl max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b pb-3"><div><h3 class="font-extrabold">فاتورة شراء موحدة</h3><p class="text-xs text-slate-500 mt-1">فاتورة واحدة للعطور المحلية وزجاجات التقسيم ومستلزمات التشغيل.</p></div><button type="button" onclick="closeModal('unifiedPurchaseModal')">✕</button></div>
+      <form onsubmit="saveUnifiedPurchaseInvoice(event)" class="space-y-3 text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><div><label class="block font-bold mb-1">نوع الصنف *</label><select id="uniPurchaseType" onchange="updateUnifiedPurchaseFields()" class="w-full border rounded-xl p-3"><option value="product">عطر محلي</option><option value="packaging">زجاجات تقسيم فارغة</option><option value="supply">مستلزمات تشغيل وتغليف</option></select></div><div><label class="block font-bold mb-1">اسم المورد *</label><input id="uniPurchaseSupplier" list="knownSuppliersList" onfocus="refreshSupplierDatalist()" required maxlength="120" class="w-full border rounded-xl p-3" placeholder="اكتب اسم المورد؛ سيُحفظ للاختيارات القادمة"></div></div>
+        <div id="uniProductFields"><label class="block font-bold mb-1">العطر *</label><select id="uniPurchaseProduct" class="w-full border rounded-xl p-3"></select></div>
+        <div id="uniPackagingFields" class="hidden"><label class="block font-bold mb-1">مقاس الزجاجة *</label><select id="uniPurchaseBottleSize" class="w-full border rounded-xl p-3"></select></div>
+        <div id="uniSupplyFields" class="hidden space-y-3"><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><div><label class="block font-bold mb-1">اسم المستلزم *</label><input id="uniPurchaseSupplyName" maxlength="100" class="w-full border rounded-xl p-3" placeholder="شنطة / فوم / كرتون"></div><div><label class="block font-bold mb-1">التصنيف</label><select id="uniPurchaseSupplyCategory" class="w-full border rounded-xl p-3"><option>تغليف</option><option>فوم وحماية</option><option>كرتون</option><option>أدوات تشغيل</option><option>أخرى</option></select></div></div><div><label class="block font-bold mb-1">وحدة القياس *</label><input id="uniPurchaseSupplyUnit" maxlength="20" class="w-full border rounded-xl p-3" placeholder="قطعة / متر / لفة"></div></div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3"><div><label class="block font-bold mb-1">الكمية *</label><input id="uniPurchaseQty" type="number" min="0.001" step="0.001" value="1" required class="w-full border rounded-xl p-3"></div><div><label class="block font-bold mb-1">إجمالي التكلفة (ج.م) *</label><input id="uniPurchaseTotal" type="number" min="0.01" step="0.01" required class="w-full border rounded-xl p-3"></div><div><label class="block font-bold mb-1">المدفوع الآن</label><input id="uniPurchasePaid" type="number" min="0" step="0.01" value="0" class="w-full border rounded-xl p-3"></div></div>
+        <div><label class="block font-bold mb-1">وسيلة الدفع</label><select id="uniPurchaseMethod" class="w-full border rounded-xl p-3"><option>نقدي</option><option>تحويل بنكي</option><option>محفظة إلكترونية</option><option>بطاقة</option><option>أخرى</option></select></div>
+        <div class="flex justify-end gap-2 border-t pt-3"><button type="button" onclick="closeModal('unifiedPurchaseModal')" class="px-4 py-2 border rounded-xl">إلغاء</button><button type="submit" class="px-5 py-2 bg-violet-700 text-white rounded-xl font-bold">اعتماد الفاتورة وتحديث المخزون</button></div>
+      </form>
+    </div>
+  </div>
+  <!-- Add Purchase Invoice Modal -->
+  <div id="purchaseModal" class="modal fixed inset-0 z-50 hidden bg-slate-900/60 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between border-b pb-3"><h3 class="font-extrabold">تسجيل فاتورة شراء استثمارية (تضاف للمخزون)</h3><button onclick="closeModal('purchaseModal')">✕</button></div>
+      <form onsubmit="savePurchaseInvoice(event)" class="space-y-3 text-xs">
+        <div><label class="block font-bold mb-1">اسم المورد / الشركة *</label><input id="purSupplier" list="knownSuppliersList" onfocus="refreshSupplierDatalist()" required type="text" placeholder="شركة التوزيع الدولية" class="w-full px-3 py-2 border rounded-xl" /></div>
+        <div>
+          <label class="block font-bold mb-1">اختر العطر *</label>
+          <select id="purProdSelect" class="w-full px-3 py-2 border rounded-xl"></select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="block font-bold mb-1">الكمية المضافة *</label><input id="purQty" required type="number" min="1" value="5" class="w-full px-3 py-2 border rounded-xl" /></div>
+          <div><label class="block font-bold mb-1">إجمالي تكلفة الشراء (ج.م) *</label><input id="purTotalCost" required type="number" step="0.01" min="1" class="w-full px-3 py-2 border rounded-xl" /></div>
+        </div>
+        <div class="grid grid-cols-2 gap-2"><div><label class="block font-bold mb-1">المدفوع الآن (ج.م)</label><input id="purPaidAmount" type="number" min="0" step="0.01" value="0" class="w-full px-3 py-2 border rounded-xl" /></div><div><label class="block font-bold mb-1">وسيلة الدفع</label><select id="purPaymentMethod" class="w-full px-3 py-2 border rounded-xl"><option>نقدي</option><option>تحويل بنكي</option><option>محفظة إلكترونية</option><option>بطاقة</option><option>أخرى</option></select></div></div>
+        <div class="flex justify-end gap-2 pt-2 border-t"><button type="submit" class="px-5 py-2 bg-brand-600 text-white rounded-xl font-bold">حفظ الفاتورة والمخزون والحسابات</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Orders History Modal -->
+  <div id="ordersHistoryModal" class="modal fixed inset-0 z-50 hidden bg-slate-900/70 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-4xl w-full p-5 space-y-4 shadow-xl max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between border-b pb-3"><h3 class="font-extrabold">🧾 سجل الطلبات</h3><button onclick="closeModal('ordersHistoryModal')">✕</button></div>
+      <div class="overflow-auto custom-scroll flex-1"><table class="w-full text-right text-xs"><thead class="bg-slate-50 sticky top-0"><tr><th class="p-3">رقم الطلب</th><th class="p-3">التاريخ</th><th class="p-3">العميل</th><th class="p-3">الإجمالي</th><th class="p-3">المدفوع</th><th class="p-3">المتبقي</th><th class="p-3">الحالة</th></tr></thead><tbody id="ordersHistoryBody" class="divide-y"></tbody></table></div>
+      <div class="flex justify-end border-t pt-3"><button onclick="closeModal('ordersHistoryModal')" class="px-5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold">إغلاق</button></div>
+    </div>
+  </div>
+
+  <!-- Add Expense Modal -->
+  <div id="expenseModal" class="modal fixed inset-0 z-50 hidden bg-slate-900/60 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between border-b pb-3"><h3 class="font-extrabold">تسجيل مصروف تشغيلي / تسوية مرتجع</h3><button onclick="closeModal('expenseModal')">✕</button></div>
+      <form onsubmit="saveExpense(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold mb-1">نوع المصروف أو التسوية</label>
+          <select id="expCategory" class="w-full px-3 py-2 border rounded-xl">
+            <option value="إعلانات ممولة (Meta/TikTok)">إعلانات ممولة (Meta/TikTok)</option>
+            <option value="شحن ونثريات">شحن ونثريات</option>
+            <option value="إيجار ومرافق">إيجار ومرافق</option>
+            <option value="تسوية ودفع دين مرتجع للعميل">تسوية ودفع دين مرتجع للعميل</option>
+          </select>
+        </div>
+        <div><label class="block font-bold mb-1">البيان / الوصف *</label><input id="expNote" required type="text" placeholder="سداد دين مرتجع للعميل..." class="w-full px-3 py-2 border rounded-xl" /></div>
+        <div><label class="block font-bold mb-1">المبلغ (ج.م) *</label><input id="expAmount" required type="number" step="0.01" min="1" class="w-full px-3 py-2 border rounded-xl" /></div>
+        <div><label class="block font-bold mb-1">وسيلة الدفع</label><select id="expPaymentMethod" class="w-full px-3 py-2 border rounded-xl"><option value="نقدي">نقدي</option><option value="تحويل بنكي">تحويل بنكي</option><option value="محفظة إلكترونية">محفظة إلكترونية</option><option value="بطاقة">بطاقة</option><option value="أخرى">أخرى</option></select></div>
+        <div class="flex justify-end gap-2 pt-2 border-t"><button type="submit" class="px-5 py-2 bg-brand-600 text-white rounded-xl font-bold">حفظ</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Hidden Print Areas -->
+  <div id="printArea" class="hidden"></div>
+  <div id="offersPrintArea" class="hidden"></div>
+<script src="./engine-runtime.js?v=single-doc-1"></script>
+\n<!-- VALERIAN CLOUD CONNECTOR (V18.3) -->
+<div id="cloudStatusPill" style="display:none" aria-hidden="true">غير متصل</div>
+
+<!-- V19.18 preserves the existing state model and Supabase schemaVersion 18. -->
+
+  <div id="supplierPaymentModal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('supplierPaymentModal')">
+    <div class="bg-white rounded-2xl p-5 w-full max-w-md space-y-3" onclick="event.stopPropagation()">
+      <div class="flex justify-between items-center"><h3 class="font-extrabold">تسجيل سداد مورد</h3><button type="button" onclick="closeModal('supplierPaymentModal')">✕</button></div>
+      <p id="supplierPaymentSummary" class="text-xs text-slate-500"></p>
+      <label class="block text-xs font-bold">مبلغ السداد</label><input id="supplierPaymentAmount" type="number" min="1" step="1" class="w-full border rounded-xl p-3">
+      <label class="block text-xs font-bold">وسيلة الدفع</label><select id="supplierPaymentMethod" class="w-full border rounded-xl p-3"><option>نقدي</option><option>تحويل بنكي</option><option>محفظة إلكترونية</option><option>بطاقة</option><option>أخرى</option></select>
+      <div class="flex justify-end gap-2"><button type="button" onclick="closeModal('supplierPaymentModal')" class="px-4 py-2 border rounded-lg">إلغاء</button><button type="button" onclick="confirmSupplierPayment()" class="px-4 py-2 bg-violet-700 text-white rounded-lg font-bold">تأكيد السداد</button></div>
+    </div>
+  </div>
+  <div id="deliveryConfirmModal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('deliveryConfirmModal')">
+    <div class="bg-white rounded-2xl p-5 w-full max-w-md space-y-3" onclick="event.stopPropagation()">
+      <div class="flex justify-between items-center"><h3 class="font-extrabold">تأكيد التحصيل وتسليم الطلب</h3><button type="button" onclick="closeModal('deliveryConfirmModal')">✕</button></div>
+      <p id="deliveryConfirmSummary" class="text-xs text-slate-500"></p>
+      <div class="rounded-xl bg-slate-50 p-3 text-sm">المبلغ المطلوب تحصيله: <b id="deliveryConfirmAmount">0 ج.م</b></div>
+      <label class="block text-xs font-bold">وسيلة التحصيل</label><select id="deliveryConfirmMethod" class="w-full border rounded-xl p-3"><option value="نقدي">نقدي</option><option value="تحويل بنكي">تحويل بنكي</option><option value="محفظة إلكترونية">محفظة إلكترونية</option><option value="بطاقة">بطاقة</option><option value="أخرى">أخرى</option></select>
+      <div class="flex justify-end gap-2"><button type="button" onclick="closeModal('deliveryConfirmModal')" class="px-4 py-2 border rounded-lg">إلغاء</button><button type="button" onclick="confirmCollectAndDeliver()" class="px-4 py-2 bg-emerald-700 text-white rounded-lg font-bold">تأكيد التحصيل والتسليم</button></div>
+    </div>
+  </div>
+  <div id="preDeliveryPaymentModal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('preDeliveryPaymentModal')">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5 space-y-4" dir="rtl">
+      <div class="flex items-center justify-between"><h3 class="font-extrabold text-lg">تحصيل أونلاين قبل التسليم للشحن</h3><button type="button" onclick="closeModal('preDeliveryPaymentModal')">✕</button></div>
+      <p id="preDeliveryPaymentSummary" class="text-xs text-slate-500"></p>
+      <div><label class="block text-xs font-bold mb-1">المبلغ المحصّل</label><input id="preDeliveryPaymentAmount" type="number" min="0.01" step="0.01" class="w-full border rounded-xl p-3" /></div>
+      <div><label class="block text-xs font-bold mb-1">وسيلة التحصيل</label><select id="preDeliveryPaymentMethod" class="w-full border rounded-xl p-3"><option value="نقدي">نقدي</option><option value="تحويل بنكي">تحويل بنكي</option><option value="محفظة إلكترونية">محفظة إلكترونية</option><option value="بطاقة">بطاقة</option><option value="أخرى">أخرى</option></select></div>
+      <div class="flex gap-2 justify-end"><button type="button" onclick="closeModal('preDeliveryPaymentModal')" class="px-4 py-2 border rounded-lg">إلغاء</button><button type="button" onclick="confirmPreDeliveryPayment()" class="px-4 py-2 bg-violet-700 text-white rounded-lg font-bold">تأكيد التحصيل</button></div>
+    </div>
+  </div>
+
+  <div id="refundPaymentModal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('refundPaymentModal')">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5 space-y-4" dir="rtl">
+      <div class="flex items-center justify-between"><h3 class="font-extrabold text-lg">رد مبلغ للعميل</h3><button type="button" onclick="closeModal('refundPaymentModal')">✕</button></div>
+      <p id="refundOrderSummary" class="text-xs text-slate-500"></p>
+      <div><label class="block text-xs font-bold mb-1">المبلغ المراد رده</label><input id="refundAmountInput" type="number" min="0.01" step="0.01" class="w-full border rounded-xl p-3" /></div>
+      <div><label class="block text-xs font-bold mb-1">طريقة رد المبلغ</label><select id="refundPaymentMethodSelect" class="w-full border rounded-xl p-3"><option value="نقدي">نقدي</option><option value="تحويل بنكي">تحويل بنكي</option><option value="محفظة إلكترونية">محفظة إلكترونية</option><option value="بطاقة">بطاقة</option><option value="أخرى">أخرى</option></select></div>
+      <div class="flex gap-2 justify-end"><button type="button" onclick="closeModal('refundPaymentModal')" class="px-4 py-2 border rounded-lg">إلغاء</button><button type="button" onclick="confirmCustomerRefund()" class="px-4 py-2 bg-violet-700 text-white rounded-lg font-bold">تأكيد رد المبلغ</button></div>
+    </div>
+  </div>
+  <div id="dispatchShippingModal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('dispatchShippingModal')">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5 space-y-4" dir="rtl">
+      <div class="flex items-center justify-between"><h3 class="font-extrabold text-lg">تسليم الطلب لشركة الشحن</h3><button type="button" onclick="closeModal('dispatchShippingModal')">✕</button></div>
+      <p id="dispatchOrderLabel" class="text-xs text-slate-500"></p>
+      <div><label class="block text-xs font-bold mb-1">شركة الشحن *</label><select id="dispatchCompanySelect" class="w-full border rounded-xl p-3"></select></div>
+      <div><label class="block text-xs font-bold mb-1">رقم البوليصة / التتبع</label><input id="dispatchTrackingNumber" maxlength="80" class="w-full border rounded-xl p-3" placeholder="يُضاف بعد استلام شركة الشحن للطلب" /></div>
+      <div><label class="block text-xs font-bold mb-1">حالة التسليم</label><select id="dispatchStatus" class="w-full border rounded-xl p-3"><option>لم يتم التسليم لشركة الشحن</option><option>تم التسليم لشركة الشحن</option></select></div>
+      <div class="flex gap-2 justify-end"><button type="button" onclick="closeModal('dispatchShippingModal')" class="px-4 py-2 border rounded-lg">إلغاء</button><button type="button" onclick="saveOrderShippingDetails()" class="px-4 py-2 bg-violet-700 text-white rounded-lg font-bold">حفظ بيانات الشحن</button></div>
+    </div>
+  </div>
+
+
+
+</div>
+
 
   <!-- ==================== SPLASH SCREEN INTRO ==================== -->
   <div id="splashOverlay">
@@ -2927,13 +3985,11 @@ html[data-valerian-theme="light"] .glass-dock .nav-pill.bg-slate-200\/20{
 
   <!-- The V5 luxury interface is the visible application. The original ERP runs
        in a same-origin hidden frame and remains the sole owner of business data. -->
-  <iframe id="valerianEngineFrame" title="VALERIAN business engine" aria-hidden="true"
-    style="position:fixed;left:-20px;top:-20px;width:2px;height:2px;border:0;opacity:0;pointer-events:none;z-index:-1"
-    src="./engine.html?v=20261118-114-mobile-phase1"></iframe>
+  
   <script id="valerianV5EngineAdapter">
   (function(){
     'use strict';
-    const frame=document.getElementById('valerianEngineFrame');
+    const frame=null;
     let engine=null, unsubscribe=null, lastSync=0, cloudStatusBound=false;
     const defaultSchema=defaultEmptySchema();
     const parseMl=value=>{const m=String(value||'').match(/[0-9]+(?:\.[0-9]+)?/);return m?Number(m[0]):100;};
@@ -3015,8 +4071,8 @@ html[data-valerian-theme="light"] .glass-dock .nav-pill.bg-slate-200\/20{
     window.addEventListener('offline',()=>{document.body.classList.add('valerian-offline');refreshHeaderCloudStatus();},{passive:true});
     if(!navigator.onLine)document.body.classList.add('valerian-offline');
     function engineReady(){
-      if(!frame.contentWindow||!frame.contentWindow.ValerianEngine)return false;
-      engine=frame.contentWindow.ValerianEngine;
+      if(!window.ValerianEngine)return false;
+      engine=window.ValerianEngine;
       return true;
     }
     async function waitForEngineBridge(timeoutMs=20000){
@@ -3036,8 +4092,8 @@ html[data-valerian-theme="light"] .glass-dock .nav-pill.bg-slate-200\/20{
       syncFromEngine();
       if(unsubscribe)unsubscribe();
       unsubscribe=engine.subscribe(snapshot=>syncFromEngine(snapshot));
-      if(!cloudStatusBound&&frame.contentWindow?.addEventListener){
-        frame.contentWindow.addEventListener('valerian:cloud-status',event=>paintCloudStatus(event.detail||{}));
+      if(!cloudStatusBound){
+        window.addEventListener('valerian:cloud-status',event=>paintCloudStatus(event.detail||{}));
         cloudStatusBound=true;
       }
       if(engine.cloudStatus)paintCloudStatus(engine.cloudStatus());
@@ -3411,7 +4467,1931 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
         frame.onload=()=>{try{frame.contentWindow.focus();frame.contentWindow.print();}catch(err){showToast('تعذر فتح نافذة الطباعة: '+err.message);}setTimeout(()=>{frame.remove();URL.revokeObjectURL(url);},60000);};
         const thermal=activePreviewShareContext?.kind==='order';
         const printCss=thermal?'@page{size:80mm auto;margin:2mm}img{width:100%;max-width:76mm}':'@page{margin:6mm}img{width:100%;max-width:100%}';
-        frame.srcdoc='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;padding:0;background:#fff}img{display:block;height:auto;object-fit:contain;page-break-inside:avoid;image-rendering:auto}'+printCss+'</style></head><body><img src="'+url+'" onload="setTimeout(()=>print(),350)"></body></html>';
+        frame.srcdoc='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;padding:0;background:#fff}img{display:block;height:auto;object-fit:contain;page-break-inside:avoid;image-rendering:auto}'+printCss+'</style>
+<style id="valerian-offline-tailwind">/*! tailwindcss v4.1.10 | MIT License | https://tailwindcss.com */
+@layer properties;
+@layer theme, base, components, utilities;
+@layer theme {
+  :root, :host {
+    --font-sans: Cairo, Tahoma, Arial, sans-serif;
+    --font-serif: "Playfair Display", Georgia, serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+      "Courier New", monospace;
+    --color-amber-50: oklch(98.7% 0.022 95.277);
+    --color-amber-100: oklch(96.2% 0.059 95.617);
+    --color-amber-200: oklch(92.4% 0.12 95.746);
+    --color-amber-300: oklch(87.9% 0.169 91.605);
+    --color-amber-600: oklch(66.6% 0.179 58.318);
+    --color-amber-700: oklch(55.5% 0.163 48.998);
+    --color-amber-800: oklch(47.3% 0.137 46.201);
+    --color-amber-900: oklch(41.4% 0.112 45.904);
+    --color-emerald-50: oklch(97.9% 0.021 166.113);
+    --color-emerald-100: oklch(95% 0.052 163.051);
+    --color-emerald-200: oklch(90.5% 0.093 164.15);
+    --color-emerald-300: oklch(84.5% 0.143 164.978);
+    --color-emerald-600: oklch(59.6% 0.145 163.225);
+    --color-emerald-700: oklch(50.8% 0.118 165.612);
+    --color-emerald-800: oklch(43.2% 0.095 166.913);
+    --color-emerald-900: oklch(37.8% 0.077 168.94);
+    --color-sky-100: oklch(95.1% 0.026 236.824);
+    --color-sky-800: oklch(44.3% 0.11 240.79);
+    --color-blue-50: oklch(97% 0.014 254.604);
+    --color-indigo-800: oklch(39.8% 0.195 277.366);
+    --color-indigo-900: oklch(35.9% 0.144 278.697);
+    --color-violet-50: oklch(96.9% 0.016 293.756);
+    --color-violet-100: oklch(94.3% 0.029 294.588);
+    --color-violet-200: oklch(89.4% 0.057 293.283);
+    --color-violet-300: oklch(81.1% 0.111 293.571);
+    --color-violet-700: oklch(49.1% 0.27 292.581);
+    --color-violet-800: oklch(43.2% 0.232 292.759);
+    --color-violet-950: oklch(28.3% 0.141 291.089);
+    --color-rose-50: oklch(96.9% 0.015 12.422);
+    --color-rose-100: oklch(94.1% 0.03 12.58);
+    --color-rose-200: oklch(89.2% 0.058 10.001);
+    --color-rose-600: oklch(58.6% 0.253 17.585);
+    --color-rose-700: oklch(51.4% 0.222 16.935);
+    --color-rose-800: oklch(45.5% 0.188 13.697);
+    --color-slate-50: oklch(98.4% 0.003 247.858);
+    --color-slate-100: oklch(96.8% 0.007 247.896);
+    --color-slate-200: oklch(92.9% 0.013 255.508);
+    --color-slate-300: oklch(86.9% 0.022 252.894);
+    --color-slate-400: oklch(70.4% 0.04 256.788);
+    --color-slate-500: oklch(55.4% 0.046 257.417);
+    --color-slate-600: oklch(44.6% 0.043 257.281);
+    --color-slate-700: oklch(37.2% 0.044 257.287);
+    --color-slate-800: oklch(27.9% 0.041 260.031);
+    --color-slate-900: oklch(20.8% 0.042 265.755);
+    --color-white: #fff;
+    --spacing: 0.25rem;
+    --container-md: 28rem;
+    --container-lg: 32rem;
+    --container-xl: 36rem;
+    --container-2xl: 42rem;
+    --container-3xl: 48rem;
+    --container-4xl: 56rem;
+    --text-xs: 0.75rem;
+    --text-xs--line-height: calc(1 / 0.75);
+    --text-sm: 0.875rem;
+    --text-sm--line-height: calc(1.25 / 0.875);
+    --text-base: 1rem;
+    --text-base--line-height: calc(1.5 / 1);
+    --text-lg: 1.125rem;
+    --text-lg--line-height: calc(1.75 / 1.125);
+    --text-xl: 1.25rem;
+    --text-xl--line-height: calc(1.75 / 1.25);
+    --text-2xl: 1.5rem;
+    --text-2xl--line-height: calc(2 / 1.5);
+    --font-weight-normal: 400;
+    --font-weight-bold: 700;
+    --font-weight-extrabold: 800;
+    --font-weight-black: 900;
+    --tracking-widest: 0.1em;
+    --radius-sm: 0.25rem;
+    --radius-lg: 0.5rem;
+    --radius-xl: 0.75rem;
+    --radius-2xl: 1rem;
+    --default-transition-duration: 150ms;
+    --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    --default-font-family: var(--font-sans);
+    --default-mono-font-family: var(--font-mono);
+    --color-brand-50: var(--brand-50, #f5f3ff);
+    --color-brand-100: var(--brand-100, #ede9fe);
+    --color-brand-200: var(--brand-200, #ddd6fe);
+    --color-brand-300: var(--brand-300, #c4b5fd);
+    --color-brand-500: var(--brand-500, #8b5cf6);
+    --color-brand-600: var(--brand-600, #7c3aed);
+    --color-brand-700: var(--brand-700, #6d28d9);
+    --color-brand-800: var(--brand-800, #5b21b6);
+    --color-brand-900: var(--brand-900, #4c1d95);
+  }
+}
+@layer base {
+  *, ::after, ::before, ::backdrop, ::file-selector-button {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: 0 solid;
+  }
+  html, :host {
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+    tab-size: 4;
+    font-family: var(--default-font-family, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
+    font-feature-settings: var(--default-font-feature-settings, normal);
+    font-variation-settings: var(--default-font-variation-settings, normal);
+    -webkit-tap-highlight-color: transparent;
+  }
+  hr {
+    height: 0;
+    color: inherit;
+    border-top-width: 1px;
+  }
+  abbr:where([title]) {
+    -webkit-text-decoration: underline dotted;
+    text-decoration: underline dotted;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-size: inherit;
+    font-weight: inherit;
+  }
+  a {
+    color: inherit;
+    -webkit-text-decoration: inherit;
+    text-decoration: inherit;
+  }
+  b, strong {
+    font-weight: bolder;
+  }
+  code, kbd, samp, pre {
+    font-family: var(--default-mono-font-family, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+    font-feature-settings: var(--default-mono-font-feature-settings, normal);
+    font-variation-settings: var(--default-mono-font-variation-settings, normal);
+    font-size: 1em;
+  }
+  small {
+    font-size: 80%;
+  }
+  sub, sup {
+    font-size: 75%;
+    line-height: 0;
+    position: relative;
+    vertical-align: baseline;
+  }
+  sub {
+    bottom: -0.25em;
+  }
+  sup {
+    top: -0.5em;
+  }
+  table {
+    text-indent: 0;
+    border-color: inherit;
+    border-collapse: collapse;
+  }
+  :-moz-focusring {
+    outline: auto;
+  }
+  progress {
+    vertical-align: baseline;
+  }
+  summary {
+    display: list-item;
+  }
+  ol, ul, menu {
+    list-style: none;
+  }
+  img, svg, video, canvas, audio, iframe, embed, object {
+    display: block;
+    vertical-align: middle;
+  }
+  img, video {
+    max-width: 100%;
+    height: auto;
+  }
+  button, input, select, optgroup, textarea, ::file-selector-button {
+    font: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    border-radius: 0;
+    background-color: transparent;
+    opacity: 1;
+  }
+  :where(select:is([multiple], [size])) optgroup {
+    font-weight: bolder;
+  }
+  :where(select:is([multiple], [size])) optgroup option {
+    padding-inline-start: 20px;
+  }
+  ::file-selector-button {
+    margin-inline-end: 4px;
+  }
+  ::placeholder {
+    opacity: 1;
+  }
+  @supports (not (-webkit-appearance: -apple-pay-button))  or (contain-intrinsic-size: 1px) {
+    ::placeholder {
+      color: currentcolor;
+      @supports (color: color-mix(in lab, red, red)) {
+        color: color-mix(in oklab, currentcolor 50%, transparent);
+      }
+    }
+  }
+  textarea {
+    resize: vertical;
+  }
+  ::-webkit-search-decoration {
+    -webkit-appearance: none;
+  }
+  ::-webkit-date-and-time-value {
+    min-height: 1lh;
+    text-align: inherit;
+  }
+  ::-webkit-datetime-edit {
+    display: inline-flex;
+  }
+  ::-webkit-datetime-edit-fields-wrapper {
+    padding: 0;
+  }
+  ::-webkit-datetime-edit, ::-webkit-datetime-edit-year-field, ::-webkit-datetime-edit-month-field, ::-webkit-datetime-edit-day-field, ::-webkit-datetime-edit-hour-field, ::-webkit-datetime-edit-minute-field, ::-webkit-datetime-edit-second-field, ::-webkit-datetime-edit-millisecond-field, ::-webkit-datetime-edit-meridiem-field {
+    padding-block: 0;
+  }
+  :-moz-ui-invalid {
+    box-shadow: none;
+  }
+  button, input:where([type="button"], [type="reset"], [type="submit"]), ::file-selector-button {
+    appearance: button;
+  }
+  ::-webkit-inner-spin-button, ::-webkit-outer-spin-button {
+    height: auto;
+  }
+  [hidden]:where(:not([hidden="until-found"])) {
+    display: none !important;
+  }
+}
+@layer utilities {
+  .pointer-events-none {
+    pointer-events: none;
+  }
+  .absolute {
+    position: absolute;
+  }
+  .fixed {
+    position: fixed;
+  }
+  .relative {
+    position: relative;
+  }
+  .sticky {
+    position: sticky;
+  }
+  .inset-0 {
+    inset: calc(var(--spacing) * 0);
+  }
+  .inset-y-0 {
+    inset-block: calc(var(--spacing) * 0);
+  }
+  .top-0 {
+    top: calc(var(--spacing) * 0);
+  }
+  .top-2 {
+    top: calc(var(--spacing) * 2);
+  }
+  .top-20 {
+    top: calc(var(--spacing) * 20);
+  }
+  .top-\[82px\] {
+    top: 82px;
+  }
+  .right-3\.5 {
+    right: calc(var(--spacing) * 3.5);
+  }
+  .left-1\/2 {
+    left: calc(1/2 * 100%);
+  }
+  .left-2 {
+    left: calc(var(--spacing) * 2);
+  }
+  .z-40 {
+    z-index: 40;
+  }
+  .z-50 {
+    z-index: 50;
+  }
+  .z-\[60\] {
+    z-index: 60;
+  }
+  .z-\[12000\] {
+    z-index: 12000;
+  }
+  .col-span-full {
+    grid-column: 1 / -1;
+  }
+  .m-1 {
+    margin: calc(var(--spacing) * 1);
+  }
+  .mx-auto {
+    margin-inline: auto;
+  }
+  .my-2 {
+    margin-block: calc(var(--spacing) * 2);
+  }
+  .mt-0\.5 {
+    margin-top: calc(var(--spacing) * 0.5);
+  }
+  .mt-1 {
+    margin-top: calc(var(--spacing) * 1);
+  }
+  .mt-2 {
+    margin-top: calc(var(--spacing) * 2);
+  }
+  .mt-3 {
+    margin-top: calc(var(--spacing) * 3);
+  }
+  .mt-5 {
+    margin-top: calc(var(--spacing) * 5);
+  }
+  .mr-1 {
+    margin-right: calc(var(--spacing) * 1);
+  }
+  .mr-auto {
+    margin-right: auto;
+  }
+  .mb-1 {
+    margin-bottom: calc(var(--spacing) * 1);
+  }
+  .mb-2 {
+    margin-bottom: calc(var(--spacing) * 2);
+  }
+  .mb-3 {
+    margin-bottom: calc(var(--spacing) * 3);
+  }
+  .mb-4 {
+    margin-bottom: calc(var(--spacing) * 4);
+  }
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+  .block {
+    display: block;
+  }
+  .flex {
+    display: flex;
+  }
+  .grid {
+    display: grid;
+  }
+  .hidden {
+    display: none;
+  }
+  .inline-flex {
+    display: inline-flex;
+  }
+  .h-4 {
+    height: calc(var(--spacing) * 4);
+  }
+  .h-5 {
+    height: calc(var(--spacing) * 5);
+  }
+  .h-9 {
+    height: calc(var(--spacing) * 9);
+  }
+  .h-10 {
+    height: calc(var(--spacing) * 10);
+  }
+  .h-11 {
+    height: calc(var(--spacing) * 11);
+  }
+  .h-16 {
+    height: calc(var(--spacing) * 16);
+  }
+  .h-full {
+    height: 100%;
+  }
+  .max-h-\[90vh\] {
+    max-height: 90vh;
+  }
+  .max-h-\[92vh\] {
+    max-height: 92vh;
+  }
+  .max-h-\[94vh\] {
+    max-height: 94vh;
+  }
+  .max-h-\[180px\] {
+    max-height: 180px;
+  }
+  .max-h-\[250px\] {
+    max-height: 250px;
+  }
+  .max-h-\[420px\] {
+    max-height: 420px;
+  }
+  .min-h-\[62px\] {
+    min-height: 62px;
+  }
+  .min-h-\[180px\] {
+    min-height: 180px;
+  }
+  .w-4 {
+    width: calc(var(--spacing) * 4);
+  }
+  .w-5 {
+    width: calc(var(--spacing) * 5);
+  }
+  .w-11 {
+    width: calc(var(--spacing) * 11);
+  }
+  .w-12 {
+    width: calc(var(--spacing) * 12);
+  }
+  .w-16 {
+    width: calc(var(--spacing) * 16);
+  }
+  .w-20 {
+    width: calc(var(--spacing) * 20);
+  }
+  .w-28 {
+    width: calc(var(--spacing) * 28);
+  }
+  .w-\[min\(94vw\,560px\)\] {
+    width: min(94vw, 560px);
+  }
+  .w-full {
+    width: 100%;
+  }
+  .max-w-2xl {
+    max-width: var(--container-2xl);
+  }
+  .max-w-3xl {
+    max-width: var(--container-3xl);
+  }
+  .max-w-4xl {
+    max-width: var(--container-4xl);
+  }
+  .max-w-\[92\%\] {
+    max-width: 92%;
+  }
+  .max-w-\[1600px\] {
+    max-width: 1600px;
+  }
+  .max-w-lg {
+    max-width: var(--container-lg);
+  }
+  .max-w-md {
+    max-width: var(--container-md);
+  }
+  .max-w-xl {
+    max-width: var(--container-xl);
+  }
+  .min-w-0 {
+    min-width: calc(var(--spacing) * 0);
+  }
+  .min-w-48 {
+    min-width: calc(var(--spacing) * 48);
+  }
+  .min-w-56 {
+    min-width: calc(var(--spacing) * 56);
+  }
+  .min-w-\[260px\] {
+    min-width: 260px;
+  }
+  .min-w-\[650px\] {
+    min-width: 650px;
+  }
+  .min-w-\[700px\] {
+    min-width: 700px;
+  }
+  .min-w-\[760px\] {
+    min-width: 760px;
+  }
+  .min-w-\[850px\] {
+    min-width: 850px;
+  }
+  .flex-1 {
+    flex: 1;
+  }
+  .shrink-0 {
+    flex-shrink: 0;
+  }
+  .-translate-x-1\/2 {
+    --tw-translate-x: calc(calc(1/2 * 100%) * -1);
+    translate: var(--tw-translate-x) var(--tw-translate-y);
+  }
+  .cursor-not-allowed {
+    cursor: not-allowed;
+  }
+  .cursor-pointer {
+    cursor: pointer;
+  }
+  .scroll-mt-28 {
+    scroll-margin-top: calc(var(--spacing) * 28);
+  }
+  .grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+  .grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .flex-col {
+    flex-direction: column;
+  }
+  .flex-wrap {
+    flex-wrap: wrap;
+  }
+  .items-center {
+    align-items: center;
+  }
+  .items-end {
+    align-items: flex-end;
+  }
+  .items-start {
+    align-items: flex-start;
+  }
+  .justify-between {
+    justify-content: space-between;
+  }
+  .justify-center {
+    justify-content: center;
+  }
+  .justify-end {
+    justify-content: flex-end;
+  }
+  .gap-1 {
+    gap: calc(var(--spacing) * 1);
+  }
+  .gap-1\.5 {
+    gap: calc(var(--spacing) * 1.5);
+  }
+  .gap-2 {
+    gap: calc(var(--spacing) * 2);
+  }
+  .gap-3 {
+    gap: calc(var(--spacing) * 3);
+  }
+  .gap-3\.5 {
+    gap: calc(var(--spacing) * 3.5);
+  }
+  .gap-4 {
+    gap: calc(var(--spacing) * 4);
+  }
+  .gap-5 {
+    gap: calc(var(--spacing) * 5);
+  }
+  .space-y-1 {
+    :where(& > :not(:last-child)) {
+      --tw-space-y-reverse: 0;
+      margin-block-start: calc(calc(var(--spacing) * 1) * var(--tw-space-y-reverse));
+      margin-block-end: calc(calc(var(--spacing) * 1) * calc(1 - var(--tw-space-y-reverse)));
+    }
+  }
+  .space-y-1\.5 {
+    :where(& > :not(:last-child)) {
+      --tw-space-y-reverse: 0;
+      margin-block-start: calc(calc(var(--spacing) * 1.5) * var(--tw-space-y-reverse));
+      margin-block-end: calc(calc(var(--spacing) * 1.5) * calc(1 - var(--tw-space-y-reverse)));
+    }
+  }
+  .space-y-2 {
+    :where(& > :not(:last-child)) {
+      --tw-space-y-reverse: 0;
+      margin-block-start: calc(calc(var(--spacing) * 2) * var(--tw-space-y-reverse));
+      margin-block-end: calc(calc(var(--spacing) * 2) * calc(1 - var(--tw-space-y-reverse)));
+    }
+  }
+  .space-y-2\.5 {
+    :where(& > :not(:last-child)) {
+      --tw-space-y-reverse: 0;
+      margin-block-start: calc(calc(var(--spacing) * 2.5) * var(--tw-space-y-reverse));
+      margin-block-end: calc(calc(var(--spacing) * 2.5) * calc(1 - var(--tw-space-y-reverse)));
+    }
+  }
+  .space-y-3 {
+    :where(& > :not(:last-child)) {
+      --tw-space-y-reverse: 0;
+      margin-block-start: calc(calc(var(--spacing) * 3) * var(--tw-space-y-reverse));
+      margin-block-end: calc(calc(var(--spacing) * 3) * calc(1 - var(--tw-space-y-reverse)));
+    }
+  }
+  .space-y-4 {
+    :where(& > :not(:last-child)) {
+      --tw-space-y-reverse: 0;
+      margin-block-start: calc(calc(var(--spacing) * 4) * var(--tw-space-y-reverse));
+      margin-block-end: calc(calc(var(--spacing) * 4) * calc(1 - var(--tw-space-y-reverse)));
+    }
+  }
+  .space-y-5 {
+    :where(& > :not(:last-child)) {
+      --tw-space-y-reverse: 0;
+      margin-block-start: calc(calc(var(--spacing) * 5) * var(--tw-space-y-reverse));
+      margin-block-end: calc(calc(var(--spacing) * 5) * calc(1 - var(--tw-space-y-reverse)));
+    }
+  }
+  .space-y-6 {
+    :where(& > :not(:last-child)) {
+      --tw-space-y-reverse: 0;
+      margin-block-start: calc(calc(var(--spacing) * 6) * var(--tw-space-y-reverse));
+      margin-block-end: calc(calc(var(--spacing) * 6) * calc(1 - var(--tw-space-y-reverse)));
+    }
+  }
+  .divide-y {
+    :where(& > :not(:last-child)) {
+      --tw-divide-y-reverse: 0;
+      border-bottom-style: var(--tw-border-style);
+      border-top-style: var(--tw-border-style);
+      border-top-width: calc(1px * var(--tw-divide-y-reverse));
+      border-bottom-width: calc(1px * calc(1 - var(--tw-divide-y-reverse)));
+    }
+  }
+  .divide-slate-100 {
+    :where(& > :not(:last-child)) {
+      border-color: var(--color-slate-100);
+    }
+  }
+  .truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .overflow-auto {
+    overflow: auto;
+  }
+  .overflow-hidden {
+    overflow: hidden;
+  }
+  .overflow-x-auto {
+    overflow-x: auto;
+  }
+  .overflow-y-auto {
+    overflow-y: auto;
+  }
+  .rounded {
+    border-radius: 0.25rem;
+  }
+  .rounded-2xl {
+    border-radius: var(--radius-2xl);
+  }
+  .rounded-full {
+    border-radius: calc(infinity * 1px);
+  }
+  .rounded-lg {
+    border-radius: var(--radius-lg);
+  }
+  .rounded-xl {
+    border-radius: var(--radius-xl);
+  }
+  .rounded-tl-sm {
+    border-top-left-radius: var(--radius-sm);
+  }
+  .rounded-tr-sm {
+    border-top-right-radius: var(--radius-sm);
+  }
+  .border {
+    border-style: var(--tw-border-style);
+    border-width: 1px;
+  }
+  .border-2 {
+    border-style: var(--tw-border-style);
+    border-width: 2px;
+  }
+  .border-t {
+    border-top-style: var(--tw-border-style);
+    border-top-width: 1px;
+  }
+  .border-b {
+    border-bottom-style: var(--tw-border-style);
+    border-bottom-width: 1px;
+  }
+  .border-dashed {
+    --tw-border-style: dashed;
+    border-style: dashed;
+  }
+  .border-amber-200 {
+    border-color: var(--color-amber-200);
+  }
+  .border-amber-300 {
+    border-color: var(--color-amber-300);
+  }
+  .border-brand-200 {
+    border-color: var(--color-brand-200);
+  }
+  .border-brand-300 {
+    border-color: var(--color-brand-300);
+  }
+  .border-brand-600 {
+    border-color: var(--color-brand-600);
+  }
+  .border-emerald-100 {
+    border-color: var(--color-emerald-100);
+  }
+  .border-emerald-200 {
+    border-color: var(--color-emerald-200);
+  }
+  .border-emerald-300 {
+    border-color: var(--color-emerald-300);
+  }
+  .border-rose-200 {
+    border-color: var(--color-rose-200);
+  }
+  .border-slate-100 {
+    border-color: var(--color-slate-100);
+  }
+  .border-slate-200 {
+    border-color: var(--color-slate-200);
+  }
+  .border-slate-200\/70 {
+    border-color: color-mix(in srgb, oklch(92.9% 0.013 255.508) 70%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      border-color: color-mix(in oklab, var(--color-slate-200) 70%, transparent);
+    }
+  }
+  .border-slate-200\/80 {
+    border-color: color-mix(in srgb, oklch(92.9% 0.013 255.508) 80%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      border-color: color-mix(in oklab, var(--color-slate-200) 80%, transparent);
+    }
+  }
+  .border-violet-100 {
+    border-color: var(--color-violet-100);
+  }
+  .border-violet-200 {
+    border-color: var(--color-violet-200);
+  }
+  .border-white\/20 {
+    border-color: color-mix(in srgb, #fff 20%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      border-color: color-mix(in oklab, var(--color-white) 20%, transparent);
+    }
+  }
+  .bg-amber-50 {
+    background-color: var(--color-amber-50);
+  }
+  .bg-amber-100 {
+    background-color: var(--color-amber-100);
+  }
+  .bg-amber-600 {
+    background-color: var(--color-amber-600);
+  }
+  .bg-blue-50 {
+    background-color: var(--color-blue-50);
+  }
+  .bg-brand-50 {
+    background-color: var(--color-brand-50);
+  }
+  .bg-brand-50\/50 {
+    background-color: var(--color-brand-50);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-brand-50) 50%, transparent);
+    }
+  }
+  .bg-brand-100 {
+    background-color: var(--color-brand-100);
+  }
+  .bg-brand-600 {
+    background-color: var(--color-brand-600);
+  }
+  .bg-emerald-50 {
+    background-color: var(--color-emerald-50);
+  }
+  .bg-emerald-50\/40 {
+    background-color: color-mix(in srgb, oklch(97.9% 0.021 166.113) 40%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-emerald-50) 40%, transparent);
+    }
+  }
+  .bg-emerald-100 {
+    background-color: var(--color-emerald-100);
+  }
+  .bg-emerald-600 {
+    background-color: var(--color-emerald-600);
+  }
+  .bg-emerald-700 {
+    background-color: var(--color-emerald-700);
+  }
+  .bg-rose-50 {
+    background-color: var(--color-rose-50);
+  }
+  .bg-rose-100 {
+    background-color: var(--color-rose-100);
+  }
+  .bg-rose-600 {
+    background-color: var(--color-rose-600);
+  }
+  .bg-rose-700 {
+    background-color: var(--color-rose-700);
+  }
+  .bg-sky-100 {
+    background-color: var(--color-sky-100);
+  }
+  .bg-slate-50 {
+    background-color: var(--color-slate-50);
+  }
+  .bg-slate-100 {
+    background-color: var(--color-slate-100);
+  }
+  .bg-slate-200 {
+    background-color: var(--color-slate-200);
+  }
+  .bg-slate-800 {
+    background-color: var(--color-slate-800);
+  }
+  .bg-slate-900 {
+    background-color: var(--color-slate-900);
+  }
+  .bg-slate-900\/60 {
+    background-color: color-mix(in srgb, oklch(20.8% 0.042 265.755) 60%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-slate-900) 60%, transparent);
+    }
+  }
+  .bg-slate-900\/70 {
+    background-color: color-mix(in srgb, oklch(20.8% 0.042 265.755) 70%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-slate-900) 70%, transparent);
+    }
+  }
+  .bg-slate-900\/80 {
+    background-color: color-mix(in srgb, oklch(20.8% 0.042 265.755) 80%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-slate-900) 80%, transparent);
+    }
+  }
+  .bg-violet-50 {
+    background-color: var(--color-violet-50);
+  }
+  .bg-violet-100 {
+    background-color: var(--color-violet-100);
+  }
+  .bg-violet-700 {
+    background-color: var(--color-violet-700);
+  }
+  .bg-white {
+    background-color: var(--color-white);
+  }
+  .bg-white\/10 {
+    background-color: color-mix(in srgb, #fff 10%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-white) 10%, transparent);
+    }
+  }
+  .bg-white\/95 {
+    background-color: color-mix(in srgb, #fff 95%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-white) 95%, transparent);
+    }
+  }
+  .bg-gradient-to-l {
+    --tw-gradient-position: to left in oklab;
+    background-image: linear-gradient(var(--tw-gradient-stops));
+  }
+  .from-violet-950 {
+    --tw-gradient-from: var(--color-violet-950);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .to-indigo-800 {
+    --tw-gradient-to: var(--color-indigo-800);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .object-cover {
+    object-fit: cover;
+  }
+  .p-1 {
+    padding: calc(var(--spacing) * 1);
+  }
+  .p-2 {
+    padding: calc(var(--spacing) * 2);
+  }
+  .p-2\.5 {
+    padding: calc(var(--spacing) * 2.5);
+  }
+  .p-3 {
+    padding: calc(var(--spacing) * 3);
+  }
+  .p-3\.5 {
+    padding: calc(var(--spacing) * 3.5);
+  }
+  .p-4 {
+    padding: calc(var(--spacing) * 4);
+  }
+  .p-5 {
+    padding: calc(var(--spacing) * 5);
+  }
+  .p-6 {
+    padding: calc(var(--spacing) * 6);
+  }
+  .p-7 {
+    padding: calc(var(--spacing) * 7);
+  }
+  .px-2 {
+    padding-inline: calc(var(--spacing) * 2);
+  }
+  .px-2\.5 {
+    padding-inline: calc(var(--spacing) * 2.5);
+  }
+  .px-3 {
+    padding-inline: calc(var(--spacing) * 3);
+  }
+  .px-3\.5 {
+    padding-inline: calc(var(--spacing) * 3.5);
+  }
+  .px-4 {
+    padding-inline: calc(var(--spacing) * 4);
+  }
+  .px-5 {
+    padding-inline: calc(var(--spacing) * 5);
+  }
+  .px-6 {
+    padding-inline: calc(var(--spacing) * 6);
+  }
+  .py-0\.5 {
+    padding-block: calc(var(--spacing) * 0.5);
+  }
+  .py-1 {
+    padding-block: calc(var(--spacing) * 1);
+  }
+  .py-1\.5 {
+    padding-block: calc(var(--spacing) * 1.5);
+  }
+  .py-2 {
+    padding-block: calc(var(--spacing) * 2);
+  }
+  .py-2\.5 {
+    padding-block: calc(var(--spacing) * 2.5);
+  }
+  .py-3 {
+    padding-block: calc(var(--spacing) * 3);
+  }
+  .py-5 {
+    padding-block: calc(var(--spacing) * 5);
+  }
+  .py-6 {
+    padding-block: calc(var(--spacing) * 6);
+  }
+  .py-8 {
+    padding-block: calc(var(--spacing) * 8);
+  }
+  .py-10 {
+    padding-block: calc(var(--spacing) * 10);
+  }
+  .py-16 {
+    padding-block: calc(var(--spacing) * 16);
+  }
+  .pt-1 {
+    padding-top: calc(var(--spacing) * 1);
+  }
+  .pt-2 {
+    padding-top: calc(var(--spacing) * 2);
+  }
+  .pt-2\.5 {
+    padding-top: calc(var(--spacing) * 2.5);
+  }
+  .pt-3 {
+    padding-top: calc(var(--spacing) * 3);
+  }
+  .pt-4 {
+    padding-top: calc(var(--spacing) * 4);
+  }
+  .pr-10 {
+    padding-right: calc(var(--spacing) * 10);
+  }
+  .pb-1 {
+    padding-bottom: calc(var(--spacing) * 1);
+  }
+  .pb-2 {
+    padding-bottom: calc(var(--spacing) * 2);
+  }
+  .pb-3 {
+    padding-bottom: calc(var(--spacing) * 3);
+  }
+  .pb-4 {
+    padding-bottom: calc(var(--spacing) * 4);
+  }
+  .pl-4 {
+    padding-left: calc(var(--spacing) * 4);
+  }
+  .text-center {
+    text-align: center;
+  }
+  .text-left {
+    text-align: left;
+  }
+  .text-right {
+    text-align: right;
+  }
+  .align-top {
+    vertical-align: top;
+  }
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+  .font-serif {
+    font-family: var(--font-serif);
+  }
+  .text-2xl {
+    font-size: var(--text-2xl);
+    line-height: var(--tw-leading, var(--text-2xl--line-height));
+  }
+  .text-base {
+    font-size: var(--text-base);
+    line-height: var(--tw-leading, var(--text-base--line-height));
+  }
+  .text-lg {
+    font-size: var(--text-lg);
+    line-height: var(--tw-leading, var(--text-lg--line-height));
+  }
+  .text-sm {
+    font-size: var(--text-sm);
+    line-height: var(--tw-leading, var(--text-sm--line-height));
+  }
+  .text-xl {
+    font-size: var(--text-xl);
+    line-height: var(--tw-leading, var(--text-xl--line-height));
+  }
+  .text-xs {
+    font-size: var(--text-xs);
+    line-height: var(--tw-leading, var(--text-xs--line-height));
+  }
+  .text-\[9px\] {
+    font-size: 9px;
+  }
+  .text-\[10px\] {
+    font-size: 10px;
+  }
+  .text-\[11px\] {
+    font-size: 11px;
+  }
+  .leading-5 {
+    --tw-leading: calc(var(--spacing) * 5);
+    line-height: calc(var(--spacing) * 5);
+  }
+  .leading-6 {
+    --tw-leading: calc(var(--spacing) * 6);
+    line-height: calc(var(--spacing) * 6);
+  }
+  .leading-7 {
+    --tw-leading: calc(var(--spacing) * 7);
+    line-height: calc(var(--spacing) * 7);
+  }
+  .leading-none {
+    --tw-leading: 1;
+    line-height: 1;
+  }
+  .font-black {
+    --tw-font-weight: var(--font-weight-black);
+    font-weight: var(--font-weight-black);
+  }
+  .font-bold {
+    --tw-font-weight: var(--font-weight-bold);
+    font-weight: var(--font-weight-bold);
+  }
+  .font-extrabold {
+    --tw-font-weight: var(--font-weight-extrabold);
+    font-weight: var(--font-weight-extrabold);
+  }
+  .font-normal {
+    --tw-font-weight: var(--font-weight-normal);
+    font-weight: var(--font-weight-normal);
+  }
+  .tracking-widest {
+    --tw-tracking: var(--tracking-widest);
+    letter-spacing: var(--tracking-widest);
+  }
+  .whitespace-nowrap {
+    white-space: nowrap;
+  }
+  .whitespace-pre-line {
+    white-space: pre-line;
+  }
+  .text-amber-600 {
+    color: var(--color-amber-600);
+  }
+  .text-amber-700 {
+    color: var(--color-amber-700);
+  }
+  .text-amber-800 {
+    color: var(--color-amber-800);
+  }
+  .text-amber-900 {
+    color: var(--color-amber-900);
+  }
+  .text-brand-600 {
+    color: var(--color-brand-600);
+  }
+  .text-brand-700 {
+    color: var(--color-brand-700);
+  }
+  .text-brand-800 {
+    color: var(--color-brand-800);
+  }
+  .text-brand-900 {
+    color: var(--color-brand-900);
+  }
+  .text-emerald-600 {
+    color: var(--color-emerald-600);
+  }
+  .text-emerald-700 {
+    color: var(--color-emerald-700);
+  }
+  .text-emerald-800 {
+    color: var(--color-emerald-800);
+  }
+  .text-emerald-900 {
+    color: var(--color-emerald-900);
+  }
+  .text-indigo-900 {
+    color: var(--color-indigo-900);
+  }
+  .text-rose-600 {
+    color: var(--color-rose-600);
+  }
+  .text-rose-700 {
+    color: var(--color-rose-700);
+  }
+  .text-rose-800 {
+    color: var(--color-rose-800);
+  }
+  .text-sky-800 {
+    color: var(--color-sky-800);
+  }
+  .text-slate-300 {
+    color: var(--color-slate-300);
+  }
+  .text-slate-400 {
+    color: var(--color-slate-400);
+  }
+  .text-slate-500 {
+    color: var(--color-slate-500);
+  }
+  .text-slate-600 {
+    color: var(--color-slate-600);
+  }
+  .text-slate-700 {
+    color: var(--color-slate-700);
+  }
+  .text-slate-800 {
+    color: var(--color-slate-800);
+  }
+  .text-slate-900 {
+    color: var(--color-slate-900);
+  }
+  .text-violet-100 {
+    color: var(--color-violet-100);
+  }
+  .text-violet-200 {
+    color: var(--color-violet-200);
+  }
+  .text-violet-800 {
+    color: var(--color-violet-800);
+  }
+  .text-violet-950 {
+    color: var(--color-violet-950);
+  }
+  .text-white {
+    color: var(--color-white);
+  }
+  .line-through {
+    text-decoration-line: line-through;
+  }
+  .antialiased {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .shadow-2xl {
+    --tw-shadow: 0 25px 50px -12px var(--tw-shadow-color, rgb(0 0 0 / 0.25));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+  .shadow-2xs {
+    --tw-shadow: 0 1px var(--tw-shadow-color, rgb(0 0 0 / 0.05));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+  .shadow-sm {
+    --tw-shadow: 0 1px 3px 0 var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 1px 2px -1px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+  .shadow-xl {
+    --tw-shadow: 0 20px 25px -5px var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 8px 10px -6px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+  .shadow-xs {
+    --tw-shadow: 0 1px 2px 0 var(--tw-shadow-color, rgb(0 0 0 / 0.05));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+  .backdrop-blur {
+    --tw-backdrop-blur: blur(8px);
+    -webkit-backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-brightness,) var(--tw-backdrop-contrast,) var(--tw-backdrop-grayscale,) var(--tw-backdrop-hue-rotate,) var(--tw-backdrop-invert,) var(--tw-backdrop-opacity,) var(--tw-backdrop-saturate,) var(--tw-backdrop-sepia,);
+    backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-brightness,) var(--tw-backdrop-contrast,) var(--tw-backdrop-grayscale,) var(--tw-backdrop-hue-rotate,) var(--tw-backdrop-invert,) var(--tw-backdrop-opacity,) var(--tw-backdrop-saturate,) var(--tw-backdrop-sepia,);
+  }
+  .transition {
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, visibility, content-visibility, overlay, pointer-events;
+    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+    transition-duration: var(--tw-duration, var(--default-transition-duration));
+  }
+  .selection\:bg-brand-500 {
+    & *::selection {
+      background-color: var(--color-brand-500);
+    }
+    &::selection {
+      background-color: var(--color-brand-500);
+    }
+  }
+  .selection\:text-white {
+    & *::selection {
+      color: var(--color-white);
+    }
+    &::selection {
+      color: var(--color-white);
+    }
+  }
+  .hover\:bg-amber-100 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-amber-100);
+      }
+    }
+  }
+  .hover\:bg-amber-700 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-amber-700);
+      }
+    }
+  }
+  .hover\:bg-brand-100 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-brand-100);
+      }
+    }
+  }
+  .hover\:bg-brand-700 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-brand-700);
+      }
+    }
+  }
+  .hover\:bg-emerald-700 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-emerald-700);
+      }
+    }
+  }
+  .hover\:bg-emerald-800 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-emerald-800);
+      }
+    }
+  }
+  .hover\:bg-rose-800 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-rose-800);
+      }
+    }
+  }
+  .hover\:bg-slate-50 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-slate-50);
+      }
+    }
+  }
+  .hover\:bg-slate-100 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-slate-100);
+      }
+    }
+  }
+  .hover\:bg-slate-200 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-slate-200);
+      }
+    }
+  }
+  .hover\:bg-slate-800 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-slate-800);
+      }
+    }
+  }
+  .hover\:bg-violet-800 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-violet-800);
+      }
+    }
+  }
+  .hover\:text-rose-600 {
+    &:hover {
+      @media (hover: hover) {
+        color: var(--color-rose-600);
+      }
+    }
+  }
+  .hover\:underline {
+    &:hover {
+      @media (hover: hover) {
+        text-decoration-line: underline;
+      }
+    }
+  }
+  .hover\:ring-2 {
+    &:hover {
+      @media (hover: hover) {
+        --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
+        box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+      }
+    }
+  }
+  .hover\:ring-brand-500 {
+    &:hover {
+      @media (hover: hover) {
+        --tw-ring-color: var(--color-brand-500);
+      }
+    }
+  }
+  .focus\:ring-2 {
+    &:focus {
+      --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
+      box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    }
+  }
+  .focus\:ring-brand-500 {
+    &:focus {
+      --tw-ring-color: var(--color-brand-500);
+    }
+  }
+  .focus\:ring-violet-300 {
+    &:focus {
+      --tw-ring-color: var(--color-violet-300);
+    }
+  }
+  .focus\:outline-none {
+    &:focus {
+      --tw-outline-style: none;
+      outline-style: none;
+    }
+  }
+  .sm\:col-span-2 {
+    @media (width >= 40rem) {
+      grid-column: span 2 / span 2;
+    }
+  }
+  .sm\:block {
+    @media (width >= 40rem) {
+      display: block;
+    }
+  }
+  .sm\:inline-flex {
+    @media (width >= 40rem) {
+      display: inline-flex;
+    }
+  }
+  .sm\:grid-cols-2 {
+    @media (width >= 40rem) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .sm\:grid-cols-3 {
+    @media (width >= 40rem) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .sm\:flex-row {
+    @media (width >= 40rem) {
+      flex-direction: row;
+    }
+  }
+  .sm\:p-4 {
+    @media (width >= 40rem) {
+      padding: calc(var(--spacing) * 4);
+    }
+  }
+  .sm\:px-6 {
+    @media (width >= 40rem) {
+      padding-inline: calc(var(--spacing) * 6);
+    }
+  }
+  .sm\:text-xl {
+    @media (width >= 40rem) {
+      font-size: var(--text-xl);
+      line-height: var(--tw-leading, var(--text-xl--line-height));
+    }
+  }
+  .md\:grid-cols-2 {
+    @media (width >= 48rem) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .md\:grid-cols-3 {
+    @media (width >= 48rem) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .md\:grid-cols-4 {
+    @media (width >= 48rem) {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  .lg\:col-span-5 {
+    @media (width >= 64rem) {
+      grid-column: span 5 / span 5;
+    }
+  }
+  .lg\:col-span-7 {
+    @media (width >= 64rem) {
+      grid-column: span 7 / span 7;
+    }
+  }
+  .lg\:grid-cols-2 {
+    @media (width >= 64rem) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .lg\:grid-cols-4 {
+    @media (width >= 64rem) {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  .lg\:grid-cols-5 {
+    @media (width >= 64rem) {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+  .lg\:grid-cols-12 {
+    @media (width >= 64rem) {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+  }
+  .xl\:col-span-4 {
+    @media (width >= 80rem) {
+      grid-column: span 4 / span 4;
+    }
+  }
+  .xl\:col-span-8 {
+    @media (width >= 80rem) {
+      grid-column: span 8 / span 8;
+    }
+  }
+  .xl\:col-span-12 {
+    @media (width >= 80rem) {
+      grid-column: span 12 / span 12;
+    }
+  }
+  .xl\:grid-cols-2 {
+    @media (width >= 80rem) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .xl\:grid-cols-3 {
+    @media (width >= 80rem) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .xl\:grid-cols-12 {
+    @media (width >= 80rem) {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+  }
+}
+@property --tw-translate-x {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+@property --tw-translate-y {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+@property --tw-translate-z {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+@property --tw-space-y-reverse {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+@property --tw-divide-y-reverse {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+@property --tw-border-style {
+  syntax: "*";
+  inherits: false;
+  initial-value: solid;
+}
+@property --tw-gradient-position {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-gradient-from {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: #0000;
+}
+@property --tw-gradient-via {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: #0000;
+}
+@property --tw-gradient-to {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: #0000;
+}
+@property --tw-gradient-stops {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-gradient-via-stops {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-gradient-from-position {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+@property --tw-gradient-via-position {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: 50%;
+}
+@property --tw-gradient-to-position {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+@property --tw-leading {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-font-weight {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-tracking {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+@property --tw-shadow-color {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-shadow-alpha {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+@property --tw-inset-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+@property --tw-inset-shadow-color {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-inset-shadow-alpha {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+@property --tw-ring-color {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-ring-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+@property --tw-inset-ring-color {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-inset-ring-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+@property --tw-ring-inset {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-ring-offset-width {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --tw-ring-offset-color {
+  syntax: "*";
+  inherits: false;
+  initial-value: #fff;
+}
+@property --tw-ring-offset-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+@property --tw-backdrop-blur {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-brightness {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-contrast {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-grayscale {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-hue-rotate {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-invert {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-opacity {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-saturate {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-sepia {
+  syntax: "*";
+  inherits: false;
+}
+@layer properties {
+  @supports ((-webkit-hyphens: none) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color:rgb(from red r g b)))) {
+    *, ::before, ::after, ::backdrop {
+      --tw-translate-x: 0;
+      --tw-translate-y: 0;
+      --tw-translate-z: 0;
+      --tw-space-y-reverse: 0;
+      --tw-divide-y-reverse: 0;
+      --tw-border-style: solid;
+      --tw-gradient-position: initial;
+      --tw-gradient-from: #0000;
+      --tw-gradient-via: #0000;
+      --tw-gradient-to: #0000;
+      --tw-gradient-stops: initial;
+      --tw-gradient-via-stops: initial;
+      --tw-gradient-from-position: 0%;
+      --tw-gradient-via-position: 50%;
+      --tw-gradient-to-position: 100%;
+      --tw-leading: initial;
+      --tw-font-weight: initial;
+      --tw-tracking: initial;
+      --tw-shadow: 0 0 #0000;
+      --tw-shadow-color: initial;
+      --tw-shadow-alpha: 100%;
+      --tw-inset-shadow: 0 0 #0000;
+      --tw-inset-shadow-color: initial;
+      --tw-inset-shadow-alpha: 100%;
+      --tw-ring-color: initial;
+      --tw-ring-shadow: 0 0 #0000;
+      --tw-inset-ring-color: initial;
+      --tw-inset-ring-shadow: 0 0 #0000;
+      --tw-ring-inset: initial;
+      --tw-ring-offset-width: 0px;
+      --tw-ring-offset-color: #fff;
+      --tw-ring-offset-shadow: 0 0 #0000;
+      --tw-backdrop-blur: initial;
+      --tw-backdrop-brightness: initial;
+      --tw-backdrop-contrast: initial;
+      --tw-backdrop-grayscale: initial;
+      --tw-backdrop-hue-rotate: initial;
+      --tw-backdrop-invert: initial;
+      --tw-backdrop-opacity: initial;
+      --tw-backdrop-saturate: initial;
+      --tw-backdrop-sepia: initial;
+    }
+  }
+}
+
+/* Offline fallback utilities and local typography */
+.hidden{display:none!important}
+html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
+.brand-title{font-family:Georgia,"Times New Roman",serif!important}
+</style>
+<style>
+    body { font-family: 'Cairo', sans-serif; background-color: #f8fafc; color: #0f172a; }
+    .brand-title { font-family: 'Playfair Display', 'Cairo', serif; letter-spacing: 0.14em; }
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    .product-thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 10px; flex-shrink: 0; background-color: #f1f5f9; }
+    .pos-product-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 10px; flex-shrink: 0; background-color: #f1f5f9; }
+    
+    @media print {
+      body * { visibility: hidden !important; }
+      #printArea, #printArea *, #offersPrintArea, #offersPrintArea * { visibility: visible !important; }
+      #printArea { position: fixed !important; left: 0 !important; top: 0 !important; width: 100% !important; background: #fff !important; color: #000 !important; padding: 15px !important; z-index: 99999; }
+      #offersPrintArea { position: fixed !important; left: 0 !important; top: 0 !important; width: 100% !important; background: #fff !important; color: #000 !important; padding: 20px !important; z-index: 99999; }
+      #printArea img, #offersPrintArea img { display:block!important; width:100%!important; height:auto!important; max-width:100%!important; object-fit:contain!important; }
+      @page { margin: 5mm; }
+    }
+
+    /* V19.8 navigation refresh */
+    body { padding-bottom: 0; }
+    .v198-desktop-nav { display:none; }
+    .v198-mobile-nav { display:flex; }
+    .v198-mobile-nav button { min-width:0; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:7px 2px; border-radius:12px; color:#64748b; font-size:10px; font-weight:800; }
+    .v198-mobile-nav button.active { color:#fff; background:var(--brand-600,#7c3aed); }
+    .v198-more-select { max-width:150px; border:1px solid #e2e8f0; border-radius:10px; background:#fff; padding:8px 28px 8px 8px; font:700 11px 'Cairo',sans-serif; color:#334155; }
+    @media (min-width:1280px) {
+      .v198-desktop-nav { display:flex; align-items:center; gap:5px; flex-wrap:wrap; justify-content:center; }
+      .v198-mobile-nav { display:none !important; }
+    }
+    @media (max-width:1279px) {
+      body { padding-bottom:76px; }
+      .v198-mobile-nav { position:fixed; z-index:45; bottom:0; left:0; right:0; padding:7px max(8px,env(safe-area-inset-left)) calc(7px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.97); border-top:1px solid #e2e8f0; box-shadow:0 -8px 24px rgba(15,23,42,.08); backdrop-filter:blur(12px); }
+      header { position:sticky; }
+    }
+
+    /* V19.15 grouped workspaces */
+    .v1916-desktop-nav{display:none;align-items:center;gap:4px;flex-wrap:wrap;justify-content:center}
+    .workspace-btn{border:1px solid transparent;border-radius:12px;padding:8px 11px;font:800 11px 'Cairo',sans-serif;color:#475569;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+    .workspace-btn.active{background:#6d28d9;color:#fff;box-shadow:0 4px 12px #6d28d922}
+    .workspace-btn.intelligence-link:not(.active){color:#6d28d9;background:#f5f3ff;border-color:#ddd6fe}
+    .v1916-subnav{display:flex;gap:7px;overflow-x:auto;overflow-y:hidden;padding:8px 12px;border-top:1px solid #f1f5f9;background:#fff;scrollbar-width:thin;align-items:center}
+    .v1916-subnav button{flex:0 0 auto;min-height:36px;border:1px solid #e2e8f0;border-radius:999px;padding:6px 12px;font:700 11px 'Cairo',sans-serif;color:#475569;background:#f8fafc}
+    .v1916-subnav button.active{background:#6d28d9;color:#fff;border-color:#5b21b6;box-shadow:0 3px 10px #6d28d933}
+    .v1916-subnav button[data-subtab="offers"]{background:#f3e8ff;border-color:#c4b5fd;color:#6b21a8;font-weight:900}.v1916-subnav button[data-subtab="offers"].active{background:#6d28d9;color:#fff;border-color:#5b21b6}
+    .v1919-offers-shortcut{background:#6d28d9!important;color:#fff!important;border-color:#6d28d9!important;font-weight:900!important}.v1916-subnav .v1916-quick-expense{background:#047857;color:#fff;border-color:#047857;font-weight:800}
+    .v1916-mobile-nav{display:flex;position:fixed;z-index:45;bottom:0;left:0;right:0;padding:6px max(5px,env(safe-area-inset-left)) calc(6px + env(safe-area-inset-bottom));background:rgba(255,255,255,.97);border-top:1px solid #e2e8f0;box-shadow:0 -8px 24px #0f172a12;backdrop-filter:blur(12px)}
+    .v1916-mobile-nav .workspace-btn{flex:1;min-width:0;flex-direction:column;gap:1px;padding:6px 1px;font-size:9px;border-radius:10px}
+    .v1916-mobile-nav .workspace-btn span:first-child{font-size:16px}
+    @media(min-width:1280px){.v1916-desktop-nav{display:flex}.v1916-mobile-nav{display:none}}
+    @media(max-width:1279px){body{padding-bottom:82px}.v1916-desktop-nav{display:none}.v1916-subnav{position:sticky;top:64px;z-index:35}}
+    .v1916-ai-card{background:linear-gradient(135deg,#1e1b4b,#312e81);color:#fff;border-radius:20px;padding:20px}
+    .v1916-metric{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:14px}
+    .v1916-table{width:100%;border-collapse:collapse;font-size:12px}.v1916-table th,.v1916-table td{padding:10px;border-bottom:1px solid #f1f5f9;text-align:right}
+
+
+
+    /* V19.23: operational fixes for import, cash transfers, delivery collection and navigation on desktop and phone */
+    .v1916-desktop-nav{display:flex;gap:10px;align-items:stretch;}
+    .v1916-desktop-nav .workspace-btn{min-height:52px;padding:12px 20px;font-size:14px;border:1px solid #dbe3ee;background:#fff;border-radius:15px;box-shadow:0 2px 7px rgba(15,23,42,.05);}
+    .v1916-desktop-nav .workspace-btn.active{background:#5b21b6;color:#fff;border-color:#4c1d95;box-shadow:0 5px 16px rgba(91,33,182,.2);}
+    .v1916-subnav{margin:10px 0 18px;padding:11px 14px;background:#f1f5f9;border:1px solid #dbe3ee;border-radius:16px;gap:9px;}
+    .v1916-subnav button{min-height:40px;padding:8px 16px;font-size:12px;background:#fff;border-color:#cbd5e1;}
+    .v1916-subnav button.active{background:#ede9fe!important;color:#4c1d95!important;border:2px solid #7c3aed!important;box-shadow:0 3px 10px rgba(124,58,237,.15);}
+    @media(max-width:767px){.v1916-desktop-nav{gap:6px;flex-wrap:wrap}.v1916-desktop-nav .workspace-btn{flex:1 1 30%;min-height:48px;padding:9px 7px;font-size:12px}.v1916-subnav{overflow-x:auto;flex-wrap:nowrap}.v1916-subnav button{flex:0 0 auto}}
+
+    /* V19.19: Always use the desktop workspace layout, including phones. */
+    html { overflow-x:auto; }
+    body { min-width:1100px !important; padding-bottom:0 !important; overflow-x:auto; }
+    main { min-width:1060px; }
+    .v1916-desktop-nav { display:flex !important; align-items:center; gap:5px; flex-wrap:nowrap; justify-content:center; }
+    .v1916-mobile-nav, .v198-mobile-nav { display:none !important; }
+    .v1916-subnav { position:sticky; top:0; z-index:38; box-shadow:0 3px 12px rgba(15,23,42,.05); }
+    .v1916-subnav button.active { background:#5b21b6 !important; color:#fff !important; border:2px solid #4c1d95 !important; box-shadow:0 4px 14px rgba(91,33,182,.28); font-weight:900; transform:translateY(-1px); }
+    .workspace-btn.active { outline:2px solid #4c1d95; outline-offset:1px; }
+    #tab-offers .offers-workspace-banner { border:2px solid #c4b5fd; background:linear-gradient(110deg,#f5f3ff,#fff); }
+    #tab-crm .loyalty-print-toolbar { background:#f5f3ff; border:1px solid #ddd6fe; border-radius:14px; padding:12px; }
+    #valerianChatMessages { min-height:240px; }
+    @media(max-width:1279px) { body { padding-bottom:0 !important; } .v1916-desktop-nav { display:flex !important; } }
+
+    /* Stable, high-resolution document capture */
+    #printPreviewBody { overflow-x:auto; }
+    #printPreviewBody > * { box-sizing:border-box; overflow-wrap:anywhere; }
+    #printPreviewBody table { width:100% !important; table-layout:fixed; border-collapse:collapse; }
+    #printPreviewBody th, #printPreviewBody td { box-sizing:border-box; overflow-wrap:anywhere; word-break:normal; }
+    .v198-capture-stage { position:fixed; left:-30000px; top:0; z-index:-1; background:#fff; pointer-events:none; }
+
+
+    /* Critical visibility fallback: keep tab switching reliable even if Tailwind CDN is unavailable. */
+    .hidden{display:none!important}
+    .modal-overlay{position:fixed;inset:0;z-index:60;background:rgba(15,23,42,.7);display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}
+    .modal-overlay.hidden{display:none!important}
+    .inventory-subnav{display:flex;flex-wrap:wrap;gap:.55rem;padding:.8rem;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:1rem}
+    .inventory-subnav button{padding:.65rem 1rem;border-radius:.75rem;background:#fff;border:1px solid #ddd6fe;color:#5b21b6;font-size:12px;font-weight:800}
+    .inventory-subnav button.active{background:#6d28d9;color:#fff;border-color:#6d28d9;box-shadow:0 3px 10px #6d28d933}
+    .inventory-pane.hidden{display:none!important}
+    .finance-positive{color:#047857!important;background:transparent!important;border-color:transparent!important}
+    .finance-negative{color:#be123c!important;background:transparent!important;border-color:transparent!important}
+    .customer-wa{display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;border-radius:999px;background:#dcfce7;color:#15803d;font-size:15px;margin-inline-start:6px}
+    .v1931-print-toolbar input{max-width:145px}
+    .v1931-print-toolbar button:hover{filter:brightness(1.12)}
+    .price-warning{display:inline-flex;padding:2px 7px;border-radius:999px;background:#fff7ed;color:#c2410c;font-size:10px;font-weight:800;margin-top:4px}
+    /* V19.35: neutral financial KPI cards; only the amount carries semantic green/red color. */
+    #repNetProfit{background:transparent!important;border:0!important;padding:0!important}
+
+  </style>
+<style id="v1960-global-brand-theme">
+  /* V19.60: apply the selected brand color across all app workspaces, not only POS. */
+  :root { --brand-50:#f5f3ff; --brand-100:#ede9fe; --brand-200:#ddd6fe; --brand-300:#c4b5fd; --brand-500:#8b5cf6; --brand-600:#7c3aed; --brand-700:#6d28d9; --brand-800:#5b21b6; --brand-900:#4c1d95; }
+  .v1960-brand-scope .bg-violet-50,.v1960-brand-scope .bg-purple-50,.v1960-brand-scope .bg-indigo-50{background:var(--brand-50)!important}
+  .v1960-brand-scope .bg-violet-100,.v1960-brand-scope .bg-purple-100,.v1960-brand-scope .bg-indigo-100{background:var(--brand-100)!important}
+  .v1960-brand-scope .bg-violet-600,.v1960-brand-scope .bg-purple-600,.v1960-brand-scope .bg-indigo-600{background:var(--brand-600)!important}
+  .v1960-brand-scope .bg-violet-200,.v1960-brand-scope .bg-purple-200,.v1960-brand-scope .bg-indigo-200{background:var(--brand-200)!important}
+  .v1960-brand-scope .bg-violet-300,.v1960-brand-scope .bg-purple-300,.v1960-brand-scope .bg-indigo-300{background:var(--brand-300)!important}
+  .v1960-brand-scope .bg-violet-500,.v1960-brand-scope .bg-purple-500,.v1960-brand-scope .bg-indigo-500{background:var(--brand-500)!important}
+  .v1960-brand-scope .bg-violet-800,.v1960-brand-scope .bg-purple-800,.v1960-brand-scope .bg-indigo-800{background:var(--brand-800)!important}
+  .v1960-brand-scope .bg-violet-900,.v1960-brand-scope .bg-purple-900,.v1960-brand-scope .bg-indigo-900{background:var(--brand-900)!important}
+  .v1960-brand-scope .text-violet-500,.v1960-brand-scope .text-purple-500,.v1960-brand-scope .text-indigo-500{color:var(--brand-500)!important}
+  .v1960-brand-scope .text-violet-600,.v1960-brand-scope .text-purple-600,.v1960-brand-scope .text-indigo-600{color:var(--brand-600)!important}
+  .v1960-brand-scope .text-violet-700,.v1960-brand-scope .text-purple-700,.v1960-brand-scope .text-indigo-700{color:var(--brand-700)!important}
+  .v1960-brand-scope .text-violet-800,.v1960-brand-scope .text-purple-800,.v1960-brand-scope .text-indigo-800{color:var(--brand-800)!important}
+  .v1960-brand-scope .text-violet-900,.v1960-brand-scope .text-purple-900,.v1960-brand-scope .text-indigo-900{color:var(--brand-900)!important}
+  .v1960-brand-scope .border-violet-100,.v1960-brand-scope .border-purple-100,.v1960-brand-scope .border-indigo-100{border-color:var(--brand-100)!important}
+  .v1960-brand-scope .border-violet-200,.v1960-brand-scope .border-purple-200,.v1960-brand-scope .border-indigo-200{border-color:var(--brand-200)!important}
+  .v1960-brand-scope .border-violet-300,.v1960-brand-scope .border-purple-300,.v1960-brand-scope .border-indigo-300{border-color:var(--brand-300)!important}
+  .v1960-brand-scope .hover\:bg-violet-50:hover,.v1960-brand-scope .hover\:bg-purple-50:hover,.v1960-brand-scope .hover\:bg-indigo-50:hover{background:var(--brand-50)!important}
+  .v1960-brand-scope .hover\:bg-violet-100:hover,.v1960-brand-scope .hover\:bg-purple-100:hover,.v1960-brand-scope .hover\:bg-indigo-100:hover{background:var(--brand-100)!important}
+  @media print{
+    #printArea .v1960-loyalty-card{width:90mm!important;max-width:90mm!important;min-height:55mm!important;height:55mm!important;margin:0 auto!important;padding:4mm 5mm!important;box-shadow:none!important;break-inside:avoid!important;page-break-inside:avoid!important}
+    #printArea .v1960-loyalty-card .v1962-card-brand{margin-bottom:2mm!important;gap:2mm!important}
+    #printArea .v1960-loyalty-card .v1962-card-brand img{width:10mm!important;height:10mm!important}
+    #printArea .v1960-loyalty-card .v1960-card-title{font-size:17pt!important;margin:0!important}
+    #printArea .v1960-loyalty-card .v1960-card-subtitle{font-size:7pt!important;margin-bottom:2mm!important}
+    #printArea .v1960-loyalty-card .v1960-card-name{font-size:12pt!important}
+    #printArea .v1960-loyalty-card .v1960-points-panel{padding:2mm!important;margin-bottom:2mm!important;max-width:60mm!important}
+  }
+  .v1960-loyalty-card{position:relative;overflow:hidden;isolation:isolate;width:100%;max-width:680px;min-height:390px;margin:0 auto;padding:30px 34px 26px;border-radius:24px;background:radial-gradient(circle at 90% 0%,rgba(255,255,255,.20),transparent 34%),linear-gradient(135deg,color-mix(in srgb,var(--loyalty-card-color,#075653) 72%,#000 28%) 0%,var(--loyalty-card-color,#075653) 52%,color-mix(in srgb,var(--loyalty-card-color,#075653) 65%,#000 35%) 100%);color:#f8fafc;border:1px solid #aeb9c8;box-shadow:none;font-family:'Cairo',Tahoma,Arial,sans-serif;text-align:center;box-sizing:border-box}
+  .v1960-loyalty-card:before{content:'';position:absolute;inset:12px;border:1px solid rgba(214,222,232,.25);border-radius:17px;pointer-events:none;z-index:-1}
+  .v1960-loyalty-card,.v1960-loyalty-card *{box-sizing:border-box;text-align:center!important}
+  .v1960-loyalty-card{direction:rtl!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important}
+  .v1960-loyalty-card .v1962-card-brand{width:100%;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;direction:ltr!important;gap:12px;margin:0 auto 22px}
+  .v1960-loyalty-card .v1962-card-brand span{display:block;direction:ltr!important;text-align:left!important}
+  .v1960-loyalty-card .v1962-card-name,.v1960-loyalty-card .v1960-card-title,.v1960-loyalty-card .v1960-card-subtitle,.v1960-loyalty-card .v1960-card-foot,.v1960-loyalty-card .v1960-card-phone{width:100%;align-self:center}
+  .v1960-loyalty-card .v1960-card-phone{direction:ltr!important;unicode-bidi:isolate!important;display:block}
+  .v1960-loyalty-card .v1960-points-panel{width:min(100%,360px)!important;max-width:360px!important;align-self:center!important}
+  .v1962-card-brand{display:flex;align-items:center;justify-content:center;gap:12px;margin:0 auto 22px;color:#f8fafc}
+  .v1962-card-brand img{width:var(--loyalty-logo-size,54px);height:var(--loyalty-logo-size,54px);object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}
+  .v1962-card-brand strong{display:block;font:900 22px/1.1 Arial,sans-serif;letter-spacing:2px;color:#f8fafc}
+  .v1962-card-brand small{display:block;font:700 9px/1.5 Arial,sans-serif;letter-spacing:1.5px;color:#cbd5e1}
+  .v1960-loyalty-card .v1960-card-kicker{font-size:10px;letter-spacing:3px;color:#c7d0dc;font-weight:800}
+  .v1960-loyalty-card .v1960-card-title{font-size:27px;line-height:1.5;font-weight:900;color:#fff;margin:3px 0 1px}
+  .v1960-loyalty-card .v1960-card-subtitle{font-size:11px;color:#cbd5e1;margin-bottom:19px}
+  .v1960-loyalty-card .v1960-card-name{font-size:19px;font-weight:900;color:#fff;margin-bottom:5px}
+  .v1960-loyalty-card .v1960-card-phone{font-size:12px;color:#d1d9e4;direction:ltr;unicode-bidi:isolate;margin-bottom:18px}
+  .v1960-loyalty-card .v1960-points-panel{background:linear-gradient(135deg,#f8fafc,#dce4ed);color:#142033;border-radius:14px;padding:13px 10px;margin:0 auto 15px;max-width:270px;border:1px solid #fff;box-shadow:inset 0 1px 0 #fff}
+  .v1960-loyalty-card .v1960-points-value{font-size:30px;font-weight:900;line-height:1.3;color:#17283d}
+  .v1960-loyalty-card .v1960-card-value{font-size:11px;color:#475569;font-weight:700}
+  .v1960-loyalty-card .v1960-card-foot{font-size:10px;color:#cbd5e1;line-height:1.8}
+  /* V19.66 loyalty card: keep every point label inside the light panel and stack the brand mark above the wordmark. */
+  .v1960-loyalty-card .v1962-card-brand{flex-direction:column!important;gap:6px!important;margin:0 auto 18px!important;min-width:0}
+  .v1960-loyalty-card .v1962-card-brand img{display:block!important;width:62px!important;height:62px!important;max-width:62px!important;flex:0 0 auto}
+  .v1960-loyalty-card .v1962-card-brand span{width:100%;text-align:center!important;direction:ltr!important}
+  .v1960-loyalty-card .v1962-card-brand strong,.v1960-loyalty-card .v1962-card-brand small{width:100%;text-align:center!important;white-space:normal!important}
+  .v1960-loyalty-card .v1960-points-panel{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;width:100%!important;max-width:390px!important;min-width:0!important;padding:18px 22px!important;margin:0 auto 15px!important;overflow:hidden!important;gap:4px}
+  .v1960-loyalty-card .v1960-points-panel>*{display:block!important;position:relative!important;width:100%!important;max-width:100%!important;min-width:0!important;margin:0!important;padding:0!important;box-sizing:border-box!important;text-align:center!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important;line-height:1.55!important}
+  .v1960-loyalty-card .v1960-points-panel .v1960-points-value{font-size:32px!important;line-height:1.25!important;margin:3px 0!important;overflow-wrap:normal!important}
+  .v1960-loyalty-card .v1960-points-panel .v1960-card-value{font-size:12px!important;padding-top:3px!important}
+  .v1960-loyalty-card .v1960-card-name,.v1960-loyalty-card .v1960-card-phone,.v1960-loyalty-card .v1960-card-subtitle,.v1960-loyalty-card .v1960-card-foot{min-width:0!important;max-width:100%!important;overflow-wrap:anywhere!important;white-space:normal!important}
+  @media print { #printArea[data-v1960-a4="1"]{width:190mm!important;max-width:190mm!important;min-width:190mm!important} }
+</style>
+<style id="v1954-print-typography-brand-fix">
+  /* V19.54: fix the actual reported issues: stretched brand emblem and crowded Arabic lines. */
+  #printPreviewBody { display:block!important; overflow-x:auto!important; text-align:center!important; }
+  #printPreviewBody > [data-v1953-print-document] { margin-left:auto!important; margin-right:auto!important; }
+  #printPreviewBody [data-v1945-invoice-brand] { line-height:1.45!important; padding-bottom:7px!important; margin-bottom:8px!important; }
+  #printPreviewBody [data-v1945-invoice-brand] > div:first-child { min-height:32px!important; gap:7px!important; }
+  #printPreviewBody [data-valerian-brand-logo] { width:30px!important; height:30px!important; min-width:30px!important; min-height:30px!important; max-width:30px!important; max-height:30px!important; object-fit:contain!important; }
+  #printPreviewBody [data-v1945-invoice-brand] > div:nth-child(2) { line-height:1.65!important; }
+  #printPreviewBody [data-v1953-print-document] { line-height:1.65!important; overflow-wrap:anywhere!important; }
+  #printPreviewBody [data-v1953-print-document] table { width:100%!important; table-layout:fixed!important; border-collapse:collapse!important; }
+  #printPreviewBody [data-v1953-print-document] th,
+  #printPreviewBody [data-v1953-print-document] td { padding:5px 3px!important; line-height:1.65!important; vertical-align:middle!important; white-space:normal!important; overflow-wrap:anywhere!important; word-break:normal!important; }
+  @media print {
+    #printArea { overflow:visible!important; }
+    #printArea > [data-v1953-print-document] { break-inside:avoid; page-break-inside:avoid; }
+    /* Preserve full-width product/offer images, but never stretch logos or QR codes. */
+    #printArea img[data-valerian-brand-logo] { display:block!important; width:30px!important; height:30px!important; min-width:30px!important; min-height:30px!important; max-width:30px!important; max-height:30px!important; object-fit:contain!important; flex:0 0 30px!important; }
+    #printArea img[data-valerian-qr-image] { display:block!important; width:58px!important; height:58px!important; max-width:58px!important; max-height:58px!important; object-fit:contain!important; }
+    #printArea [data-v1945-invoice-brand] { line-height:1.45!important; padding-bottom:7px!important; margin-bottom:8px!important; }
+    #printArea [data-v1945-invoice-brand] > div:first-child { min-height:32px!important; gap:7px!important; }
+    #printArea [data-v1945-invoice-brand] > div:nth-child(2) { line-height:1.65!important; }
+    #printArea [data-v1953-print-document] { line-height:1.65!important; overflow-wrap:anywhere!important; }
+    #printArea [data-v1953-print-document] table { width:100%!important; table-layout:fixed!important; border-collapse:collapse!important; }
+    #printArea [data-v1953-print-document] th,
+    #printArea [data-v1953-print-document] td { padding:5px 3px!important; line-height:1.65!important; vertical-align:middle!important; white-space:normal!important; overflow-wrap:anywhere!important; word-break:normal!important; }
+    #printArea [data-v1953-print-document] > div { box-sizing:border-box!important; }
+  }
+</style>
+<style id="valerian-premium-financial-modals">
+.modal-overlay{position:fixed!important;inset:0!important;z-index:140!important;display:flex;align-items:center;justify-content:center;padding:16px!important;background:rgba(1,7,12,.84)!important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}.modal-overlay.hidden{display:none!important}
+#supplierPaymentModal>div,#deliveryConfirmModal>div,#refundPaymentModal>div,#preDeliveryPaymentModal>div{width:min(100%,460px)!important;max-height:min(88dvh,760px);overflow:auto;padding:24px!important;border:1px solid rgba(186,230,253,.24)!important;border-radius:28px!important;background:linear-gradient(155deg,#142635 0%,#07131e 55%,#02080c 100%)!important;color:#f8fafc!important;box-shadow:0 28px 90px rgba(0,0,0,.72),inset 0 1px 0 rgba(255,255,255,.1)!important;animation:valerianModalIn .28s cubic-bezier(.2,.8,.2,1)}
+#supplierPaymentModal h3,#deliveryConfirmModal h3,#refundPaymentModal h3,#preDeliveryPaymentModal h3{color:#f8fafc!important;font-size:17px!important;font-weight:900!important}#supplierPaymentModal p,#deliveryConfirmModal p,#refundPaymentModal p,#preDeliveryPaymentModal p{color:#b9c9d5!important;line-height:1.8}#supplierPaymentModal label,#deliveryConfirmModal label,#refundPaymentModal label,#preDeliveryPaymentModal label{color:#b9c9d5!important;font-size:12px!important;font-weight:800!important}
+#supplierPaymentModal input,#supplierPaymentModal select,#deliveryConfirmModal select,#refundPaymentModal input,#refundPaymentModal select,#preDeliveryPaymentModal input,#preDeliveryPaymentModal select{width:100%;min-height:48px;padding:12px 14px!important;border:1px solid rgba(203,213,225,.2)!important;border-radius:14px!important;background:#0a1a26!important;color:#f8fafc!important;font-weight:800!important;outline:none}
+#deliveryConfirmModal .bg-slate-50{background:rgba(186,230,253,.09)!important;border:1px solid rgba(186,230,253,.18);border-radius:16px;color:#dcecf5!important}#deliveryConfirmModal .bg-slate-50 b{color:#fff}
+#supplierPaymentModal button[onclick*="closeModal"],#deliveryConfirmModal button[onclick*="closeModal"],#refundPaymentModal button[onclick*="closeModal"],#preDeliveryPaymentModal button[onclick*="closeModal"]{border:1px solid rgba(203,213,225,.22)!important;border-radius:13px!important;color:#dce7ef!important;background:rgba(255,255,255,.045)!important;padding:11px 16px!important;font-weight:800}
+#supplierPaymentModal button[onclick*="confirm"],#deliveryConfirmModal button[onclick*="confirm"],#refundPaymentModal button[onclick*="confirm"],#preDeliveryPaymentModal button[onclick*="confirm"]{border:1px solid rgba(226,232,240,.55)!important;border-radius:13px!important;background:linear-gradient(135deg,#f8fafc,#b8c7d3)!important;color:#07131e!important;padding:11px 17px!important;font-weight:900!important;box-shadow:0 8px 22px rgba(186,230,253,.12)}
+@keyframes valerianModalIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}@media(max-width:520px){#supplierPaymentModal>div,#deliveryConfirmModal>div,#refundPaymentModal>div,#preDeliveryPaymentModal>div{padding:20px!important;border-radius:24px!important}}
+</style>
+<style id="valerian-single-document-engine-host">#valerian-legacy-engine-host{position:fixed!important;left:-30000px!important;top:0!important;width:1600px!important;min-height:100vh!important;height:auto!important;overflow:visible!important;z-index:-1!important;pointer-events:none!important}#valerian-legacy-engine-host *{pointer-events:auto}</style>
+</head><body><img src="'+url+'" onload="setTimeout(()=>print(),350)"></body></html>';
       }catch(err){console.error(err);showToast('تعذرت طباعة صورة المعاينة: '+String(err.message||err));}
     };
     window.saveEditedProduct=async function(){
@@ -3533,8 +6513,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
     if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
       window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=valerian-112-cloud-baseline-reconcile',{scope:'./',updateViaCache:'none'}).catch(err=>console.warn('VALERIAN V20 offline registration failed',err)));
     }
-    frame.addEventListener('load',()=>connectEngine().catch(reportError));
-    if(frame.contentWindow?.ValerianEngine)connectEngine().catch(reportError);
+    connectEngine().catch(reportError);
     // Fallback for browser restore/cloud events that occur after the first frame load.
     window.addEventListener('focus',()=>{if(engine)syncFromEngine();});
   })();
