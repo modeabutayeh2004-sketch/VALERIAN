@@ -1,0 +1,49 @@
+name: Deploy VALERIAN V20 design preview
+on:
+  push:
+    branches: [android/apk-v20]
+    paths:
+      - 'index.html'
+      - 'engine.html'
+      - 'service-worker.js'
+      - 'manifest.webmanifest'
+      - 'assets/**'
+      - 'scripts/**'
+      - 'package.json'
+      - '.github/workflows/deploy-v20-preview.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: valerian-v20-preview
+  cancel-in-progress: true
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout V20 preview branch
+        uses: actions/checkout@v4
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build web preview only
+        run: |
+          npm install
+          npm run build:web
+      - name: Upload static preview
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./www
+      - name: Deploy preview
+        id: deployment
+        uses: actions/deploy-pages@v4
