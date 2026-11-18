@@ -6330,11 +6330,18 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     async function resetAllSystemData(password) {
       if (!cloudClient || !cloudReady || !cloudUser || !navigator.onLine) throw new Error('يجب تسجيل الدخول إلى حساب المزامنة والاتصال بالإنترنت قبل حذف جميع البيانات.');
       if (cloudDirty || cloudSaveInFlight || cloudConflict) throw new Error('هناك تغييرات لم تكتمل مزامنتها أو تعارض بين الأجهزة. نفّذ المزامنة وحل التعارض أولًا.');
-      const email=String(cloudUser.email||'').trim(),secret=String(password||'');
+      const email=String(cloudUser.email||'').trim(),secret=String(password||''),expectedUserId=String(cloudUser.id||'');
       if(!email||!secret)throw new Error('أدخل كلمة مرور حساب المزامنة.');
-      const {data:authData,error:authError}=await cloudClient.auth.signInWithPassword({email,password:secret});
-      if(authError||!authData?.user?.id||String(authData.user.id)!==String(cloudUser.id))throw new Error('كلمة مرور حساب المزامنة غير صحيحة أو تعذر التحقق من الحساب.');
-      if (cloudDirty || cloudSaveInFlight || cloudConflict) throw new Error('تغيرت حالة المزامنة أثناء التحقق. أعد المحاولة بعد استقرار المزامنة.');
+      // Use an isolated non-persistent client; never replace the active cloud session during destructive-action verification.
+      let verificationClient=null,verified=false;
+      try{
+        verificationClient=window.supabase.createClient(VALERIAN_CLOUD_URL,VALERIAN_CLOUD_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+        const {data:authData,error:authError}=await verificationClient.auth.signInWithPassword({email,password:secret});
+        verified=!authError&&!!authData?.user?.id&&String(authData.user.id)===expectedUserId;
+      }catch(_){verified=false;}
+      finally{if(verificationClient){try{await verificationClient.auth.signOut({scope:'local'});}catch(_){}}}
+      if(!verified)throw new Error('كلمة مرور حساب المزامنة غير صحيحة أو تعذر التحقق من الحساب.');
+      if(!cloudUser||String(cloudUser.id)!==expectedUserId||cloudDirty||cloudSaveInFlight||cloudConflict)throw new Error('تغيرت حالة الحساب أو المزامنة أثناء التحقق. أعد المحاولة بعد استقرار المزامنة.');
       const before=structuredClone(state),oldLocal=localStorage.getItem(STORAGE_KEY);
       try {
         await valDownloadStateBackup('valerian_before_full_reset');
