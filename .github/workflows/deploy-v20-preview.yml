@@ -30,7 +30,7 @@ jobs:
         with:
           node-version: 22
       - name: Install web build dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
       - name: Build browser preview only
         run: npm run build:web
       - name: Upload browser preview package
