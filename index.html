@@ -3340,7 +3340,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     function mobileBrandHeader(){
       const fallback='<div dir="ltr" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:2px 0 12px;border-bottom:1px solid rgba(203,213,225,.32);color:#e2e8f0;font-family:Arial,sans-serif"><span style="font-size:22px;font-weight:900;letter-spacing:3px;color:#e2e8f0">VALERIAN</span></div>';
       try{
-        if(!engine&&frame?.contentWindow?.ValerianEngine)engine=frame.contentWindow.ValerianEngine;
+        if(!engine&&window.ValerianEngine)engine=window.ValerianEngine;
         let html=engine?.getBrandHeaderHtml?.();
         if(!html)return fallback;
         html=html.replace('background:#fff;color:#172033','background:transparent!important;color:#e2e8f0!important')
