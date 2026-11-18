@@ -2799,7 +2799,7 @@
        in a same-origin hidden frame and remains the sole owner of business data. -->
   <iframe id="valerianEngineFrame" title="VALERIAN business engine" aria-hidden="true"
     style="position:fixed;left:-20px;top:-20px;width:2px;height:2px;border:0;opacity:0;pointer-events:none;z-index:-1"
-    src="./engine.html?v=20261118-98-meta-bootstrap"></iframe>
+    src="./engine.html?v=20261118-99-auth-bridge"></iframe>
   <script id="valerianV5EngineAdapter">
   (function(){
     'use strict';
@@ -3425,7 +3425,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
     };
 
     if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
-      window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=valerian-98-meta-bootstrap',{scope:'./',updateViaCache:'none'}).catch(err=>console.warn('VALERIAN V20 offline registration failed',err)));
+      window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=valerian-99-auth-bridge',{scope:'./',updateViaCache:'none'}).catch(err=>console.warn('VALERIAN V20 offline registration failed',err)));
     }
     frame.addEventListener('load',()=>connectEngine().catch(reportError));
     if(frame.contentWindow?.ValerianEngine)connectEngine().catch(reportError);
@@ -3449,7 +3449,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
    'iframe: '+(frame?'موجود':'مفقود')+' | '+(frame?.contentDocument?.readyState||'لا يوجد document'),
    'محرك الأعمال: '+(eng?'موجود':'غير موجود'),
    'جاهزية المحرك: '+(eng?.ready?'promise موجودة':'غير متاحة'),
-   'إصدار التشخيص: V20-98',
+   'إصدار التشخيص: V20-99',
    'حالة السحابة: '+cloud,
    'تفاصيل المزامنة الجزئية: '+(syncDiag?JSON.stringify(syncDiag):'cloudDiagnostics API غير متاحة'),
    'وضع المزامنة: '+(syncDiag?.mode||'غير متاح'),
