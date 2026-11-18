@@ -6775,7 +6775,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     // V20 incremental journal client. Legacy snapshot sync remains available until
     // the additive Supabase migration has been installed and bootstrap succeeds.
     let cloudIncrementalReady=false, cloudIncrementalBase=null, cloudIncrementalQueue=Promise.resolve(), cloudOutboxQueue=Promise.resolve(), cloudIncrementalGeneration=0;
-    const cloudSyncDiagnostics={mode:'غير معروف',bootstrap:'لم يبدأ',phase:'idle',currentOperation:'لا يوجد',lastAttempt:'لم تبدأ محاولة',lastSuccess:'لا توجد مزامنة مؤكدة بعد',lastError:'لا يوجد',lastPushCount:0,lastPullCount:0,cursor:0,outboxCount:0,imageUploadAttempted:0,imageUploadSucceeded:0,imageUploadSkipped:0,imageUploadErrors:0,imageDownloadAttempted:0,imageDownloadSucceeded:0,imageDownloadErrors:0,realtimeStatus:'غير مشترك',lastRealtimeEvent:'لا يوجد'};
+    const cloudSyncDiagnostics={mode:'غير معروف',bootstrap:'لم يبدأ',phase:'idle',currentOperation:'لا يوجد',lastAttempt:'لم تبدأ محاولة',lastSuccess:'لا توجد مزامنة مؤكدة بعد',lastError:'لا يوجد',lastPollSkip:'',lastPushCount:0,lastPullCount:0,cursor:0,imageUploadAttempted:0,imageUploadSucceeded:0,imageUploadSkipped:0,imageUploadErrors:0,imageDownloadAttempted:0,imageDownloadSucceeded:0,imageDownloadErrors:0,realtimeStatus:'غير مشترك',lastRealtimeEvent:'لا يوجد'};
     function valSyncPhase(phase,operation){cloudSyncDiagnostics.phase=phase;cloudSyncDiagnostics.currentOperation=operation||phase;valCloudDiagnostic('مرحلة المزامنة: '+phase+' — '+cloudSyncDiagnostics.currentOperation);}
     const VAL_SYNC_OUTBOX_KEY='val_sync_outbox_v1', VAL_SYNC_CURSOR_KEY='val_sync_cursor_v1';
     const VAL_SYNC_ID_ARRAYS=new Set([
@@ -6852,6 +6852,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       if(!cloudIncrementalReady||cloudApplyingRemote||!cloudIncrementalBase)return;
       const previous=cloudIncrementalBase,current=valSyncCloudClone(state),patch=valSyncBuildPatch(previous,current);
       if(!patch)return;
+      valCloudDiagnostic('التقاط تغيير محلي: '+patch.ops.length+' عملية ('+patch.ops.slice(0,8).map(x=>x.op+':'+x.key+(x.id?'/'+x.id:'')).join(', ')+').');
       cloudIncrementalGeneration++;
       cloudIncrementalBase=current;
       cloudIncrementalQueue=cloudIncrementalQueue.then(async()=>{
@@ -6902,9 +6903,11 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         const items=await valSyncReadOutbox();
         if(!items.length)break;
         const batch=items.slice(0,100);
+        valCloudDiagnostic('بدء RPC push: outbox='+items.length+'، batch='+batch.length+'، أول change_id='+batch[0]?.change_id+'.');
         const {data,error}=await cloudClient.rpc('valerian_sync_push',{p_changes:batch});
-        if(error)throw error;
-        if(!data?.ok)throw new Error('رفضت السحابة تسجيل دفعة التغييرات.');
+        if(error){valCloudDiagnostic('فشل RPC push: '+cloudErrorMessage(error));throw error;}
+        if(!data?.ok){valCloudDiagnostic('RPC push أعاد ok=false: '+JSON.stringify(data));throw new Error('رفضت السحابة تسجيل دفعة التغييرات.');}
+        valCloudDiagnostic('نجاح RPC push: '+JSON.stringify({ok:data.ok,inserted:data.inserted,cursor:data.cursor})+'.');
         const ids=new Set(batch.map(x=>x.change_id));
         // Re-read and remove only acknowledged IDs; preserve edits queued during RPC.
         const remaining=await valSyncMutateOutbox(current=>current.filter(x=>!ids.has(x.change_id)));
@@ -6917,9 +6920,11 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       let cursor=await valSyncReadCursor(),rounds=0;
       while(rounds++<10){
         const generationAtRequest=cloudIncrementalGeneration;
+        valCloudDiagnostic('بدء RPC pull بعد cursor='+cursor+'؛ generation='+generationAtRequest+'.');
         const {data,error}=await cloudClient.rpc('valerian_sync_pull',{p_after_seq:cursor,p_limit:200});
-        if(error)throw error;
-        if(!data?.ok||!Array.isArray(data.changes))throw new Error('تعذر قراءة سجل التغييرات السحابي.');
+        if(error){valCloudDiagnostic('فشل RPC pull: '+cloudErrorMessage(error));throw error;}
+        if(!data?.ok||!Array.isArray(data.changes)){valCloudDiagnostic('استجابة pull غير صالحة: '+JSON.stringify(data));throw new Error('تعذر قراءة سجل التغييرات السحابي.');}
+        valCloudDiagnostic('استجابة pull: '+data.changes.length+' تغيير، cursor الجديد='+data.cursor+'.');
         if(generationAtRequest!==cloudIncrementalGeneration){cloudConflict=true;throw new Error('وصلت تغييرات محلية أثناء استقبال تحديثات جهاز آخر؛ احتفظنا بالبيانات المحلية وأوقفنا التطبيق التلقائي.');}
         if(!data.changes.length){cloudSyncDiagnostics.cursor=cursor;break;}
         cloudSyncDiagnostics.lastPullCount+=data.changes.length;
@@ -6949,12 +6954,15 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       // Baseline AFTER image metadata is prepared and journaled.
       const generationAtStart=cloudIncrementalGeneration;
       valSyncPhase('pushing','رفع التغييرات المسجلة فقط');
+      valCloudDiagnostic('قبل push: generation='+generationAtStart+'، outbox='+ (await valSyncReadOutbox()).length+'، dirty='+cloudDirty+'.');
       await valIncrementalPush();
       await cloudIncrementalQueue;
-      if(generationAtStart===cloudIncrementalGeneration && !(await valSyncReadOutbox()).length){
+      const pendingAfterPush=await valSyncReadOutbox();
+      valCloudDiagnostic('بعد push: generation start='+generationAtStart+' current='+cloudIncrementalGeneration+'، outbox='+pendingAfterPush.length+'.');
+      if(generationAtStart===cloudIncrementalGeneration && !pendingAfterPush.length){
         valSyncPhase('pulling','استقبال التغييرات الجديدة من سجل السحابة');
         await valIncrementalPull();
-      }
+      }else{valCloudDiagnostic('تخطي pull داخل المزامنة: تغييرات محلية أحدث أو outbox غير فارغ.');}
       return generationAtStart;
     }
 
@@ -7213,7 +7221,9 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     }
 
     async function pollCloudChanges() {
-      if(!cloudReady || !cloudUser || !navigator.onLine || cloudConflict || cloudDirty || cloudSaveInFlight || cloudPollInFlight) return;
+      const pollBlock=!cloudReady?'cloudReady=false':!cloudUser?'cloudUser missing':!navigator.onLine?'offline':cloudConflict?'cloudConflict=true':cloudDirty?'cloudDirty=true':cloudSaveInFlight?'cloudSaveInFlight=true':cloudPollInFlight?'cloudPollInFlight=true':'';
+      if(pollBlock){if(cloudSyncDiagnostics.lastPollSkip!==pollBlock){cloudSyncDiagnostics.lastPollSkip=pollBlock;valCloudDiagnostic('تخطي pull تلقائيًا: '+pollBlock+'.');}return;}
+      cloudSyncDiagnostics.lastPollSkip='';
       cloudPollInFlight=true;
       try {
         if(cloudIncrementalReady){
