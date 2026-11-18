@@ -3095,7 +3095,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
   <!-- Hidden Print Areas -->
   <div id="printArea" class="hidden"></div>
   <div id="offersPrintArea" class="hidden"></div>
-<script src="./engine-runtime.js?v=toast-viewport-2"></script>
+<script src="./engine-runtime.js?v=toast-viewport-3"></script>
 \n<!-- VALERIAN CLOUD CONNECTOR (V18.3) -->
 <div id="cloudStatusPill" style="display:none" aria-hidden="true">غير متصل</div>
 
@@ -3343,7 +3343,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           <div class="bottle-content relative z-10 flex items-center justify-between gap-2">
             <div>
               <span class="text-[11px] font-bold text-slate-400">إجمالي المبيعات المحققة</span>
-              <div id="kpiTotalSales" data-slot="kpi-total-sales" class="text-3xl md:text-4xl font-black silver-text mt-1 bidi-ltr" style="color:#000000 !important;">0 EGP</div>
+              <div id="kpiTotalSales" data-slot="kpi-total-sales" class="text-3xl md:text-4xl font-black mt-1 bidi-ltr" style="color:#000000 !important;-webkit-text-fill-color:#000000 !important;background:none !important;background-image:none !important;-webkit-background-clip:border-box !important;background-clip:border-box !important;text-shadow:none !important;">0 EGP</div>
             </div>
             <span id="liveArabicDate" class="text-[11px] text-slate-400 font-semibold px-3 py-1.5 rounded-full bg-white/5 border border-white/10"></span>
           </div>
@@ -4063,6 +4063,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     function showToast(msg) {
       const box = document.getElementById('mobileToast');
       if (!box) return;
+      // Remove legacy centering utilities so they cannot offset the fixed toast.
+      box.classList.remove('top-20','left-1/2','-translate-x-1/2','w-[90%]','max-w-sm');
       // Keep the toast attached to the viewport, outside transformed app panels.
       if (box.parentElement !== document.body) document.body.appendChild(box);
       const content = box.firstElementChild;
@@ -4076,7 +4078,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         bottom: 'auto',
         width: 'min(92vw, 420px)',
         maxWidth: 'calc(100vw - 24px)',
-        transform: 'translateX(-50%)',
+        transform: 'none',
+        translate: 'none',
         zIndex: '20000',
         boxSizing: 'border-box',
         padding: '0'
@@ -6339,7 +6342,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
     };
 
     if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
-      window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=valerian-v20-118-toast-viewport',{scope:'./',updateViaCache:'none'}).catch(err=>console.warn('VALERIAN V20 offline registration failed',err)));
+      window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=valerian-v20-119-toast-kpi',{scope:'./',updateViaCache:'none'}).catch(err=>console.warn('VALERIAN V20 offline registration failed',err)));
     }
     connectEngine().catch(reportError);
     // Fallback for browser restore/cloud events that occur after the first frame load.
