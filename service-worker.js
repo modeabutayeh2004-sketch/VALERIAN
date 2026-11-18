@@ -1,7 +1,7 @@
 /* VALERIAN V20.117 — single-document engine integration */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-127-supply-delete-sheet';
-const APP_SHELL = ['./', './index.html', './engine-runtime.js?v=v5-supply-delete-sheet-20261119', './manifest.webmanifest', './assets/valerian-icon.jpg'];
+const CACHE_NAME = 'valerian-app-shell-v20-128-supply-delete-api';
+const APP_SHELL = ['./', './index.html', './engine-runtime.js?v=v5-supply-delete-api-20261119', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
