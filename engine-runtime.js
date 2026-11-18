@@ -1811,7 +1811,7 @@
     // Pending reservations do not earn points, but points redeemed on them remain reserved until returned.
     function isOrderDeliveredForLoyalty(o) {
       const status=String(o?.status||'');
-      return !!o?.deliveredAt || status.includes('تم التسليم') || (!!o?.stockDeducted && !!o?.returnedAt && status.includes('مرتجع'));
+      return !!o?.deliveredAt || status.includes('تم التسليم') || (!o?.shippedAt && !!o?.stockDeducted && !!o?.returnedAt && status.includes('مرتجع'));
     }
 
     // Recalculate the balance from current settings. Returns reverse earned points on returned value
@@ -2723,7 +2723,7 @@ function previewPeriodicReportPrint() {
       const tracking = document.getElementById('dispatchTrackingNumber').value.trim();
       const status = document.getElementById('dispatchStatus').value;
       if (!company) { showToast('اختر شركة الشحن بعد تسليم الطلب للشركة.', 'error'); return; }
-      if (order.stockDeducted && status !== 'تم التسليم لشركة الشحن') {
+      if (order.shippedAt && status !== 'تم التسليم لشركة الشحن') {
         showToast('الطلب خرج بالفعل من المخزون وتم تسليمه للشحن؛ لا يمكن إلغاء مرحلة الشحن من هنا.', 'error'); return;
       }
       const before = structuredClone(state);
@@ -3356,7 +3356,7 @@ function previewPeriodicReportPrint() {
         const returnedValue = Math.max(0, Number(o.returnedValue || 0));
         totalReturns += returnedValue;
         const netOrderValue = Math.max(0, Number(o.grandTotal || 0) - returnedValue);
-        if (o.stockDeducted || String(o.status || '').includes('تم التسليم')) {
+        if (isOrderDeliveredForLoyalty(o)) {
           fullSales += netOrderValue;
           (o.items || []).forEach(item => {
             const prod = state.products.find(p => p.id === item.id);
