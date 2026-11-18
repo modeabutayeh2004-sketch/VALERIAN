@@ -6107,7 +6107,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         return {ok:false,error:window.__valerianLastSaveError?.message||'تعذر حفظ الحذف في قاعدة البيانات.'};
       }
       refreshAllViews();
-      valCloudDiagnostic('الحذف المحلي اكتمل: product='+id+' absent='+!state.products.some(p=>relatedIds.has(String(p.id)))+' generation='+cloudIncrementalGeneration+' outbox='+((await valSyncReadOutbox()).length)+'.');
+      let deleteOutboxCount='غير متاح';try{deleteOutboxCount=(await valSyncReadOutbox()).length;}catch(_){} valCloudDiagnostic('الحذف المحلي اكتمل: product='+id+' absent='+!state.products.some(p=>relatedIds.has(String(p.id)))+' generation='+cloudIncrementalGeneration+' outbox='+deleteOutboxCount+'.');
       showToast('تم حذف المنتج نهائيًا من المخزون مع الاحتفاظ بالسجلات التاريخية.','success');
       return {ok:true,deletedCount:relatedIds.size};
     }
