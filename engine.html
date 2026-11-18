@@ -2987,11 +2987,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         invoiceWhatsAppMsg: 'مرحباً {customer}، مرفق فاتورتكم رقم {order} من ڤاليريان. شكراً لثقتكم بنا.'
       },
       brand: { logo: '' },
-      products: [
-        { id: 'p_1', name: 'Tom Ford Oud Wood', category: 'رجالي', size: '100 مل', price: 5400, totalCost: 3500, stock: 15, barcode: '622111001', image: '', notes: 'عود ملكي فاخر', isOffer: true, offerPrice: 4900, isDecantable: false },
-        { id: 'p_2', name: 'Chanel Coco Mademoiselle', category: 'نسائي', size: '100 مل', price: 4900, totalCost: 3200, stock: 8, barcode: '622111002', image: '', notes: 'عطر زهري شرقي', isOffer: true, offerPrice: 4400, isDecantable: false },
-        { id: 'p_dec_1', name: 'تقسيم Tom Ford Oud Wood (10 مل)', category: 'تقسيم', size: '10 مل', price: 650, totalCost: 365, averageCost: 365, stock: 0, reservedStock: 0, emptyContainersStock: 0, decantBottleCost: 15, barcode: '622999001', image: '', notes: 'عطر تقسيم بعبوة فاخرة', isOffer: false, offerPrice: 0, isDecantable: true, parentId: 'p_1', decantSize: 10, legacyStockNeedsReview: false }
-      ],
+      products: [],
       imports: [],
       purchases: [],
       supplierInvoices: [],
@@ -3575,6 +3571,29 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     }
 
     let state = loadState();
+
+    // Remove only the exact built-in sample records shipped by older V20 builds.
+    // Keep any sample record that has already been used by real business activity.
+    function valStripLegacyDemoSeed(st){
+      const demo=new Map([
+        ['p_1','Tom Ford Oud Wood'],
+        ['p_2','Chanel Coco Mademoiselle'],
+        ['p_dec_1','تقسيم Tom Ford Oud Wood (10 مل)']
+      ]);
+      const referenced=new Set();
+      ['orders','imports','purchases','supplierInvoices','inventoryMovements','packagingMovements','auditLog'].forEach(key=>{
+        (Array.isArray(st?.[key])?st[key]:[]).forEach(row=>{
+          const add=x=>{if(x?.id)referenced.add(String(x.id));if(x?.productId)referenced.add(String(x.productId));if(x?.parentId)referenced.add(String(x.parentId));};
+          add(row);(Array.isArray(row?.items)?row.items:[]).forEach(add);
+        });
+      });
+      const before=Array.isArray(st?.products)?st.products.length:0;
+      st.products=(Array.isArray(st?.products)?st.products:[]).filter(p=>{
+        return !(demo.get(String(p?.id))===String(p?.name||'')&&!referenced.has(String(p.id)));
+      });
+      return before!==st.products.length;
+    }
+    valStripLegacyDemoSeed(state);
 
     function saveState() {
       try {
@@ -6935,12 +6954,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       cloudSyncDiagnostics.cursor=effectiveCursor;
       cloudSyncDiagnostics.lastError='لا يوجد';
 
-      if(!base&&!usedMetaOnly){
-        const seedState=valSyncCloudClone(state);
-        const seed={version:1,ops:Object.keys(seedState).map(key=>({op:'set',key,value:valSyncClone(seedState[key])}))};
-        const items=await valSyncReadOutbox();
-        if(!items.length){items.push({change_id:valSyncNewId(),patch:seed,created_at:new Date().toISOString()});await valSyncWriteOutbox(items);}
-      }
+      // An empty cloud baseline is not permission to upload this device's defaults.
+      // Keep a fresh account empty; only real user edits may enter the journal.
       // Assets are fetched only when absent or when their content hash changes.
       await valDownloadCloudImageAssets(state);
       await valUploadCloudImageAssets();
@@ -7460,7 +7475,9 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         }
         const restored=await valRestoreDurableState();
         if(restored){
+          const removedDemo=valStripLegacyDemoSeed(state);
           await valImagesInit();
+          if(removedDemo){persistLocal(state);await valQueueDurableState(state);await valDurableWritePromise;}
           refreshAllViews();
           try{loadSettingsToUI();}catch(_){}
           showToast('تم استعادة أحدث بيانات النشاط من التخزين الدائم على الجهاز.','success');
