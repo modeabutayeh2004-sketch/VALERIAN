@@ -3265,7 +3265,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
       const set=(id,value)=>{const el=document.getElementById(id);if(el)el.value=value??'';};
       set('editProdId',p.id);set('editProdName',p.name);set('editProdType',p.productType||'عطور');set('editProdCategory',p.category||'غير محدد');
       set('editProdSize',sizeMatch?sizeMatch[0]:'');set('editProdUnit',unit);set('editProdPrice',p.price);set('editProdCost',p.averageCost??p.totalCost??0);
-      set('editProdStock',p.stock);set('editProdMin',p.minimumStock??2);set('editProdNotes',p.notes||'');
+      set('editProdStock',p.stock);const stockField=document.getElementById('editProdStock');if(stockField)stockField.readOnly=p.productType==='عطور'||p.category==='تقسيم';set('editProdMin',p.minimumStock??2);set('editProdNotes',p.notes||'');
       set('editProdDecantSize',p.decantSizeMl||p.decantSize||10);set('editProdDecantCost',p.decantBottleCost||15);set('editProdOfferPrice',p.offerPrice||'');
       document.getElementById('editProdDecantable').checked=!!p.isDecantable;
       toggleEditDecantFields();
@@ -3324,7 +3324,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
       try{
         const payload={id,name:document.getElementById('editProdName').value.trim(),productType:document.getElementById('editProdType').value,category:document.getElementById('editProdCategory').value,
           size:document.getElementById('editProdSize').value+' '+document.getElementById('editProdUnit').value,stockUnit:document.getElementById('editProdUnit').value,
-          price:Number(document.getElementById('editProdPrice').value),averageCost:Number(document.getElementById('editProdCost').value),stock:Number(current.stock||0),
+          price:Number(document.getElementById('editProdPrice').value),averageCost:Number(document.getElementById('editProdCost').value),stock:(current.productType==='عطور'||current.category==='تقسيم')?Number(current.stock||0):Number(document.getElementById('editProdStock').value),
           minimumStock:Number(document.getElementById('editProdMin').value),notes:document.getElementById('editProdNotes').value,
           isDecantable:document.getElementById('editProdDecantable').checked,decantSizeMl:Number(document.getElementById('editProdDecantSize').value||10),
           decantBottleCost:Number(document.getElementById('editProdDecantCost').value||15),isOffer:document.getElementById('editProdOffer').checked,
