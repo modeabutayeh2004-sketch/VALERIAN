@@ -6923,7 +6923,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const hasStoredCursor=!!storedCursorRow&&Number.isFinite(Number(storedCursorRow.cursor))&&Number(storedCursorRow.cursor)>=0;
       const storedCursor=hasStoredCursor?Number(storedCursorRow.cursor):0;
       const pendingBeforeBootstrap=await valSyncReadOutbox();
-      let data=null,error=null,usedMetaOnly=hasStoredCursor||pendingBeforeBootstrap.length>0;
+      const localHasBusinessData=['products','imports','purchases','supplierInvoices','supplierPayments','customers','orders','expenses','inventoryMovements','packagingPurchases','packagingMovements','operatingSupplies','operatingSupplyInvoices','operatingSupplyMovements','paymentTransactions','returnRecords','refundTransactions'].some(key=>Array.isArray(state[key])&&state[key].length>0);
+      let data=null,error=null,usedMetaOnly=(hasStoredCursor&&localHasBusinessData)||pendingBeforeBootstrap.length>0;
 
       if(usedMetaOnly){
         const meta=await cloudClient.rpc('valerian_sync_bootstrap_meta');
@@ -6945,7 +6946,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       if(!data?.ok)throw new Error('تعذر تثبيت نقطة بداية المزامنة الجزئية.');
 
       const base=data.state?normalizeState(data.state):null;
-      const applyBaseline=!!base&&!hasStoredCursor&&!pendingBeforeBootstrap.length;
+      const applyBaseline=!!base&&!pendingBeforeBootstrap.length&&!localHasBusinessData;
       if(applyBaseline){
         const hydrated=await valHydrateImageState(base,{storeIncoming:true,strict:false});
         const applied=await applyCloudState(hydrated);
@@ -6958,8 +6959,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       }
 
       // Never reset a valid local cursor to the immutable server baseline cursor.
-      const effectiveCursor=hasStoredCursor?storedCursor:Number(data.cursor||0);
-      if(!hasStoredCursor)await valSyncWriteCursor(effectiveCursor);
+      const effectiveCursor=applyBaseline?Number(data.cursor||0):(hasStoredCursor?storedCursor:Number(data.cursor||0));
+      if(applyBaseline||!hasStoredCursor)await valSyncWriteCursor(effectiveCursor);
       cloudRevision=Number(data.revision||0); cloudLegacyRevision=cloudRevision;
       cloudIncrementalBase=valSyncCloudClone(state);
       cloudIncrementalReady=true;
