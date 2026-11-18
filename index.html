@@ -3634,5 +3634,21 @@ html[data-valerian-theme="light"] .nav-pill{color:#746957!important}
 html[data-valerian-theme="light"] .nav-pill.bg-slate-200\/20{background:rgba(198,166,107,.2)!important;color:#6c5129!important}
 </style>
 <script id="valerianThemeController">(function(){const K='valerian-theme-preference-v2';function apply(v){v=v==='light'?'light':'dark';document.documentElement.setAttribute('data-valerian-theme',v);try{localStorage.setItem(K,v)}catch(_){}const b=document.getElementById('valerianThemeToggle'),l=document.getElementById('valerianThemeLabel');if(b)b.textContent=v==='dark'?'التبديل للوضع النهاري':'التبديل للوضع الليلي';if(l)l.textContent=v==='dark'?'ليلي • Onyx Champagne':'نهاري • Pearl Champagne';const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=v==='dark'?'#171513':'#f2ede4'}window.toggleValerianTheme=()=>apply(document.documentElement.getAttribute('data-valerian-theme')==='dark'?'light':'dark');let saved='dark';try{saved=localStorage.getItem(K)||'dark'}catch(_){}apply(saved);document.addEventListener('DOMContentLoaded',()=>apply(saved))})();</script>
+
+<style id="valerian-light-dashboard-liquid-text-fix">
+/* Approved light-mode dashboard refinement: match the champagne liquid used by inventory indicators. */
+html[data-valerian-theme="light"] .bottle-card .water-fill{
+  background:linear-gradient(180deg,rgba(198,166,107,.78),rgba(157,128,80,.9))!important;
+}
+html[data-valerian-theme="light"] .bottle-card .bottle-content,
+html[data-valerian-theme="light"] .bottle-card .bottle-content span,
+html[data-valerian-theme="light"] .bottle-card .bottle-content strong{
+  color:#000!important;
+  -webkit-text-fill-color:#000!important;
+}
+html[data-valerian-theme="light"] #kpiWaterOrig + .bottle-content > span{
+  white-space:nowrap!important;
+}
+</style>
 </body>
 </html>
