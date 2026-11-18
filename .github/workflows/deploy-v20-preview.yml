@@ -1,4 +1,4 @@
-name: Build and publish VALERIAN V20 browser preview
+name: Build VALERIAN V20 browser preview
 on:
   push:
     branches: [android/apk-v20]
@@ -16,17 +16,12 @@ on:
 permissions:
   contents: read
   actions: write
-  pages: write
-  id-token: write
 concurrency:
   group: valerian-v20-browser-preview
   cancel-in-progress: true
 jobs:
   build-preview:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout V20 preview branch
         uses: actions/checkout@v4
@@ -38,16 +33,7 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Build browser preview only
         run: npm run build:web
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
-      - name: Upload complete V20 browser app to Pages
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./www
-      - name: Deploy live browser preview
-        id: deployment
-        uses: actions/deploy-pages@v4
-      - name: Upload downloadable browser preview package
+      - name: Upload browser preview package
         uses: actions/upload-artifact@v4
         with:
           name: VALERIAN-V20-Browser-Preview
