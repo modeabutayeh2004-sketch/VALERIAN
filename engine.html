@@ -3699,26 +3699,58 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       if (!file) return;
       const reader = new FileReader();
       reader.onload = async ev => {
+        let before = null;
         try {
-          const parsed = JSON.parse(ev.target.result);
+          let parsed = JSON.parse(ev.target.result);
+          // Accept both the direct VALERIAN state export and common wrapped backup shapes.
+          if (parsed && !Array.isArray(parsed.products)) parsed = parsed.state || parsed.data || parsed.backup || parsed;
           const required = ['products','orders','customers','expenses'];
-          if (!parsed || typeof parsed !== 'object' || required.some(k => !Array.isArray(parsed[k]))) throw new Error('invalid schema');
-          if (parsed.products.some(p => !p || typeof p.id !== 'string' || typeof p.name !== 'string') || parsed.orders.some(o => !o || typeof o.id !== 'string' || !Array.isArray(o.items))) throw new Error('invalid records');
+          if (!parsed || typeof parsed !== 'object' || required.some(k => !Array.isArray(parsed[k]))) {
+            throw new Error('الملف لا يحتوي أقسام النسخة الاحتياطية الأساسية (products / orders / customers / expenses).');
+          }
+          const validId = v => (typeof v === 'string' && v.trim().length > 0) || (typeof v === 'number' && Number.isFinite(v));
+          if (parsed.products.some(p => !p || !validId(p.id) || typeof p.name !== 'string') ||
+              parsed.orders.some(o => !o || !validId(o.id) || !Array.isArray(o.items))) {
+            throw new Error('بعض سجلات المنتجات أو الطلبات غير مكتملة أو لا تحتوي معرفات صالحة.');
+          }
           if (!confirm(`ملف صالح مبدئياً.
 المنتجات: ${parsed.products.length}
 الطلبات: ${parsed.orders.length}
 العملاء: ${parsed.customers.length}
 
 سيتم استبدال البيانات الحالية. هل أنشأت نسخة احتياطية حديثة وتريد المتابعة؟`)) { e.target.value=''; return; }
-          const before = structuredClone(state);
-          try { await valDownloadStateBackup('valerian_before_restore'); }
-          catch (backupErr) { console.error('Emergency backup failed', backupErr); showToast('تعذر إنشاء نسخة قبل الاستعادة؛ أُلغيت العملية لحماية البيانات.', 'error'); return; }
-          state = normalizeState(parsed);
-          if (!saveState()) { state = before; refreshAllViews(); return; }
+
+          before = structuredClone(state);
+          // Emergency safety copy must not depend on local images being available on this device.
+          // Missing image placeholders are preserved in this safety copy; imported inline images are handled below.
+          try {
+            const safeBlob = new Blob([JSON.stringify(before, null, 2)], {type:'application/json;charset=utf-8'});
+            const safeUrl = URL.createObjectURL(safeBlob), safeLink = document.createElement('a');
+            safeLink.href = safeUrl;
+            safeLink.download = `valerian_before_restore_${new Date().toISOString().replace(/[:.]/g,'-')}.json`;
+            document.body.appendChild(safeLink); safeLink.click(); safeLink.remove();
+            setTimeout(() => URL.revokeObjectURL(safeUrl), 3000);
+          } catch (backupErr) {
+            console.error('Emergency backup failed', backupErr);
+            throw new Error('تعذر إنشاء نسخة أمان من البيانات الحالية؛ أُلغيت الاستعادة لحماية بياناتك.');
+          }
+
+          // Store Base64 images from the selected JSON in this installation's IndexedDB before applying state.
+          const hydrated = await valHydrateImageState(parsed, {storeIncoming:true, strict:false});
+          state = normalizeState(hydrated);
+          if (!saveState()) throw new Error('تعذر حفظ البيانات المستوردة محلياً.');
           await valIdbFlush();
-          refreshAllViews(); showToast('تم استعادة النسخة بعد التحقق من بنيتها وإنشاء نسخة أمان.', 'success');
-        } catch(err) { console.error(err); showToast('ملف النسخة الاحتياطية غير صالح أو لا يحتوي الأقسام المطلوبة.', 'error'); }
-        finally { e.target.value=''; }
+          if (valDurableWritePromise) await valDurableWritePromise;
+          refreshAllViews();
+          showToast('تم استعادة النسخة الاحتياطية بنجاح.', 'success');
+        } catch(err) {
+          console.error('VALERIAN JSON restore failed:', err);
+          if (before) {
+            state = before;
+            try { saveState(); refreshAllViews(); } catch(rollbackErr) { console.error('Restore rollback failed', rollbackErr); }
+          }
+          showToast('تعذر استيراد النسخة: ' + (err?.message || 'راجع صيغة الملف وصلاحيته.'), 'error');
+        } finally { e.target.value=''; }
       };
       reader.onerror = () => { showToast('تعذر قراءة ملف النسخة الاحتياطية.', 'error'); e.target.value=''; };
       reader.readAsText(file);
