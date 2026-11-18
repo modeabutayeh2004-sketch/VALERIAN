@@ -3497,9 +3497,26 @@ function previewPeriodicReportPrint() {
       closeModal('customerProfileModal');refreshAllViews();showToast('تم حفظ ملف العميل وتفضيلاته.','success');return true;
     }
     function setInventoryPane(key){
-      document.querySelectorAll('#tab-inventory .inventory-pane').forEach(el=>el.classList.toggle('hidden',el.id!=='inventoryPane-'+key));
-      document.querySelectorAll('.inventory-subnav [data-inv-pane]').forEach(b=>b.classList.toggle('active',b.dataset.invPane===key));
+      const target=document.getElementById('inventoryPane-'+key);
+      if(!target||!document.getElementById('tab-inventory')?.contains(target)){
+        console.warn('VALERIAN inventory pane not found:',key);
+        return false;
+      }
+      document.querySelectorAll('#tab-inventory .inventory-pane').forEach(el=>{
+        const active=el===target;
+        el.classList.toggle('hidden',!active);
+        el.setAttribute('aria-hidden',active?'false':'true');
+      });
+      document.querySelectorAll('#tab-inventory .inventory-subnav [data-inv-pane]').forEach(b=>{
+        const active=b.dataset.invPane===key;
+        b.classList.toggle('active',active);
+        b.setAttribute('aria-selected',active?'true':'false');
+      });
+      return true;
     }
+    // The HTML uses inline onclick handlers; explicitly expose this function even
+    // when the engine is evaluated inside a private runtime scope.
+    window.setInventoryPane=setInventoryPane;
 
     function printCustomerProfileFromModal(){
       const field=document.getElementById('customerProfileIndex');
