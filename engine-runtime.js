@@ -2804,9 +2804,58 @@ function previewPeriodicReportPrint() {
       if(!saveState()){state=before;refreshAllViews();return;}pendingDeliveryOrderIndex=null;closeModal('deliveryConfirmModal');renderShipments();renderInventory();renderCrmTable();refreshAllViews();previewDocumentPrint(o,'final_invoice');showToast('تم تأكيد التحصيل والتسليم وتحديث المخزون.','success');
     }
 
+    let pendingReturnOrderIndex = null;
+    function openOrderReturnModal(idx){
+      const order=state.orders[idx];
+      if(!order||(order.items||[]).every(i=>Number(i.returnedQty||0)>=Number(i.qty||0))){showToast('لا توجد كميات متاحة لإرجاعها في هذا الطلب.','error');return;}
+      pendingReturnOrderIndex=idx;
+      const delivered=!!order.stockDeducted;
+      const summary=document.getElementById('orderReturnSummary');
+      if(summary)summary.textContent='الطلب '+order.id+' — '+(order.name||'')+' — '+(order.phone||'');
+      const guidance=document.getElementById('orderReturnGuidance');
+      if(guidance)guidance.textContent=delivered?'حدد كمية كل صنف وحالته بعد الاستلام: سليم يعود للمخزون، مفتوح يُضاف رصيده بالملليلتر إلى الزجاجات المتاحة للتقسيم، ومكسور يُسجل كهالك وخسارة.':'هذا الطلب لم يُخصم من المخزون بعد؛ اعتماد المرتجع سيحرر الكمية المحجوزة فقط دون إضافة مستلزمات تغليف أو حركة بيع.';
+      const host=document.getElementById('orderReturnItems');
+      if(!host)return;
+      host.innerHTML=(order.items||[]).map(item=>{
+        const remaining=Math.max(0,Number(item.qty||0)-Number(item.returnedQty||0));
+        if(!remaining)return '';
+        const product=state.products.find(p=>String(p.id)===String(item.id));
+        const bottleMl=product?Math.max(1,Number(getBottleVolumeMl(product)||0)):0;
+        return '<div class="rounded-xl border border-slate-200 p-3 space-y-2" data-return-row="1" data-product-id="'+escapeHTML(item.id)+'">'+
+          '<div class="flex items-start justify-between gap-3"><div class="min-w-0"><b class="text-sm">'+escapeHTML(item.name||product?.name||'صنف')+'</b><div class="text-[10px] text-slate-500">الكمية الأصلية: '+Number(item.qty||0)+' — المرتجع سابقًا: '+Number(item.returnedQty||0)+' — المتاح: '+remaining+'</div></div><span class="text-xs font-bold text-slate-600">'+formatCurrency(item.price||0)+'</span></div>'+
+          '<div class="grid grid-cols-1 '+(delivered?'sm:grid-cols-2':'')+' gap-2"><label class="text-[10px] font-bold text-slate-600">الكمية المرتجعة<input class="return-qty mt-1 w-full border rounded-lg p-2 text-sm" type="number" min="0" max="'+remaining+'" step="1" value="0"></label>'+
+          (delivered?'<label class="text-[10px] font-bold text-slate-600">حالة المنتج المرتجع<select class="return-disposition mt-1 w-full border rounded-lg p-2 text-sm" onchange="toggleReturnOpenMl(this)"><option value="restock">سليم ومغلق — يعود للمخزون</option><option value="open">مفتوح — رصيد متاح للتقسيم</option><option value="writeoff">مكسور / تالف — هالك</option></select></label>':'')+'</div>'+
+          (delivered?'<label class="return-open-ml-wrap hidden text-[10px] font-bold text-amber-800">كمية العطر المتبقية بالملليلتر<input class="return-open-ml mt-1 w-full border border-amber-300 rounded-lg p-2 text-sm" type="number" min="0" max="'+(bottleMl*remaining)+'" step="0.1" value="0"><span class="block mt-1 font-normal">الحد الأقصى النظري: '+formatNumber(bottleMl*remaining,1)+' مل حسب سعة العبوة.</span></label>':'')+
+          '</div>';
+      }).join('');
+      openModal('orderReturnModal');
+    }
+    function toggleReturnOpenMl(select){
+      const row=select?.closest('[data-return-row]');
+      const wrap=row?.querySelector('.return-open-ml-wrap');
+      if(wrap)wrap.classList.toggle('hidden',select.value!=='open');
+    }
+    function confirmOrderReturn(){
+      const idx=pendingReturnOrderIndex,order=state.orders[idx];
+      if(!order){closeModal('orderReturnModal');return;}
+      const selections=[...document.querySelectorAll('#orderReturnItems [data-return-row]')].map(row=>{
+        const qty=Number(row.querySelector('.return-qty')?.value||0);
+        const disposition=order.stockDeducted?String(row.querySelector('.return-disposition')?.value||'restock'):'release';
+        const openMl=disposition==='open'?Number(row.querySelector('.return-open-ml')?.value||0):0;
+        return {productId:row.dataset.productId,qty,disposition,openMl};
+      }).filter(x=>x.qty>0);
+      if(!selections.length){showToast('حدد كمية واحدة على الأقل للمرتجع.','error');return;}
+      try{
+        markAsReturned(idx,selections);
+        pendingReturnOrderIndex=null;
+        closeModal('orderReturnModal');
+      }catch(err){showToast(String(err?.message||err),'error');}
+    }
+
     function markAsReturned(idx, suppliedSelections = null) {
       const o = state.orders[idx];
       if (!o || (o.items || []).every(i => Number(i.returnedQty || 0) >= Number(i.qty || 0))) { showToast('تم إرجاع كامل قيمة الطلب بالفعل.', 'error'); return; }
+      if(!Array.isArray(suppliedSelections)){openOrderReturnModal(idx);return;}
       const before = structuredClone(state);
       const selections = [];
       let returnValue = 0;
@@ -2823,7 +2872,7 @@ function previewPeriodicReportPrint() {
           qty=Number(supplied?.qty||0);
           if(!Number.isInteger(qty)||qty<0||qty>remainingQty)throw new Error('كمية المرتجع غير صحيحة للصنف '+(item.name||item.id)+'.');
           if(!qty)continue;
-          if(o.stockDeducted){disposition=String(supplied?.disposition||'restock');if(!['restock','quarantine','writeoff'].includes(disposition))throw new Error('حالة المرتجع غير صحيحة للصنف '+(item.name||item.id)+'.');}
+          if(o.stockDeducted){disposition=String(supplied?.disposition||'restock');if(!['restock','open','quarantine','writeoff'].includes(disposition))throw new Error('حالة المرتجع غير صحيحة للصنف '+(item.name||item.id)+'.');}
         }else{
           const rawQty=prompt(`مرتجع جزئي — ${item.name||item.id}\nالكمية الأصلية: ${item.qty}\nالمرتجع سابقاً: ${item.returnedQty||0}\nالمتاح إرجاعه الآن: ${remainingQty}\nأدخل الكمية المرتجعة (0 للتخطي):`,String(remainingQty));
           if(rawQty===null)return;qty=Number(rawQty);
@@ -2836,7 +2885,12 @@ function previewPeriodicReportPrint() {
         const unitPrice = Math.max(0, Number(item.price || 0));
         const lineReturnValue = roundMoney(unitPrice * qty * netFactor);
         returnValue += lineReturnValue;
-        selections.push({ item, prod, qty, disposition, lineReturnValue });
+        const openMl=Number(supplied?.openMl||0);
+        if(disposition==='open'){
+          const capacity=Math.max(1,Number(getBottleVolumeMl(prod)||0))*qty;
+          if(!Number.isFinite(openMl)||openMl<=0||openMl>capacity+0.001)throw new Error('أدخل كمية الملليلترات المتبقية بصورة صحيحة للصنف '+(item.name||item.id)+'.');
+        }
+        selections.push({ item, prod, qty, disposition, openMl, lineReturnValue });
       }
       if (!selections.length) { showToast('لم يتم تحديد أي كميات للمرتجع.', 'error'); return; }
       const previousReturnedValueForLoyalty=Math.max(0,Number(o.returnedValue||0));
@@ -2869,7 +2923,8 @@ function previewPeriodicReportPrint() {
         item.returnedQty = Number(item.returnedQty || 0) + qty;
         if (o.stockDeducted) {
           if (disposition === 'restock') { prod.stock=Number(prod.stock||0)+qty; addInventoryMovement(prod.id,'RETURN_RESTOCK',qty,o.id,'مرتجع جزئي سليم ومغلق'); }
-          else if (disposition === 'quarantine') { prod.quarantineStock=Number(prod.quarantineStock||0)+qty; addInventoryMovement(prod.id,'RETURN_QUARANTINE',qty,o.id,'مرتجع جزئي مفتوح/مستخدم — عزل'); }
+          else if (disposition === 'open') { prod.decantMlAvailable=Number(prod.decantMlAvailable||0)+Number(x.openMl||0); state.decantReturnLog=Array.isArray(state.decantReturnLog)?state.decantReturnLog:[]; state.decantReturnLog.unshift({id:'DRT-'+Date.now()+'-'+Math.random().toString(36).slice(2,5),date:new Date().toISOString(),orderId:o.id,productId:prod.id,productName:prod.name,quantity:qty,availableMl:Number(x.openMl||0),note:'مرتجع مفتوح — أضيف إلى رصيد العطر المتاح للتقسيم'}); }
+          else if (disposition === 'quarantine') { prod.quarantineStock=Number(prod.quarantineStock||0)+qty; addInventoryMovement(prod.id,'RETURN_QUARANTINE',qty,o.id,'مرتجع جزئي معزول'); }
           else { prod.writeoffStock=Number(prod.writeoffStock||0)+qty; addInventoryMovement(prod.id,'RETURN_WRITEOFF',qty,o.id,'مرتجع جزئي تالف — هالك'); }
         } else {
           prod.reservedStock=Math.max(0,Number(prod.reservedStock||0)-qty);
@@ -2879,7 +2934,7 @@ function previewPeriodicReportPrint() {
       o.returnedValue = cumulativeReturnValue;
       o.returnedAt = new Date().toISOString();
       o.returnItems = o.returnItems || [];
-      selections.forEach(x=>o.returnItems.push({productId:x.prod.id,productName:x.prod.name,qty:x.qty,disposition:x.disposition,returnValue:x.lineReturnValue,date:new Date().toISOString()}));
+      selections.forEach(x=>o.returnItems.push({productId:x.prod.id,productName:x.prod.name,qty:x.qty,disposition:x.disposition,openMl:Number(x.openMl||0),returnValue:x.lineReturnValue,date:new Date().toISOString()}));
       o.refundLiability = priorLiability + newLiability;
       o.refundStatus = o.refundLiability > 0 ? 'مستحق للعميل — لم يُرد نقداً' : 'لا يوجد مبلغ مستحق';
       o.remainingAmount = roundMoney(Math.max(0, Number(o.grandTotal||0) - cumulativeReturnValue - alreadyPaid));
@@ -2914,7 +2969,7 @@ function previewPeriodicReportPrint() {
       }
       const fullyReturned = (o.items||[]).every(i=>Number(i.returnedQty||0)>=Number(i.qty||0));
       o.status = fullyReturned ? 'مرتجع بالكامل / قيد تسوية المبلغ' : 'مرتجع جزئي / الطلب مستمر';
-      state.returnRecords.unshift({id:'RET-'+Date.now(),orderId:o.id,date:new Date().toISOString(),items:selections.map(x=>({productId:x.prod.id,productName:x.prod.name,qty:x.qty,disposition:x.disposition,returnValue:x.lineReturnValue})),returnValue,liability:newLiability,cashRefunded:0,loyaltyPointsDeducted:pointsDeductNow,loyaltyPointsRestored:pointsToRestoreNow});
+      state.returnRecords.unshift({id:'RET-'+Date.now(),orderId:o.id,date:new Date().toISOString(),items:selections.map(x=>({productId:x.prod.id,productName:x.prod.name,qty:x.qty,disposition:x.disposition,openMl:Number(x.openMl||0),returnValue:x.lineReturnValue})),returnValue,liability:newLiability,cashRefunded:0,loyaltyPointsDeducted:pointsDeductNow,loyaltyPointsRestored:pointsToRestoreNow});
       logAudit('ORDER_PARTIAL_RETURN','مرتجع '+(fullyReturned?'كامل':'جزئي')+' للطلب '+o.id+' — القيمة '+returnValue+' — خصم نقاط '+pointsDeductNow+' — استعادة نقاط '+pointsToRestoreNow+' — المستحق الجديد '+newLiability);
       if (!saveState()) { state=before; refreshAllViews(); return; }
       renderShipments(); renderInventory(); renderCrmTable(); refreshAllViews();
