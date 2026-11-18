@@ -4920,6 +4920,19 @@ function previewPeriodicReportPrint() {
           await valIdbFlush();
           return {ok:true,invoice:structuredClone(state.operatingSupplyInvoices[0]),snapshot:snapshot()};
         },
+        getPackagingBottleSizes:async()=>{await ready;return getSharedPackagingSizes();},
+        createPackagingBottleInvoice:async payload=>{
+          await ready;if(!payload)throw new Error('بيانات فاتورة زجاجات التقسيم مطلوبة.');
+          const size=Number(payload.sizeMl),qty=Number(payload.quantity),total=roundMoney(Number(payload.totalCost)),paid=roundMoney(Number(payload.paidAmount||0)),supplier=String(payload.supplier||'').trim();
+          if(!Number.isFinite(size)||size<=0||!Number.isSafeInteger(qty)||qty<=0||!supplier||!Number.isFinite(total)||total<=0||!Number.isFinite(paid)||paid<0||paid>total)throw new Error('راجع المورد ومقاس الزجاجة والكمية والتكلفة والمدفوع.');
+          const beforeCount=(state.packagingPurchases||[]).length;
+          el('emptyContainersSize').innerHTML=getSharedPackagingSizes().map(n=>'<option value="'+n+'">'+n+' مل</option>').join('');el('emptyContainersSize').value=String(size);
+          el('emptyContainersQty').value=String(qty);el('emptyContainersTotalCost').value=String(total);el('emptyContainersSupplier').value=supplier;el('emptyContainersPaid').value=String(paid);el('emptyContainersMethod').value=normalizePaymentMethod(payload.paymentMethod||'نقدي');
+          receiveEmptyContainers({preventDefault(){}});
+          if((state.packagingPurchases||[]).length!==beforeCount+1)throw new Error('لم يعتمد المحرك فاتورة زجاجات التقسيم.');
+          await valDurableWritePromise;if(valDurableWriteError)throw new Error('لم يكتمل الحفظ الدائم: '+String(valDurableWriteError.message||valDurableWriteError));await valIdbFlush();
+          return {ok:true,purchase:structuredClone(state.packagingPurchases[0]),snapshot:snapshot()};
+        },
         updateOperatingSupplyRecipe:async payload=>{
           await ready;
           const supply=(state.operatingSupplies||[]).find(x=>String(x.id)===String(payload?.id||''));
