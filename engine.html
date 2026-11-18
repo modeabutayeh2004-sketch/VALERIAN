@@ -6881,29 +6881,47 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       });
     }
     async function valIncrementalBootstrap(){
-      const {data,error}=await cloudClient.rpc('valerian_sync_bootstrap');
-      if(error)throw error;
-      if(!data?.ok)throw new Error('تعذر تثبيت نقطة بداية المزامنة الجزئية.');
-
-      // The server cursor is the immutable migration baseline, NOT the latest cursor.
-      // Preserve this device's durable cursor on every later login; otherwise every
-      // sign-in replays the entire journal since migration and reapplies the old base.
+      // Read local progress BEFORE contacting bootstrap. The full baseline is needed
+      // only once on a fresh device; later logins use a metadata-only RPC.
       const storedCursorRow=await valIdbGet('appstate',VAL_SYNC_CURSOR_KEY);
       const hasStoredCursor=!!storedCursorRow&&Number.isFinite(Number(storedCursorRow.cursor))&&Number(storedCursorRow.cursor)>=0;
       const storedCursor=hasStoredCursor?Number(storedCursorRow.cursor):0;
       const pendingBeforeBootstrap=await valSyncReadOutbox();
+      let data=null,error=null,usedMetaOnly=hasStoredCursor||pendingBeforeBootstrap.length>0;
+
+      if(usedMetaOnly){
+        const meta=await cloudClient.rpc('valerian_sync_bootstrap_meta');
+        data=meta.data;error=meta.error;
+        if(error){
+          const message=String(error.message||error);
+          const missingMeta=message.includes('PGRST202')||message.includes('Could not find the function')||message.includes('does not exist')||message.includes('schema cache');
+          if(!missingMeta)throw error;
+          valCloudDiagnostic('RPC bootstrap_meta غير متاح؛ استخدام bootstrap الكامل مؤقتاً حتى تطبيق migration الجديدة.');
+          const full=await cloudClient.rpc('valerian_sync_bootstrap');
+          data=full.data;error=full.error;
+          usedMetaOnly=false;
+        }
+      }else{
+        const full=await cloudClient.rpc('valerian_sync_bootstrap');
+        data=full.data;error=full.error;
+      }
+      if(error)throw error;
+      if(!data?.ok)throw new Error('تعذر تثبيت نقطة بداية المزامنة الجزئية.');
+
       const base=data.state?normalizeState(data.state):null;
       const applyBaseline=!!base&&!hasStoredCursor&&!pendingBeforeBootstrap.length;
-
       if(applyBaseline){
         const hydrated=await valHydrateImageState(base,{storeIncoming:true,strict:false});
         const applied=await applyCloudState(hydrated);
         if(!applied)throw new Error('تعذر تطبيق نقطة البداية السحابية.');
         valCloudDiagnostic('Bootstrap: تم تطبيق النسخة الأساسية لأول تهيئة لهذا الجهاز.');
       }else if(base){
-        valCloudDiagnostic('Bootstrap: تم الاحتفاظ بالحالة المحلية وتجاوز إعادة تطبيق النسخة الأساسية؛ cursor المحلي='+storedCursor+'، outbox='+pendingBeforeBootstrap.length+'.');
+        valCloudDiagnostic('Bootstrap: تم تجاوز إعادة تطبيق النسخة الأساسية للحفاظ على البيانات المحلية؛ cursor='+storedCursor+'، outbox='+pendingBeforeBootstrap.length+'.');
+      }else if(usedMetaOnly){
+        valCloudDiagnostic('Bootstrap metadata-only: لم يتم تنزيل نسخة النشاط الكاملة؛ cursor المحلي='+storedCursor+'.');
       }
 
+      // Never reset a valid local cursor to the immutable server baseline cursor.
       const effectiveCursor=hasStoredCursor?storedCursor:Number(data.cursor||0);
       if(!hasStoredCursor)await valSyncWriteCursor(effectiveCursor);
       cloudRevision=Number(data.revision||0);
@@ -6914,13 +6932,13 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       cloudSyncDiagnostics.cursor=effectiveCursor;
       cloudSyncDiagnostics.lastError='لا يوجد';
 
-      if(!base){
+      if(!base&&!usedMetaOnly){
         const seedState=valSyncCloudClone(state);
         const seed={version:1,ops:Object.keys(seedState).map(key=>({op:'set',key,value:valSyncClone(seedState[key])}))};
         const items=await valSyncReadOutbox();
         if(!items.length){items.push({change_id:valSyncNewId(),patch:seed,created_at:new Date().toISOString()});await valSyncWriteOutbox(items);}
       }
-      // Download only missing/changed assets; image bytes never enter the journal.
+      // Assets are fetched only when absent or when their content hash changes.
       await valDownloadCloudImageAssets(state);
       await valUploadCloudImageAssets();
       cloudSyncDiagnostics.outboxCount=(await valSyncReadOutbox()).length;
@@ -7088,7 +7106,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     async function initializeValerianCloud(user) {
       await window.__valImgReady;
       cloudUser=user; setCloudStatus('جارٍ فحص بيانات السحابة…','#a16207');
-      const {data:row,error}=await cloudClient.from('valerian_state').select('state,revision,updated_at').eq('user_id',user.id).maybeSingle();
+      const {data:row,error}=await cloudClient.from('valerian_state').select('revision,updated_at').eq('user_id',user.id).maybeSingle();
       if(error){setCloudStatus('خطأ قراءة السحابة: '+cloudErrorMessage(error),'#b91c1c');return;}
       // Prefer journal-based sync when the additive migration is installed.
       try{
@@ -7116,24 +7134,30 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         }
         console.warn('Incremental sync migration is not installed; retaining legacy snapshot mode.',incrementalError);
       }
-      if(!row){
+      let legacyRow=null;
+      if(row){
+        const legacy=await cloudClient.from('valerian_state').select('state,revision,updated_at').eq('user_id',user.id).maybeSingle();
+        if(legacy.error){setCloudStatus('خطأ قراءة النسخة السحابية القديمة: '+cloudErrorMessage(legacy.error),'#b91c1c');return;}
+        legacyRow=legacy.data;
+      }
+      if(!legacyRow){
         // Default to Cancel: never upload this device's existing data automatically.
         showToast('لا توجد نسخة سحابية سابقة؛ تم إلغاء رفع بيانات هذا الجهاز والإبقاء عليها محلياً.');
         setCloudStatus('تم تسجيل الدخول — البيانات الحالية محفوظة محلياً','#a16207');
         cloudRevision=0; cloudReady=true; cloudDirty=false;
       } else {
-        cloudRevision=Number(row.revision||0);
+        cloudRevision=Number(legacyRow.revision||0);
         let cloudHasLegacyImages=false;
-        valWalkImages(row.state,(owner,key)=>{if(typeof owner[key]==='string'&&owner[key].startsWith('data:')&&owner[key]!==VAL_IMG_PH)cloudHasLegacyImages=true;});
-        const localMatchesCloud = valComparableStateJson(normalizeState(state)) === valComparableStateJson(normalizeState(row.state));
+        valWalkImages(legacyRow.state,(owner,key)=>{if(typeof owner[key]==='string'&&owner[key].startsWith('data:')&&owner[key]!==VAL_IMG_PH)cloudHasLegacyImages=true;});
+        const localMatchesCloud = valComparableStateJson(normalizeState(state)) === valComparableStateJson(normalizeState(legacyRow.state));
         const localHasBusinessData = ['products','orders','customers','imports','expenses','inventoryMovements'].some(key=>Array.isArray(state[key])&&state[key].length>0);
         if((hadLocalValerianState || localHasBusinessData) && !localMatchesCloud){
           // The old blocking choice is intentionally removed. Always take the Cancel path:
           // keep the cloud copy authoritative and never overwrite it with this device's local data.
           showToast('تم العثور على بيانات سحابية مختلفة؛ تم إلغاء رفع بيانات الجهاز واختيار النسخة السحابية.');
-          const applied=await applyCloudState(row.state); if(!applied)return;
+          const applied=await applyCloudState(legacyRow.state); if(!applied)return;
         } else if(!localMatchesCloud) {
-          const applied=await applyCloudState(row.state); if(!applied)return;
+          const applied=await applyCloudState(legacyRow.state); if(!applied)return;
         }
         cloudReady=true;
         // Remove embedded legacy images from the cloud only after this device has
