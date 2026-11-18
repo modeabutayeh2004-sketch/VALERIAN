@@ -3872,6 +3872,18 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       </div>
     </div>
 
+    <!-- SHEET: DELETE OPERATING SUPPLY -->
+    <div id="v5SupplyDeleteSheet" class="fixed inset-0 z-[75] hidden sheet-backdrop flex items-end justify-center" onclick="if(event.target===this)closeSheet('v5SupplyDeleteSheet')">
+      <div class="sheet-panel w-full max-w-md rounded-t-3xl p-5 space-y-4 max-h-[88dvh] overflow-y-auto no-scrollbar">
+        <div class="w-10 h-1 rounded-full bg-slate-300/30 mx-auto"></div>
+        <div class="flex items-center justify-between"><div><h3 class="text-base font-black">حذف مستلزم تغليف</h3><p class="text-[10px] text-slate-400 mt-1">تأكيد الإزالة من قائمة المخزون النشط</p></div><button type="button" onclick="closeSheet('v5SupplyDeleteSheet')" class="glass-pill rounded-full w-9 h-9">✕</button></div>
+        <input id="v5SupplyDeleteId" type="hidden">
+        <div class="v5-supply-card rounded-2xl p-4 space-y-2"><div class="text-[10px] text-rose-500 font-black">الصنف المحدد</div><div id="v5SupplyDeleteName" class="text-base font-black"></div><p id="v5SupplyDeleteDetails" class="v5-supply-muted text-xs leading-6"></p></div>
+        <div class="v5-supply-warning rounded-xl p-3 text-[11px] leading-6">سيتم إخفاء الصنف وإيقاف استهلاكه في الطلبات الجديدة. لن تُحذف فواتير الشراء أو حركات المخزون أو السجلات المالية السابقة.</div>
+        <div class="grid grid-cols-2 gap-2"><button type="button" onclick="closeSheet('v5SupplyDeleteSheet')" class="glass-pill rounded-full py-3 text-xs font-bold">إلغاء</button><button id="v5SupplyDeleteConfirmBtn" type="button" onclick="confirmOperatingSupplyDeleteFromScreen()" class="v5-supply-danger rounded-full py-3 text-xs font-black">تأكيد الحذف</button></div>
+      </div>
+    </div>
+
     <!-- SHEET: OPERATING SUPPLIES WRITEOFF -->
     <div id="v5SupplyWriteoffSheet" class="fixed inset-0 z-[70] hidden sheet-backdrop flex items-end justify-center" onclick="if(event.target===this)closeSheet('v5SupplyWriteoffSheet')">
       <div class="sheet-panel w-full max-w-md rounded-t-3xl p-5 space-y-4 max-h-[90dvh] overflow-y-auto no-scrollbar">
@@ -4933,7 +4945,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           <div class="grid grid-cols-2 gap-2"><div class="v5-supply-stat rounded-xl p-2"><span class="v5-supply-muted text-[9px] block">متوسط تكلفة الوحدة</span><b class="text-xs font-black bidi-ltr block mt-1">${fmtEgp(x.averageUnitCost||0)}</b></div><div class="v5-supply-stat rounded-xl p-2"><span class="v5-supply-muted text-[9px] block">حد إعادة الطلب</span><b class="text-xs font-black block mt-1">${min.toLocaleString('en-US')}</b></div></div>
           ${low?'<div class="v5-supply-warning rounded-lg px-2.5 py-2 text-[10px] font-bold">⚠️ الرصيد عند حد إعادة الطلب أو أقل</div>':''}
           <div class="grid grid-cols-3 gap-2"><label class="col-span-1"><span class="v5-supply-muted text-[9px] block mb-1">لكل طلب</span><input id="v5-os-order-${escapeHtmlMobile(id)}" type="number" min="0" step="0.001" value="${Number(x.recipePerOrder||0)}" class="v5-supply-input w-full rounded-lg p-2 text-xs"></label><label class="col-span-1"><span class="v5-supply-muted text-[9px] block mb-1">لكل وحدة</span><input id="v5-os-unit-${escapeHtmlMobile(id)}" type="number" min="0" step="0.001" value="${Number(x.recipePerUnit||0)}" class="v5-supply-input w-full rounded-lg p-2 text-xs"></label><label class="col-span-1"><span class="v5-supply-muted text-[9px] block mb-1">حد التنبيه</span><input id="v5-os-min-${escapeHtmlMobile(id)}" type="number" min="0" step="0.001" value="${min}" class="v5-supply-input w-full rounded-lg p-2 text-xs"></label></div>
-          <div class="grid grid-cols-3 gap-2"><button type="button" onclick="saveOperatingSupplyRecipeFromScreen('${encodeURIComponent(id)}')" class="glass-pill rounded-full py-2.5 text-[10px] font-black">حفظ الاستهلاك</button><button type="button" onclick="openOperatingSupplyWriteoffFromScreen('${encodeURIComponent(id)}')" class="v5-supply-danger rounded-full py-2.5 text-[10px] font-black">هالك / عجز جرد</button><button type="button" onclick="deleteOperatingSupplyFromScreen('${encodeURIComponent(id)}')" class="v5-supply-danger rounded-full py-2.5 text-[10px] font-black">حذف الصنف</button></div>
+          <div class="grid grid-cols-3 gap-2"><button type="button" onclick="saveOperatingSupplyRecipeFromScreen('${encodeURIComponent(id)}')" class="glass-pill rounded-full py-2.5 text-[10px] font-black">حفظ الاستهلاك</button><button type="button" onclick="openOperatingSupplyWriteoffFromScreen('${encodeURIComponent(id)}')" class="v5-supply-danger rounded-full py-2.5 text-[10px] font-black">هالك / عجز جرد</button><button type="button" onclick="openOperatingSupplyDeleteFromScreen('${encodeURIComponent(id)}')" class="v5-supply-danger rounded-full py-2.5 text-[10px] font-black">حذف الصنف</button></div>
         </article>`;
       }).join(''):'<div class="v5-supply-card rounded-2xl p-5 text-center col-span-full"><div class="text-2xl mb-2">🧰</div><b class="text-sm font-black block">لا توجد مستلزمات مسجلة حتى الآن</b><p class="v5-supply-muted text-[10px] mt-1">ابدأ بإضافة أول مستلزم من زر «إضافة / شراء مستلزم تغليف».</p></div>';
       const bottleBox=document.getElementById('v5SupplyBottleSizes');
@@ -4967,12 +4979,27 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       try{const api=window.ValerianEngine;if(!api)throw new Error('محرك VALERIAN غير جاهز؛ لم يتم حفظ الإعدادات.');await api.ready;const result=await api.updateOperatingSupplyRecipe(payload);window.ValerianUI?.hydrate?.();if(!result?.ok)throw new Error(result?.error||'تعذر حفظ إعداد الاستهلاك.');showToast('تم حفظ إعدادات استهلاك '+(result.supplyName||'المستلزم')+'.');}
       catch(err){showToast(String(err?.message||'تعذر حفظ إعداد الاستهلاك.'));}
     };
-    window.deleteOperatingSupplyFromScreen=async function(encodedId){
+    window.openOperatingSupplyDeleteFromScreen=function(encodedId){
       const id=decodeURIComponent(String(encodedId||'')),supply=(appState.operatingSupplies||[]).find(x=>String(x.id)===id&&!x.archivedAt&&x.active!==false);
       if(!supply)return showToast('المستلزم غير موجود أو تم حذفه بالفعل.');
-      if(!confirm('حذف «'+String(supply.name||'المستلزم')+'» من قائمة مستلزمات التغليف؟\\nسيختفي من المخزون النشط ولن يُستهلك في الطلبات الجديدة، مع الاحتفاظ بالفواتير والحركات السابقة لأغراض الحسابات والمراجعة.'))return;
-      try{const api=window.ValerianEngine;if(!api)throw new Error('محرك VALERIAN غير جاهز؛ لم يتم تنفيذ الحذف.');await api.ready;const result=await api.archiveOperatingSupply({id});window.ValerianUI?.hydrate?.();if(!result?.ok)throw new Error(result?.error||'تعذر حذف المستلزم.');switchInventorySection('supplies');showToast('تم حذف المستلزم من القائمة مع الاحتفاظ بسجلاته المالية.');}
-      catch(err){showToast(String(err?.message||'تعذر حذف المستلزم.'));}
+      document.getElementById('v5SupplyDeleteId').value=id;
+      document.getElementById('v5SupplyDeleteName').textContent=String(supply.name||'المستلزم');
+      document.getElementById('v5SupplyDeleteDetails').textContent='الرصيد الحالي: '+Number(supply.quantity||0)+' '+String(supply.unit||'قطعة')+' — سيتم إخفاؤه من القائمة النشطة مع الاحتفاظ بسجلاته السابقة.';
+      const btn=document.getElementById('v5SupplyDeleteConfirmBtn');if(btn){btn.disabled=false;btn.textContent='تأكيد الحذف';}
+      openSheet('v5SupplyDeleteSheet');
+    };
+    window.confirmOperatingSupplyDeleteFromScreen=async function(){
+      const id=String(document.getElementById('v5SupplyDeleteId').value||''),btn=document.getElementById('v5SupplyDeleteConfirmBtn');
+      if(!id)return showToast('لم يتم تحديد المستلزم.');
+      if(btn){btn.disabled=true;btn.textContent='جارٍ الحذف...';}
+      try{
+        const api=window.ValerianEngine;if(!api)throw new Error('محرك VALERIAN غير جاهز؛ لم يتم تنفيذ الحذف.');
+        await api.ready;const result=await api.archiveOperatingSupply({id});
+        if(!result?.ok)throw new Error(result?.error||'لم يؤكد المحرك حذف المستلزم.');
+        closeSheet('v5SupplyDeleteSheet');window.ValerianUI?.hydrate?.();switchInventorySection('supplies');
+        showToast('تم حذف المستلزم من القائمة مع الاحتفاظ بسجلاته المالية.');
+      }catch(err){showToast('تعذر حذف المستلزم: '+String(err?.message||err));}
+      finally{if(btn){btn.disabled=false;btn.textContent='تأكيد الحذف';}}
     };
     window.openOperatingSupplyWriteoffFromScreen=function(encodedId){
       const id=decodeURIComponent(String(encodedId||'')),supply=(appState.operatingSupplies||[]).find(x=>String(x.id)===id);if(!supply)return showToast('المستلزم غير موجود.');
