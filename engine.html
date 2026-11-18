@@ -3403,7 +3403,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       });
       valWalkImages(copy,(owner,key)=>{
         const id=valImageAssetId(owner,key);
-        owner[key]=id&&localAssets.has(id)?localAssets.get(id):VAL_IMG_PH;
+        owner[key]=owner[key+'Removed']===true?'':(id&&localAssets.has(id)?localAssets.get(id):VAL_IMG_PH);
       });
       return copy;
     }
@@ -3434,7 +3434,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const refs=[];
       valWalkImages(targetState,(owner,key)=>{
         const id=valImageAssetId(owner,key),path=owner[valImageStoragePathKey(key)];
-        if(id&&path)refs.push({owner,key,id,path});
+        if(id&&path&&owner[key+'Removed']!==true)refs.push({owner,key,id,path});
       });
       const assets={};let downloaded=0;
       for(const item of refs){
@@ -3462,9 +3462,13 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const uploads=[];
       valWalkImages(state,(owner,key)=>{
         const id=valImageAssetId(owner,key);if(!id)return;
-        const value=owner[key],cached=valIdb.cache[id];
+        const value=owner[key],cached=valIdb.cache[id],pathKey=valImageStoragePathKey(key),removedKey=key+'Removed';
+        if(value===''){
+          if(owner[pathKey]||owner[removedKey]!==true){delete owner[pathKey];owner[removedKey]=true;metadataChanged=true;}
+          return;
+        }
         const source=typeof value==='string'&&value.startsWith('data:')&&value!==VAL_IMG_PH?value:cached;
-        if(typeof source==='string'&&source.startsWith('data:')&&source!==VAL_IMG_PH)uploads.push({owner,key,id,source});
+        if(typeof source==='string'&&source.startsWith('data:')&&source!==VAL_IMG_PH)uploads.push({owner,key,id,source,pathKey,removedKey});
       });
       let uploaded=0,metadataChanged=false;
       for(const item of uploads){
@@ -3472,10 +3476,10 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         const ext=valImageExtension(blob.type),safeId=item.id.replace(/[^a-zA-Z0-9_-]/g,'_').slice(0,100)||'asset';
         const path=cloudUser.id+'/'+safeId+'-'+hash+'.'+ext;
         const pathKey=valImageStoragePathKey(item.key);
-        if(item.owner[pathKey]===path)continue;
+        if(item.owner[item.pathKey]===path&&!item.owner[item.removedKey])continue;
         const {error}=await cloudClient.storage.from(VAL_IMAGE_BUCKET).upload(path,blob,{upsert:true,contentType:blob.type||'image/jpeg',cacheControl:'31536000'});
         if(error)throw new Error('تعذر رفع صورة '+item.id+' إلى التخزين السحابي: '+cloudErrorMessage(error));
-        item.owner[pathKey]=path;uploaded++;metadataChanged=true;
+        item.owner[item.pathKey]=path;delete item.owner[item.removedKey];uploaded++;metadataChanged=true;
       }
       if(metadataChanged){
         persistLocal(state);await valQueueDurableState(state);await valDurableWritePromise;
