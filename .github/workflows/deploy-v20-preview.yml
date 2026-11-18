@@ -1,16 +1,5 @@
 name: Deploy VALERIAN V20 design preview
 on:
-  push:
-    branches: [android/apk-v20]
-    paths:
-      - 'index.html'
-      - 'engine.html'
-      - 'service-worker.js'
-      - 'manifest.webmanifest'
-      - 'assets/**'
-      - 'scripts/**'
-      - 'package.json'
-      - '.github/workflows/deploy-v20-preview.yml'
   workflow_dispatch:
 permissions:
   contents: read
