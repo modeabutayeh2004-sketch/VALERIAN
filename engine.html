@@ -3457,7 +3457,12 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       if(downloaded&&targetState===state){persistLocal(state);await valQueueDurableState(state);await valDurableWritePromise;refreshAllViews();}
       return downloaded;
     }
-    async function valUploadCloudImageAssets(){
+    function valUploadCloudImageAssets(){
+      const job=cloudImageUploadQueue.then(()=>valUploadCloudImageAssetsWorker());
+      cloudImageUploadQueue=job.catch(()=>{});
+      return job;
+    }
+    async function valUploadCloudImageAssetsWorker(){
       if(!cloudClient||!cloudUser||!navigator.onLine)return 0;
       valSyncPhase('preparing_assets','فحص الصور التي تغيرت فقط');
       await window.__valImgReady;clearTimeout(valIdb.flushTimer);await valIdbFlush();
@@ -6092,6 +6097,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const relatedIds=new Set([String(id)]);
       state.products.forEach(p=>{if(String(p.parentId||'')===String(id))relatedIds.add(String(p.id));});
       state.products=state.products.filter(p=>!relatedIds.has(String(p.id)));
+      valCloudDiagnostic('حذف محلي نهائي بدأ: product='+id+' related='+Array.from(relatedIds).join(',')+' remaining='+state.products.some(p=>relatedIds.has(String(p.id)))+'.');
       if(Array.isArray(cart)){for(let n=cart.length-1;n>=0;n--)if(relatedIds.has(String(cart[n].id)))cart.splice(n,1);renderCart();}
       logAudit('PRODUCT_PERMANENTLY_DELETED','حذف نهائي للمنتج '+product.name+' والأصناف التابعة له مع الاحتفاظ بالفواتير والحركات التاريخية');
       if(!saveState()){
@@ -6101,6 +6107,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         return {ok:false,error:window.__valerianLastSaveError?.message||'تعذر حفظ الحذف في قاعدة البيانات.'};
       }
       refreshAllViews();
+      valCloudDiagnostic('الحذف المحلي اكتمل: product='+id+' absent='+!state.products.some(p=>relatedIds.has(String(p.id)))+' generation='+cloudIncrementalGeneration+' outbox='+((await valSyncReadOutbox()).length)+'.');
       showToast('تم حذف المنتج نهائيًا من المخزون مع الاحتفاظ بالسجلات التاريخية.','success');
       return {ok:true,deletedCount:relatedIds.size};
     }
@@ -6770,6 +6777,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     let cloudUser = null, cloudRevision = 0, cloudReady = false, cloudDirty = false, cloudConflict = false;
     let cloudSaveTimer = null, cloudChannel = null, cloudApplyingRemote = false;
     let cloudSaveInFlight = false, cloudPollInFlight = false, cloudRetryTimer = null, cloudRetryDelay = 3000;
+    let cloudIncrementalPullQueue=Promise.resolve(), cloudImageUploadQueue=Promise.resolve();
     const hadLocalValerianState = !!localStorage.getItem(STORAGE_KEY);
 
     // V20 incremental journal client. Legacy snapshot sync remains available until
@@ -6903,7 +6911,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         const items=await valSyncReadOutbox();
         if(!items.length)break;
         const batch=items.slice(0,100);
-        valCloudDiagnostic('بدء RPC push: outbox='+items.length+'، batch='+batch.length+'، أول change_id='+batch[0]?.change_id+'.');
+        valCloudDiagnostic('بدء RPC push: outbox='+items.length+'، batch='+batch.length+'، أول change_id='+batch[0]?.change_id+'، التفاصيل=['+batch.map(x=>x.change_id+':'+(x.patch?.ops||[]).slice(0,12).map(op=>op.op+':'+op.key+(op.id?'/'+op.id:'')).join('|')).join(' ; ')+'].');
         const {data,error}=await cloudClient.rpc('valerian_sync_push',{p_changes:batch});
         if(error){valCloudDiagnostic('فشل RPC push: '+cloudErrorMessage(error));throw error;}
         if(!data?.ok){valCloudDiagnostic('RPC push أعاد ok=false: '+JSON.stringify(data));throw new Error('رفضت السحابة تسجيل دفعة التغييرات.');}
@@ -6916,20 +6924,38 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         valCloudDiagnostic('تأكيد رفع دفعة: أُرسلت '+batch.length+' تغييرات، أضافت السحابة '+Number(data.inserted||0)+' جديدة، والمتبقي '+remaining.length+'.');
       }
     }
-    async function valIncrementalPull(){
+    function valIncrementalPull(source='unspecified'){
+      const requestId=valSyncNewId().slice(0,8);
+      const job=cloudIncrementalPullQueue.then(()=>valIncrementalPullWorker(source,requestId));
+      cloudIncrementalPullQueue=job.catch(()=>{});
+      return job;
+    }
+    async function valIncrementalPullWorker(source,requestId){
       let cursor=await valSyncReadCursor(),rounds=0;
+      valCloudDiagnostic('بدء دورة استقبال موحدة: source='+source+' request='+requestId+' cursor='+cursor+'.');
       while(rounds++<10){
         const generationAtRequest=cloudIncrementalGeneration;
         valCloudDiagnostic('بدء RPC pull بعد cursor='+cursor+'؛ generation='+generationAtRequest+'.');
         const {data,error}=await cloudClient.rpc('valerian_sync_pull',{p_after_seq:cursor,p_limit:200});
         if(error){valCloudDiagnostic('فشل RPC pull: '+cloudErrorMessage(error));throw error;}
         if(!data?.ok||!Array.isArray(data.changes)){valCloudDiagnostic('استجابة pull غير صالحة: '+JSON.stringify(data));throw new Error('تعذر قراءة سجل التغييرات السحابي.');}
-        valCloudDiagnostic('استجابة pull: '+data.changes.length+' تغيير، cursor الجديد='+data.cursor+'.');
+        const responseCursor=Number(data.cursor??cursor);
+        const returnedSeqs=data.changes.map(row=>Number(row?.seq||0)).filter(Number.isFinite);
+        const maxReturnedSeq=returnedSeqs.length?Math.max(...returnedSeqs):cursor;
+        valCloudDiagnostic('استجابة pull: source='+source+' request='+requestId+'، '+data.changes.length+' تغيير، cursor='+responseCursor+'، أعلى seq مستلم='+maxReturnedSeq+'.');
+        if((data.changes.length===0&&responseCursor!==cursor)||(data.changes.length>0&&responseCursor!==maxReturnedSeq)){
+          valCloudDiagnostic('رفض استجابة pull غير متسقة؛ لم نغيّر المؤشر المحلي. requested='+cursor+' responseCursor='+responseCursor+' changes='+data.changes.length+' maxSeq='+maxReturnedSeq+'.');
+          throw new Error('استجابة سجل التغييرات غير متسقة مع المؤشر؛ احتفظنا بالمؤشر المحلي ولم نطبق تحديثات غير مؤكدة.');
+        }
         if(generationAtRequest!==cloudIncrementalGeneration){cloudConflict=true;throw new Error('وصلت تغييرات محلية أثناء استقبال تحديثات جهاز آخر؛ احتفظنا بالبيانات المحلية وأوقفنا التطبيق التلقائي.');}
         if(!data.changes.length){cloudSyncDiagnostics.cursor=cursor;break;}
         cloudSyncDiagnostics.lastPullCount+=data.changes.length;
         let next=structuredClone(state);
-        for(const row of data.changes)next=valSyncApplyPatch(next,row.patch);
+        for(const row of data.changes){
+          const ops=Array.isArray(row.patch?.ops)?row.patch.ops:[];
+          valCloudDiagnostic('تغيير وارد seq='+row.seq+' change_id='+row.change_id+' ops='+ops.length+' ['+ops.slice(0,12).map(x=>x.op+':'+x.key+(x.id?'/'+x.id:'')).join(', ')+'].');
+          next=valSyncApplyPatch(next,row.patch);
+        }
         cloudApplyingRemote=true;
         try{
           await valDownloadCloudImageAssets(next);
@@ -6947,7 +6973,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         if(data.changes.length<200)break;
       }
     }
-    async function valIncrementalSync(){
+    async function valIncrementalSync(source='automatic'){
       if(!cloudIncrementalReady)throw new Error('المزامنة الجزئية لم تُهيأ بعد.');
       await valUploadCloudImageAssets();
       await cloudIncrementalQueue;
@@ -6961,7 +6987,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       valCloudDiagnostic('بعد push: generation start='+generationAtStart+' current='+cloudIncrementalGeneration+'، outbox='+pendingAfterPush.length+'.');
       if(generationAtStart===cloudIncrementalGeneration && !pendingAfterPush.length){
         valSyncPhase('pulling','استقبال التغييرات الجديدة من سجل السحابة');
-        await valIncrementalPull();
+        await valIncrementalPull('sync:'+source);
       }else{valCloudDiagnostic('تخطي pull داخل المزامنة: تغييرات محلية أحدث أو outbox غير فارغ.');}
       return generationAtStart;
     }
@@ -7164,7 +7190,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       try {
         if(cloudIncrementalReady){
           valSyncPhase('preparing_assets','تهيئة التغييرات والصور المعدلة');
-          const syncGeneration=await valIncrementalSync();
+          const syncGeneration=await valIncrementalSync(manual?'manual':'automatic');
           valSyncPhase('finalizing','تأكيد طابور الرفع ومؤشر الاستقبال');
           const pending=await valSyncReadOutbox();
           cloudSyncDiagnostics.outboxCount=pending.length;cloudSyncDiagnostics.cursor=await valSyncReadCursor();
@@ -7220,14 +7246,14 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       }
     }
 
-    async function pollCloudChanges() {
+    async function pollCloudChanges(source='automatic') {
       const pollBlock=!cloudReady?'cloudReady=false':!cloudUser?'cloudUser missing':!navigator.onLine?'offline':cloudConflict?'cloudConflict=true':cloudDirty?'cloudDirty=true':cloudSaveInFlight?'cloudSaveInFlight=true':cloudPollInFlight?'cloudPollInFlight=true':'';
       if(pollBlock){if(cloudSyncDiagnostics.lastPollSkip!==pollBlock){cloudSyncDiagnostics.lastPollSkip=pollBlock;valCloudDiagnostic('تخطي pull تلقائيًا: '+pollBlock+'.');}return;}
       cloudSyncDiagnostics.lastPollSkip='';
       cloudPollInFlight=true;
       try {
         if(cloudIncrementalReady){
-          await valIncrementalPull();
+          await valIncrementalPull('poll:'+source);
           setCloudStatus('متصل — تم فحص سجل التغييرات الجزئي','#047857');
           return;
         }
@@ -7258,14 +7284,14 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           cloudSyncDiagnostics.lastRealtimeEvent=new Date().toISOString();
           valCloudDiagnostic('وصل إشعار Realtime جديد من سجل التغييرات؛ جارٍ جلب ما بعد المؤشر.');
           clearTimeout(cloudRealtimeWakeTimer);
-          cloudRealtimeWakeTimer=setTimeout(()=>{if(cloudReady&&!cloudDirty&&!cloudConflict)pollCloudChanges();},180);
+          cloudRealtimeWakeTimer=setTimeout(()=>{if(cloudReady&&!cloudDirty&&!cloudConflict)pollCloudChanges('realtime');},180);
         })
         .subscribe((status,error)=>{
           cloudSyncDiagnostics.realtimeStatus=status+(error?': '+cloudErrorMessage(error):'');
           valCloudDiagnostic('Realtime: '+cloudSyncDiagnostics.realtimeStatus);
           if(status==='SUBSCRIBED'){
             clearTimeout(cloudRealtimeWakeTimer);
-            cloudRealtimeWakeTimer=setTimeout(()=>{if(cloudReady&&!cloudDirty&&!cloudConflict)pollCloudChanges();},100);
+            cloudRealtimeWakeTimer=setTimeout(()=>{if(cloudReady&&!cloudDirty&&!cloudConflict)pollCloudChanges('realtime-subscribe');},100);
           }
         });
       setCloudStatus('متصل — استقبال التحديثات عبر Realtime مفعّل','#047857');
@@ -7278,15 +7304,15 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     });
     window.addEventListener('offline',()=>{if(cloudReady)setCloudStatus('غير متصل — التغييرات محفوظة محلياً مؤقتاً','#a16207');});
     window.addEventListener('beforeunload',e=>{if(cloudDirty||valDurableWriteError){e.preventDefault();e.returnValue='';}});
-    window.addEventListener('focus',()=>pollCloudChanges());
+    window.addEventListener('focus',()=>pollCloudChanges('focus'));
     // Realtime is the fast path; frequent cursor reconciliation is the recovery path.
     // A Realtime subscription can silently disconnect on mobile/backgrounded browsers,
     // so never rely on WebSocket delivery alone for cross-device updates.
-    setInterval(()=>{if(document.visibilityState!=='hidden')pollCloudChanges();},12000);
+    setInterval(()=>{if(document.visibilityState!=='hidden')pollCloudChanges('interval');},12000);
     document.addEventListener('visibilitychange',()=>{
       if(document.visibilityState==='visible'){
         clearTimeout(cloudRealtimeWakeTimer);
-        cloudRealtimeWakeTimer=setTimeout(()=>pollCloudChanges(),150);
+        cloudRealtimeWakeTimer=setTimeout(()=>pollCloudChanges('visibility'),150);
       }
     });
 
