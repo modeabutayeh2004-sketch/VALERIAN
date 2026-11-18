@@ -1,7 +1,7 @@
 /* VALERIAN V20.117 — single-document engine integration */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-124-supplies-engine-unit-fix';
-const APP_SHELL = ['./', './index.html', './engine-runtime.js?v=v5-supplies-engine-unit-fix-20261119', './manifest.webmanifest', './assets/valerian-icon.jpg'];
+const CACHE_NAME = 'valerian-app-shell-v20-125-shared-decant-bottle-invoices';
+const APP_SHELL = ['./', './index.html', './engine-runtime.js?v=v5-shared-decant-bottle-invoices-20261119', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
