@@ -2403,6 +2403,7 @@ html[data-valerian-theme="light"] .glass-dock .nav-pill.bg-slate-200\/20{
           <p class="text-xs text-slate-500">الزجاجات الأصلية بالقطعة، السائل المفتوح بالمل، وعبوات التقسيم الجاهزة بالعبوة.</p>
         </div>
         <div class="flex flex-wrap gap-2">
+          <button type="button" onclick="setInventoryPane('supplies')" class="px-4 py-2.5 rounded-xl bg-violet-700 hover:bg-violet-800 text-white text-xs font-extrabold shadow-sm">🧰 مستلزمات التغليف والتشغيل</button>
           <button onclick="openDecantProductionModal()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold">🧪 تجهيز عبوات تقسيم</button>
           <button onclick="openStockAdjustmentModal()" class="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold">⚖️ تسوية / جرد المخزون</button>
           <button onclick="openUnifiedPurchaseModal('product')" class="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold">+ فاتورة شراء موحدة</button>
@@ -2420,10 +2421,11 @@ html[data-valerian-theme="light"] .glass-dock .nav-pill.bg-slate-200\/20{
 
       <div id="legacyDecantWarning" class="hidden rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 font-bold">⚠️ توجد أرصدة تقسيم قديمة بوحدات غير مؤكدة. افتح كل منتج تقسيم من زر «مراجعة / تعديل»، راجع عدد العبوات الجاهزة فعليًا والعبوات الفارغة، ثم احفظ لتفعيل البيع والتجهيز.</div>
       <div class="inventory-subnav" role="tablist" aria-label="أقسام المخزون">
-        <button type="button" class="active" data-inv-pane="stock" onclick="setInventoryPane('stock')">📦 أرصدة المنتجات</button>
+        <button type="button" data-inv-pane="supplies" onclick="setInventoryPane('supplies')">🧰 مستلزمات التغليف والتشغيل</button>
+        <button type="button" data-inv-pane="stock" onclick="setInventoryPane('stock')">📦 أرصدة المنتجات</button>
         <button type="button" data-inv-pane="purchases" onclick="setInventoryPane('purchases')">🧾 فواتير الشراء والاستيراد</button>
         <button type="button" data-inv-pane="movements" onclick="setInventoryPane('movements')">🔄 سجل حركات المخزون</button>
-        <button type="button" data-inv-pane="supplies" onclick="setInventoryPane('supplies')">🧰 مستلزمات التشغيل والتغليف</button>
+
       </div>
       <div class="grid grid-cols-1 xl:grid-cols-12 gap-5 inventory-pane" id="inventoryPane-stock">
         <div id="lowStockAlertBanner" class="hidden xl:col-span-12 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950">
