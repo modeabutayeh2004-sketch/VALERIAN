@@ -3436,7 +3436,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         const id=valImageAssetId(owner,key),path=owner[valImageStoragePathKey(key)];
         if(id&&path&&owner[key+'Removed']!==true)refs.push({owner,key,id,path});
       });
-      const assets={};let downloaded=0;
+      const assets={};let downloaded=0;cloudSyncDiagnostics.imageDownloadAttempted=0;cloudSyncDiagnostics.imageDownloadSucceeded=0;cloudSyncDiagnostics.imageDownloadErrors=0;
       for(const item of refs){
         const local=(typeof item.owner[item.key]==='string'&&item.owner[item.key].startsWith('data:')&&item.owner[item.key]!==VAL_IMG_PH)?item.owner[item.key]:valIdb.cache[item.id];
         const hashMatch=/-([a-f0-9]{64})\.[a-z0-9]+$/i.exec(String(item.path));
@@ -3447,10 +3447,11 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
             if(actual.toLowerCase()===hashMatch[1].toLowerCase()){item.owner[item.key]=local;continue;}
           }catch(_){}
         }
+        cloudSyncDiagnostics.imageDownloadAttempted++;
         const {data,error}=await cloudClient.storage.from(VAL_IMAGE_BUCKET).download(item.path);
-        if(error)throw new Error('تعذر تنزيل صورة من السحابة ('+item.id+'): '+cloudErrorMessage(error));
+        if(error){cloudSyncDiagnostics.imageDownloadErrors++;throw new Error('تعذر تنزيل صورة من السحابة ('+item.id+'): '+cloudErrorMessage(error));}
         if(!data)throw new Error('السحابة لم تُرجع ملف الصورة ('+item.id+').');
-        const dataUrl=await valImageBlobToData(data);item.owner[item.key]=dataUrl;assets[item.id]=dataUrl;downloaded++;
+        const dataUrl=await valImageBlobToData(data);item.owner[item.key]=dataUrl;assets[item.id]=dataUrl;downloaded++;cloudSyncDiagnostics.imageDownloadSucceeded++;
       }
       if(Object.keys(assets).length){await valIdbPutMany('images',assets);Object.assign(valIdb.cache,assets);valIdb.ready=true;}
       if(downloaded&&targetState===state){persistLocal(state);await valQueueDurableState(state);await valDurableWritePromise;refreshAllViews();}
@@ -3458,9 +3459,11 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     }
     async function valUploadCloudImageAssets(){
       if(!cloudClient||!cloudUser||!navigator.onLine)return 0;
+      valSyncPhase('preparing_assets','فحص الصور التي تغيرت فقط');
       await window.__valImgReady;clearTimeout(valIdb.flushTimer);await valIdbFlush();
       const uploads=[];
       let uploaded=0,metadataChanged=false;
+      cloudSyncDiagnostics.imageUploadAttempted=0;cloudSyncDiagnostics.imageUploadSucceeded=0;cloudSyncDiagnostics.imageUploadSkipped=0;cloudSyncDiagnostics.imageUploadErrors=0;
       valWalkImages(state,(owner,key)=>{
         const id=valImageAssetId(owner,key);if(!id)return;
         const value=owner[key],cached=valIdb.cache[id],pathKey=valImageStoragePathKey(key),removedKey=key+'Removed';
@@ -3475,10 +3478,11 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         const blob=valImageDataToBlob(item.source),hash=await valImageSha256(blob);
         const ext=valImageExtension(blob.type),safeId=item.id.replace(/[^a-zA-Z0-9_-]/g,'_').slice(0,100)||'asset';
         const path=cloudUser.id+'/'+safeId+'-'+hash+'.'+ext;
-        if(item.owner[item.pathKey]===path&&!item.owner[item.removedKey])continue;
+        if(item.owner[item.pathKey]===path&&!item.owner[item.removedKey]){cloudSyncDiagnostics.imageUploadSkipped++;continue;}
+        cloudSyncDiagnostics.imageUploadAttempted++;valSyncPhase('uploading_assets','رفع صورة معدلة: '+item.id);
         const {error}=await cloudClient.storage.from(VAL_IMAGE_BUCKET).upload(path,blob,{upsert:true,contentType:blob.type||'image/jpeg',cacheControl:'31536000'});
-        if(error)throw new Error('تعذر رفع صورة '+item.id+' إلى التخزين السحابي: '+cloudErrorMessage(error));
-        item.owner[item.pathKey]=path;delete item.owner[item.removedKey];uploaded++;metadataChanged=true;
+        if(error){cloudSyncDiagnostics.imageUploadErrors++;throw new Error('تعذر رفع صورة '+item.id+' إلى التخزين السحابي: '+cloudErrorMessage(error));}
+        item.owner[item.pathKey]=path;delete item.owner[item.removedKey];uploaded++;cloudSyncDiagnostics.imageUploadSucceeded++;metadataChanged=true;
       }
       if(metadataChanged){
         persistLocal(state);await valQueueDurableState(state);await valDurableWritePromise;
@@ -6771,7 +6775,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     // V20 incremental journal client. Legacy snapshot sync remains available until
     // the additive Supabase migration has been installed and bootstrap succeeds.
     let cloudIncrementalReady=false, cloudIncrementalBase=null, cloudIncrementalQueue=Promise.resolve(), cloudIncrementalGeneration=0;
-    const cloudSyncDiagnostics={mode:'غير معروف',bootstrap:'لم يبدأ',lastAttempt:'لم تبدأ محاولة',lastSuccess:'لا توجد مزامنة مؤكدة بعد',lastError:'لا يوجد',lastPushCount:0,lastPullCount:0,cursor:0,outboxCount:0};
+    const cloudSyncDiagnostics={mode:'غير معروف',bootstrap:'لم يبدأ',phase:'idle',currentOperation:'لا يوجد',lastAttempt:'لم تبدأ محاولة',lastSuccess:'لا توجد مزامنة مؤكدة بعد',lastError:'لا يوجد',lastPushCount:0,lastPullCount:0,cursor:0,outboxCount:0,imageUploadAttempted:0,imageUploadSucceeded:0,imageUploadSkipped:0,imageUploadErrors:0,imageDownloadAttempted:0,imageDownloadSucceeded:0,imageDownloadErrors:0,realtimeStatus:'غير مشترك',lastRealtimeEvent:'لا يوجد'};
+    function valSyncPhase(phase,operation){cloudSyncDiagnostics.phase=phase;cloudSyncDiagnostics.currentOperation=operation||phase;valCloudDiagnostic('مرحلة المزامنة: '+phase+' — '+cloudSyncDiagnostics.currentOperation);}
     const VAL_SYNC_OUTBOX_KEY='val_sync_outbox_v1', VAL_SYNC_CURSOR_KEY='val_sync_cursor_v1';
     const VAL_SYNC_ID_ARRAYS=new Set([
       'products','imports','purchases','supplierInvoices','supplierPayments','customers','orders',
@@ -6923,13 +6928,17 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     async function valIncrementalSync(){
       if(!cloudIncrementalReady)throw new Error('المزامنة الجزئية لم تُهيأ بعد.');
       await valUploadCloudImageAssets();
+      await cloudIncrementalQueue;
+      // Baseline AFTER image metadata is prepared and journaled.
       const generationAtStart=cloudIncrementalGeneration;
+      valSyncPhase('pushing','رفع التغييرات المسجلة فقط');
       await valIncrementalPush();
       await cloudIncrementalQueue;
-      // Do not pull over newer local edits. They are queued and pushed first.
       if(generationAtStart===cloudIncrementalGeneration && !(await valSyncReadOutbox()).length){
+        valSyncPhase('pulling','استقبال التغييرات الجديدة من سجل السحابة');
         await valIncrementalPull();
       }
+      return generationAtStart;
     }
 
     function setCloudStatus(label, color) {
@@ -7115,6 +7124,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
 
     async function cloudSyncNow(manual) {
       if(manual){cloudSyncDiagnostics.lastAttempt=new Date().toISOString();cloudSyncDiagnostics.lastPushCount=0;cloudSyncDiagnostics.lastPullCount=0;}
+      cloudSyncDiagnostics.lastError='لا يوجد';
       if(!cloudClient || !cloudUser || !cloudReady || cloudConflict) {
         if(manual) setCloudStatus('المزامنة غير جاهزة أو يوجد تعارض يحتاج مراجعة','#b91c1c');
         return;
@@ -7128,13 +7138,15 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       let writeSucceeded = false;
       try {
         if(cloudIncrementalReady){
-          const syncGeneration=cloudIncrementalGeneration;
-          await valIncrementalSync();
+          valSyncPhase('preparing_assets','تهيئة التغييرات والصور المعدلة');
+          const syncGeneration=await valIncrementalSync();
+          valSyncPhase('finalizing','تأكيد طابور الرفع ومؤشر الاستقبال');
           const pending=await valSyncReadOutbox();
           cloudSyncDiagnostics.outboxCount=pending.length;cloudSyncDiagnostics.cursor=await valSyncReadCursor();
           cloudDirty=pending.length>0 || syncGeneration!==cloudIncrementalGeneration;
           writeSucceeded=!cloudDirty;
           if(!cloudDirty){cloudSyncDiagnostics.lastSuccess=new Date().toISOString();cloudSyncDiagnostics.lastError='لا يوجد';}
+          cloudSyncDiagnostics.phase='idle';cloudSyncDiagnostics.currentOperation=cloudDirty?'تغييرات محلية أحدث تنتظر دفعة تالية':'لا يوجد';
           setCloudStatus(cloudDirty?'تم رفع دفعة تغييرات — توجد تغييرات أخرى بانتظار المزامنة':'متصل — تمت مزامنة التغييرات الجزئية بنجاح','#047857');
           return;
         }
@@ -7169,7 +7181,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         setCloudStatus(cloudDirty?'تم حفظ التغييرات، وهناك تعديلات أحدث بانتظار الحفظ':'متصل — آخر مزامنة ناجحة','#047857');
       } catch(err) {
         cloudDirty=true;
-        const detail=cloudErrorMessage(err);cloudSyncDiagnostics.lastError=detail;
+        const detail=cloudErrorMessage(err);cloudSyncDiagnostics.lastError=detail;cloudSyncDiagnostics.phase='error';cloudSyncDiagnostics.currentOperation=detail;
         if(cloudIncrementalReady)cloudSyncDiagnostics.mode='Incremental Journal — خطأ';
         const assetBlock=/صور مطلوبة|حجم البيانات مع الصور|IndexedDB|تأخر تجهيز مخزن الصور/.test(detail);
         setCloudStatus((assetBlock?'توقفت المزامنة لحماية الصور: ':'انقطع الاتصال أثناء المزامنة: ')+detail+(assetBlock?' — أصلح الصور/الحجم ثم أعد المحاولة.':' — سنعيد المحاولة'),'#b91c1c');
@@ -7209,11 +7221,27 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       } finally { cloudPollInFlight=false; }
     }
 
+    let cloudRealtimeWakeTimer=null;
     function subscribeCloudChanges() {
-      // Realtime row-change payloads include the entire JSON state and can be very large.
-      // Use revision-only polling instead; the full state is fetched only when revision changes.
-      if(cloudChannel && cloudClient){cloudClient.removeChannel(cloudChannel);cloudChannel=null;}
-      if(cloudReady)setCloudStatus('متصل — فحص تحديثات خفيف مفعّل','#047857');
+      if(!cloudClient||!cloudReady||!cloudUser||!cloudIncrementalReady)return;
+      if(cloudChannel){cloudClient.removeChannel(cloudChannel);cloudChannel=null;}
+      const userId=cloudUser.id;
+      cloudChannel=cloudClient.channel('valerian-journal-'+userId)
+        .on('postgres_changes',{event:'INSERT',schema:'public',table:'valerian_sync_changes',filter:'user_id=eq.'+userId},payload=>{
+          cloudSyncDiagnostics.lastRealtimeEvent=new Date().toISOString();
+          valCloudDiagnostic('وصل إشعار Realtime جديد من سجل التغييرات؛ جارٍ جلب ما بعد المؤشر.');
+          clearTimeout(cloudRealtimeWakeTimer);
+          cloudRealtimeWakeTimer=setTimeout(()=>{if(cloudReady&&!cloudDirty&&!cloudConflict)pollCloudChanges();},180);
+        })
+        .subscribe((status,error)=>{
+          cloudSyncDiagnostics.realtimeStatus=status+(error?': '+cloudErrorMessage(error):'');
+          valCloudDiagnostic('Realtime: '+cloudSyncDiagnostics.realtimeStatus);
+          if(status==='SUBSCRIBED'){
+            clearTimeout(cloudRealtimeWakeTimer);
+            cloudRealtimeWakeTimer=setTimeout(()=>{if(cloudReady&&!cloudDirty&&!cloudConflict)pollCloudChanges();},100);
+          }
+        });
+      setCloudStatus('متصل — استقبال التحديثات عبر Realtime مفعّل','#047857');
     }
     window.addEventListener('online',()=>{
       if(!cloudClient) loadSupabaseLibrary();
@@ -7224,7 +7252,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     window.addEventListener('offline',()=>{if(cloudReady)setCloudStatus('غير متصل — التغييرات محفوظة محلياً مؤقتاً','#a16207');});
     window.addEventListener('beforeunload',e=>{if(cloudDirty||valDurableWriteError){e.preventDefault();e.returnValue='';}});
     window.addEventListener('focus',()=>pollCloudChanges());
-    setInterval(()=>pollCloudChanges(),60000);
+    // WebSocket is primary; 5-minute cursor reconciliation is a recovery safety net.
+    setInterval(()=>pollCloudChanges(),300000);
 
     // V18.3: removed duplicate subscription and duplicate lifecycle listeners.
     if(navigator.onLine) { loadSupabaseLibrary(); setTimeout(()=>{valLoadLib('QRCode');valLoadLib('html2canvas');},4000); }
@@ -7412,7 +7441,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           connected:!!cloudReady,authenticated:!!cloudUser,email:String(cloudUser?.email||''),
           online:!!navigator.onLine,dirty:!!cloudDirty,conflict:!!cloudConflict,
           label:(document.getElementById('cloudMessage')?.textContent||'').replace(/^الحالة:\s*/,''),
-          incremental:{mode:cloudSyncDiagnostics.mode,bootstrap:cloudSyncDiagnostics.bootstrap,ready:!!cloudIncrementalReady,cursor:cloudSyncDiagnostics.cursor,outboxCount:cloudSyncDiagnostics.outboxCount,lastPushCount:cloudSyncDiagnostics.lastPushCount,lastPullCount:cloudSyncDiagnostics.lastPullCount,lastAttempt:cloudSyncDiagnostics.lastAttempt,lastSuccess:cloudSyncDiagnostics.lastSuccess,lastError:cloudSyncDiagnostics.lastError}
+          incremental:{mode:cloudSyncDiagnostics.mode,bootstrap:cloudSyncDiagnostics.bootstrap,ready:!!cloudIncrementalReady,cursor:cloudSyncDiagnostics.cursor,outboxCount:cloudSyncDiagnostics.outboxCount,lastPushCount:cloudSyncDiagnostics.lastPushCount,lastPullCount:cloudSyncDiagnostics.lastPullCount,lastAttempt:cloudSyncDiagnostics.lastAttempt,lastSuccess:cloudSyncDiagnostics.lastSuccess,lastError:cloudSyncDiagnostics.lastError,phase:cloudSyncDiagnostics.phase,currentOperation:cloudSyncDiagnostics.currentOperation,realtimeStatus:cloudSyncDiagnostics.realtimeStatus,lastRealtimeEvent:cloudSyncDiagnostics.lastRealtimeEvent,imageUploadAttempted:cloudSyncDiagnostics.imageUploadAttempted,imageUploadSucceeded:cloudSyncDiagnostics.imageUploadSucceeded,imageUploadSkipped:cloudSyncDiagnostics.imageUploadSkipped,imageUploadErrors:cloudSyncDiagnostics.imageUploadErrors,imageDownloadAttempted:cloudSyncDiagnostics.imageDownloadAttempted,imageDownloadSucceeded:cloudSyncDiagnostics.imageDownloadSucceeded,imageDownloadErrors:cloudSyncDiagnostics.imageDownloadErrors}
         }),
         cloudDiagnostics:()=>({...cloudSyncDiagnostics,incrementalReady:!!cloudIncrementalReady,localGeneration:cloudIncrementalGeneration,dirty:!!cloudDirty,conflict:!!cloudConflict,online:!!navigator.onLine,log:document.getElementById('cloudDiagnosticsLog')?.textContent||'لا يوجد سجل تشخيص داخلي'}),
         cloudSignIn:async credentials=>{
