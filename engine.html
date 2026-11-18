@@ -5004,7 +5004,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     function savePurchaseInvoice(e) {
       e.preventDefault(); const supplier=document.getElementById('purSupplier').value.trim(),prodId=document.getElementById('purProdSelect').value,qty=Number(document.getElementById('purQty').value||0),totalCost=roundMoney(Number(document.getElementById('purTotalCost').value||0)),paid=roundMoney(Number(document.getElementById('purPaidAmount').value||0)),method=normalizePaymentMethod(document.getElementById('purPaymentMethod').value);
       const prod=state.products.find(p=>p.id===prodId); if(!prod)return;
-      if(prod.productType==='عطور'){showToast('زيادة كميات العطور تتم حصريًا عبر فواتير الاستيراد. استخدم شاشة الاستيراد لتسجيل دخول الكمية.','error');return;}
+      if(String(prod.productType||'عطور')==='عطور'){showToast('زيادة كميات العطور تتم حصريًا عبر فواتير الاستيراد. استخدم شاشة الاستيراد لتسجيل دخول الكمية.','error');return;}
       if(prod.category==='تقسيم'){showToast('شراء عبوات التقسيم الجاهزة لا يتم عبر فاتورة الزجاجات. استخدم شراء العبوات الفارغة أو تجهيز التقسيم.','error');return;}
       if(!Number.isSafeInteger(qty)||qty<=0||!Number.isFinite(totalCost)||totalCost<=0||!Number.isFinite(paid)||paid<0||paid>totalCost){showToast('تحقق من الكمية والتكلفة والمدفوع.','error');return;}
       const before=structuredClone(state),oldQty=Number(prod.stock||0),oldUnit=Number(prod.averageCost??prod.totalCost??0),openEq=Number(prod.decantMlAvailable||0)/getBottleVolumeMl(prod),weighted=oldQty+openEq,unit=totalCost/qty;
@@ -5951,11 +5951,18 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     async function permanentlyDeleteProduct(id,password) {
       if(!cloudClient||!cloudReady||!cloudUser||!navigator.onLine) return {ok:false,error:'يجب الاتصال بحساب VALERIAN CLOUD والإنترنت للتحقق قبل حذف المنتج.'};
       if(cloudDirty||cloudSaveInFlight||cloudConflict) return {ok:false,error:'توجد تغييرات غير متزامنة أو تعارض. نفّذ المزامنة أولاً ثم أعد الحذف.'};
-      const email=String(cloudUser.email||'').trim(),secret=String(password||'');
+      const email=String(cloudUser.email||'').trim(),secret=String(password||''),expectedUserId=String(cloudUser.id||'');
       if(!email||!secret)return {ok:false,error:'أدخل كلمة مرور حساب المزامنة.'};
-      const {data:authData,error:authError}=await cloudClient.auth.signInWithPassword({email,password:secret});
-      if(authError||!authData?.user?.id||String(authData.user.id)!==String(cloudUser.id))return {ok:false,error:'كلمة مرور حساب المزامنة غير صحيحة أو تعذر التحقق من الحساب.'};
-      if(cloudDirty||cloudSaveInFlight||cloudConflict)return {ok:false,error:'تغيرت حالة المزامنة أثناء التحقق. نفّذ المزامنة ثم أعد الحذف.'};
+      // Verify credentials with an isolated, non-persistent Supabase client so the active cloud session is never replaced.
+      let verificationClient=null,verified=false;
+      try{
+        verificationClient=window.supabase.createClient(VALERIAN_CLOUD_URL,VALERIAN_CLOUD_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+        const {data:authData,error:authError}=await verificationClient.auth.signInWithPassword({email,password:secret});
+        verified=!authError&&!!authData?.user?.id&&String(authData.user.id)===expectedUserId;
+      }catch(_){verified=false;}
+      finally{if(verificationClient){try{await verificationClient.auth.signOut({scope:'local'});}catch(_){}}}
+      if(!verified)return {ok:false,error:'كلمة مرور حساب المزامنة غير صحيحة أو تعذر التحقق من الحساب.'};
+      if(!cloudUser||String(cloudUser.id)!==expectedUserId||cloudDirty||cloudSaveInFlight||cloudConflict)return {ok:false,error:'تغيرت حالة الحساب أو المزامنة أثناء التحقق. نفّذ المزامنة ثم أعد الحذف.'};
       const index=state.products.findIndex(p=>String(p.id)===String(id));
       if(index<0)return {ok:false,error:'المنتج غير موجود.'};
       const before=structuredClone(state),cartBefore=Array.isArray(cart)?structuredClone(cart):null,product=state.products[index];
