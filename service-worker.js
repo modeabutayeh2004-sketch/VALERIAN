@@ -1,6 +1,6 @@
-/* VALERIAN V20.116 — approved Onyx & Pearl application shell */
+/* VALERIAN V20.117 — single-document engine integration */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-116-onyx-pearl';
+const CACHE_NAME = 'valerian-app-shell-v20-117-single-document';
 const APP_SHELL = ['./', './index.html', './engine-runtime.js?v=single-doc-1', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
