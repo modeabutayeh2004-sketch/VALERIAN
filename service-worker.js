@@ -1,7 +1,7 @@
 /* VALERIAN V20.117 — single-document engine integration */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-122-supplies-pane-fix';
-const APP_SHELL = ['./', './index.html', './engine-runtime.js?v=supplies-pane-fix-20261118', './manifest.webmanifest', './assets/valerian-icon.jpg'];
+const CACHE_NAME = 'valerian-app-shell-v20-123-visible-supplies-workspace';
+const APP_SHELL = ['./', './index.html', './engine-runtime.js?v=v5-supplies-workspace-20261119', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
