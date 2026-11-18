@@ -2144,7 +2144,33 @@ html[data-valerian-theme="light"] .glass-dock .nav-pill.bg-slate-200\/20{
 }
 </style>
 
-</head>
+
+    /* Checkout sheet: anchor to the real mobile viewport and keep the full form scrollable. */
+    #checkoutSheet {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 9999 !important;
+      min-height: 0;
+      height: 100%;
+      align-items: flex-end;
+      overflow: hidden;
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+    #checkoutSheet > .sheet-panel {
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 28rem;
+      min-height: 0;
+      max-height: calc(90dvh - env(safe-area-inset-top, 0px));
+      max-height: min(90dvh, calc(100vh - env(safe-area-inset-top, 0px) - 8px));
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+      touch-action: pan-y;
+    }
+  </head>
 <body class="pb-28 selection:bg-sky-300/30 selection:text-white">
 <div id="valerian-legacy-engine-host" aria-hidden="true">
 
@@ -4160,7 +4186,14 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     }
 
     function openSheet(id) {
-      document.getElementById(id).classList.remove('hidden');
+      const sheet = document.getElementById(id);
+      if (!sheet) return;
+      // Keep the checkout sheet outside transformed app containers so fixed
+      // positioning is relative to the actual mobile viewport, not the app shell.
+      if (id === 'checkoutSheet' && sheet.parentElement !== document.body) {
+        document.body.appendChild(sheet);
+      }
+      sheet.classList.remove('hidden');
       if (id === 'checkoutSheet') renderCheckoutSheet();
       if (id === 'decantLabSheet') populateDecantLab();
       if (id === 'stockAdjustSheet') populateAdjustSheet();
