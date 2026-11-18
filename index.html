@@ -2103,6 +2103,47 @@ html[data-valerian-theme="light"] .glass-dock .nav-pill.bg-slate-200\/20{
 </style>
 
 <style id="valerian-single-document-engine-host">#valerian-legacy-engine-host{position:fixed!important;left:-30000px!important;top:0!important;width:1600px!important;min-height:100vh!important;height:auto!important;overflow:visible!important;z-index:-1!important;pointer-events:none!important}#valerian-legacy-engine-host *{pointer-events:auto}</style>
+<style id="valerian-v5-action-viewport-fix">
+/* Fix the actual mobile ERP confirmation dialog (v5ActionModal). */
+#v5ActionModal{
+  position:fixed!important;
+  inset:0!important;
+  top:0!important;right:0!important;bottom:0!important;left:0!important;
+  width:auto!important;height:auto!important;min-height:0!important;max-height:none!important;
+  box-sizing:border-box!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  padding: max(12px, env(safe-area-inset-top, 0px)) 12px max(12px, env(safe-area-inset-bottom, 0px))!important;
+  overflow-x:hidden!important;overflow-y:auto!important;
+  overscroll-behavior:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+#v5ActionModal.hidden{display:none!important}
+#v5ActionModal>.v5-action-panel{
+  position:relative!important;
+  box-sizing:border-box!important;
+  width:min(100%,440px)!important;min-width:0!important;
+  max-height:calc(100dvh - max(12px,env(safe-area-inset-top,0px)) - max(12px,env(safe-area-inset-bottom,0px)))!important;
+  min-height:0!important;flex:0 1 auto!important;
+  margin:auto!important;
+  display:flex!important;flex-direction:column!important;
+  overflow-x:hidden!important;overflow-y:auto!important;
+  overscroll-behavior:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+#v5ActionModal #v5ActionDetails{min-height:0!important;max-height:min(28dvh,220px)!important;flex:0 1 auto!important;overflow-y:auto!important}
+#v5ActionModal .v5-action-panel> .grid.grid-cols-2:last-child{
+  position:sticky!important;bottom:-1px!important;z-index:2!important;
+  flex-shrink:0!important;padding-top:10px!important;
+  background:inherit!important;
+}
+#v5ActionModal .v5-action-panel button{min-height:44px!important;max-width:100%!important;white-space:normal!important}
+@media(max-width:520px){
+  #v5ActionModal{padding:max(8px,env(safe-area-inset-top,0px)) 10px max(8px,env(safe-area-inset-bottom,0px))!important}
+  #v5ActionModal>.v5-action-panel{width:100%!important;max-height:calc(100dvh - max(8px,env(safe-area-inset-top,0px)) - max(8px,env(safe-area-inset-bottom,0px)))!important;border-radius:22px!important;padding:14px!important}
+  #v5ActionModal #v5ActionDetails{max-height:24dvh!important}
+}
+</style>
+
 </head>
 <body class="pb-28 selection:bg-sky-300/30 selection:text-white">
 <div id="valerian-legacy-engine-host" aria-hidden="true">
