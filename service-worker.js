@@ -1,7 +1,7 @@
 /* VALERIAN V20.7 — offline application shell */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-98-meta-bootstrap';
-const APP_SHELL = ['./', './index.html', './engine.html?v=20261118-98-meta-bootstrap', './manifest.webmanifest', './assets/valerian-icon.jpg'];
+const CACHE_NAME = 'valerian-app-shell-v20-99-auth-bridge';
+const APP_SHELL = ['./', './index.html', './engine.html?v=20261118-99-auth-bridge', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
