@@ -6774,11 +6774,11 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     }
     function initializeCloudClientIfNeeded(){
       if(cloudClient || !window.supabase?.createClient) return;
-      cloudClient=window.supabase.createClient(VALERIAN_CLOUD_URL,VALERIAN_CLOUD_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+      const valNativePreferences=window.Capacitor?.Plugins?.Preferences; const valAuthStorage={async getItem(key){try{if(valNativePreferences?.get){const r=await valNativePreferences.get({key});if(r?.value!=null)return r.value;}}catch(_){} try{return window.localStorage.getItem(key);}catch(_){return null;}},async setItem(key,value){try{if(valNativePreferences?.set){await valNativePreferences.set({key,value});return;}}catch(_){} try{window.localStorage.setItem(key,value);}catch(_){}},async removeItem(key){try{if(valNativePreferences?.remove){await valNativePreferences.remove({key});return;}}catch(_){} try{window.localStorage.removeItem(key);}catch(_){} }}; cloudClient=window.supabase.createClient(VALERIAN_CLOUD_URL,VALERIAN_CLOUD_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:valAuthStorage,storageKey:'valerian-v20-auth'}});
       cloudClient.auth.getSession().then(({data})=>{if(data.session?.user) initializeValerianCloud(data.session.user); else setCloudStatus('اضغط للاتصال بالسحابة','#475569');}).catch(()=>setCloudStatus('المزامنة غير متاحة حاليًا — البيانات المحلية تعمل','#a16207'));
     }
     function loadOptionalLibrary(name){ return valLoadLib(name); }
-    let cloudUser = null, cloudRevision = 0, cloudReady = false, cloudDirty = false, cloudConflict = false;
+    let cloudUser = null, cloudRevision = 0, cloudLegacyRevision = 0, cloudReady = false, cloudDirty = false, cloudConflict = false;
     let cloudSaveTimer = null, cloudChannel = null, cloudApplyingRemote = false;
     let cloudSaveInFlight = false, cloudPollInFlight = false, cloudRetryTimer = null, cloudRetryDelay = 3000;
     let cloudIncrementalPullQueue=Promise.resolve(), cloudImageUploadQueue=Promise.resolve();
@@ -6924,7 +6924,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       // Never reset a valid local cursor to the immutable server baseline cursor.
       const effectiveCursor=hasStoredCursor?storedCursor:Number(data.cursor||0);
       if(!hasStoredCursor)await valSyncWriteCursor(effectiveCursor);
-      cloudRevision=Number(data.revision||0);
+      cloudRevision=Number(data.revision||0); cloudLegacyRevision=cloudRevision;
       cloudIncrementalBase=valSyncCloudClone(state);
       cloudIncrementalReady=true;
       cloudSyncDiagnostics.mode='Incremental Journal';
@@ -6955,7 +6955,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         const {data,error}=await cloudClient.rpc('valerian_sync_push',{p_changes:batch});
         if(error){valCloudDiagnostic('فشل RPC push: '+cloudErrorMessage(error));throw error;}
         if(!data?.ok){valCloudDiagnostic('RPC push أعاد ok=false: '+JSON.stringify(data));throw new Error('رفضت السحابة تسجيل دفعة التغييرات.');}
-        valCloudDiagnostic('نجاح RPC push: '+JSON.stringify({ok:data.ok,inserted:data.inserted,cursor:data.cursor})+'.');
+        valCloudDiagnostic('نجاح RPC push: '+JSON.stringify({ok:data.ok,inserted:data.inserted,cursor:data.cursor,revision:data.revision})+'.'); cloudLegacyRevision=Number(data.revision??cloudLegacyRevision);
         const ids=new Set(batch.map(x=>x.change_id));
         // Re-read and remove only acknowledged IDs; preserve edits queued during RPC.
         const remaining=await valSyncMutateOutbox(current=>current.filter(x=>!ids.has(x.change_id)));
@@ -7107,6 +7107,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       await window.__valImgReady;
       cloudUser=user; setCloudStatus('جارٍ فحص بيانات السحابة…','#a16207');
       const {data:row,error}=await cloudClient.from('valerian_state').select('revision,updated_at').eq('user_id',user.id).maybeSingle();
+       cloudLegacyRevision=Number(row?.revision||0);
       if(error){setCloudStatus('خطأ قراءة السحابة: '+cloudErrorMessage(error),'#b91c1c');return;}
       // Prefer journal-based sync when the additive migration is installed.
       try{
@@ -7300,7 +7301,18 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       try {
         if(cloudIncrementalReady){
           await valIncrementalPull('poll:'+source);
-          setCloudStatus('متصل — تم فحص سجل التغييرات الجزئي','#047857');
+          // Legacy compatibility: only fetch the full snapshot when an older client actually advanced it.
+          const {data:legacyMeta,error:legacyMetaError}=await cloudClient.from('valerian_state').select('revision').eq('user_id',cloudUser.id).maybeSingle();
+          if(legacyMetaError){setCloudStatus('تعذر فحص توافق النسخ القديمة: '+cloudErrorMessage(legacyMetaError),'#b91c1c');return;}
+          const legacyRevision=Number(legacyMeta?.revision||0);
+          if(legacyRevision>cloudLegacyRevision){
+            if(cloudDirty||cloudSaveInFlight){cloudConflict=true;setCloudStatus('وصل تعديل من نسخة قديمة بالتزامن مع تعديل محلي. لم نستبدل أي بيانات.','#b91c1c');return;}
+            const {data:legacyRow,error:legacyError}=await cloudClient.from('valerian_state').select('state,revision').eq('user_id',cloudUser.id).maybeSingle();
+            if(legacyError){setCloudStatus('تعذر تحميل تحديث النسخة القديمة: '+cloudErrorMessage(legacyError),'#b91c1c');return;}
+            const applied=await applyCloudState(legacyRow.state); if(!applied)return;
+            cloudLegacyRevision=Number(legacyRow.revision||legacyRevision); cloudIncrementalBase=valSyncCloudClone(state);
+            setCloudStatus('تم استقبال تحديث من نسخة VALERIAN قديمة — تم تحديث البيانات محلياً','#047857');
+          }else setCloudStatus('متصل — تم فحص سجل التغييرات الجزئي','#047857');
           return;
         }
         // Cheap revision-only check: never download the full JSON business state unless
