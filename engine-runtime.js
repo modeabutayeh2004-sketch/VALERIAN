@@ -2037,8 +2037,8 @@
       const before=structuredClone(state);try{
         state.operatingSupplies=Array.isArray(state.operatingSupplies)?state.operatingSupplies:[];
         const key=name.toLocaleLowerCase('ar').replace(/\s+/g,' ').trim()+'|'+unit.toLocaleLowerCase('ar');
-        let supply=state.operatingSupplies.find(x=>(String(x.name||'').toLocaleLowerCase('ar').replace(/\s+/g,' ').trim()+'|'+String(x.unit||'').toLocaleLowerCase('ar'))===key);
-        if(!supply){supply={id:'SUPPLY-'+Date.now()+'-'+Math.random().toString(36).slice(2,5),name,category,unit,quantity:0,averageUnitCost:0,lastPurchaseUnitCost:0,recipePerOrder:0,recipePerUnit:0,minimumStock:0};state.operatingSupplies.push(supply);}
+        let supply=state.operatingSupplies.find(x=>(!x.archivedAt&&x.active!==false)&&(String(x.name||'').toLocaleLowerCase('ar').replace(/\s+/g,' ').trim()+'|'+String(x.unit||'').toLocaleLowerCase('ar'))===key);
+        if(!supply){supply=state.operatingSupplies.find(x=>(String(x.name||'').toLocaleLowerCase('ar').replace(/\s+/g,' ').trim()+'|'+String(x.unit||'').toLocaleLowerCase('ar'))===key);if(supply){supply.archivedAt=null;supply.active=true;}else{supply={id:'SUPPLY-'+Date.now()+'-'+Math.random().toString(36).slice(2,5),name,category,unit,quantity:0,averageUnitCost:0,lastPurchaseUnitCost:0,recipePerOrder:0,recipePerUnit:0,minimumStock:0};state.operatingSupplies.push(supply);}}
         const oldQty=Math.max(0,Number(supply.quantity||0)),oldValue=oldQty*Math.max(0,Number(supply.averageUnitCost||0)),unitCost=total/qty;
         supply.name=name;supply.category=category;supply.unit=unit;supply.quantity=oldQty+qty;supply.averageUnitCost=(oldValue+total)/supply.quantity;supply.lastPurchaseUnitCost=unitCost;supply.lastPurchaseDate=new Date().toISOString();
         const id='OSINV-'+Date.now(),date=new Date().toISOString();
@@ -2066,7 +2066,7 @@
     }
     function getOrderSupplyRequirements(order){
       const units=(order?.items||[]).reduce((n,i)=>n+Math.max(0,Number(i.qty||0)-Number(i.returnedQty||0)),0);
-      return (state.operatingSupplies||[]).map(x=>({supply:x,qty:Math.max(0,Number(x.recipePerOrder||0)+Number(x.recipePerUnit||0)*units)})).filter(x=>x.qty>0);
+      return (state.operatingSupplies||[]).filter(x=>!x.archivedAt&&x.active!==false).map(x=>({supply:x,qty:Math.max(0,Number(x.recipePerOrder||0)+Number(x.recipePerUnit||0)*units)})).filter(x=>x.qty>0);
     }
     function validateOrderSupplyAvailability(order){
       const req=getOrderSupplyRequirements(order);for(const r of req){if(Number(r.supply.quantity||0)+1e-9<r.qty){showToast(`مستلزم غير كافٍ: ${r.supply.name}. المطلوب ${r.qty} والمتاح ${r.supply.quantity||0} ${r.supply.unit}. حدّث فاتورة الشراء أو وصفة الاستهلاك.`, 'error');return false;}}return true;
@@ -2173,7 +2173,7 @@
       const ppb=document.getElementById('packagingPurchasesBody');if(ppb){const rows=state.packagingPurchases||[];ppb.innerHTML=rows.length?rows.map(x=>`<tr><td class="p-3">${new Date(x.date).toLocaleDateString('ar-EG')}</td><td class="p-3 font-bold">${escapeHTML(x.id)}</td><td class="p-3">${escapeHTML(x.supplier||'—')}</td><td class="p-3">${Number(x.sizeMl)} مل</td><td class="p-3">${Number(x.quantity)}</td><td class="p-3 font-bold">${formatCurrency(x.totalCost)}</td></tr>`).join(''):'<tr><td colspan="6" class="p-5 text-center text-slate-400">لا توجد فواتير زجاجات.</td></tr>'; }
       const pmb=document.getElementById('packagingMovementsBody');if(pmb){const rows=state.packagingMovements||[];pmb.innerHTML=rows.slice(0,150).map(x=>`<tr><td class="p-3">${new Date(x.date).toLocaleString('ar-EG')}</td><td class="p-3 font-bold">${Number(x.sizeMl)} مل</td><td class="p-3">${escapeHTML(x.type)}</td><td class="p-3 font-bold ${Number(x.quantity)<0?'text-rose-600':'text-emerald-700'}">${Number(x.quantity)>0?'+':''}${Number(x.quantity)}</td><td class="p-3">${Number(x.balanceAfter||0)}</td><td class="p-3">${escapeHTML(x.reference||'—')}</td></tr>`).join('')||'<tr><td colspan="6" class="p-5 text-center text-slate-400">لا توجد حركات زجاجات مسجلة.</td></tr>'; }
       const osBody=document.getElementById('operatingSuppliesBody');
-      if(osBody){const supplies=state.operatingSupplies||[];osBody.innerHTML=supplies.length?supplies.map(x=>`<tr><td class="p-3 font-bold">${escapeHTML(x.name)}</td><td class="p-3">${escapeHTML(x.category||'أخرى')} / ${escapeHTML(x.unit||'قطعة')}</td><td class="p-3 font-extrabold ${Number(x.quantity||0)<=Number(x.minimumStock||0)?'text-rose-600':'text-emerald-700'}">${Number(x.quantity||0)} ${escapeHTML(x.unit||'')}</td><td class="p-3">${formatCurrency(x.averageUnitCost||0)}</td><td class="p-2"><input id="os-order-${x.id}" type="number" min="0" step="0.001" value="${Number(x.recipePerOrder||0)}" class="w-20 border rounded p-1"></td><td class="p-2"><input id="os-unit-${x.id}" type="number" min="0" step="0.001" value="${Number(x.recipePerUnit||0)}" class="w-20 border rounded p-1"></td><td class="p-2"><input id="os-min-${x.id}" title="حد إعادة الطلب" type="number" min="0" step="1" value="${Number(x.minimumStock||0)}" class="w-16 border rounded p-1"><button type="button" onclick="saveOperatingSupplyRecipe('${x.id}')" class="px-2 py-1 m-1 rounded bg-violet-100 text-violet-800 font-bold">حفظ الوصفة</button><button type="button" onclick="openOperatingSupplyWriteoff('${x.id}')" class="px-2 py-1 rounded bg-rose-100 text-rose-700 font-bold">هالك / جرد</button></td></tr>`).join(''):'<tr><td colspan="7" class="p-5 text-center text-slate-400">لا توجد مستلزمات بعد. ابدأ بفاتورة شراء مستلزمات.</td></tr>';}
+      if(osBody){const supplies=(state.operatingSupplies||[]).filter(x=>!x.archivedAt&&x.active!==false);osBody.innerHTML=supplies.length?supplies.map(x=>`<tr><td class="p-3 font-bold">${escapeHTML(x.name)}</td><td class="p-3">${escapeHTML(x.category||'أخرى')} / ${escapeHTML(x.unit||'قطعة')}</td><td class="p-3 font-extrabold ${Number(x.quantity||0)<=Number(x.minimumStock||0)?'text-rose-600':'text-emerald-700'}">${Number(x.quantity||0)} ${escapeHTML(x.unit||'')}</td><td class="p-3">${formatCurrency(x.averageUnitCost||0)}</td><td class="p-2"><input id="os-order-${x.id}" type="number" min="0" step="0.001" value="${Number(x.recipePerOrder||0)}" class="w-20 border rounded p-1"></td><td class="p-2"><input id="os-unit-${x.id}" type="number" min="0" step="0.001" value="${Number(x.recipePerUnit||0)}" class="w-20 border rounded p-1"></td><td class="p-2"><input id="os-min-${x.id}" title="حد إعادة الطلب" type="number" min="0" step="1" value="${Number(x.minimumStock||0)}" class="w-16 border rounded p-1"><button type="button" onclick="saveOperatingSupplyRecipe('${x.id}')" class="px-2 py-1 m-1 rounded bg-violet-100 text-violet-800 font-bold">حفظ الوصفة</button><button type="button" onclick="openOperatingSupplyWriteoff('${x.id}')" class="px-2 py-1 rounded bg-rose-100 text-rose-700 font-bold">هالك / جرد</button></td></tr>`).join(''):'<tr><td colspan="7" class="p-5 text-center text-slate-400">لا توجد مستلزمات بعد. ابدأ بفاتورة شراء مستلزمات.</td></tr>';}
       const osi=document.getElementById('operatingSupplyInvoicesBody');if(osi){const rows=state.operatingSupplyInvoices||[];osi.innerHTML=rows.length?rows.map(x=>`<tr><td class="p-3">${new Date(x.date).toLocaleDateString('ar-EG')}</td><td class="p-3 font-bold">${escapeHTML(x.id)}</td><td class="p-3">${escapeHTML(x.supplier)}</td><td class="p-3">${escapeHTML(x.supplyName)}</td><td class="p-3">${Number(x.quantity)} ${escapeHTML(x.unit)}</td><td class="p-3 font-bold">${formatCurrency(x.totalCost)}</td></tr>`).join(''):'<tr><td colspan="6" class="p-5 text-center text-slate-400">لا توجد فواتير مستلزمات.</td></tr>';}
       const osm=document.getElementById('operatingSupplyMovementsBody');if(osm){const rows=state.operatingSupplyMovements||[];osm.innerHTML=rows.slice(0,150).map(x=>`<tr><td class="p-3">${new Date(x.date).toLocaleString('ar-EG')}</td><td class="p-3 font-bold">${escapeHTML(x.supplyName)}</td><td class="p-3">${escapeHTML(x.type)}</td><td class="p-3 font-bold ${Number(x.quantity)<0?'text-rose-600':'text-emerald-700'}">${Number(x.quantity)>0?'+':''}${Number(x.quantity)} ${escapeHTML(x.unit)}</td><td class="p-3">${Number(x.balanceAfter)}</td><td class="p-3">${escapeHTML(x.reference||'—')}</td></tr>`).join('')||'<tr><td colspan="6" class="p-5 text-center text-slate-400">لا توجد حركات مستلزمات.</td></tr>';}
       renderUnifiedInventoryExtras();
@@ -2184,7 +2184,7 @@
       let rows=[];
       if(kind==='product') rows=[];
       else if(kind==='packaging') rows=getSharedPackagingSizes().map(size=>{const x=getPackagingEntry(size);return {value:String(size),label:`زجاجات ${size} مل (الرصيد ${Number(x.quantity||0)})`};});
-      else rows=(state.operatingSupplies||[]).map(x=>({value:x.id,label:`${x.name} (${x.unit||'قطعة'}) — الرصيد ${Number(x.quantity||0)}`}));
+      else rows=(state.operatingSupplies||[]).filter(x=>!x.archivedAt&&x.active!==false).map(x=>({value:x.id,label:`${x.name} (${x.unit||'قطعة'}) — الرصيد ${Number(x.quantity||0)}`}));
       sel.innerHTML=rows.map(x=>`<option value="${escapeHTML(x.value)}">${escapeHTML(x.label)}</option>`).join('');
       updateStockAdjustmentPreview();
     }
@@ -2193,7 +2193,7 @@
       const osBodyUnified=document.getElementById('operatingSuppliesBody');
       if(osBodyUnified){
         const bottleRows=getSharedPackagingSizes().map(size=>{const x=getPackagingEntry(size);return `<tr class="bg-emerald-50/40"><td class="p-3 font-bold">زجاجات تقسيم ${size} مل</td><td class="p-3">عبوات مشتركة / زجاجة</td><td class="p-3 font-extrabold ${Number(x.quantity||0)<=0?'text-rose-600':'text-emerald-700'}">${Number(x.quantity||0)} زجاجة</td><td class="p-3">${formatCurrency(x.averageUnitCost||0)}</td><td class="p-2 text-slate-400">تُستهلك تلقائيًا عند إنتاج التقسيم</td><td class="p-2 text-slate-400">—</td><td class="p-2"><button type="button" onclick="openUnifiedPurchaseModal('packaging')" class="px-2 py-1 rounded bg-emerald-100 text-emerald-800 font-bold">فاتورة شراء</button><button type="button" onclick="openStockAdjustmentModal('packaging','${size}')" class="px-2 py-1 m-1 rounded bg-rose-100 text-rose-700 font-bold">هالك / جرد</button></td></tr>`;}).join('');
-        const supplyRows=(state.operatingSupplies||[]).map(x=>`<tr><td class="p-3 font-bold">${escapeHTML(x.name)}</td><td class="p-3">${escapeHTML(x.category||'أخرى')} / ${escapeHTML(x.unit||'قطعة')}</td><td class="p-3 font-extrabold ${Number(x.quantity||0)<=Number(x.minimumStock||0)?'text-rose-600':'text-emerald-700'}">${Number(x.quantity||0)} ${escapeHTML(x.unit||'')}</td><td class="p-3">${formatCurrency(x.averageUnitCost||0)}</td><td class="p-2"><input id="os-order-${x.id}" type="number" min="0" step="0.001" value="${Number(x.recipePerOrder||0)}" class="w-20 border rounded p-1"></td><td class="p-2"><input id="os-unit-${x.id}" type="number" min="0" step="0.001" value="${Number(x.recipePerUnit||0)}" class="w-20 border rounded p-1"></td><td class="p-2"><input id="os-min-${x.id}" title="حد إعادة الطلب" type="number" min="0" step="0.001" value="${Number(x.minimumStock||0)}" class="w-16 border rounded p-1"><button type="button" onclick="saveOperatingSupplyRecipe('${x.id}')" class="px-2 py-1 m-1 rounded bg-violet-100 text-violet-800 font-bold">حفظ الوصفة</button><button type="button" onclick="openStockAdjustmentModal('supply','${x.id}')" class="px-2 py-1 rounded bg-rose-100 text-rose-700 font-bold">هالك / جرد</button></td></tr>`).join('');
+        const supplyRows=(state.operatingSupplies||[]).filter(x=>!x.archivedAt&&x.active!==false).map(x=>`<tr><td class="p-3 font-bold">${escapeHTML(x.name)}</td><td class="p-3">${escapeHTML(x.category||'أخرى')} / ${escapeHTML(x.unit||'قطعة')}</td><td class="p-3 font-extrabold ${Number(x.quantity||0)<=Number(x.minimumStock||0)?'text-rose-600':'text-emerald-700'}">${Number(x.quantity||0)} ${escapeHTML(x.unit||'')}</td><td class="p-3">${formatCurrency(x.averageUnitCost||0)}</td><td class="p-2"><input id="os-order-${x.id}" type="number" min="0" step="0.001" value="${Number(x.recipePerOrder||0)}" class="w-20 border rounded p-1"></td><td class="p-2"><input id="os-unit-${x.id}" type="number" min="0" step="0.001" value="${Number(x.recipePerUnit||0)}" class="w-20 border rounded p-1"></td><td class="p-2"><input id="os-min-${x.id}" title="حد إعادة الطلب" type="number" min="0" step="0.001" value="${Number(x.minimumStock||0)}" class="w-16 border rounded p-1"><button type="button" onclick="saveOperatingSupplyRecipe('${x.id}')" class="px-2 py-1 m-1 rounded bg-violet-100 text-violet-800 font-bold">حفظ الوصفة</button><button type="button" onclick="openStockAdjustmentModal('supply','${x.id}')" class="px-2 py-1 rounded bg-rose-100 text-rose-700 font-bold">هالك / جرد</button></td></tr>`).join('');
         osBodyUnified.innerHTML=bottleRows+supplyRows||'<tr><td colspan="7" class="p-5 text-center text-slate-400">لا توجد مستلزمات أو زجاجات مسجلة.</td></tr>';
       }
       // Consolidate all purchasing documents into the existing purchase history table.
@@ -2231,7 +2231,7 @@
       const kind=document.getElementById('stockAdjKind')?.value||'packaging',id=document.getElementById('stockAdjProduct')?.value;
       if(kind==='product')return null;
       if(kind==='packaging'){const x=getPackagingEntry(id);return {kind,id:String(id),name:`زجاجات ${id} مل`,unit:'زجاجة',current:Math.max(0,Number(x.quantity||0)),reserved:0,record:x};}
-      const x=(state.operatingSupplies||[]).find(y=>String(y.id)===String(id));return x?{kind,id:String(id),name:x.name,unit:x.unit||'قطعة',current:Math.max(0,Number(x.quantity||0)),reserved:0,record:x}:null;
+      const x=(state.operatingSupplies||[]).find(y=>String(y.id)===String(id)&&!y.archivedAt&&y.active!==false);return x?{kind,id:String(id),name:x.name,unit:x.unit||'قطعة',current:Math.max(0,Number(x.quantity||0)),reserved:0,record:x}:null;
     }
     function updateStockAdjustmentPreview(){
       const t=getUnifiedAdjustmentTarget();if(!t)return;
@@ -4933,10 +4933,23 @@ function previewPeriodicReportPrint() {
           await valDurableWritePromise;if(valDurableWriteError)throw new Error('لم يكتمل الحفظ الدائم: '+String(valDurableWriteError.message||valDurableWriteError));await valIdbFlush();
           return {ok:true,purchase:structuredClone(state.packagingPurchases[0]),snapshot:snapshot()};
         },
+        archiveOperatingSupply:async payload=>{
+          await ready;
+          const id=String(payload?.id||''),supply=(state.operatingSupplies||[]).find(x=>String(x.id)===id&&!x.archivedAt&&x.active!==false);
+          if(!supply)throw new Error('المستلزم غير موجود أو تم حذفه بالفعل.');
+          const before=structuredClone(state),name=String(supply.name||'مستلزم');
+          supply.archivedAt=new Date().toISOString();supply.active=false;supply.recipePerOrder=0;supply.recipePerUnit=0;
+          logAudit('OPERATING_SUPPLY_ARCHIVED','حذف '+name+' من قائمة المستلزمات النشطة مع الاحتفاظ بالفواتير والحركات والرصيد التاريخي.');
+          if(!saveState()){state=before;throw new Error('تعذر حفظ حذف المستلزم.');}
+          try{await valDurableWritePromise;if(valDurableWriteError)throw valDurableWriteError;await valIdbFlush();}
+          catch(err){state=before;saveState();throw new Error('لم يكتمل الحفظ الدائم لحذف المستلزم: '+String(err?.message||err));}
+          refreshAllViews();
+          return {ok:true,supplyName:name,snapshot:snapshot()};
+        },
         updateOperatingSupplyRecipe:async payload=>{
           await ready;
-          const supply=(state.operatingSupplies||[]).find(x=>String(x.id)===String(payload?.id||''));
-          if(!supply)throw new Error('المستلزم غير موجود.');
+          const supply=(state.operatingSupplies||[]).find(x=>String(x.id)===String(payload?.id||'')&&!x.archivedAt&&x.active!==false);
+          if(!supply)throw new Error('المستلزم غير موجود أو تم حذفه.');
           const perOrder=Number(payload?.recipePerOrder),perUnit=Number(payload?.recipePerUnit),minimum=Number(payload?.minimumStock);
           if(![perOrder,perUnit,minimum].every(x=>Number.isFinite(x)&&x>=0))throw new Error('قيم الاستهلاك وحد التنبيه يجب أن تكون أرقامًا غير سالبة.');
           const before=structuredClone(supply);
