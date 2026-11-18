@@ -250,7 +250,7 @@
   
 /* VALERIAN secure deletion credential dialog */
 #v5DeleteCredentialModal{position:fixed;inset:0;z-index:220;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,5,9,.84);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}#v5DeleteCredentialModal.hidden{display:none}.v5-delete-panel{width:100%;max-width:430px;border:1px solid rgba(203,213,225,.24);border-radius:27px;background:linear-gradient(150deg,#172b39 0%,#081620 60%,#03090e 100%);box-shadow:0 30px 100px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.12);padding:22px;animation:v5ActionIn .24s ease-out}.v5-delete-input{width:100%;border:1px solid rgba(203,213,225,.24);border-radius:14px;background:rgba(0,0,0,.3);padding:14px;color:#f8fafc;font-size:15px;font-weight:800;outline:none}.v5-delete-input:focus{border-color:rgba(186,230,253,.75);box-shadow:0 0 0 3px rgba(186,230,253,.1)}
-</style>
+html[data-valerian-theme="dark"] body{background:#031321!important;color:#f5f8fc}html[data-valerian-theme="dark"] .ambient-silk-bg{background:radial-gradient(ellipse 90% 58% at 8% 4%,rgba(18,91,119,.42),transparent 62%),radial-gradient(ellipse 76% 66% at 92% 80%,rgba(20,43,91,.62),transparent 64%),linear-gradient(145deg,#062b42,#031b31 48%,#08152e)}html[data-valerian-theme="light"] body{background:#edf2f5!important;color:#17283a!important}html[data-valerian-theme="light"] .ambient-silk-bg{background:radial-gradient(ellipse 82% 55% at 10% 5%,rgba(177,211,215,.48),transparent 65%),radial-gradient(ellipse 72% 62% at 92% 85%,rgba(189,203,226,.48),transparent 66%),linear-gradient(145deg,#f8fbfc,#e8eff3 48%,#e5ebf3)}html[data-valerian-theme="light"] .glass-card,html[data-valerian-theme="light"] .glass-pill{background:linear-gradient(145deg,#fff,#eff5f8)!important;border-color:rgba(43,68,90,.15)!important;box-shadow:0 12px 28px rgba(43,65,84,.09),inset 0 1px 0 #fff!important}html[data-valerian-theme="light"] .glass-dock,html[data-valerian-theme="light"] .sheet-panel{background:rgba(247,250,252,.97)!important;border-color:rgba(38,65,87,.18)!important}html[data-valerian-theme="light"] .sheet-backdrop{background:rgba(31,49,66,.32)!important}html[data-valerian-theme="light"] .money-action-panel,html[data-valerian-theme="light"] .v5-action-panel,html[data-valerian-theme="light"] .v5-delete-panel{background:linear-gradient(145deg,#fff,#eaf0f4)!important;color:#17283a!important}html[data-valerian-theme="light"] .text-white,html[data-valerian-theme="light"] .text-slate-100,html[data-valerian-theme="light"] .text-slate-200,html[data-valerian-theme="light"] .text-slate-300{color:#1d3043!important}html[data-valerian-theme="light"] .text-slate-400,html[data-valerian-theme="light"] .text-slate-500{color:#64788c!important}html[data-valerian-theme="light"] .nav-pill{color:#536a7e!important}html[data-valerian-theme="light"] .silver-btn{background:linear-gradient(135deg,#284d68,#55788f 55%,#b4c8d5)!important;color:#fff!important}.bidi-count{direction:rtl!important;unicode-bidi:plaintext!important;text-align:right!important;display:block}.valerian-home-hero{border-radius:30px 30px 34px 34px;background:linear-gradient(135deg,rgba(10,44,69,.94),rgba(4,20,40,.96) 62%,rgba(14,29,59,.96));border:1px solid rgba(165,197,224,.2);box-shadow:0 22px 48px rgba(0,7,18,.32),inset 0 1px 0 rgba(255,255,255,.12)}html[data-valerian-theme="light"] .valerian-home-hero{background:linear-gradient(135deg,#fff,#e7f0f4 60%,#e9edf6)}.valerian-glass-icon{width:46px;height:46px;display:flex;align-items:center;justify-content:center;border-radius:17px;font-size:25px;background:linear-gradient(145deg,rgba(255,255,255,.24),rgba(255,255,255,.035) 55%,rgba(0,0,0,.18));border:1px solid rgba(255,255,255,.24);box-shadow:inset 0 1px 2px rgba(255,255,255,.38),0 8px 18px rgba(0,0,0,.24);text-shadow:0 2px 5px rgba(0,0,0,.25)}.nav-art{width:36px;height:30px;display:flex;align-items:center;justify-content:center;font-size:22px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}.valerian-shortcut{border-radius:24px!important;padding:13px 8px!important;background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(255,255,255,.025))!important;border:1px solid rgba(205,224,239,.18)!important;box-shadow:0 10px 24px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.11)!important}html[data-valerian-theme="light"] .valerian-shortcut{background:linear-gradient(145deg,#fff,#e6eff4)!important}</style>
 <script>
 (function(){
   const logs=[];
@@ -370,7 +370,7 @@
   <div class="max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto min-h-dvh relative flex flex-col">
 
     <!-- ULTRA-CLEAN MINIMALIST TOP BANNER (NO ADD BUTTON) -->
-    <header class="sticky top-0 z-30 px-4 md:px-6 py-3 bg-[#02080c]/85 backdrop-blur-2xl border-b border-white/[0.07]">
+    <header class="sticky top-0 z-30 px-4 md:px-6 py-3 rounded-b-[30px] bg-gradient-to-b from-[#09233a]/90 to-[#04172b]/72 backdrop-blur-2xl border-b border-white/[0.10] shadow-[0_12px_32px_rgba(0,5,15,.22)]">
       <div class="flex items-center justify-between">
         <!-- Brand Mark & Title Only -->
         <div class="flex items-center gap-3">
@@ -446,7 +446,7 @@
         </div>
         <button type="button" onclick="closeV5ActionModal()" class="w-9 h-9 rounded-full glass-pill text-slate-300">✕</button>
       </div>
-      <div class="rounded-2xl border border-white/10 bg-white/[.045] p-4"><p id="v5ActionMessage" class="text-sm leading-7 text-slate-200">هل تريد المتابعة؟</p></div>
+      <div class="rounded-2xl border border-white/10 bg-white/[.045] p-4"><p id="v5ActionMessage" class="text-sm leading-7 text-slate-200">هل تريد المتابعة؟</p></div><div id="v5ActionDetails" class="hidden rounded-2xl border border-white/10 bg-white/[.035] p-4 space-y-2 max-h-64 overflow-y-auto"></div>
       <div id="v5ActionMethodWrap" class="hidden space-y-2">
         <div class="text-[11px] font-extrabold text-slate-300">وسيلة التحصيل عند التسليم</div>
         <input type="hidden" id="v5ActionMethod" value="نقدي">
@@ -477,7 +477,7 @@
       <!-- ==================== SCREEN A: HOME DASHBOARD ==================== -->
       <section id="screen-home" class="app-screen space-y-6">
         <!-- Hero KPI Card: Total Sales Standalone -->
-        <div class="glass-card rounded-3xl p-5 md:p-6 bottle-card relative overflow-hidden">
+        <div class="valerian-home-hero rounded-3xl p-5 md:p-6 bottle-card relative overflow-hidden">
           <div id="heroWaterFill" class="water-fill" style="--level: 8%;"></div>
           <div class="bottle-content relative z-10 flex items-center justify-between gap-2">
             <div>
@@ -494,46 +494,28 @@
             <div id="kpiWaterOrig" class="water-fill" style="--level: 8%;"></div>
             <div class="bottle-content relative z-10">
               <span class="text-[10px] text-slate-400 block">المخزون الأصلي</span>
-              <strong id="kpiOriginalStock" data-slot="kpi-original-stock" class="text-sm md:text-base font-extrabold text-white mt-1 block bidi-ltr">0 زجاجة</strong>
+              <strong id="kpiOriginalStock" data-slot="kpi-original-stock" class="text-sm md:text-base font-extrabold text-white mt-1 block bidi-count">0 زجاجة</strong>
             </div>
           </div>
           <div class="glass-card rounded-2xl p-3.5 border border-white/[0.08] bottle-card overflow-hidden">
             <div id="kpiWaterDec" class="water-fill" style="--level: 8%;"></div>
             <div class="bottle-content relative z-10">
               <span class="text-[10px] text-slate-400 block">عبوات التقسيم</span>
-              <strong id="kpiDecantStock" data-slot="kpi-decant-stock" class="text-sm md:text-base font-extrabold text-sky-200 mt-1 block bidi-ltr">0 عبوة</strong>
+              <strong id="kpiDecantStock" data-slot="kpi-decant-stock" class="text-sm md:text-base font-extrabold text-sky-200 mt-1 block bidi-count">0 عبوة</strong>
             </div>
           </div>
           <div class="glass-card rounded-2xl p-3.5 border border-white/[0.08] bottle-card overflow-hidden">
             <div id="kpiWaterRes" class="water-fill" style="--level: 8%;"></div>
             <div class="bottle-content relative z-10">
               <span class="text-[10px] text-slate-400 block">حجوزات معلقة</span>
-              <strong id="kpiPendingReservations" data-slot="kpi-pending-reservations" class="text-sm md:text-base font-extrabold text-amber-300 mt-1 block bidi-ltr">0 طلبات</strong>
+              <strong id="kpiPendingReservations" data-slot="kpi-pending-reservations" class="text-sm md:text-base font-extrabold text-amber-300 mt-1 block bidi-count">0 طلبات</strong>
             </div>
           </div>
         </div>
 
         <!-- Quick Actions -->
-        <div class="grid grid-cols-4 gap-2.5 md:gap-4">
-          <button onclick="switchScreen('pos', 'direct')" class="glass-card rounded-2xl py-3.5 px-2 flex flex-col items-center gap-2 active:scale-95 transition">
-            <span class="w-10 h-10 rounded-full silver-btn flex items-center justify-center text-sm font-black">⚡</span>
-            <span class="text-[11px] font-extrabold text-white">بيع سريع</span>
-          </button>
-          <button onclick="switchScreen('pos', 'reservation')" class="glass-card rounded-2xl py-3.5 px-2 flex flex-col items-center gap-2 active:scale-95 transition">
-            <span class="w-10 h-10 rounded-full bg-amber-400/15 border border-amber-300/35 text-amber-200 flex items-center justify-center text-sm">⏳</span>
-            <span class="text-[11px] font-extrabold text-white">حجز 30%</span>
-          </button>
-          <button onclick="switchScreen('inventory')" class="glass-card rounded-2xl py-3.5 px-2 flex flex-col items-center gap-2 active:scale-95 transition">
-            <span class="w-10 h-10 rounded-full bg-sky-400/15 border border-sky-300/35 text-sky-200 flex items-center justify-center text-sm">🧪</span>
-            <span class="text-[11px] font-extrabold text-white">التقسيم</span>
-          </button>
-          <button onclick="switchScreen('more', 'reports')" class="glass-card rounded-2xl py-3.5 px-2 flex flex-col items-center gap-2 active:scale-95 transition">
-            <span class="w-10 h-10 rounded-full bg-emerald-400/15 border border-emerald-300/35 text-emerald-200 flex items-center justify-center text-sm">📊</span>
-            <span class="text-[11px] font-extrabold text-white">التقارير</span>
-          </button>
-        </div>
-
-        <!-- Dynamic Low Stock Alert -->
+        <div class="grid grid-cols-4 gap-2.5 md:gap-4"><button onclick="switchScreen('pos','direct')" class="valerian-shortcut glass-card flex flex-col items-center gap-2 active:scale-95 transition"><span class="valerian-glass-icon">🛍️</span><span class="text-[11px] font-extrabold text-white">بيع سريع</span></button><button onclick="switchScreen('pos','reservation')" class="valerian-shortcut glass-card flex flex-col items-center gap-2 active:scale-95 transition"><span class="valerian-glass-icon">🗓️</span><span class="text-[11px] font-extrabold text-white">حجز 30%</span></button><button onclick="switchScreen('inventory')" class="valerian-shortcut glass-card flex flex-col items-center gap-2 active:scale-95 transition"><span class="valerian-glass-icon">🧴</span><span class="text-[11px] font-extrabold text-white">التقسيم</span></button><button onclick="switchScreen('more','reports')" class="valerian-shortcut glass-card flex flex-col items-center gap-2 active:scale-95 transition"><span class="valerian-glass-icon">📈</span><span class="text-[11px] font-extrabold text-white">التقارير</span></button></div>
+<!-- Dynamic Low Stock Alert -->
         <div id="homeLowStockBanner" class="hidden glass-card rounded-2xl p-3.5 border-amber-400/35 bg-amber-500/10 flex items-center justify-between gap-3">
           <div class="flex items-center gap-2.5">
             <span class="text-lg">⚠️</span>
@@ -766,23 +748,23 @@
     <!-- BOTTOM FLOATING DOCK -->
     <nav class="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-[94%] max-w-md glass-dock rounded-full px-2 py-1.5 flex items-center justify-between">
       <button onclick="switchScreen('home')" data-nav="home" aria-label="الرئيسية" class="nav-pill flex-1 py-2 rounded-full flex flex-col items-center gap-0.5 text-white bg-slate-200/20">
-        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>
+        <span class="nav-art" aria-hidden="true">🏠</span>
         <span class="text-[10px] font-extrabold">الرئيسية</span>
       </button>
       <button onclick="switchScreen('pos')" data-nav="pos" aria-label="الكاشير" class="nav-pill flex-1 py-2 rounded-full flex flex-col items-center gap-0.5 text-slate-400">
-        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h3m-3 4h8M15 12h1"/></svg>
+        <span class="nav-art" aria-hidden="true">🛒</span>
         <span class="text-[10px] font-extrabold">الكاشير</span>
       </button>
       <button onclick="switchScreen('inventory')" data-nav="inventory" aria-label="المخزون" class="nav-pill flex-1 py-2 rounded-full flex flex-col items-center gap-0.5 text-slate-400">
-        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16l-1 14H5L4 7Z"/><path d="M8 7a4 4 0 0 1 8 0M9 11v6m6-6v6"/></svg>
+        <span class="nav-art" aria-hidden="true">🧴</span>
         <span class="text-[10px] font-extrabold">المخزون</span>
       </button>
       <button onclick="switchScreen('imports')" data-nav="imports" aria-label="الاستيراد" class="nav-pill flex-1 py-2 rounded-full flex flex-col items-center gap-0.5 text-slate-400">
-        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h18l-2 11H5L3 7Z"/><path d="M7 7V4h10v3M8 12h8m-8 3h5"/></svg>
+        <span class="nav-art" aria-hidden="true">📦</span>
         <span class="text-[10px] font-extrabold">الاستيراد</span>
       </button>
       <button onclick="switchScreen('more')" data-nav="more" aria-label="المزيد" class="nav-pill flex-1 py-2 rounded-full flex flex-col items-center gap-0.5 text-slate-400">
-        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
+        <span class="nav-art" aria-hidden="true">✨</span>
         <span class="text-[10px] font-extrabold">المزيد</span>
       </button>
     </nav>
@@ -1063,7 +1045,7 @@
         </div>
 
         <div class="glass-card rounded-2xl p-3.5 space-y-2.5 text-xs">
-          <div class="flex justify-between items-center">
+          <div class="flex items-center justify-between gap-3 mb-3"><div><div class="text-sm font-extrabold text-white">مظهر VALERIAN</div><p class="text-[10px] text-slate-400 mt-1">الوضع الليلي هو الهوية الأصلية، ويمكنك التبديل للنهاري.</p></div><button id="valerianThemeToggle" type="button" onclick="toggleValerianTheme()" class="rounded-full silver-btn px-4 py-2 text-[11px] font-black">التبديل للنهاري</button></div><div class="flex justify-between items-center gap-3 mb-2"><span class="text-slate-300">الثيم الحالي</span><span id="valerianThemeLabel" class="text-xs font-black text-sky-200">ليلي • Deep Navy</span></div><div class="flex justify-between items-center">
             <span class="text-slate-300">حالة البيانات</span>
             <span id="dbStatusBadge" class="px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-200 border border-sky-400/30 font-bold">نموذج خالٍ</span>
           </div>
@@ -1297,9 +1279,9 @@
       const pendingCount = appState.orders.filter(o => !o.stockDeducted).length;
 
       document.getElementById('kpiTotalSales').textContent = fmtEgp(deliveredSales);
-      document.getElementById('kpiOriginalStock').textContent = `${origStock} زجاجة`;
-      document.getElementById('kpiDecantStock').textContent = `${decStock} عبوة`;
-      document.getElementById('kpiPendingReservations').textContent = `${pendingCount} طلبات`;
+      document.getElementById('kpiOriginalStock').innerHTML = `<bdi dir="ltr">${origStock}</bdi> زجاجة`;
+      document.getElementById('kpiDecantStock').innerHTML = `<bdi dir="ltr">${decStock}</bdi> عبوة`;
+      document.getElementById('kpiPendingReservations').innerHTML = `<bdi dir="ltr">${pendingCount}</bdi> طلبات`;
 
       updateWaterSimulationLevels(deliveredSales, origStock, decStock, pendingCount);
 
@@ -2886,7 +2868,7 @@
        in a same-origin hidden frame and remains the sole owner of business data. -->
   <iframe id="valerianEngineFrame" title="VALERIAN business engine" aria-hidden="true"
     style="position:fixed;left:-20px;top:-20px;width:2px;height:2px;border:0;opacity:0;pointer-events:none;z-index:-1"
-    src="./engine.html?v=20261118-113-mobile-phase1"></iframe>
+    src="./engine.html?v=20261118-114-phase1-redesign"></iframe>
   <script id="valerianV5EngineAdapter">
   (function(){
     'use strict';
@@ -3301,9 +3283,11 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
       document.getElementById('v5ActionIcon').textContent=delivery?'✓':'↶';
       document.getElementById('v5ActionTitle').textContent=delivery?'تأكيد التسليم والتحصيل':'مراجعة المرتجع';
       document.getElementById('v5ActionSubtitle').textContent=delivery?'اعتماد التسليم وتسجيل وسيلة التحصيل':'تأكيد تسجيل المرتجع قبل تحديث السجلات';
-      document.getElementById('v5ActionMessage').textContent=delivery
-        ? 'هل راجعت الطلب وأصبحت جاهزًا لتأكيد تسليمه؟ سيتم تسجيل التسليم ووسيلة التحصيل وتحديث المخزون والحسابات.'
-        : 'هل تريد تسجيل هذا الطلب كمرتجع؟ سيتم تنفيذ حركة المرتجع من خلال محرك الأعمال وتحديث السجلات المرتبطة.';
+      document.getElementById('v5ActionMessage').textContent=delivery?'راجع ملخص الطلب قبل اعتماد التسليم وتسجيل وسيلة التحصيل.':'راجع تفاصيل الطلب والكميات والمبالغ التالية قبل اعتماد المرتجع. لن يتم تحديث السجلات قبل تأكيدك.';
+      const details=document.getElementById('v5ActionDetails');
+      const itemRows=(order.items||[]).map(item=>'<div class="flex items-center justify-between gap-3 border-b border-white/10 py-2"><span class="min-w-0 text-xs text-slate-200">'+escapeHtmlMobile(item.name||item.productName||'منتج')+'</span><strong class="bidi-ltr shrink-0 text-xs text-white">'+Number(item.qty||0)+' × '+fmtEgp(item.price||0)+'</strong></div>').join('');
+      details.innerHTML='<div class="grid grid-cols-2 gap-2"><div><div class="text-[9px] text-slate-400">رقم الطلب</div><div class="text-xs font-black text-white bidi-ltr">'+escapeHtmlMobile(order.id)+'</div></div><div><div class="text-[9px] text-slate-400">العميل</div><div class="text-xs font-black text-white">'+escapeHtmlMobile(order.name||'—')+'</div></div></div><div class="pt-2">'+(itemRows||'<div class="text-xs text-slate-400">لا توجد بنود مسجلة</div>')+'</div><div class="grid grid-cols-2 gap-2 pt-2"><div class="rounded-xl bg-white/5 p-2"><div class="text-[9px] text-slate-400">إجمالي الفاتورة</div><strong class="block text-xs text-white bidi-ltr">'+fmtEgp(order.grandTotal||0)+'</strong></div><div class="rounded-xl bg-white/5 p-2"><div class="text-[9px] text-slate-400">المبلغ المدفوع</div><strong class="block text-xs text-emerald-300 bidi-ltr">'+fmtEgp(order.depositAmount||0)+'</strong></div><div class="rounded-xl bg-white/5 p-2 col-span-2"><div class="text-[9px] text-slate-400">المتبقي</div><strong class="block text-sm text-amber-200 bidi-ltr">'+fmtEgp(order.remainingAmount||0)+'</strong></div></div>';
+      details.classList.remove('hidden');
       document.getElementById('v5ActionMethodWrap').classList.toggle('hidden',!delivery);
       document.getElementById('v5ActionMethod').value='نقدي';
       document.querySelectorAll('[data-v5-action-method]').forEach(b=>b.classList.toggle('selected',b.dataset.v5ActionMethod==='نقدي'));
