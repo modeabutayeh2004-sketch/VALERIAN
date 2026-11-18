@@ -816,7 +816,7 @@
           <div class="grid grid-cols-3 gap-2">
             <div><span class="text-[10px] text-slate-400">سعر البيع</span><input id="newProdPrice" type="number" placeholder="0" class="w-full glass-pill rounded-xl px-2.5 py-2 text-white font-bold bidi-ltr" /></div>
             <div><span class="text-[10px] text-slate-400">التكلفة</span><input id="newProdCost" type="number" placeholder="0" class="w-full glass-pill rounded-xl px-2.5 py-2 text-white font-bold bidi-ltr" /></div>
-            <div><span class="text-[10px] text-slate-400">الرصيد الافتتاحي</span><input id="newProdStock" type="number" placeholder="0" class="w-full glass-pill rounded-xl px-2.5 py-2 text-white font-bold bidi-ltr" /></div>
+            <div><span class="text-[10px] text-slate-400">الرصيد الافتتاحي</span><input id="newProdStock" type="number" placeholder="0" value="0" class="w-full glass-pill rounded-xl px-2.5 py-2 text-white font-bold bidi-ltr" /><span class="text-[9px] text-slate-500">العطور تبدأ بصفر، وتُضاف كمياتها من فواتير الاستيراد فقط.</span></div>
           </div>
           <button id="saveNewProductBtn" onclick="saveNewProductFromSheet()" class="w-full py-3 rounded-full silver-btn text-xs font-black mt-1">حفظ وإدراج في المخزون</button>
         </div>
@@ -837,7 +837,7 @@
         </div>
         <div class="grid grid-cols-2 gap-2"><input id="editProdSize" type="number" min="0" step="any" placeholder="الحجم / الوزن" class="glass-pill rounded-xl px-3 py-2 text-white"><select id="editProdUnit" class="glass-pill rounded-xl px-3 py-2 text-white bg-[#04121a]"><option value="مل">ملليلتر</option><option value="جرام">جرام</option><option value="كيلوجرام">كيلوجرام</option><option value="وحدة">وحدة</option><option value="عبوة تقسيم جاهزة">عبوة تقسيم جاهزة</option></select></div>
         <div class="grid grid-cols-2 gap-2"><label class="text-[10px] text-slate-400">سعر البيع<input id="editProdPrice" type="number" min="0" step="any" class="w-full glass-pill rounded-xl px-3 py-2 text-white"></label><label class="text-[10px] text-slate-400">التكلفة المتوسطة<input id="editProdCost" type="number" min="0" step="any" class="w-full glass-pill rounded-xl px-3 py-2 text-white"></label></div>
-        <div class="grid grid-cols-2 gap-2"><label class="text-[10px] text-slate-400">الكمية الحالية<input id="editProdStock" type="number" min="0" step="1" class="w-full glass-pill rounded-xl px-3 py-2 text-white"></label><label class="text-[10px] text-slate-400">حد التنبيه<input id="editProdMin" type="number" min="0" step="1" class="w-full glass-pill rounded-xl px-3 py-2 text-white"></label></div>
+        <div class="grid grid-cols-2 gap-2"><label class="text-[10px] text-slate-400">الكمية الحالية (تُحدّث من فواتير الاستيراد فقط)<input id="editProdStock" type="number" min="0" step="1" readonly aria-readonly="true" class="w-full glass-pill rounded-xl px-3 py-2 text-slate-400 opacity-70"></label><label class="text-[10px] text-slate-400">حد التنبيه<input id="editProdMin" type="number" min="0" step="1" class="w-full glass-pill rounded-xl px-3 py-2 text-white"></label></div>
         <label class="text-[10px] text-slate-400 block">ملاحظات<textarea id="editProdNotes" rows="2" class="w-full glass-pill rounded-xl px-3 py-2 text-white"></textarea></label>
         <label class="flex items-center gap-2 text-xs text-slate-200"><input id="editProdDecantable" type="checkbox" class="accent-sky-400"> متاح للتقسيم</label>
         <div class="grid grid-cols-2 gap-2"><label class="text-[10px] text-slate-400">حجم التقسيم (مل)<input id="editProdDecantSize" type="number" min="1" step="any" class="w-full glass-pill rounded-xl px-3 py-2 text-white"></label><label class="text-[10px] text-slate-400">تكلفة العبوة<input id="editProdDecantCost" type="number" min="0" step="any" class="w-full glass-pill rounded-xl px-3 py-2 text-white"></label></div>
@@ -950,11 +950,11 @@
       <div class="sheet-panel w-full max-w-md rounded-t-3xl p-5 space-y-4">
         <div class="w-10 h-1 rounded-full bg-slate-300/30 mx-auto"></div>
         <div class="flex items-center justify-between">
-          <h3 class="text-base font-black text-white">⚖️ تسوية المخزون وتسجيل الهالك</h3>
+          <h3 class="text-base font-black text-white">⚖️ تسوية مخزون العبوات الفارغة</h3>
           <button onclick="closeSheet('stockAdjustSheet')" class="w-8 h-8 rounded-full glass-pill text-xs">✕</button>
         </div>
         <div class="space-y-3 text-xs">
-          <select id="adjProductSelect" class="w-full glass-pill rounded-xl px-3 py-2.5 text-white bg-[#04121a] font-bold"></select>
+          <select id="adjProductSelect" class="w-full glass-pill rounded-xl px-3 py-2.5 text-white bg-[#04121a] font-bold"></select><p class="text-[10px] text-slate-400">تسوية العبوات الفارغة فقط. كميات العطور لا تُعدّل من هنا وتُزاد حصريًا بفواتير الاستيراد.</p>
           <div class="grid grid-cols-2 gap-2">
             <select id="adjType" class="glass-pill rounded-xl px-3 py-2 text-white bg-[#04121a] font-bold">
               <option value="WASTAGE">هالك / كسر زجاجة</option>
@@ -1897,9 +1897,10 @@
 
     function populateAdjustSheet() {
       const sel = document.getElementById('adjProductSelect');
-      sel.innerHTML = appState.products.length
-        ? appState.products.map(p => `<option value="${p.id}">${p.name} (متاح: ${getAvail(p)})</option>`).join('')
-        : `<option value="">لا توجد منتجات</option>`;
+      const pools=Object.values(appState.packagingInventory||{}).sort((a,b)=>Number(a.sizeMl)-Number(b.sizeMl));
+      sel.innerHTML = pools.length
+        ? pools.map(p => `<option value="${p.sizeMl}">عبوات فارغة ${p.sizeMl} مل (الرصيد: ${p.quantity||0})</option>`).join('')
+        : `<option value="">لا توجد عبوات مسجلة</option>`;
     }
 
     function applyMobileStockAdjustment() {
@@ -2812,7 +2813,7 @@
        in a same-origin hidden frame and remains the sole owner of business data. -->
   <iframe id="valerianEngineFrame" title="VALERIAN business engine" aria-hidden="true"
     style="position:fixed;left:-20px;top:-20px;width:2px;height:2px;border:0;opacity:0;pointer-events:none;z-index:-1"
-    src="./engine.html?v=20261118-85-pre-apk-review"></iframe>
+    src="./engine.html?v=20261118-86-stock-security-liquid"></iframe>
   <script id="valerianV5EngineAdapter">
   (function(){
     'use strict';
@@ -3031,6 +3032,8 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
     // All write paths below call the ERP engine. V5's local appState is only a view model.
     function toggleNewProductDecantFields(){
       const perfume=document.getElementById('newProdType')?.value==='عطور';
+      const stockInput=document.getElementById('newProdStock');
+      if(stockInput){stockInput.readOnly=perfume;stockInput.value=perfume?'0':stockInput.value;stockInput.placeholder=perfume?'يُضاف من فاتورة الاستيراد':'0';}
       const wrap=document.getElementById('newProdDecantWrap');
       const check=document.getElementById('newProdDecantable');
       const options=document.getElementById('newProdDecantOptions');
@@ -3054,7 +3057,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
         decantBottleCost:Number(document.getElementById('newProdDecantBottleCost')?.value||15),
         price:Number(document.getElementById('newProdPrice').value||0),
         averageCost:Number(document.getElementById('newProdCost').value||0),
-        stock:Number(document.getElementById('newProdStock').value||0),
+        stock:document.getElementById('newProdType').value==='عطور'?0:Number(document.getElementById('newProdStock').value||0),
         image:pendingNewProductImage||''
       };
       if(!payload.name)return showToast('أدخل اسم المنتج أولاً.');
@@ -3128,7 +3131,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
       if(!reason)return showToast('يرجى كتابة سبب التسوية');
       try{
         const reasonType=document.getElementById('adjType').value==='SHORTAGE'?'COUNT_SHORTAGE':'WASTAGE';
-        const r=await runEngine('adjustStock',{kind:'product',id,quantity:qty,reason,reasonType});
+        const r=await runEngine('adjustStock',{kind:'packaging',id,quantity:qty,reason,reasonType});
         if(r.ok){closeSheet('stockAdjustSheet');showToast('تم تسجيل التسوية في سجل حركات المخزون الأصلي.');}
       }catch(err){reportError(err);}
     };
@@ -3244,10 +3247,12 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
       const id=decodeURIComponent(String(encodedId||''));
       const product=appState.products.find(p=>String(p.id)===id);
       if(!product)return showToast('المنتج غير موجود في المخزون.');
-      const approval=await openV5DeleteCredential({title:'حذف المنتج نهائيًا',description:'أنت على وشك حذف «'+product.name+'» نهائيًا. لن يمكن استعادته، وستظل الفواتير والحركات التاريخية المسجلة كما هي. اكتب كلمة «حذف» للتأكيد.',label:'اكتب كلمة حذف',inputType:'text',placeholder:'حذف',requiredValue:'حذف',invalidMessage:'اكتب كلمة حذف كما هي للمتابعة.'});
+      const approval=await openV5DeleteCredential({title:'تأكيد الحذف النهائي',description:'أنت على وشك حذف «'+product.name+'» نهائيًا. اكتب كلمة «حذف» أولاً للتأكيد.',label:'اكتب كلمة حذف',inputType:'text',placeholder:'حذف',requiredValue:'حذف',invalidMessage:'اكتب كلمة حذف كما هي للمتابعة.'});
       if(approval===null){showToast('تم إلغاء الحذف النهائي.');return;}
+      const password=await openV5DeleteCredential({title:'التحقق من حساب VALERIAN CLOUD',description:'أدخل كلمة مرور حساب المزامنة للتحقق من هويتك قبل حذف المنتج نهائيًا. لن يتم الحذف إذا فشل التحقق.',label:'كلمة مرور حساب المزامنة',inputType:'password',placeholder:'كلمة مرور VALERIAN CLOUD',confirmText:'تحقق واحذف'});
+      if(password===null){showToast('تم إلغاء الحذف النهائي.');return;}
       try{
-        const result=await runEngine('permanentlyDeleteProduct',id);
+        const result=await runEngine('permanentlyDeleteProduct',{id,password});
         if(result?.ok!==true)throw new Error(result?.error||'لم يتم حذف المنتج.');
         syncFromEngine(result.snapshot);
         renderInventoryList('all');
@@ -3333,7 +3338,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
       try{
         const payload={id,name:document.getElementById('editProdName').value.trim(),productType:document.getElementById('editProdType').value,category:document.getElementById('editProdCategory').value,
           size:document.getElementById('editProdSize').value+' '+document.getElementById('editProdUnit').value,stockUnit:document.getElementById('editProdUnit').value,
-          price:Number(document.getElementById('editProdPrice').value),averageCost:Number(document.getElementById('editProdCost').value),stock:Number(document.getElementById('editProdStock').value),
+          price:Number(document.getElementById('editProdPrice').value),averageCost:Number(document.getElementById('editProdCost').value),stock:Number(current.stock||0),
           minimumStock:Number(document.getElementById('editProdMin').value),notes:document.getElementById('editProdNotes').value,
           isDecantable:document.getElementById('editProdDecantable').checked,decantSizeMl:Number(document.getElementById('editProdDecantSize').value||10),
           decantBottleCost:Number(document.getElementById('editProdDecantCost').value||15),isOffer:document.getElementById('editProdOffer').checked,
@@ -3458,7 +3463,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
    'iframe: '+(frame?'موجود':'مفقود')+' | '+(frame?.contentDocument?.readyState||'لا يوجد document'),
    'محرك الأعمال: '+(eng?'موجود':'غير موجود'),
    'جاهزية المحرك: '+(eng?.ready?'promise موجودة':'غير متاحة'),
-   'إصدار التشخيص: V20-85',
+   'إصدار التشخيص: V20-86',
    'حالة السحابة: '+cloud,
    'تفاصيل المزامنة الجزئية: '+(syncDiag?JSON.stringify(syncDiag):'cloudDiagnostics API غير متاحة'),
    'وضع المزامنة: '+(syncDiag?.mode||'غير متاح'),
