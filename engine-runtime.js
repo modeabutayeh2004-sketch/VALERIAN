@@ -2774,8 +2774,8 @@ function previewPeriodicReportPrint() {
           <td class="py-3 px-4 text-left flex items-center justify-end gap-1.5">
             <button onclick="previewDocumentPrint(state.orders[${idx}], 'shipping_waybill')" class="px-2.5 py-1 rounded bg-slate-100 text-[11px] font-bold">بوليصة 🚚</button>
             <button onclick="openOrderShippingEditor(${idx})" class="px-2.5 py-1 rounded bg-violet-100 text-violet-800 text-[11px] font-bold">بيانات شركة الشحن ✎</button>
-            ${!o.stockDeducted && Number(o.remainingAmount||0)>0 ? `<button onclick="recordPreDeliveryPayment(${idx})" class="px-2.5 py-1 rounded bg-sky-100 text-sky-800 text-[11px] font-bold">تحصيل أونلاين قبل التسليم</button>` : ''}
-            ${!o.stockDeducted && !o.status.includes('مرتجع بالكامل') ? `<button onclick="collectRemaining(${idx})" class="px-2.5 py-1 rounded bg-emerald-600 text-white text-[11px] font-bold">تحصيل وتسليم ✓</button>` : ''}
+            ${!o.deliveredAt && Number(o.remainingAmount||0)>0 ? `<button onclick="recordPreDeliveryPayment(${idx})" class="px-2.5 py-1 rounded bg-sky-100 text-sky-800 text-[11px] font-bold">تحصيل أونلاين قبل الاستلام</button>` : ''}
+            ${!o.deliveredAt && !o.status.includes('مرتجع بالكامل') ? `<button onclick="collectRemaining(${idx})" class="px-2.5 py-1 rounded bg-emerald-600 text-white text-[11px] font-bold">${o.stockDeducted?'تأكيد الاستلام والتحصيل ✓':'تأكيد الاستلام والتحصيل ✓'}</button>` : ''}
             ${!(o.items||[]).every(i=>Number(i.returnedQty||0)>=Number(i.qty||0)) ? `<button onclick="markAsReturned(${idx})" class="px-2.5 py-1 rounded bg-rose-50 text-rose-700 text-[11px] font-bold">تسجيل مرتجع ↩️</button>` : `<span class="text-[10px] text-rose-600 font-bold">تم الإرجاع</span>`}
             ${Number(o.refundLiability||0)>0 ? `<button onclick="settleRefund(${idx})" class="px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 text-[11px] font-bold">رد مبلغ للعميل 💵</button>` : ''}
           </td>
@@ -2819,7 +2819,7 @@ function previewPeriodicReportPrint() {
       openModal('deliveryConfirmModal');
     }
     function confirmCollectAndDeliver(){
-      const idx=pendingDeliveryOrderIndex,o=state.orders[idx];if(!o||o.stockDeducted){closeModal('deliveryConfirmModal');return;}
+      const idx=pendingDeliveryOrderIndex,o=state.orders[idx];if(!o||o.deliveredAt){closeModal('deliveryConfirmModal');return;}
       const due=roundMoney(Math.max(0,Number(o.remainingAmount||0))),method=normalizePaymentMethod(document.getElementById('deliveryConfirmMethod').value),allowed=['نقدي','تحويل بنكي','محفظة إلكترونية','بطاقة','أخرى'];
       if(due>0&&!allowed.includes(method)){showToast('اختر وسيلة التحصيل من القائمة.','error');return;}
       const before=structuredClone(state);
