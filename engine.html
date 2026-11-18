@@ -6076,6 +6076,10 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       return true;
     }
     async function permanentlyDeleteProduct(id,password) {
+      // V20-96 bridge compatibility: the V5 shell calls engine methods with one payload object.
+      // Accept both (id, password) and ({id, password}) so the destructive action receives the real credentials and product ID.
+      if(id && typeof id==='object' && !Array.isArray(id)){password=id.password;id=id.id;}
+      id=String(id??'');
       if(!cloudClient||!cloudReady||!cloudUser||!navigator.onLine) return {ok:false,error:'يجب الاتصال بحساب VALERIAN CLOUD والإنترنت للتحقق قبل حذف المنتج.'};
       if(cloudDirty||cloudSaveInFlight||cloudConflict) return {ok:false,error:'توجد تغييرات غير متزامنة أو تعارض. نفّذ المزامنة أولاً ثم أعد الحذف.'};
       const email=String(cloudUser.email||'').trim(),secret=String(password||''),expectedUserId=String(cloudUser.id||'');
@@ -6109,7 +6113,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       refreshAllViews();
       let deleteOutboxCount='غير متاح';try{deleteOutboxCount=(await valSyncReadOutbox()).length;}catch(_){} valCloudDiagnostic('الحذف المحلي اكتمل: product='+id+' absent='+!state.products.some(p=>relatedIds.has(String(p.id)))+' generation='+cloudIncrementalGeneration+' outbox='+deleteOutboxCount+'.');
       showToast('تم حذف المنتج نهائيًا من المخزون مع الاحتفاظ بالسجلات التاريخية.','success');
-      return {ok:true,deletedCount:relatedIds.size};
+      return {ok:true,deletedCount:relatedIds.size,snapshot:structuredClone(state)};
     }
     function deleteProduct(id) {
       const product = state.products.find(p => p.id === id);
