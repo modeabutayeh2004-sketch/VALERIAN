@@ -2874,7 +2874,9 @@ body.is-offline .water-fill::before, body.is-offline .inventory-level-fill::afte
       document.getElementById('v5CloudSyncBtn')?.classList.toggle('hidden',!connected);
       document.getElementById('v5CloudLogoutBtn')?.classList.toggle('hidden',!authenticated);
       const button=document.getElementById('v5CloudHeaderButton');
-      const healthy=connected&&online&&!s.conflict;
+      const statusText=String(label||'');
+      const hasIssue=/فشل|تعذر|خطأ|تعارض|غير متصل|بانتظار رفعها|لم تكتمل/i.test(statusText);
+      const healthy=connected&&online&&!s.dirty&&!s.conflict&&!hasIssue;
       if(button){
         button.classList.toggle('text-emerald-300',healthy);
         button.classList.toggle('text-rose-400',!healthy);
