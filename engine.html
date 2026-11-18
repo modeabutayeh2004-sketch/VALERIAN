@@ -2847,7 +2847,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     <div class="bg-white rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-xl max-h-[92vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b pb-3"><div><h3 class="font-extrabold">⚖️ تسوية وجرد المخزون</h3><p class="text-[11px] text-slate-500 mt-1">جرد موحد للعطور والتقسيمات والزجاجات ومستلزمات التشغيل — لتسجيل الهالك أو العجز فقط.</p></div><button type="button" onclick="closeModal('stockAdjustmentModal')">✕</button></div>
       <form onsubmit="saveStockAdjustment(event)" class="space-y-3 text-xs">
-        <div><label class="block font-bold mb-1">نوع المخزون *</label><select id="stockAdjKind" class="w-full border rounded-xl p-2" onchange="populateUnifiedStockAdjustmentItems()"><option value="product">العطور والتقسيمات</option><option value="packaging">زجاجات التقسيم الفارغة</option><option value="supply">مستلزمات التشغيل والتغليف</option></select></div><div><label class="block font-bold mb-1">الصنف *</label><select id="stockAdjProduct" required onchange="updateStockAdjustmentPreview()" class="w-full border rounded-xl p-2"></select></div>
+        <div><label class="block font-bold mb-1">نوع المخزون *</label><select id="stockAdjKind" class="w-full border rounded-xl p-2" onchange="populateUnifiedStockAdjustmentItems()"><option value="packaging">زجاجات التقسيم الفارغة</option><option value="supply">مستلزمات التشغيل والتغليف</option></select></div><div><label class="block font-bold mb-1">الصنف *</label><select id="stockAdjProduct" required onchange="updateStockAdjustmentPreview()" class="w-full border rounded-xl p-2"></select></div>
         <div class="grid grid-cols-2 gap-2"><div><label class="block font-bold mb-1">نوع النقص *</label><select id="stockAdjReasonType" class="w-full border rounded-xl p-2"><option value="WASTAGE">هالك / تالف</option><option value="COUNT_SHORTAGE">عجز جرد</option></select></div><div><label class="block font-bold mb-1">الكمية المراد خصمها *</label><input id="stockAdjQty" type="number" min="1" step="1" required value="1" oninput="updateStockAdjustmentPreview()" class="w-full border rounded-xl p-2"/></div></div>
         <div class="rounded-xl bg-slate-50 border p-3 space-y-1"><div id="stockAdjCurrent" class="font-bold"></div><div id="stockAdjAfter" class="font-extrabold text-brand-700"></div><div id="stockAdjAvailable" class="text-slate-500"></div></div>
         <div><label class="block font-bold mb-1">سبب التسوية *</label><input id="stockAdjReason" required maxlength="200" placeholder="مثال: نتيجة الجرد الفعلي / تلف / فرق رصيد افتتاحي" class="w-full border rounded-xl p-2"/></div>
@@ -4916,7 +4916,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     function populateUnifiedStockAdjustmentItems(){
       const kind=document.getElementById('stockAdjKind')?.value||'product',sel=document.getElementById('stockAdjProduct');if(!sel)return;
       let rows=[];
-      if(kind==='product') rows=(state.products||[]).map(p=>({value:p.id,label:`${p.name} — ${p.size||''} (الرصيد ${Number(p.stock||0)}، المحجوز ${Number(p.reservedStock||0)})`}));
+      if(kind==='product') rows=[];
       else if(kind==='packaging') rows=getSharedPackagingSizes().map(size=>{const x=getPackagingEntry(size);return {value:String(size),label:`زجاجات ${size} مل (الرصيد ${Number(x.quantity||0)})`};});
       else rows=(state.operatingSupplies||[]).map(x=>({value:x.id,label:`${x.name} (${x.unit||'قطعة'}) — الرصيد ${Number(x.quantity||0)}`}));
       sel.innerHTML=rows.map(x=>`<option value="${escapeHTML(x.value)}">${escapeHTML(x.label)}</option>`).join('');
@@ -4953,16 +4953,17 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const supplierFields=['purSupplier','supplySupplier','emptyContainersSupplier'];supplierFields.forEach(id=>{const el=document.getElementById(id);if(el){el.setAttribute('list','knownSuppliersList');el.setAttribute('onfocus','refreshSupplierDatalist()');}});
 
     }
-    function openStockAdjustmentModal(kind='product',itemId=''){
-      const k=document.getElementById('stockAdjKind');if(k)k.value=['product','packaging','supply'].includes(kind)?kind:'product';
+    function openStockAdjustmentModal(kind='packaging',itemId=''){
+      if(kind==='product'){showToast('تعديل كميات العطور من شاشة المخزون متوقف. الزيادة تتم حصريًا عبر فواتير الاستيراد.','error');return;}
+      const k=document.getElementById('stockAdjKind');if(k)k.value=['packaging','supply'].includes(kind)?kind:'packaging';
       populateUnifiedStockAdjustmentItems();
       const sel=document.getElementById('stockAdjProduct');if(itemId&&sel&&[...sel.options].some(o=>o.value===String(itemId)))sel.value=String(itemId);
       document.getElementById('stockAdjReasonType').value='WASTAGE';document.getElementById('stockAdjQty').value='1';document.getElementById('stockAdjReason').value='';
       updateStockAdjustmentPreview();openModal('stockAdjustmentModal');
     }
     function getUnifiedAdjustmentTarget(){
-      const kind=document.getElementById('stockAdjKind')?.value||'product',id=document.getElementById('stockAdjProduct')?.value;
-      if(kind==='product'){const x=(state.products||[]).find(p=>String(p.id)===String(id));return x?{kind,id:String(id),name:x.name,unit:x.category==='تقسيم'?'وحدة تقسيم':'زجاجة',current:Math.max(0,Number(x.stock||0)),reserved:Math.max(0,Number(x.reservedStock||0)),record:x}:null;}
+      const kind=document.getElementById('stockAdjKind')?.value||'packaging',id=document.getElementById('stockAdjProduct')?.value;
+      if(kind==='product')return null;
       if(kind==='packaging'){const x=getPackagingEntry(id);return {kind,id:String(id),name:`زجاجات ${id} مل`,unit:'زجاجة',current:Math.max(0,Number(x.quantity||0)),reserved:0,record:x};}
       const x=(state.operatingSupplies||[]).find(y=>String(y.id)===String(id));return x?{kind,id:String(id),name:x.name,unit:x.unit||'قطعة',current:Math.max(0,Number(x.quantity||0)),reserved:0,record:x}:null;
     }
@@ -4977,7 +4978,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       e.preventDefault();const t=getUnifiedAdjustmentTarget(),qty=Number(document.getElementById('stockAdjQty').value),reasonType=document.getElementById('stockAdjReasonType').value,reason=document.getElementById('stockAdjReason').value.trim();
       if(!t){showToast('اختر صنفًا صحيحًا من المخزون.','error');return;}
       if(!Number.isFinite(qty)||qty<=0||!reason){showToast('أدخل كمية صحيحة وسببًا تفصيليًا؛ السبب إجباري.','error');return;}
-      if(t.kind==='product'&&!Number.isSafeInteger(qty)){showToast('كمية العطور والتقسيمات يجب أن تكون عددًا صحيحًا.','error');return;}
+      if(t.kind==='product'){showToast('تعديل كميات العطور من شاشة المخزون غير مسموح. تُزاد الكميات عبر فواتير الاستيراد فقط.','error');return;}
       if(t.kind==='packaging'&&!Number.isSafeInteger(qty)){showToast('عدد الزجاجات يجب أن يكون عددًا صحيحًا.','error');return;}
       if(!['WASTAGE','COUNT_SHORTAGE'].includes(reasonType)){showToast('نوع حركة النقص غير صحيح.','error');return;}
       if(qty>t.current-t.reserved){showToast(`لا يمكن خصم ${qty}. المتاح بعد استبعاد المحجوز هو ${Math.max(0,t.current-t.reserved)} فقط.`,'error');return;}
@@ -5003,6 +5004,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     function savePurchaseInvoice(e) {
       e.preventDefault(); const supplier=document.getElementById('purSupplier').value.trim(),prodId=document.getElementById('purProdSelect').value,qty=Number(document.getElementById('purQty').value||0),totalCost=roundMoney(Number(document.getElementById('purTotalCost').value||0)),paid=roundMoney(Number(document.getElementById('purPaidAmount').value||0)),method=normalizePaymentMethod(document.getElementById('purPaymentMethod').value);
       const prod=state.products.find(p=>p.id===prodId); if(!prod)return;
+      if(prod.productType==='عطور'){showToast('زيادة كميات العطور تتم حصريًا عبر فواتير الاستيراد. استخدم شاشة الاستيراد لتسجيل دخول الكمية.','error');return;}
       if(prod.category==='تقسيم'){showToast('شراء عبوات التقسيم الجاهزة لا يتم عبر فاتورة الزجاجات. استخدم شراء العبوات الفارغة أو تجهيز التقسيم.','error');return;}
       if(!Number.isSafeInteger(qty)||qty<=0||!Number.isFinite(totalCost)||totalCost<=0||!Number.isFinite(paid)||paid<0||paid>totalCost){showToast('تحقق من الكمية والتكلفة والمدفوع.','error');return;}
       const before=structuredClone(state),oldQty=Number(prod.stock||0),oldUnit=Number(prod.averageCost??prod.totalCost??0),openEq=Number(prod.decantMlAvailable||0)/getBottleVolumeMl(prod),weighted=oldQty+openEq,unit=totalCost/qty;
@@ -5946,7 +5948,14 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       showToast(disabling ? 'تم تعطيل المنتج عن البيع والحجز مع الاحتفاظ به في المخزون.' : 'تمت إعادة إتاحة المنتج للبيع والحجز.', 'success');
       return true;
     }
-    function permanentlyDeleteProduct(id) {
+    async function permanentlyDeleteProduct(id,password) {
+      if(!cloudClient||!cloudReady||!cloudUser||!navigator.onLine) return {ok:false,error:'يجب الاتصال بحساب VALERIAN CLOUD والإنترنت للتحقق قبل حذف المنتج.'};
+      if(cloudDirty||cloudSaveInFlight||cloudConflict) return {ok:false,error:'توجد تغييرات غير متزامنة أو تعارض. نفّذ المزامنة أولاً ثم أعد الحذف.'};
+      const email=String(cloudUser.email||'').trim(),secret=String(password||'');
+      if(!email||!secret)return {ok:false,error:'أدخل كلمة مرور حساب المزامنة.'};
+      const {data:authData,error:authError}=await cloudClient.auth.signInWithPassword({email,password:secret});
+      if(authError||!authData?.user?.id||String(authData.user.id)!==String(cloudUser.id))return {ok:false,error:'كلمة مرور حساب المزامنة غير صحيحة أو تعذر التحقق من الحساب.'};
+      if(cloudDirty||cloudSaveInFlight||cloudConflict)return {ok:false,error:'تغيرت حالة المزامنة أثناء التحقق. نفّذ المزامنة ثم أعد الحذف.'};
       const index=state.products.findIndex(p=>String(p.id)===String(id));
       if(index<0)return {ok:false,error:'المنتج غير موجود.'};
       const before=structuredClone(state),cartBefore=Array.isArray(cart)?structuredClone(cart):null,product=state.products[index];
@@ -7251,9 +7260,9 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           };
         },
         refresh:()=>{refreshAllViews();emit('valerian:state-changed',{source:'refresh'});return snapshot();},
-        permanentlyDeleteProduct:async id=>{
+        permanentlyDeleteProduct:async payload=>{
           await ready;
-          const result=permanentlyDeleteProduct(String(id));
+          const result=await permanentlyDeleteProduct(String(payload?.id||''),String(payload?.password||''));
           return {...result,snapshot:snapshot()};
         },
         toggleProductSalesAvailability:async id=>{
@@ -7338,6 +7347,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           const decantSize=Number(payload?.decantSizeMl||10),bottleCost=Math.max(0,Number(payload?.decantBottleCost??15));
           if(!name||!Number.isFinite(price)||price<=0||!Number.isFinite(cost)||cost<0||!Number.isSafeInteger(openingQty)||openingQty<0)throw new Error('راجع اسم المنتج والسعر والتكلفة والرصيد الافتتاحي.');
           if(category==='تقسيم')throw new Error('إضافة منتج تقسيم تتطلب ربطه بزجاجة أصلية. فعّل خيار التقسيم في منتج العطر الأصلي بدلاً من ذلك.');
+          if(isPerfume&&openingQty>0)throw new Error('لا يمكن تسجيل رصيد افتتاحي للعطور. أضف الكمية من خلال فاتورة استيراد بعد إنشاء المنتج.');
           if(price+0.0001<cost)throw new Error('سعر البيع لا يجوز أن يقل عن متوسط تكلفة المنتج.');
           const volumeMl=isPerfume?getBottleVolumeMl({size}):0;
           if(isDecantable&&(!volumeMl||!Number.isFinite(decantSize)||decantSize<=0||decantSize>volumeMl))throw new Error('حجم التقسيم يجب أن يكون أكبر من صفر ولا يتجاوز حجم العطر الأصلي.');
@@ -7365,7 +7375,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         adjustStock:async payload=>{
           await ready;
           if(!payload)throw new Error('بيانات التسوية مطلوبة.');
-          const kind=['product','packaging','supply'].includes(payload.kind)?payload.kind:'product';
+          const kind=['packaging','supply'].includes(payload.kind)?payload.kind:'packaging';
+          if(payload.kind==='product')throw new Error('تعديل كميات العطور من شاشة المخزون متوقف. الزيادة تتم حصريًا عبر فواتير الاستيراد.');
           openStockAdjustmentModal(kind,String(payload.id||''));
           el('stockAdjReasonType').value=payload.reasonType==='COUNT_SHORTAGE'?'COUNT_SHORTAGE':'WASTAGE';
           el('stockAdjQty').value=String(payload.quantity||0);
@@ -7547,7 +7558,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           if(!product)throw new Error('المنتج غير موجود.');
           const name=String(payload?.name??product.name).trim(),price=Number(payload?.price??product.price),minimumStock=Math.floor(Number(payload?.minimumStock??product.minimumStock??2));
           const notes=String(payload?.notes??product.notes??''),isOffer=payload?.isOffer===undefined?!!product.isOffer:!!payload.isOffer,offerPrice=Number(payload?.offerPrice??product.offerPrice??0);
-          const averageCost=Number(payload?.averageCost??product.averageCost??product.totalCost??0),stock=Number(payload?.stock??product.stock);
+          const averageCost=Number(payload?.averageCost??product.averageCost??product.totalCost??0),stock=Number(product.stock||0);
+          if(payload?.stock!==undefined&&Number(payload.stock)!==Number(product.stock||0))throw new Error('لا يمكن تعديل كمية العطر من شاشة تعديل البيانات. تُضاف الكميات عبر فواتير الاستيراد فقط.');
           const productType=String(payload?.productType??product.productType??'عطور'),category=String(payload?.category??product.category??'غير محدد');
           const stockUnit=String(payload?.stockUnit??product.stockUnit??'مل'),size=String(payload?.size??product.size??'');
           const isDecantable=productType==='عطور'&&category!=='تقسيم'&&(payload?.isDecantable===undefined?!!product.isDecantable:!!payload.isDecantable);
@@ -7557,9 +7569,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           if(!Number.isSafeInteger(minimumStock)||minimumStock<0||!Number.isSafeInteger(stock)||stock<0)throw new Error('الكمية وحد التنبيه يجب أن يكونا رقمين صحيحين غير سالبين.');
           if(isOffer&&(!Number.isFinite(offerPrice)||offerPrice<=0||offerPrice>=price))throw new Error('سعر العرض يجب أن يكون أكبر من صفر وأقل من سعر البيع.');
           if(isDecantable&&(!Number.isFinite(decantSizeMl)||decantSizeMl<=0||!Number.isFinite(decantBottleCost)||decantBottleCost<0))throw new Error('راجع بيانات التقسيم وتكلفة العبوة.');
-          const before=structuredClone(product),productsBefore=structuredClone(state.products),movementsBefore=structuredClone(state.inventoryMovements||[]),stockDelta=stock-Number(product.stock||0);
+          const before=structuredClone(product),productsBefore=structuredClone(state.products),movementsBefore=structuredClone(state.inventoryMovements||[]);
           Object.assign(product,{name,price,averageCost,totalCost:averageCost,stock,minimumStock,notes,isOffer,offerPrice:isOffer?offerPrice:0,productType,category,stockUnit,size,image:String(payload?.image??product.image??''),isDecantable,decantSize:decantSizeMl,decantSizeMl,decantBottleCost});
-          if(stockDelta)addInventoryMovement(product.id,'ADJUST',stockDelta,'PRODUCT_EDIT','تعديل كمية المخزون من صفحة تعديل المنتج');
           const existingDecant=state.products.find(p=>String(p.parentId||'')===String(product.id)&&p.category==='تقسيم'&&!p.archived);
           if(isDecantable){
             const volume=Math.max(1,getBottleVolumeMl(product)),unitCost=Number((averageCost/volume*decantSizeMl+decantBottleCost).toFixed(2));
