@@ -3530,6 +3530,18 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
 </script>
 <style id="valerian-blended-luxury-theme">
 /* V20.116 — blended luxury palette; isolated review page only */
+/* Correct the actual dashboard parent shell (the navy panel in the user's screenshot). */
+html[data-valerian-theme="light"] .home-command-center{
+ background:linear-gradient(145deg,#fffdf8 0%,#f1e9dc 58%,#e8dece 100%)!important;
+ border:1px solid rgba(157,128,80,.34)!important;
+ box-shadow:0 16px 36px rgba(83,66,43,.12),inset 0 1px 0 rgba(255,255,255,.92)!important;
+}
+html[data-valerian-theme="dark"] .home-command-center{
+ background:linear-gradient(145deg,#3b3024 0%,#211d19 58%,#171513 100%)!important;
+ border:1px solid rgba(198,166,107,.32)!important;
+ box-shadow:0 18px 38px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,235,199,.08)!important;
+}
+
 :root{--vl-onyx:#171513;--vl-onyx-2:#211d19;--vl-pearl:#f5f0e7;--vl-pearl-2:#ebe3d6;--vl-champagne:#c6a66b;--vl-brass:#9d8050;--vl-ink:#342d25;--vl-muted:#817568}
 html[data-valerian-theme="dark"] body{background:#171513!important;color:#f7f1e7!important}
 html[data-valerian-theme="dark"] .ambient-silk-bg{background:radial-gradient(ellipse 86% 55% at 12% 4%,rgba(123,91,54,.22),transparent 63%),radial-gradient(ellipse 72% 58% at 92% 84%,rgba(87,54,72,.16),transparent 66%),linear-gradient(145deg,#29231d 0%,#171513 48%,#100f0e 100%)!important}
