@@ -756,7 +756,7 @@
     function renderValerianIntelligence(){
       if(!state || !document.getElementById('intelSales'))return;
       const days=document.getElementById('intelPeriod')?.value||'30', now=Date.now(), cutoff=days==='all'?0:now-Number(days)*86400000;
-      const delivered=(state.orders||[]).filter(o=>{const d=new Date(o.date||0).getTime();return (o.stockDeducted||String(o.status||'').includes('تم التسليم'))&&d>=cutoff&&d<=now;});
+      const delivered=(state.orders||[]).filter(o=>{const d=new Date(o.date||0).getTime();return isOrderDeliveredForLoyalty(o)&&d>=cutoff&&d<=now;});
       const map=new Map();let sales=0,cogs=0,units=0,legacy=0;
       delivered.forEach(o=>{const netOrderRevenue=Math.max(0,Number(o.grandTotal||0)-Number(o.returnedValue||0));sales+=netOrderRevenue;const lines=(o.items||[]).map(it=>({it,qty:Math.max(0,Number(it.qty||0)-Number(it.returnedQty||0))})).filter(x=>x.qty>0);const grossLines=lines.reduce((sum,x)=>sum+Math.max(0,Number(x.it.price||0))*x.qty,0);lines.forEach(({it,qty})=>{const p=(state.products||[]).find(x=>x.id===it.id);const costKnown=it.unitCostAtSale!==undefined&&it.unitCostAtSale!==null;if(!costKnown)legacy++;const unitCost=Number(costKnown?it.unitCostAtSale:(p?.averageCost??p?.totalCost??0));const lineGross=Math.max(0,Number(it.price||0))*qty;const allocatedRevenue=grossLines>0?netOrderRevenue*(lineGross/grossLines):0;const row=map.get(it.id)||{id:it.id,name:p?.name||it.name||'منتج غير موجود بالكتالوج',qty:0,revenue:0,cost:0,profit:0};row.qty+=qty;row.revenue+=allocatedRevenue;row.cost+=unitCost*qty;row.profit+=allocatedRevenue-(unitCost*qty);map.set(it.id,row);cogs+=unitCost*qty;units+=qty;});});
       const rows=[...map.values()].sort((a,b)=>b.qty-a.qty), profitable=[...map.values()].sort((a,b)=>b.profit-a.profit), low=[...map.values()].sort((a,b)=>a.profit-b.profit);
@@ -776,8 +776,8 @@
     function valerianChatReply(question){
       const raw=String(question||'').trim(), q=raw.toLowerCase().replace(/[؟?!.,،]/g,' ');
       const products=state.products||[], customers=state.customers||[], expenses=state.expenses||[], invoices=state.supplierInvoices||[], payments=state.supplierPayments||[], orders=state.orders||[];
-      const delivered=orders.filter(o=>o.stockDeducted||String(o.status||'').includes('تم التسليم'));
-      const pending=orders.filter(o=>!o.stockDeducted&&!String(o.status||'').includes('مرتجع بالكامل'));
+      const delivered=orders.filter(isOrderDeliveredForLoyalty);
+      const pending=orders.filter(o=>!isOrderDeliveredForLoyalty(o)&&!String(o.status||'').includes('مرتجع بالكامل'));
       const productMap=new Map();let sales=0,cogs=0,units=0,legacy=0,returned=0;
       delivered.forEach(o=>{const net=Math.max(0,Number(o.grandTotal||0)-Number(o.returnedValue||0));sales+=net;returned+=Number(o.returnedValue||0);const lines=(o.items||[]).map(it=>({it,qty:Math.max(0,Number(it.qty||0)-Number(it.returnedQty||0))})).filter(x=>x.qty>0);const gross=lines.reduce((a,x)=>a+Math.max(0,Number(x.it.price||0))*x.qty,0);lines.forEach(({it,qty})=>{const p=products.find(x=>x.id===it.id);const known=it.unitCostAtSale!==undefined&&it.unitCostAtSale!==null;if(!known)legacy++;const cost=Number(known?it.unitCostAtSale:(p?.averageCost??p?.totalCost??0));const revenue=gross>0?net*(Math.max(0,Number(it.price||0))*qty/gross):0;const row=productMap.get(it.id)||{id:it.id,name:p?.name||it.name||'منتج غير معروف',qty:0,revenue:0,cost:0,profit:0};row.qty+=qty;row.revenue+=revenue;row.cost+=cost*qty;row.profit+=revenue-cost*qty;productMap.set(it.id,row);cogs+=cost*qty;units+=qty;});});
       const rows=[...productMap.values()], top=[...rows].sort((a,b)=>b.qty-a.qty), profitable=[...rows].sort((a,b)=>b.profit-a.profit), low=[...rows].sort((a,b)=>a.profit-b.profit);
@@ -1811,7 +1811,7 @@
     // Pending reservations do not earn points, but points redeemed on them remain reserved until returned.
     function isOrderDeliveredForLoyalty(o) {
       const status=String(o?.status||'');
-      return !!o?.deliveredAt || status.includes('تم التسليم') || (!!o?.stockDeducted && status.includes('مرتجع'));
+      return !!o?.deliveredAt || status.includes('تم التسليم') || (!!o?.stockDeducted && !!o?.returnedAt && status.includes('مرتجع'));
     }
 
     // Recalculate the balance from current settings. Returns reverse earned points on returned value
@@ -2723,12 +2723,40 @@ function previewPeriodicReportPrint() {
       const tracking = document.getElementById('dispatchTrackingNumber').value.trim();
       const status = document.getElementById('dispatchStatus').value;
       if (!company) { showToast('اختر شركة الشحن بعد تسليم الطلب للشركة.', 'error'); return; }
+      if (order.stockDeducted && status !== 'تم التسليم لشركة الشحن') {
+        showToast('الطلب خرج بالفعل من المخزون وتم تسليمه للشحن؛ لا يمكن إلغاء مرحلة الشحن من هنا.', 'error'); return;
+      }
       const before = structuredClone(state);
+      if (status === 'تم التسليم لشركة الشحن' && !order.stockDeducted) {
+        if (!validateOrderSupplyAvailability(order)) return;
+        for (const item of (order.items || [])) {
+          const prod = state.products.find(p => String(p.id) === String(item.id));
+          const qty = Math.max(0, Number(item.qty || 0) - Number(item.returnedQty || 0));
+          if (!prod || !qty) continue;
+          if (Number(prod.reservedStock || 0) < qty || Number(prod.stock || 0) < qty) {
+            state = before; showToast('تعذر الشحن: رصيد الحجز أو المخزون غير كافٍ للمنتج ' + (prod.name || item.name) + '.', 'error'); return;
+          }
+        }
+        for (const item of (order.items || [])) {
+          const prod = state.products.find(p => String(p.id) === String(item.id));
+          const qty = Math.max(0, Number(item.qty || 0) - Number(item.returnedQty || 0));
+          if (!prod || !qty) continue;
+          prod.reservedStock = Number(prod.reservedStock || 0) - qty;
+          prod.stock = Number(prod.stock || 0) - qty;
+          addInventoryMovement(prod.id, 'SHIPMENT', -qty, order.id, 'خصم مخزون عند تسليم الطلب لشركة الشحن');
+        }
+        try { consumeOrderSupplies(order); }
+        catch (err) { state = before; refreshAllViews(); showToast(String(err?.message || err), 'error'); return; }
+        order.stockDeducted = true;
+        order.shippedAt = new Date().toISOString();
+        order.status = 'تم شحنه';
+      }
       order.shippingCompany = company; order.trackingNumber = tracking; order.shippingStatus = status;
       order.shippingDispatchedAt = status === 'تم التسليم لشركة الشحن' ? (order.shippingDispatchedAt || new Date().toISOString()) : (order.shippingDispatchedAt || '');
       logAudit('ORDER_SHIPPING_DETAILS_UPDATED', `تحديث بيانات شحن الطلب ${order.id}: ${company} — ${tracking||'بدون رقم تتبع'}`);
       if (!saveState()) { state=before; refreshAllViews(); return; }
-      pendingShippingOrderIndex = null; closeModal('dispatchShippingModal'); renderShipments(); showToast('تم حفظ بيانات شركة الشحن ورقم التتبع على الطلب.', 'success');
+      pendingShippingOrderIndex = null; closeModal('dispatchShippingModal'); renderShipments(); renderInventory(); refreshAllViews();
+      showToast(order.stockDeducted && !order.deliveredAt ? 'تم شحن الطلب وخصم المخزون ومستلزمات التغليف. المبيعات لن تُسجل إلا بعد تأكيد الاستلام.' : 'تم حفظ بيانات شركة الشحن ورقم التتبع على الطلب.', 'success');
     }
 
     function renderShipments() {
@@ -2757,7 +2785,7 @@ function previewPeriodicReportPrint() {
 
     let pendingPreDeliveryPaymentIndex = null;
     function recordPreDeliveryPayment(idx) {
-      const o=state.orders[idx]; if(!o||o.stockDeducted){showToast('لا يمكن تسجيل تحصيل قبل التسليم لهذا الطلب.','error');return;}
+      const o=state.orders[idx]; if(!o||o.deliveredAt){showToast('لا يمكن تسجيل تحصيل قبل تأكيد الاستلام لهذا الطلب.','error');return;}
       const due=roundMoney(Math.max(0,Number(o.remainingAmount||0))); if(!due){showToast('الطلب مدفوع بالكامل بالفعل.','error');return;}
       pendingPreDeliveryPaymentIndex=idx;
       document.getElementById('preDeliveryPaymentSummary').textContent=`الطلب ${o.id} — ${o.name} | المتبقي ${formatCurrency(due)}`;
@@ -2766,7 +2794,7 @@ function previewPeriodicReportPrint() {
       openModal('preDeliveryPaymentModal');
     }
     function confirmPreDeliveryPayment(){
-      const idx=pendingPreDeliveryPaymentIndex,o=state.orders[idx];if(!o||o.stockDeducted){closeModal('preDeliveryPaymentModal');return;}
+      const idx=pendingPreDeliveryPaymentIndex,o=state.orders[idx];if(!o||o.deliveredAt){closeModal('preDeliveryPaymentModal');return;}
       const due=roundMoney(Math.max(0,Number(o.remainingAmount||0))),raw=document.getElementById('preDeliveryPaymentAmount').value,amount=roundMoney(Number(raw));
       const method=normalizePaymentMethod(document.getElementById('preDeliveryPaymentMethod').value);
       if(raw===''||!Number.isFinite(amount)||amount<=0||amount>due+0.0001){showToast(`أدخل مبلغًا أكبر من صفر ولا يتجاوز المتبقي ${formatCurrency(due)}.`,'error');return;}
@@ -2782,7 +2810,7 @@ function previewPeriodicReportPrint() {
 
     let pendingDeliveryOrderIndex=null;
     function collectRemaining(idx){
-      const o=state.orders[idx];if(!o||String(o.status||'').includes('مرتجع بالكامل')||o.stockDeducted){showToast('هذا الطلب تم تسليمه أو تسويته بالفعل.','error');return;}
+      const o=state.orders[idx];if(!o||String(o.status||'').includes('مرتجع بالكامل')||o.deliveredAt){showToast('هذا الطلب تم تسليمه أو تسويته بالفعل.','error');return;}
       const due=roundMoney(Math.max(0,Number(o.remainingAmount||0)));pendingDeliveryOrderIndex=idx;
       document.getElementById('deliveryConfirmSummary').textContent=`الطلب ${o.id} — ${o.name} — ${o.phone||''}`;
       document.getElementById('deliveryConfirmAmount').textContent=formatCurrency(due);
@@ -2795,10 +2823,14 @@ function previewPeriodicReportPrint() {
       const due=roundMoney(Math.max(0,Number(o.remainingAmount||0))),method=normalizePaymentMethod(document.getElementById('deliveryConfirmMethod').value),allowed=['نقدي','تحويل بنكي','محفظة إلكترونية','بطاقة','أخرى'];
       if(due>0&&!allowed.includes(method)){showToast('اختر وسيلة التحصيل من القائمة.','error');return;}
       const before=structuredClone(state);
-      if(!validateOrderSupplyAvailability(o)) return;
-      for(const item of (o.items||[])){const prod=state.products.find(p=>p.id===item.id);if(!prod){state=before;showToast('لا يمكن التسليم لأن أحد المنتجات المرتبطة بالطلب غير موجود.','error');return;}const qty=Math.max(0,Number(item.qty||0)-Number(item.returnedQty||0));if(!qty)continue;if(Number(prod.reservedStock||0)<qty||Number(prod.stock||0)<qty){state=before;showToast(`لا يمكن التسليم: رصيد الحجز أو المخزون غير كافٍ للمنتج ${prod.name}.`,'error');return;}prod.reservedStock-=qty;prod.stock-=qty;addInventoryMovement(prod.id,'DELIVERY',-qty,o.id,'تسليم طلب محجوز');}
-      if(due>0)addPaymentTransaction(o,'FINAL_PAYMENT',due,'تحصيل باقي الطلب عند التسليم',method);
-      o.depositAmount=Number(o.depositAmount||0)+due;o.remainingAmount=0;o.status='مؤكد / تم التسليم';o.stockDeducted=true;o.deliveredAt=new Date().toISOString();try{consumeOrderSupplies(o);}catch(err){state=before;refreshAllViews();showToast(String(err?.message||err),'error');return;}
+      if(!o.stockDeducted){
+        if(!validateOrderSupplyAvailability(o)) return;
+        for(const item of (o.items||[])){const prod=state.products.find(p=>p.id===item.id);if(!prod){state=before;showToast('لا يمكن التسليم لأن أحد المنتجات المرتبطة بالطلب غير موجود.','error');return;}const qty=Math.max(0,Number(item.qty||0)-Number(item.returnedQty||0));if(!qty)continue;if(Number(prod.reservedStock||0)<qty||Number(prod.stock||0)<qty){state=before;showToast(`لا يمكن التسليم: رصيد الحجز أو المخزون غير كافٍ للمنتج ${prod.name}.`,'error');return;}prod.reservedStock-=qty;prod.stock-=qty;addInventoryMovement(prod.id,'DELIVERY',-qty,o.id,'تسليم طلب محجوز');}
+        try{consumeOrderSupplies(o);}catch(err){state=before;refreshAllViews();showToast(String(err?.message||err),'error');return;}
+        o.stockDeducted=true;o.shippedAt=o.shippedAt||new Date().toISOString();
+      }
+      if(due>0)addPaymentTransaction(o,'FINAL_PAYMENT',due,'تحصيل باقي الطلب عند تأكيد الاستلام',method);
+      o.depositAmount=Number(o.depositAmount||0)+due;o.remainingAmount=0;o.status='مؤكد / تم التسليم';o.deliveredAt=new Date().toISOString();
       const cust=state.customers.find(c=>c.phone===o.phone);if(cust){cust.totalSpent=Number(cust.totalSpent||0)+Math.max(0,Number(o.grandTotal||0)-Number(o.returnedValue||0));if(!o.loyaltyAwarded){const completedBeforeThisOrder=countCompletedOrdersForCustomer(o.phone,o.id),startAt=Math.max(1,Math.floor(Number(state.settings.loyaltyStartOrder||1)));o.loyaltyStartOrderAtSale=startAt;o.loyaltyEligibleAtSale=completedBeforeThisOrder+1>=startAt;const rate=Math.max(0,Number(state.settings.loyaltyPercentage||0));o.earnedPoints=o.loyaltyEligibleAtSale?Math.round((Math.max(0,Number(o.grandTotal||0)-Number(o.returnedValue||0))*rate)/100):0;}cust.points=Number(cust.points||0)+Number(o.earnedPoints||0);}
       o.loyaltyAwarded=true;logAudit('ORDER_DELIVERED','تسليم الطلب '+o.id+' والتحصيل '+due+' عبر '+(due?method:'مدفوع مسبقًا'));
       if(!saveState()){state=before;refreshAllViews();return;}pendingDeliveryOrderIndex=null;closeModal('deliveryConfirmModal');renderShipments();renderInventory();renderCrmTable();refreshAllViews();previewDocumentPrint(o,'final_invoice');showToast('تم تأكيد التحصيل والتسليم وتحديث المخزون.','success');
@@ -5006,10 +5038,10 @@ function previewPeriodicReportPrint() {
           const orderId=typeof payload==='object'?payload.orderId:payload;
           const method=normalizePaymentMethod(typeof payload==='object'?payload.method:'نقدي');
           const idx=findOrder(orderId);if(idx<0)throw new Error('الطلب غير موجود.');
-          if(state.orders[idx].stockDeducted)return {ok:false,error:'الطلب مسجل بالفعل كطلب تم تسليمه.',snapshot:snapshot()};
+          if(state.orders[idx].deliveredAt)return {ok:false,error:'الطلب مسجل بالفعل كطلب تم تسليمه.',snapshot:snapshot()};
           pendingDeliveryOrderIndex=idx;el('deliveryConfirmMethod').value=method;
           const before=JSON.stringify(state.orders[idx]);confirmCollectAndDeliver();
-          return {ok:JSON.stringify(state.orders[idx])!==before&&!!state.orders[idx].stockDeducted,snapshot:snapshot()};
+          return {ok:JSON.stringify(state.orders[idx])!==before&&!!state.orders[idx].deliveredAt,snapshot:snapshot()};
         },
         returnOrder:async payload=>{
           await ready;
