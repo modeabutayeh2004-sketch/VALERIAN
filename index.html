@@ -31,10 +31,24 @@
     .ambient-silk-bg {
       position: fixed; inset: 0; pointer-events: none; z-index: -10;
       background:
-        radial-gradient(ellipse 70% 45% at 18% 8%, rgba(56, 189, 248, 0.08) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 50% at 85% 90%, rgba(148, 163, 184, 0.06) 0%, transparent 60%),
-        linear-gradient(180deg, #030c12 0%, #010407 100%);
+        radial-gradient(ellipse 82% 54% at 14% 7%, rgba(30, 112, 119, .34) 0%, transparent 62%),
+        radial-gradient(ellipse 70% 58% at 92% 82%, rgba(25, 49, 91, .34) 0%, transparent 64%),
+        radial-gradient(ellipse 120% 90% at 50% 50%, rgba(5, 48, 55, .42) 0%, transparent 72%),
+        repeating-linear-gradient(116deg, rgba(255,255,255,.012) 0 1px, transparent 1px 5px),
+        linear-gradient(145deg, #062a30 0%, #031b25 42%, #061327 100%);
+      background-blend-mode:screen,screen,normal,soft-light,normal;
     }
+    body { background-color:#041d25; }
+    .bidi-ltr, bdi[dir="ltr"], [dir="ltr"].bidi-isolate {
+      direction:ltr; unicode-bidi:isolate; text-align:left;
+    }
+    .bidi-rtl, bdi[dir="rtl"] { direction:rtl; unicode-bidi:isolate; text-align:right; }
+    input[type="number"], input[inputmode="decimal"], input[inputmode="numeric"] {
+      direction:ltr; unicode-bidi:plaintext; text-align:left;
+    }
+    .crop-viewport { position:relative; width:min(76vw,320px); height:min(76vw,320px); max-width:320px; max-height:320px; overflow:hidden; border-radius:18px; background:#07131b; border:1px solid rgba(203,213,225,.35); margin:auto; touch-action:pan-y; }
+    .crop-viewport img { width:100%; height:100%; object-fit:cover; transition:object-position .08s linear,transform .08s linear; }
+    .crop-range { width:100%; accent-color:#9fcbd0; }
 
     /* Ultra-Refined Glass Surfaces */
     .glass-card {
@@ -751,24 +765,24 @@
 
     <!-- BOTTOM FLOATING DOCK -->
     <nav class="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-[94%] max-w-md glass-dock rounded-full px-2 py-1.5 flex items-center justify-between">
-      <button onclick="switchScreen('home')" data-nav="home" class="nav-pill flex-1 py-2 rounded-full flex flex-col items-center gap-0.5 text-white bg-slate-200/20">
-        <span class="text-base leading-none">🏛️</span>
+      <button onclick="switchScreen('home')" data-nav="home" aria-label="الرئيسية" class="nav-pill flex-1 py-2 rounded-full flex flex-col items-center gap-0.5 text-white bg-slate-200/20">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>
         <span class="text-[10px] font-extrabold">الرئيسية</span>
       </button>
-      <button onclick="switchScreen('pos')" data-nav="pos" class="nav-pill flex-1 py-2 rounded-full flex flex-col items-center gap-0.5 text-slate-400">
-        <span class="text-base leading-none">🛍️</span>
+      <button onclick="switchScreen('pos')" data-nav="pos" aria-label="الكاشير" class="nav-pill flex-1 py-2 rounded-full flex flex-col items-center gap-0.5 text-slate-400">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h3m-3 4h8M15 12h1"/></svg>
         <span class="text-[10px] font-extrabold">الكاشير</span>
       </button>
-      <button onclick="switchScreen('inventory')" data-nav="inventory" class="nav-pill flex-1 py-2 rounded-full flex flex-col items-center gap-0.5 text-slate-400">
-        <span class="text-base leading-none">🧪</span>
+      <button onclick="switchScreen('inventory')" data-nav="inventory" aria-label="المخزون" class="nav-pill flex-1 py-2 rounded-full flex flex-col items-center gap-0.5 text-slate-400">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16l-1 14H5L4 7Z"/><path d="M8 7a4 4 0 0 1 8 0M9 11v6m6-6v6"/></svg>
         <span class="text-[10px] font-extrabold">المخزون</span>
       </button>
-      <button onclick="switchScreen('imports')" data-nav="imports" class="nav-pill flex-1 py-2 rounded-full flex flex-col items-center gap-0.5 text-slate-400">
-        <span class="text-base leading-none">🚢</span>
+      <button onclick="switchScreen('imports')" data-nav="imports" aria-label="الاستيراد" class="nav-pill flex-1 py-2 rounded-full flex flex-col items-center gap-0.5 text-slate-400">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h18l-2 11H5L3 7Z"/><path d="M7 7V4h10v3M8 12h8m-8 3h5"/></svg>
         <span class="text-[10px] font-extrabold">الاستيراد</span>
       </button>
-      <button onclick="switchScreen('more')" data-nav="more" class="nav-pill flex-1 py-2 rounded-full flex flex-col items-center gap-0.5 text-slate-400">
-        <span class="text-base leading-none">☰</span>
+      <button onclick="switchScreen('more')" data-nav="more" aria-label="المزيد" class="nav-pill flex-1 py-2 rounded-full flex flex-col items-center gap-0.5 text-slate-400">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
         <span class="text-[10px] font-extrabold">المزيد</span>
       </button>
     </nav>
@@ -797,7 +811,7 @@
               </label>
               <input id="newProdImgInput" type="file" accept="image/*" class="hidden" onchange="handleNewProdImage(event)" />
               <div class="flex-1 space-y-1">
-                <p id="newProdImageStatus" class="text-[10px] text-slate-300 leading-4">ارفع صورة المنتج؛ سيتم ضغطها تلقائيًا لتسريع الحفظ والمزامنة.</p>
+                <p id="newProdImageStatus" class="text-[10px] text-slate-300 leading-4">اختر صورة المنتج ثم اضبط القص والتكبير قبل اعتمادها وحفظها.</p>
                 <button type="button" id="clearProdImgBtn" onclick="clearNewProdImage()" class="hidden text-[10px] text-rose-300 font-bold underline">إزالة الصورة</button>
               </div>
             </div>
@@ -1007,6 +1021,21 @@
     </div>
 
     <!-- SHEET 5: PREVIEW & LOYALTY -->
+    <!-- PRODUCT IMAGE CROP EDITOR -->
+    <div id="productCropModal" class="fixed inset-0 z-[80] hidden sheet-backdrop flex items-center justify-center p-4" onclick="if(event.target===this)cancelProductImageCrop()">
+      <div class="sheet-panel w-full max-w-sm rounded-3xl p-5 space-y-4">
+        <div class="flex items-center justify-between"><h3 class="text-sm font-black text-white">قص صورة المنتج</h3><button type="button" onclick="cancelProductImageCrop()" class="w-8 h-8 rounded-full glass-pill">✕</button></div>
+        <p class="text-[11px] text-slate-300 text-center">اضبط التكبير ومركز الصورة، ثم اعتمد القص قبل حفظ المنتج.</p>
+        <div class="crop-viewport"><img id="productCropPreview" alt="معاينة قص صورة المنتج"></div>
+        <div class="space-y-2 text-[11px]">
+          <label class="flex items-center justify-between gap-3"><span>التكبير</span><input id="productCropZoom" class="crop-range" type="range" min="1" max="2.5" step="0.05" value="1" oninput="updateProductCropPreview()"></label>
+          <label class="flex items-center justify-between gap-3"><span>أفقي</span><input id="productCropX" class="crop-range" type="range" min="0" max="100" step="1" value="50" oninput="updateProductCropPreview()"></label>
+          <label class="flex items-center justify-between gap-3"><span>رأسي</span><input id="productCropY" class="crop-range" type="range" min="0" max="100" step="1" value="50" oninput="updateProductCropPreview()"></label>
+        </div>
+        <div class="grid grid-cols-2 gap-2"><button type="button" onclick="cancelProductImageCrop()" class="py-3 rounded-full glass-pill text-xs font-bold">إلغاء</button><button type="button" onclick="applyProductImageCrop()" class="py-3 rounded-full silver-btn text-xs font-black">اعتماد القص</button></div>
+      </div>
+    </div>
+
     <div id="previewModalSheet" class="fixed inset-0 z-50 hidden sheet-backdrop flex items-end justify-center" onclick="if(event.target===this)closeSheet('previewModalSheet')">
       <div class="sheet-panel w-full max-w-md rounded-t-3xl p-5 max-h-[92dvh] overflow-y-auto no-scrollbar space-y-4">
         <div class="w-10 h-1 rounded-full bg-slate-300/30 mx-auto"></div>
@@ -1015,6 +1044,7 @@
           <button onclick="closeSheet('previewModalSheet')" class="w-8 h-8 rounded-full glass-pill text-xs">✕</button>
         </div>
         <div id="previewSheetBody"></div>
+        <p class="text-[10px] text-slate-400 text-center">صورة المشاركة تُجهّز تلقائيًا بمقاس 4:5 أو 9:16 المناسب للمنصات الاجتماعية، بينما الطباعة تحتفظ بمقاس الإيصال الأصلي.</p>
         <div class="grid grid-cols-3 gap-2 pt-2">
           <button onclick="shareViaWhatsApp()" class="py-3 rounded-full bg-emerald-500 text-[#02080c] text-[10px] font-black">واتساب 🟢</button>
           <button onclick="downloadPreviewImage()" class="py-3 rounded-full silver-btn text-[10px] font-black">تنزيل الصورة ⬇️</button>
@@ -1340,81 +1370,85 @@
       }
     }
 
-    async function handleNewProdImage(e) {
-      const file = e.target.files && e.target.files[0];
-      if (!file) return;
-      const token = ++window.__v5ImageToken;
-      const status = document.getElementById('newProdImageStatus');
-      const placeholder = document.getElementById('newProdImgPlaceholder');
-      const saveBtn = document.getElementById('saveNewProductBtn');
-      window.__v5ImageProcessing = true;
-      if (saveBtn) saveBtn.disabled = true;
-      if (status) status.textContent = 'جارٍ تجهيز الصورة وضغطها...';
-      if (placeholder) placeholder.querySelector('span:last-child').textContent = 'جارٍ التجهيز';
-      try {
-        if (!String(file.type || '').startsWith('image/')) throw new Error('الملف المختار ليس صورة.');
-        if (file.size > 25 * 1024 * 1024) throw new Error('حجم الصورة الأصلية أكبر من 25 ميجابايت.');
-        let source = null, objectUrl = '';
-        try {
-          if (typeof createImageBitmap === 'function') source = await createImageBitmap(file);
-          else {
-            objectUrl = URL.createObjectURL(file);
-            source = await new Promise((resolve, reject) => {
-              const img = new Image();
-              img.onload = () => resolve(img);
-              img.onerror = () => reject(new Error('تعذر فتح الصورة المختارة.'));
-              img.src = objectUrl;
-            });
-          }
-          if (token !== window.__v5ImageToken) return;
-          const sourceWidth = source.width || source.naturalWidth;
-          const sourceHeight = source.height || source.naturalHeight;
-          if (!sourceWidth || !sourceHeight) throw new Error('أبعاد الصورة غير صالحة.');
-          const scale = Math.min(1, 720 / Math.max(sourceWidth, sourceHeight));
-          const width = Math.max(1, Math.round(sourceWidth * scale));
-          const height = Math.max(1, Math.round(sourceHeight * scale));
-          const canvas = document.createElement('canvas');
-          canvas.width = width; canvas.height = height;
-          const ctx = canvas.getContext('2d', {alpha:false});
-          if (!ctx) throw new Error('المتصفح لم يستطع تجهيز الصورة.');
-          ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, width, height);
-          ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-          ctx.drawImage(source, 0, 0, width, height);
-          let blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.76));
-          if (!blob) throw new Error('تعذر ضغط الصورة.');
-          if (blob.size > 450 * 1024) blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.64));
-          if (!blob || !blob.size) throw new Error('ملف الصورة الناتج فارغ.');
-          const dataUrl = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(String(reader.result || ''));
-            reader.onerror = () => reject(new Error('تعذر قراءة الصورة بعد ضغطها.'));
-            reader.readAsDataURL(blob);
-          });
-          if (token !== window.__v5ImageToken) return;
-          pendingNewProductImage = dataUrl;
-          const preview = document.getElementById('newProdImgPreview');
-          preview.src = dataUrl;
-          preview.classList.remove('hidden');
-          placeholder.classList.add('hidden');
-          document.getElementById('clearProdImgBtn').classList.remove('hidden');
-          if (status) status.textContent = 'الصورة جاهزة — ' + Math.round(blob.size / 1024) + ' كيلوبايت بعد الضغط.';
-        } finally {
-          if (source && typeof source.close === 'function') source.close();
-          if (objectUrl) URL.revokeObjectURL(objectUrl);
-        }
-      } catch (err) {
-        if (token === window.__v5ImageToken) {
-          pendingNewProductImage = '';
-          if (status) status.textContent = 'تعذر تجهيز الصورة. جرّب صورة أخرى.';
-          showToast(String(err && err.message || 'تعذر تجهيز صورة المنتج.'));
-        }
-      } finally {
-        if (token === window.__v5ImageToken) {
-          window.__v5ImageProcessing = false;
-          if (saveBtn) saveBtn.disabled = false;
-          if (placeholder && !pendingNewProductImage) placeholder.querySelector('span:last-child').textContent = 'اختر صورة';
-        }
+    let pendingCropImage=null, pendingCropObjectUrl='';
+    function updateProductCropPreview(){
+      const img=document.getElementById('productCropPreview');
+      if(!img||!pendingCropImage)return;
+      const zoom=Number(document.getElementById('productCropZoom')?.value||1);
+      const x=Number(document.getElementById('productCropX')?.value||50);
+      const y=Number(document.getElementById('productCropY')?.value||50);
+      img.style.objectPosition=x+'% '+y+'%';
+      img.style.transform='scale('+zoom+')';
+    }
+    async function handleNewProdImage(e){
+      const file=e.target.files&&e.target.files[0];if(!file)return;
+      const status=document.getElementById('newProdImageStatus');
+      try{
+        if(!String(file.type||'').startsWith('image/'))throw new Error('الملف المختار ليس صورة.');
+        if(file.size>25*1024*1024)throw new Error('حجم الصورة الأصلية أكبر من 25 ميجابايت.');
+        if(pendingCropObjectUrl)URL.revokeObjectURL(pendingCropObjectUrl);
+        pendingCropObjectUrl=URL.createObjectURL(file);
+        const img=new Image();
+        await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('تعذر فتح الصورة المختارة.'));img.src=pendingCropObjectUrl;});
+        if(!img.naturalWidth||!img.naturalHeight)throw new Error('أبعاد الصورة غير صالحة.');
+        pendingCropImage=img;
+        const preview=document.getElementById('productCropPreview');
+        preview.src=pendingCropObjectUrl;
+        document.getElementById('productCropZoom').value='1';
+        document.getElementById('productCropX').value='50';
+        document.getElementById('productCropY').value='50';
+        updateProductCropPreview();
+        document.getElementById('productCropModal').classList.remove('hidden');
+        if(status)status.textContent='اضبط القص ثم اضغط اعتماد القص.';
+      }catch(err){
+        if(status)status.textContent='تعذر فتح الصورة. جرّب صورة أخرى.';
+        showToast(String(err&&err.message||'تعذر فتح صورة المنتج.'));
+        if(pendingCropObjectUrl)URL.revokeObjectURL(pendingCropObjectUrl);
+        pendingCropObjectUrl='';pendingCropImage=null;
+        e.target.value='';
       }
+    }
+    function cancelProductImageCrop(){
+      const modal=document.getElementById('productCropModal');if(modal)modal.classList.add('hidden');
+      if(pendingCropObjectUrl)URL.revokeObjectURL(pendingCropObjectUrl);
+      pendingCropObjectUrl='';pendingCropImage=null;
+      const input=document.getElementById('newProdImgInput');if(input)input.value='';
+      const status=document.getElementById('newProdImageStatus');if(status)status.textContent=pendingNewProductImage?'الصورة السابقة ما زالت محفوظة.':'لم يتم اعتماد صورة بعد.';
+    }
+    async function applyProductImageCrop(){
+      if(!pendingCropImage)return showToast('اختر صورة أولاً.');
+      const saveBtn=document.getElementById('saveNewProductBtn'),status=document.getElementById('newProdImageStatus');
+      const token=++window.__v5ImageToken;
+      window.__v5ImageProcessing=true;if(saveBtn)saveBtn.disabled=true;
+      if(status)status.textContent='جارٍ قص الصورة وضغطها...';
+      try{
+        const image=pendingCropImage,w=image.naturalWidth,h=image.naturalHeight;
+        const zoom=Math.max(1,Math.min(2.5,Number(document.getElementById('productCropZoom').value||1)));
+        const side=Math.min(w,h)/zoom;
+        const xPct=Math.max(0,Math.min(100,Number(document.getElementById('productCropX').value||50)))/100;
+        const yPct=Math.max(0,Math.min(100,Number(document.getElementById('productCropY').value||50)))/100;
+        const sx=(w-side)*xPct,sy=(h-side)*yPct;
+        const canvas=document.createElement('canvas');canvas.width=720;canvas.height=720;
+        const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)throw new Error('تعذر إنشاء مساحة قص الصورة.');
+        ctx.fillStyle='#ffffff';ctx.fillRect(0,0,720,720);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+        ctx.drawImage(image,sx,sy,side,side,0,0,720,720);
+        let blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.78));
+        if(!blob)throw new Error('تعذر ضغط الصورة بعد القص.');
+        if(blob.size>450*1024)blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.64));
+        if(!blob||!blob.size)throw new Error('ملف الصورة الناتج فارغ.');
+        const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||''));reader.onerror=()=>reject(new Error('تعذر قراءة الصورة بعد القص.'));reader.readAsDataURL(blob);});
+        if(token!==window.__v5ImageToken)return;
+        pendingNewProductImage=dataUrl;
+        const preview=document.getElementById('newProdImgPreview');preview.src=dataUrl;preview.classList.remove('hidden');
+        document.getElementById('newProdImgPlaceholder').classList.add('hidden');
+        document.getElementById('clearProdImgBtn').classList.remove('hidden');
+        document.getElementById('productCropModal').classList.add('hidden');
+        if(status)status.textContent='تم اعتماد القص — '+Math.round(blob.size/1024)+' كيلوبايت بعد الضغط.';
+        if(pendingCropObjectUrl)URL.revokeObjectURL(pendingCropObjectUrl);
+        pendingCropObjectUrl='';pendingCropImage=null;
+        document.getElementById('newProdImgInput').value='';
+      }catch(err){showToast(String(err&&err.message||'تعذر قص الصورة.'));if(status)status.textContent='تعذر اعتماد القص؛ الصورة السابقة لم تتغير.';}
+      finally{window.__v5ImageProcessing=false;if(saveBtn)saveBtn.disabled=false;}
     }
 
     function clearNewProdImage() {
@@ -2388,7 +2422,7 @@
       return window.__v5Html2CanvasPromise;
     }
 
-    async function createPreviewImageBlob() {
+    async function createPreviewImageBlob(format='social') {
       const source = document.querySelector('#previewSheetBody > *');
       if (!source) throw new Error('لا توجد معاينة مفتوحة لتحويلها إلى صورة.');
       const capture = await loadPreviewCaptureLibrary();
@@ -2396,7 +2430,7 @@
       const rect = source.getBoundingClientRect();
       // Match the live preview's rendered width exactly. Using scrollWidth here
       // widened the export clone and changed line wrapping/vertical positions.
-      const width = Math.ceil(rect.width || source.offsetWidth || source.scrollWidth);
+      const width = format==='social' ? 900 : Math.ceil(rect.width || source.offsetWidth || source.scrollWidth);
       const captureNode = source.cloneNode(true);
       // html2canvas can paint background-clip:text as a rectangular gradient.
       // Keep the live preview untouched; normalize gradient text only in the export clone.
@@ -2476,9 +2510,35 @@
         });
         ctx.restore();
       }
-      const blob = await new Promise(resolve => canvas && canvas.toBlob(resolve, 'image/png'));
-      if (!blob || !blob.size) throw new Error('تعذر إنشاء ملف الصورة.');
-      return blob;
+      if(!canvas)throw new Error('تعذر إنشاء صورة المستند.');
+      if(format==='receipt'){
+        const receiptBlob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+        if(!receiptBlob||!receiptBlob.size)throw new Error('تعذر إنشاء ملف الطباعة.');
+        return receiptBlob;
+      }
+      // Social export: render the complete invoice on a crisp 4:5 post or 9:16 story canvas.
+      const outputWidth=1080;
+      const fittedHeight=Math.ceil(canvas.height*(outputWidth-120)/canvas.width);
+      const outputHeight=fittedHeight<=1120?1350:1920;
+      const output=document.createElement('canvas');output.width=outputWidth;output.height=outputHeight;
+      const out=output.getContext('2d');if(!out)throw new Error('تعذر تجهيز مقاس المشاركة.');
+      const bg=out.createLinearGradient(0,0,outputWidth,outputHeight);
+      bg.addColorStop(0,'#062b31');bg.addColorStop(.52,'#071b2a');bg.addColorStop(1,'#101a35');
+      out.fillStyle=bg;out.fillRect(0,0,outputWidth,outputHeight);
+      out.globalAlpha=.16;out.fillStyle='#9cc9c8';out.beginPath();out.ellipse(150,130,360,220,-.35,0,Math.PI*2);out.fill();
+      out.globalAlpha=1;
+      const maxW=outputWidth-120,maxH=outputHeight-180;
+      const factor=Math.min(maxW/canvas.width,maxH/canvas.height);
+      const drawW=Math.round(canvas.width*factor),drawH=Math.round(canvas.height*factor);
+      const dx=Math.round((outputWidth-drawW)/2),dy=Math.round((outputHeight-drawH)/2);
+      out.shadowColor='rgba(0,0,0,.42)';out.shadowBlur=34;out.shadowOffsetY=14;
+      out.fillStyle='#ffffff';out.fillRect(dx-2,dy-2,drawW+4,drawH+4);
+      out.shadowColor='transparent';out.shadowBlur=0;out.shadowOffsetY=0;
+      out.drawImage(canvas,dx,dy,drawW,drawH);
+      out.strokeStyle='rgba(211,232,230,.48)';out.lineWidth=2;out.strokeRect(28,28,outputWidth-56,outputHeight-56);
+      const socialBlob=await new Promise(resolve=>output.toBlob(resolve,'image/png'));
+      if(!socialBlob||!socialBlob.size)throw new Error('تعذر إنشاء صورة المشاركة.');
+      return socialBlob;
     }
 
     function previewImageFileName() {
@@ -2826,7 +2886,7 @@
        in a same-origin hidden frame and remains the sole owner of business data. -->
   <iframe id="valerianEngineFrame" title="VALERIAN business engine" aria-hidden="true"
     style="position:fixed;left:-20px;top:-20px;width:2px;height:2px;border:0;opacity:0;pointer-events:none;z-index:-1"
-    src="./engine.html?v=20261118-112-cloud-baseline-reconcile"></iframe>
+    src="./engine.html?v=20261118-113-mobile-phase1"></iframe>
   <script id="valerianV5EngineAdapter">
   (function(){
     'use strict';
@@ -3279,9 +3339,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
       const id=decodeURIComponent(String(encodedId||''));
       const product=appState.products.find(p=>String(p.id)===id);
       if(!product)return showToast('المنتج غير موجود في المخزون.');
-      const approval=await openV5DeleteCredential({title:'تأكيد الحذف النهائي',description:'أنت على وشك حذف «'+product.name+'» نهائيًا. اكتب كلمة «حذف» أولاً للتأكيد.',label:'اكتب كلمة حذف',inputType:'text',placeholder:'حذف',requiredValue:'حذف',invalidMessage:'اكتب كلمة حذف كما هي للمتابعة.'});
-      if(approval===null){showToast('تم إلغاء الحذف النهائي.');return;}
-      const password=await openV5DeleteCredential({title:'التحقق من حساب VALERIAN CLOUD',description:'أدخل كلمة مرور حساب المزامنة للتحقق من هويتك قبل حذف المنتج نهائيًا. لن يتم الحذف إذا فشل التحقق.',label:'كلمة مرور حساب المزامنة',inputType:'password',placeholder:'كلمة مرور VALERIAN CLOUD',confirmText:'تحقق واحذف'});
+      const password=await openV5DeleteCredential({title:'تأكيد حذف المنتج',description:'أدخل كلمة مرور حساب VALERIAN CLOUD لتأكيد حذف «'+product.name+'». لن يتم الحذف إذا فشل التحقق من الحساب.',label:'كلمة مرور حساب المزامنة',inputType:'password',placeholder:'كلمة مرور VALERIAN CLOUD',confirmText:'تحقق واحذف'});
       if(password===null){showToast('تم إلغاء الحذف النهائي.');return;}
       try{
         const result=await runEngine('permanentlyDeleteProduct',{id,password});
@@ -3337,7 +3395,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
     window.printPreviewImage=async function(){
       try{
         showToast('جارٍ تجهيز نسخة الطباعة عالية الدقة...');
-        const blob=await createPreviewImageBlob();
+        const blob=await createPreviewImageBlob('receipt');
         if(window.ValerianNative && typeof window.ValerianNative.printImage==='function'){
           const thermal=activePreviewShareContext?.kind==='order';
           window.ValerianNative.printImage(await blobToDataUrl(blob), 'VALERIAN-'+(activePreviewShareContext?.kind||'document'), thermal);
