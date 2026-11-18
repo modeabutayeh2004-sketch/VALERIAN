@@ -3410,7 +3410,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     // Private Supabase Storage for durable cross-device product photos and brand logo.
     const VAL_IMAGE_BUCKET='valerian-assets';
     function valImageDataToBlob(uri){
-      const m=/^data:([^;,]+)?(;base64)?,([\\s\\S]*)$/.exec(String(uri||''));
+      const m=/^data:([^;,]+)?(;base64)?,([\s\S]*)$/.exec(String(uri||''));
       if(!m)throw new Error('صيغة صورة محلية غير صالحة.');
       const mime=m[1]||'application/octet-stream',raw=m[2]?atob(m[3]):decodeURIComponent(m[3]);
       const bytes=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
