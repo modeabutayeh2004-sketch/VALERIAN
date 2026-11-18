@@ -6774,7 +6774,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
 
     // V20 incremental journal client. Legacy snapshot sync remains available until
     // the additive Supabase migration has been installed and bootstrap succeeds.
-    let cloudIncrementalReady=false, cloudIncrementalBase=null, cloudIncrementalQueue=Promise.resolve(), cloudIncrementalGeneration=0;
+    let cloudIncrementalReady=false, cloudIncrementalBase=null, cloudIncrementalQueue=Promise.resolve(), cloudOutboxQueue=Promise.resolve(), cloudIncrementalGeneration=0;
     const cloudSyncDiagnostics={mode:'غير معروف',bootstrap:'لم يبدأ',phase:'idle',currentOperation:'لا يوجد',lastAttempt:'لم تبدأ محاولة',lastSuccess:'لا توجد مزامنة مؤكدة بعد',lastError:'لا يوجد',lastPushCount:0,lastPullCount:0,cursor:0,outboxCount:0,imageUploadAttempted:0,imageUploadSucceeded:0,imageUploadSkipped:0,imageUploadErrors:0,imageDownloadAttempted:0,imageDownloadSucceeded:0,imageDownloadErrors:0,realtimeStatus:'غير مشترك',lastRealtimeEvent:'لا يوجد'};
     function valSyncPhase(phase,operation){cloudSyncDiagnostics.phase=phase;cloudSyncDiagnostics.currentOperation=operation||phase;valCloudDiagnostic('مرحلة المزامنة: '+phase+' — '+cloudSyncDiagnostics.currentOperation);}
     const VAL_SYNC_OUTBOX_KEY='val_sync_outbox_v1', VAL_SYNC_CURSOR_KEY='val_sync_cursor_v1';
@@ -6829,6 +6829,18 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     async function valSyncWriteOutbox(items){
       await valIdbTx('appstate','readwrite',os=>os.put({items,updatedAt:Date.now()},VAL_SYNC_OUTBOX_KEY));
     }
+    // Serialize every outbox read-modify-write. Without this lock, a local edit
+    // arriving while the RPC is in flight can be overwritten by the older batch snapshot.
+    function valSyncMutateOutbox(mutator){
+      const job=cloudOutboxQueue.then(async()=>{
+        const items=await valSyncReadOutbox();
+        const next=await mutator(items);
+        await valSyncWriteOutbox(next);
+        return next;
+      });
+      cloudOutboxQueue=job.catch(()=>{});
+      return job;
+    }
     async function valSyncReadCursor(){
       const row=await valIdbGet('appstate',VAL_SYNC_CURSOR_KEY);
       return Math.max(0,Number(row?.cursor||0));
@@ -6843,9 +6855,10 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       cloudIncrementalGeneration++;
       cloudIncrementalBase=current;
       cloudIncrementalQueue=cloudIncrementalQueue.then(async()=>{
-        const items=await valSyncReadOutbox();
-        items.push({change_id:valSyncNewId(),patch,created_at:new Date().toISOString()});
-        await valSyncWriteOutbox(items);
+        await valSyncMutateOutbox(items=>{
+          items.push({change_id:valSyncNewId(),patch,created_at:new Date().toISOString()});
+          return items;
+        });
         cloudDirty=true;
         setCloudStatus('تغييرات جزئية محفوظة محلياً — بانتظار رفعها','#a16207');
       }).catch(err=>{
@@ -6884,16 +6897,20 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     }
     async function valIncrementalPush(){
       await cloudIncrementalQueue;
-      let items=await valSyncReadOutbox();
-      while(items.length){
+      await cloudOutboxQueue;
+      while(true){
+        const items=await valSyncReadOutbox();
+        if(!items.length)break;
         const batch=items.slice(0,100);
         const {data,error}=await cloudClient.rpc('valerian_sync_push',{p_changes:batch});
         if(error)throw error;
         if(!data?.ok)throw new Error('رفضت السحابة تسجيل دفعة التغييرات.');
         const ids=new Set(batch.map(x=>x.change_id));
-        items=items.filter(x=>!ids.has(x.change_id));
-        cloudSyncDiagnostics.lastPushCount+=batch.length;cloudSyncDiagnostics.outboxCount=items.length;
-        await valSyncWriteOutbox(items);
+        // Re-read and remove only acknowledged IDs; preserve edits queued during RPC.
+        const remaining=await valSyncMutateOutbox(current=>current.filter(x=>!ids.has(x.change_id)));
+        cloudSyncDiagnostics.lastPushCount+=batch.length;
+        cloudSyncDiagnostics.outboxCount=remaining.length;
+        valCloudDiagnostic('تأكيد رفع دفعة: أُرسلت '+batch.length+' تغييرات، أضافت السحابة '+Number(data.inserted||0)+' جديدة، والمتبقي '+remaining.length+'.');
       }
     }
     async function valIncrementalPull(){
