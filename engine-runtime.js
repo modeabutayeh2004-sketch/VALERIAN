@@ -865,8 +865,9 @@
       } else if (container.parentElement !== document.body) {
         document.body.appendChild(container);
       }
-      // Use fixed side insets instead of 50% + translate: the latter can clip
-      // on mobile when a transformed ancestor or a narrow visual viewport exists.
+      // Strip legacy Tailwind positioning utilities and their individual translate property.
+      container.classList.remove('top-[82px]','left-1/2','-translate-x-1/2','items-center');
+      // Use fixed side insets; never combine left:50% with a centering transform.
       Object.assign(container.style, {
         position: 'fixed',
         top: 'calc(env(safe-area-inset-top, 0px) + 12px)',
@@ -878,6 +879,7 @@
         marginLeft: 'auto',
         marginRight: 'auto',
         transform: 'none',
+        translate: 'none',
         zIndex: '20000',
         display: 'flex',
         flexDirection: 'column',
