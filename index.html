@@ -100,8 +100,8 @@
      .water-fill {
       position: absolute; z-index: 0; left: 0; right: 0; bottom: 0; width: auto; height: var(--level,0%); max-height: 100%;
       border: 0; border-radius: 0; border-bottom-left-radius: inherit; border-bottom-right-radius: inherit; clip-path: none;
-      background:linear-gradient(180deg,rgba(8,66,73,.48),rgba(5,51,59,.66) 48%,rgba(2,35,43,.78));
-      box-shadow:inset 0 1px 8px rgba(174,224,226,.10),0 -1px 8px rgba(5,55,63,.18);
+      background:linear-gradient(180deg,rgba(45,212,191,.30),rgba(13,148,136,.62) 48%,rgba(15,118,110,.78));
+      box-shadow:inset 0 1px 8px rgba(204,251,241,.16),0 -1px 10px rgba(45,212,191,.20);
       transition: height .65s cubic-bezier(.22,1,.36,1); pointer-events: none;
     }
     .water-fill::before { content:"";position:absolute;inset:0;background-image:radial-gradient(circle at 18% 78%,rgba(255,255,255,.78) 0 1px,transparent 2px),radial-gradient(circle at 62% 56%,rgba(255,255,255,.58) 0 1.4px,transparent 2.5px),radial-gradient(circle at 82% 88%,rgba(255,255,255,.66) 0 1px,transparent 2px);background-size:37px 48px,53px 62px,61px 54px;animation:valerian-liquid-bubbles 5.8s linear infinite;opacity:.72; }
@@ -119,7 +119,7 @@
       position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%;
       object-fit: cover; border-radius: inherit;
     }
-     .inventory-level-fill { position:absolute;z-index:1;left:0;right:0;bottom:0;height:var(--level,0%);border-radius:0;background:linear-gradient(180deg,rgba(8,66,73,.44),rgba(5,51,59,.64) 55%,rgba(2,35,43,.78));box-shadow:inset 0 1px 5px rgba(174,224,226,.10),0 -1px 7px rgba(5,55,63,.16);pointer-events:none; }
+     .inventory-level-fill { position:absolute;z-index:1;left:0;right:0;bottom:0;height:var(--level,0%);border-radius:0;background:linear-gradient(180deg,rgba(45,212,191,.28),rgba(13,148,136,.60) 55%,rgba(15,118,110,.82));box-shadow:inset 0 1px 5px rgba(204,251,241,.16),0 -1px 7px rgba(45,212,191,.16);pointer-events:none; }
     .inventory-level-fill::before { content:"";position:absolute;top:0;left:0;right:0;height:2px;background:rgba(255,255,255,.78);box-shadow:0 0 7px rgba(255,255,255,.28); }
     .inventory-level-fill::after { content:"";position:absolute;inset:0;background-image:radial-gradient(circle at 22% 78%,rgba(255,255,255,.78) 0 1px,transparent 2px),radial-gradient(circle at 72% 52%,rgba(255,255,255,.62) 0 1.2px,transparent 2.3px),radial-gradient(circle at 48% 91%,rgba(255,255,255,.55) 0 1px,transparent 2px);background-size:31px 39px,47px 51px,55px 43px;animation:valerian-liquid-bubbles 5.8s linear infinite;opacity:.75; }
     @keyframes valerian-liquid-bubbles { 0%{background-position:0 24px,0 38px,0 18px;} 100%{background-position:0 -24px,0 -38px,0 -18px;} }
@@ -148,17 +148,14 @@
         -webkit-backdrop-filter: none !important;
         backdrop-filter: none !important;
       }
-      .water-fill, .inventory-level-fill::after { animation: none !important; }
-      header.sticky, #moneyActionModal { -webkit-backdrop-filter:none !important; backdrop-filter:none !important; }
+      .water-fill { animation: none !important; }
     }
     @media (prefers-reduced-motion: reduce) {
       .water-fill { animation: none !important; transition: none !important; }
     }
 
     /* VALERIAN premium financial action dialog */
-    body.is-offline .water-fill, body.is-offline .inventory-level-fill { transition:none !important; }
-body.is-offline .water-fill::before, body.is-offline .inventory-level-fill::after { animation:none !important; }
-#moneyActionModal{position:fixed;inset:0;z-index:120;display:flex;align-items:flex-end;justify-content:center;padding:16px;background:rgba(0,5,9,.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);}
+    #moneyActionModal{position:fixed;inset:0;z-index:120;display:flex;align-items:flex-end;justify-content:center;padding:16px;background:rgba(0,5,9,.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);}
     #moneyActionModal.hidden{display:none;}
     .money-action-panel{width:100%;max-width:430px;border:1px solid rgba(226,232,240,.22);border-radius:28px;background:linear-gradient(155deg,rgba(18,34,47,.98),rgba(3,10,16,.99));box-shadow:0 28px 90px rgba(0,0,0,.72),inset 0 1px 0 rgba(255,255,255,.12);padding:22px;animation:moneyPanelIn .32s cubic-bezier(.2,.8,.2,1);}
     .money-action-field{width:100%;border:1px solid rgba(203,213,225,.18);border-radius:15px;background:rgba(255,255,255,.055);padding:13px 14px;color:#f8fafc;font-size:14px;font-weight:800;outline:none;}
@@ -360,8 +357,8 @@ body.is-offline .water-fill::before, body.is-offline .inventory-level-fill::afte
 
         <!-- Cloud and Settings Actions -->
         <div class="flex items-center gap-2">
-          <button id="v5CloudHeaderButton" onclick="openCloudPanel()" aria-label="السحابة والمزامنة" class="h-9 rounded-full glass-pill flex items-center gap-1.5 px-3 text-[10px] font-extrabold text-rose-400 hover:text-white" data-sync-state="offline" title="المزامنة غير متصلة">
-            <svg id="v5CloudHeaderIcon" aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 18a5 5 0 0 1-.6-9.96A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9H7Z"/></svg><span>السحابة</span>
+          <button id="v5CloudHeaderButton" onclick="openCloudPanel()" aria-label="السحابة والمزامنة" class="h-9 rounded-full glass-pill flex items-center gap-1.5 px-3 text-[10px] font-extrabold text-emerald-200 hover:text-white">
+            <span aria-hidden="true">☁</span><span>السحابة</span>
           </button>
           <button onclick="openSheet('settingsSheet')" aria-label="الإعدادات" class="w-9 h-9 rounded-full glass-pill flex items-center justify-center text-slate-300 hover:text-white">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -2802,7 +2799,7 @@ body.is-offline .water-fill::before, body.is-offline .inventory-level-fill::afte
        in a same-origin hidden frame and remains the sole owner of business data. -->
   <iframe id="valerianEngineFrame" title="VALERIAN business engine" aria-hidden="true"
     style="position:fixed;left:-20px;top:-20px;width:2px;height:2px;border:0;opacity:0;pointer-events:none;z-index:-1"
-    src="./engine.html?v=20261118-102-authfix"></iframe>
+    src="./engine.html?v=20261118-100-sync-fast"></iframe>
   <script id="valerianV5EngineAdapter">
   (function(){
     'use strict';
@@ -2866,16 +2863,7 @@ body.is-offline .water-fill::before, body.is-offline .inventory-level-fill::afte
       document.getElementById('v5CloudSyncBtn')?.classList.toggle('hidden',!connected);
       document.getElementById('v5CloudLogoutBtn')?.classList.toggle('hidden',!authenticated);
       const button=document.getElementById('v5CloudHeaderButton');
-      const statusText=String(label||'');
-      const hasIssue=/فشل|تعذر|خطأ|تعارض|غير متصل|بانتظار رفعها|لم تكتمل/i.test(statusText);
-      const healthy=connected&&online&&!s.dirty&&!s.conflict&&!hasIssue;
-      if(button){
-        button.classList.toggle('text-emerald-300',healthy);
-        button.classList.toggle('text-rose-400',!healthy);
-        button.dataset.syncState=healthy?'connected':'offline';
-        button.title=healthy?'المزامنة متصلة وتعمل':(label||'المزامنة غير متصلة');
-        button.setAttribute('aria-label',healthy?'المزامنة متصلة وتعمل':'المزامنة غير متصلة — '+(label||''));
-      }
+      if(button){button.classList.toggle('text-emerald-200',connected);button.classList.toggle('text-amber-200',!connected);button.title=label||'إعدادات حساب VALERIAN CLOUD';}
     }
     function engineReady(){
       if(!frame.contentWindow||!frame.contentWindow.ValerianEngine)return false;
@@ -3437,7 +3425,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
     };
 
     if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
-      window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=valerian-104-startup-fix',{scope:'./',updateViaCache:'none'}).catch(err=>console.warn('VALERIAN V20 offline registration failed',err)));
+      window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=valerian-100-sync-fast',{scope:'./',updateViaCache:'none'}).catch(err=>console.warn('VALERIAN V20 offline registration failed',err)));
     }
     frame.addEventListener('load',()=>connectEngine().catch(reportError));
     if(frame.contentWindow?.ValerianEngine)connectEngine().catch(reportError);
@@ -3486,14 +3474,6 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
  const frame=$('valerianEngineFrame');frame?.addEventListener('load',()=>{diag?.push('ENGINE IFRAME LOAD','iframe load event');setTimeout(refresh,300);});
  setInterval(()=>{if($('valDiagPanel').style.display!=='none')refresh();},1200);
  diag?.push('DIAGNOSTICS','Diagnostic panel installed');
-})();
-</script>
-<script id="valerian-offline-performance">
-(function(){
-  const apply=()=>document.body.classList.toggle('is-offline',!navigator.onLine);
-  apply();
-  window.addEventListener('online',apply,{passive:true});
-  window.addEventListener('offline',apply,{passive:true});
 })();
 </script>
 </body>
