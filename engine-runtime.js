@@ -5197,6 +5197,50 @@ function previewPeriodicReportPrint() {
           refreshAllViews();
           return {ok:true,snapshot:snapshot()};
         },
+        createImportInvoice:async payload=>{
+          await ready;
+          const supplier=String(payload?.supplier||'').trim();
+          const dateValue=String(payload?.date||new Date().toISOString().slice(0,10));
+          const rate=Number(payload?.exchangeRate),shipping=Number(payload?.shippingCost||0),customs=Number(payload?.customsCost||0),paid=Number(payload?.paidAmount||0);
+          const lines=Array.isArray(payload?.lines)?payload.lines.map(line=>({productId:String(line?.productId||''),qty:Number(line?.qty),unitForeign:Number(line?.unitForeign)})):[];
+          if(!supplier||!/^\d{4}-\d{2}-\d{2}$/.test(dateValue)||!Number.isFinite(rate)||rate<=0||!lines.length||lines.some(line=>!line.productId||!Number.isSafeInteger(line.qty)||line.qty<=0||!Number.isFinite(line.unitForeign)||line.unitForeign<=0||!state.products.some(p=>String(p.id)===line.productId&&!p.archived&&p.category!=='تقسيم'))||!Number.isFinite(shipping)||shipping<0||!Number.isFinite(customs)||customs<0||!Number.isFinite(paid)||paid<0)throw new Error('بيانات فاتورة الاستيراد غير مكتملة أو غير صحيحة.');
+          const before=structuredClone(state);
+          let committed=false;
+          try{
+            el('impSupplier').value=supplier;
+            el('impExchangeRate').value=String(rate);
+            el('impInvoiceDate').value=dateValue;
+            el('impShippingCost').value=String(shipping);
+            el('impCustomsCost').value=String(customs);
+            el('impPaidAmount').value=String(paid);
+            el('impPaymentMethod').value=normalizePaymentMethod(payload?.paymentMethod||'نقدي');
+            el('impNotes').value=String(payload?.notes||'');
+            el('importLinesBody').innerHTML='';
+            lines.forEach(line=>addImportLine(line.productId,line.qty,line.unitForeign));
+            const calc=updateImportTotals();
+            if(paid>calc.grand+0.0001)throw new Error('المبلغ المدفوع لا يمكن أن يتجاوز إجمالي الفاتورة.');
+            const saved=saveImportShipmentCore();
+            if(saved!==true)throw new Error(window.__valerianLastSaveError?.message||'لم يتم اعتماد فاتورة الاستيراد.');
+            committed=true;
+            await valDurableWritePromise;
+            await valIdbFlush();
+            const invoice=state.imports.find(item=>String(item.id)===String('IMP-'+Date.now()));
+            const latest=state.imports[0];
+            if(!latest||latest.supplier!==supplier||Number(latest.totalEgp||0)!==Number(calc.grand.toFixed(2)))throw new Error('لم يتم العثور على الفاتورة المعتمدة في سجل المحرك.');
+            let cloudSyncOk=true;
+            if(cloudReady&&cloudUser&&navigator.onLine&&!cloudConflict){
+              try{clearTimeout(cloudSaveTimer);await cloudSyncNow(true);cloudSyncOk=!cloudConflict&&!cloudDirty;}
+              catch(_){cloudSyncOk=false;}
+            }
+            return {ok:true,invoice:structuredClone(latest),cloudSyncOk,snapshot:snapshot()};
+          }catch(error){
+            if(!committed){
+              state=before;
+              try{persistLocal(before);await valIdbFlush();}catch(rollbackError){console.error('Import invoice rollback failed',rollbackError);}
+            }
+            throw error;
+          }
+        },
         paySupplierInvoice:async payload=>{
           await ready;
           const invoiceId=typeof payload==='object'?payload.invoiceId:payload;
