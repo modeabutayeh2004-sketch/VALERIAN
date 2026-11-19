@@ -45,3 +45,5 @@ jobs:
         run: node tests/mobile-finance-cashbook-smoke.mjs
       - name: Verify mobile finance and cashbook screens in a browser
         run: node tests/mobile-finance-ui-smoke.mjs
+      - name: Verify backup restore and safety download in a browser
+        run: node tests/mobile-backup-restore-smoke.mjs
