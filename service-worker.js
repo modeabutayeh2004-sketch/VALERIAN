@@ -1,6 +1,6 @@
 /* VALERIAN V20.117 — single-document engine integration */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-131-supplier-paid-report';
+const CACHE_NAME = 'valerian-app-shell-v20-132-mobile-edit-image-crop';
 const APP_SHELL = ['./', './index.html', './engine-runtime.js?v=v5-supplier-paid-report-20261119', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
