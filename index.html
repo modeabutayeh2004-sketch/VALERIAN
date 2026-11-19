@@ -6193,6 +6193,14 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       document.getElementById('repMobileNet').textContent = fmtEgp(net);
     }
 
+    async function callMobileEngine(method,payload){
+      const api=window.ValerianEngine;if(!api||typeof api[method]!=='function')throw new Error('عملية '+method+' غير متاحة في محرك VALERIAN.');
+      await api.ready;
+      const result=await api[method](payload);
+      if(result?.snapshot)syncFromEngine(result.snapshot);else syncFromEngine();
+      if(result?.ok===false)throw new Error(result.error||'لم يعتمد محرك الأعمال العملية.');
+      return result;
+    }
     async function renderMoreFinance() {
       const list=document.getElementById('mobileExpensesList');if(!list)return;
       try{
@@ -6207,12 +6215,12 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     async function submitMobileExpense(event){
       event.preventDefault();
       const payload={category:document.getElementById('mobileExpenseCategory').value,note:document.getElementById('mobileExpenseNote').value.trim(),amount:Number(document.getElementById('mobileExpenseAmount').value),method:document.getElementById('mobileExpenseMethod').value};
-      try{const result=await runEngine('createExpense',payload);if(!result?.ok)throw new Error(result?.error||'تعذر تسجيل المصروف.');document.getElementById('mobileExpenseForm').reset();showToast('تم تسجيل المصروف وحفظه.');await renderMoreFinance();}
+      try{const result=await callMobileEngine('createExpense',payload);if(!result?.ok)throw new Error(result?.error||'تعذر تسجيل المصروف.');document.getElementById('mobileExpenseForm').reset();showToast('تم تسجيل المصروف وحفظه.');await renderMoreFinance();}
       catch(err){showToast(err?.message||'تعذر تسجيل المصروف.');}
     }
     async function deleteMobileExpense(id){
       if(!confirm('هل تريد حذف هذا المصروف من السجل؟'))return;
-      try{const result=await runEngine('deleteExpense',id);if(!result?.ok)throw new Error(result?.error||'تعذر حذف المصروف.');showToast('تم حذف المصروف.');await renderMoreFinance();}
+      try{const result=await callMobileEngine('deleteExpense',id);if(!result?.ok)throw new Error(result?.error||'تعذر حذف المصروف.');showToast('تم حذف المصروف.');await renderMoreFinance();}
       catch(err){showToast(err?.message||'تعذر حذف المصروف.');}
     }
     async function renderMoreCashbook(){
@@ -6228,17 +6236,17 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     }
     async function submitMobileCashOpening(event){
       event.preventDefault();
-      try{const result=await runEngine('setCashOpeningBalance',{method:document.getElementById('mobileCashOpeningMethod').value,amount:Number(document.getElementById('mobileCashOpeningAmount').value),date:document.getElementById('mobileCashOpeningDate').value,note:document.getElementById('mobileCashOpeningNote').value.trim()});if(!result?.ok)throw new Error(result?.error||'تعذر حفظ الرصيد الافتتاحي.');showToast('تم حفظ الرصيد الافتتاحي.');await renderMoreCashbook();}
+      try{const result=await callMobileEngine('setCashOpeningBalance',{method:document.getElementById('mobileCashOpeningMethod').value,amount:Number(document.getElementById('mobileCashOpeningAmount').value),date:document.getElementById('mobileCashOpeningDate').value,note:document.getElementById('mobileCashOpeningNote').value.trim()});if(!result?.ok)throw new Error(result?.error||'تعذر حفظ الرصيد الافتتاحي.');showToast('تم حفظ الرصيد الافتتاحي.');await renderMoreCashbook();}
       catch(err){showToast(err?.message||'تعذر حفظ الرصيد الافتتاحي.');}
     }
     async function submitMobileCashAdjustment(event){
       event.preventDefault();
-      try{const result=await runEngine('createCashbookAdjustment',{direction:document.getElementById('mobileCashAdjustDirection').value,amount:Number(document.getElementById('mobileCashAdjustAmount').value),method:document.getElementById('mobileCashAdjustMethod').value,date:document.getElementById('mobileCashAdjustDate').value,note:document.getElementById('mobileCashAdjustNote').value.trim()});if(!result?.ok)throw new Error(result?.error||'تعذر تسجيل التسوية.');document.getElementById('mobileCashAdjustAmount').value='';document.getElementById('mobileCashAdjustNote').value='';showToast('تم تسجيل التسوية النقدية.');await renderMoreCashbook();}
+      try{const result=await callMobileEngine('createCashbookAdjustment',{direction:document.getElementById('mobileCashAdjustDirection').value,amount:Number(document.getElementById('mobileCashAdjustAmount').value),method:document.getElementById('mobileCashAdjustMethod').value,date:document.getElementById('mobileCashAdjustDate').value,note:document.getElementById('mobileCashAdjustNote').value.trim()});if(!result?.ok)throw new Error(result?.error||'تعذر تسجيل التسوية.');document.getElementById('mobileCashAdjustAmount').value='';document.getElementById('mobileCashAdjustNote').value='';showToast('تم تسجيل التسوية النقدية.');await renderMoreCashbook();}
       catch(err){showToast(err?.message||'تعذر تسجيل التسوية.');}
     }
     async function submitMobileCashTransfer(event){
       event.preventDefault();
-      try{const result=await runEngine('createCashbookTransfer',{fromMethod:document.getElementById('mobileCashTransferFrom').value,toMethod:document.getElementById('mobileCashTransferTo').value,amount:Number(document.getElementById('mobileCashTransferAmount').value),date:document.getElementById('mobileCashTransferDate').value,note:document.getElementById('mobileCashTransferNote').value.trim()});if(!result?.ok)throw new Error(result?.error||'تعذر تسجيل التحويل.');document.getElementById('mobileCashTransferAmount').value='';document.getElementById('mobileCashTransferNote').value='';showToast('تم تسجيل التحويل بين الحسابات.');await renderMoreCashbook();}
+      try{const result=await callMobileEngine('createCashbookTransfer',{fromMethod:document.getElementById('mobileCashTransferFrom').value,toMethod:document.getElementById('mobileCashTransferTo').value,amount:Number(document.getElementById('mobileCashTransferAmount').value),date:document.getElementById('mobileCashTransferDate').value,note:document.getElementById('mobileCashTransferNote').value.trim()});if(!result?.ok)throw new Error(result?.error||'تعذر تسجيل التحويل.');document.getElementById('mobileCashTransferAmount').value='';document.getElementById('mobileCashTransferNote').value='';showToast('تم تسجيل التحويل بين الحسابات.');await renderMoreCashbook();}
       catch(err){showToast(err?.message||'تعذر تسجيل التحويل.');}
     }
 
