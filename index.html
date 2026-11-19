@@ -6275,6 +6275,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       event.preventDefault();
       try{const result=await callMobileEngine('createCashbookTransfer',{fromMethod:document.getElementById('mobileCashTransferFrom').value,toMethod:document.getElementById('mobileCashTransferTo').value,amount:Number(document.getElementById('mobileCashTransferAmount').value),date:document.getElementById('mobileCashTransferDate').value,note:document.getElementById('mobileCashTransferNote').value.trim()});if(!result?.ok)throw new Error(result?.error||'تعذر تسجيل التحويل.');document.getElementById('mobileCashTransferAmount').value='';document.getElementById('mobileCashTransferNote').value='';showToast('تم تسجيل التحويل بين الحسابات.');await renderMoreCashbook();}
       catch(err){showToast(err?.message||'تعذر تسجيل التحويل.');}
+      finally{await renderMoreTransfers();}
     }
 
     function askMobileBi(topic) {
