@@ -5260,7 +5260,7 @@ function previewPeriodicReportPrint() {
             el('importLinesBody').innerHTML='';
             lines.forEach(line=>addImportLine(line.productId,line.qty,line.unitForeign));
             const calc=updateImportTotals();
-            if(Math.abs(calc.grand-grand)>0.01)throw new Error('اختلاف في إجمالي الفاتورة بين واجهة V20 ومحرك الاستيراد.');
+            if(roundMoney(calc.grand)!==grand)throw new Error('اختلاف في إجمالي الفاتورة بين واجهة V20 ومحرك الاستيراد.');
             const saved=saveImportShipmentCore(null,{deferRefresh:true,deferToast:true});
             if(saved!==true)throw new Error(window.__valerianLastSaveError?.message||'لم يتم اعتماد فاتورة الاستيراد. راجع بيانات الفاتورة وحاول مرة أخرى.');
             await valDurableWritePromise;
