@@ -3,7 +3,7 @@ import path from 'node:path';
 import sharp from 'sharp';
 const root=process.cwd(), out=path.join(root,'www');
 fs.rmSync(out,{recursive:true,force:true});fs.mkdirSync(out,{recursive:true});
-for(const file of ['index.html','engine-runtime.js','service-worker.js','preview-obsidian-champagne.html','preview-aubergine-brass.html','preview-onyx-champagne.html','preview-onyx-pearl-champagne.html']) fs.copyFileSync(path.join(root,file),path.join(out,file));
+for(const file of ['index.html','engine-runtime.js','service-worker.js']) fs.copyFileSync(path.join(root,file),path.join(out,file));
 // The service worker pre-caches this exact path. Include the source emblem in
 // the web bundle so cache.addAll() succeeds during first installation.
 const assetsOut=path.join(out,'assets');fs.mkdirSync(assetsOut,{recursive:true});
