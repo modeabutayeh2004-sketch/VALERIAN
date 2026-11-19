@@ -2065,8 +2065,20 @@
       if(!saveState()){state=before;refreshAllViews();return;}closeModal('supplyWriteoffModal');refreshAllViews();showToast('تم تسجيل النقص وتحديث رصيد المستلزمات.','success');
     }
     function getOrderSupplyRequirements(order){
-      const units=(order?.items||[]).reduce((n,i)=>n+Math.max(0,Number(i.qty||0)-Number(i.returnedQty||0)),0);
-      return (state.operatingSupplies||[]).filter(x=>!x.archivedAt&&x.active!==false).map(x=>({supply:x,qty:Math.max(0,Number(x.recipePerOrder||0)+Number(x.recipePerUnit||0)*units)})).filter(x=>x.qty>0);
+      const items=Array.isArray(order?.items)?order.items:[];
+      return (state.operatingSupplies||[]).filter(x=>!x.archivedAt&&x.active!==false).map(supply=>{
+        let qty=Math.max(0,Number(supply.recipePerOrder||0));
+        const productRecipes=supply.productRecipes&&typeof supply.productRecipes==='object'&&!Array.isArray(supply.productRecipes)?supply.productRecipes:null;
+        items.forEach(item=>{
+          const itemQty=Math.max(0,Number(item.qty||0)-Number(item.returnedQty||0));
+          if(!itemQty)return;
+          const productId=String(item.id||item.productId||'');
+          const hasProductRate=!!productRecipes&&Object.prototype.hasOwnProperty.call(productRecipes,productId);
+          const perUnit=hasProductRate?Number(productRecipes[productId]||0):Number(supply.recipePerUnit||0);
+          if(Number.isFinite(perUnit)&&perUnit>0)qty+=perUnit*itemQty;
+        });
+        return {supply,qty:Math.max(0,qty)};
+      }).filter(x=>x.qty>0);
     }
     function validateOrderSupplyAvailability(order){
       const req=getOrderSupplyRequirements(order);for(const r of req){if(Number(r.supply.quantity||0)+1e-9<r.qty){showToast(`مستلزم غير كافٍ: ${r.supply.name}. المطلوب ${r.qty} والمتاح ${r.supply.quantity||0} ${r.supply.unit}. حدّث فاتورة الشراء أو وصفة الاستهلاك.`, 'error');return false;}}return true;
@@ -4958,10 +4970,14 @@ function previewPeriodicReportPrint() {
           const supply=(state.operatingSupplies||[]).find(x=>String(x.id)===String(payload?.id||'')&&!x.archivedAt&&x.active!==false);
           if(!supply)throw new Error('المستلزم غير موجود أو تم حذفه.');
           const perOrder=Number(payload?.recipePerOrder),perUnit=Number(payload?.recipePerUnit),minimum=Number(payload?.minimumStock);
+          const rawRecipes=payload?.productRecipes;
           if(![perOrder,perUnit,minimum].every(x=>Number.isFinite(x)&&x>=0))throw new Error('قيم الاستهلاك وحد التنبيه يجب أن تكون أرقامًا غير سالبة.');
+          if(!rawRecipes||typeof rawRecipes!=='object'||Array.isArray(rawRecipes))throw new Error('إعدادات الاستهلاك حسب المنتج غير صالحة.');
+          const productRecipes={};
+          Object.entries(rawRecipes).forEach(([productId,value])=>{const rate=Number(value);if(!productId||!Number.isFinite(rate)||rate<0)throw new Error('يوجد معدل استهلاك غير صالح لأحد المنتجات.');productRecipes[String(productId)]=rate;});
           const before=structuredClone(supply);
-          Object.assign(supply,{recipePerOrder:perOrder,recipePerUnit:perUnit,minimumStock:minimum});
-          logAudit('SUPPLY_RECIPE_UPDATED','تحديث استهلاك '+supply.name+' لكل طلب ووحدة');
+          Object.assign(supply,{recipePerOrder:perOrder,recipePerUnit:perUnit,productRecipes,minimumStock:minimum});
+          logAudit('SUPPLY_RECIPE_UPDATED','تحديث استهلاك '+supply.name+' حسب الطلب والمنتج');
           if(!saveState()){Object.assign(supply,before);throw new Error('تعذر حفظ إعدادات استهلاك المستلزم.');}
           try{await valDurableWritePromise;if(valDurableWriteError)throw valDurableWriteError;await valIdbFlush();}
           catch(err){Object.assign(supply,before);saveState();throw new Error('لم يكتمل الحفظ الدائم لإعداد الاستهلاك: '+String(err?.message||err));}
