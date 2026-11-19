@@ -3363,8 +3363,24 @@ function previewPeriodicReportPrint() {
       let totalReservations = 0;
       let totalReturns = 0;
       let totalCogs = 0;
+      let totalWriteoffLoss = 0;
 
       filteredOrders.forEach(o => {
+        // Damaged returns are removed from sold COGS with the returned quantity,
+        // then recognized separately as a loss at the immutable sale-time unit cost.
+        (Array.isArray(o.returnItems) ? o.returnItems : []).forEach(ret => {
+          if (ret.disposition !== 'writeoff') return;
+          const returnDate = new Date(ret.date || o.returnedAt || o.date || 0);
+          let inPeriod = true;
+          if (period === 'today') inPeriod = returnDate.toDateString() === now.toDateString();
+          else if (period === 'week') inPeriod = returnDate <= now && (now - returnDate) / 86400000 <= 7;
+          else if (period === 'month') inPeriod = returnDate.getMonth() === now.getMonth() && returnDate.getFullYear() === now.getFullYear();
+          if (!inPeriod) return;
+          const original = (o.items || []).find(item => String(item.id) === String(ret.productId));
+          const product = state.products.find(p => String(p.id) === String(ret.productId));
+          const unitCost = Math.max(0, Number(original?.unitCostAtSale ?? product?.averageCost ?? product?.totalCost ?? 0));
+          totalWriteoffLoss += unitCost * Math.max(0, Number(ret.qty || 0));
+        });
         const returnedValue = Math.max(0, Number(o.returnedValue || 0));
         totalReturns += returnedValue;
         const netOrderValue = Math.max(0, Number(o.grandTotal || 0) - returnedValue);
@@ -3385,7 +3401,7 @@ function previewPeriodicReportPrint() {
 
       const totalExpenses = state.expenses.filter(e => { if (String(e.category||'').includes('استبدال نقاط عملاء')) return false; const d = new Date(e.date); if (period === 'today') return d.toDateString() === now.toDateString(); if (period === 'week') return (now - d) / 86400000 <= 7 && d <= now; if (period === 'month') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); return true; }).reduce((s, e) => s + Number(e.amount || 0), 0);
       // COGS uses the immutable unitCostAtSale snapshot when present; legacy rows fall back to current average cost.
-      const trueNetProfit = fullSales - totalCogs - totalExpenses;
+      const trueNetProfit = fullSales - totalCogs - totalExpenses - totalWriteoffLoss;
       const supplierInvoices=Array.isArray(state.supplierInvoices)?state.supplierInvoices:[],supplierPayments=Array.isArray(state.supplierPayments)?state.supplierPayments:[];
       const supplierPaidNow=supplierInvoices.reduce((sum,inv)=>{const linked=supplierPayments.filter(p=>String(p.invoiceId)===String(inv.id)).reduce((a,p)=>a+Math.max(0,Number(p.amount||0)),0);return sum+Math.min(Math.max(0,Number(inv.totalAmount||0)),Math.max(Math.max(0,Number(inv.paidAmount||0)),linked));},0);
       const supplierDueNow=supplierInvoices.reduce((sum,inv)=>{const linked=supplierPayments.filter(p=>String(p.invoiceId)===String(inv.id)).reduce((a,p)=>a+Math.max(0,Number(p.amount||0)),0);const paid=Math.min(Math.max(0,Number(inv.totalAmount||0)),Math.max(Math.max(0,Number(inv.paidAmount||0)),linked));return sum+Math.max(0,Number(inv.totalAmount||0)-paid);},0);
@@ -3396,6 +3412,8 @@ function previewPeriodicReportPrint() {
       document.getElementById('repReservations').textContent = formatCurrency(totalReservations);
       document.getElementById('repReturns').textContent = formatCurrency(totalReturns);
       document.getElementById('repExpenses').textContent = formatCurrency(totalExpenses);
+      const writeoffEl = document.getElementById('repWriteoffLoss');
+      if (writeoffEl) writeoffEl.textContent = formatCurrency(totalWriteoffLoss);
       document.getElementById('repNetProfit').textContent = formatCurrency(trueNetProfit); document.getElementById('repNetProfit').classList.toggle('finance-positive',trueNetProfit>=0); document.getElementById('repNetProfit').classList.toggle('finance-negative',trueNetProfit<0);
 
       const tbody = document.getElementById('reportsTableBody');
