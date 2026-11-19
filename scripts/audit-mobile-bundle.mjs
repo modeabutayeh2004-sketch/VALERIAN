@@ -46,6 +46,13 @@ const engineScriptCount = (html.match(/<script\b[^>]*src=["'][^"']*engine-runtim
 if (engineScriptCount !== 1) failures.push('Expected exactly one engine-runtime.js script tag; found ' + engineScriptCount + '.');
 if (!html.includes('waitForEngineBridge') || !html.includes('runEngine(')) failures.push('Mobile UI is missing its engine connection/command bridge.');
 if (!runtime.includes('window.ValerianEngine=Object.freeze')) failures.push('Business runtime does not expose the expected ValerianEngine API.');
+const apiStart = runtime.indexOf('window.ValerianEngine=Object.freeze({');
+const apiBody = apiStart >= 0 ? runtime.slice(apiStart) : '';
+const apiMethods = new Set([...apiBody.matchAll(/^ {8}([A-Za-z0-9_$]+):/gm)].map((m) => m[1]));
+const uiEngineCalls = [...new Set([...html.matchAll(/runEngine\(\s*['"]([^'"]+)['"]/g)].map((m) => m[1]))];
+for (const method of uiEngineCalls) {
+  if (!apiMethods.has(method)) failures.push('Mobile UI calls an engine method that is not exposed: ' + method);
+}
 if (!runtime.includes('const ready') && !runtime.includes('ready=')) warnings.push('Could not statically confirm the runtime readiness promise.');
 
 for (const file of ['index.html', 'engine-runtime.js', 'service-worker.js']) {
@@ -112,6 +119,8 @@ if (!hostOpen) {
 }
 
 const duplicateImportDefinitions = (runtime.match(/createImportInvoice\s*:/g) || []).length;
+if (duplicateImportDefinitions !== 1) failures.push('Expected exactly one createImportInvoice handler; found ' + duplicateImportDefinitions + '.');
+if (!runtime.includes('if(updateRetail)updateRetail.checked=line.updateRetail===true')) failures.push('Import handler does not preserve retail prices unless an explicit override is requested.');
 const legacyDomLookups = (runtime.match(/document\.getElementById\s*\(/g) || []).length;
 if (duplicateImportDefinitions > 1) warnings.push('Runtime defines createImportInvoice ' + duplicateImportDefinitions + ' times; the last object property wins and needs deliberate reconciliation.');
 if (legacyDomLookups > 0) warnings.push('Business runtime still performs ' + legacyDomLookups + ' direct DOM lookups; do not remove legacy DOM dependencies until they are mapped.');
