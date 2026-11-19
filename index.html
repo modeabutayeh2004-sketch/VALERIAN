@@ -5640,13 +5640,20 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
 
     async function confirmMobileReturn(orderId) {
       const root=document.getElementById('mobileReturnEditor');if(!root)return;
+      const section=root.querySelector('section');
+      const button=section?.querySelector('button:last-child');
+      let errorBox=root.querySelector('#mobileReturnError');
+      if(!errorBox&&section){errorBox=document.createElement('div');errorBox.id='mobileReturnError';errorBox.setAttribute('role','alert');errorBox.setAttribute('aria-live','assertive');errorBox.className='rounded-xl border border-rose-300/30 bg-rose-500/10 px-3 py-2 text-[11px] leading-5 text-rose-100';section.insertBefore(errorBox,section.lastElementChild);}
+      if(button?.disabled)return;
       const selections=[...root.querySelectorAll('[data-mobile-return-row]')].map(row=>({
         productId:row.dataset.productId,
         qty:Number(row.querySelector('.mobile-return-qty')?.value||0),
         disposition:row.querySelector('.mobile-return-disposition')?.value||'release',
         openMl:Number(row.querySelector('.mobile-return-openml')?.value||0)
       })).filter(item=>item.qty>0);
-      if(!selections.length)return showToast('حدد كمية مرتجعة واحدة على الأقل.');
+      if(!selections.length){if(errorBox){errorBox.textContent='حدد كمية مرتجعة واحدة على الأقل.';}return showToast('حدد كمية مرتجعة واحدة على الأقل.');}
+      if(button){button.disabled=true;button.textContent='جارٍ اعتماد المرتجع…';}
+      if(errorBox)errorBox.textContent='';
       try{
         const result=await window.ValerianShippingAction('returnOrder',{orderId,selections});
         if(result?.ok!==true)throw new Error(result?.error||'لم يؤكد محرك الأعمال اعتماد المرتجع.');
@@ -5654,7 +5661,14 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         renderMoreTracking();
         renderMoreOrders();
         showToast('تم تسجيل المرتجع وتحديث المخزون / الهالك / رصيد التقسيم حسب الحالة.');
-      }catch(err){window.ValerianReportError(err);}
+      }catch(err){
+        const message=String(err?.message||err||'تعذر اعتماد المرتجع.');
+        console.error('Mobile return approval failed:',message,err);
+        if(errorBox)errorBox.textContent=message;
+        showToast(message);
+      }finally{
+        if(button&&root.isConnected){button.disabled=false;button.textContent='اعتماد المرتجع';}
+      }
     }
 
     function renderCrmMobile(){
