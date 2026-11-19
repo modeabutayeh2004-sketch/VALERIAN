@@ -1,5 +1,5 @@
 /* Isolated Tailwind v4.1.10 utility-only completion audit. No preflight or components. */
-@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/theme.css" layer(theme) source(none);
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
 
 @theme {
