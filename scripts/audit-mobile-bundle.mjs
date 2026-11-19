@@ -106,7 +106,8 @@ if (!hostOpen) {
     if (missingIds.length > 2) failures.push('Business runtime references missing HTML IDs: ' + missingIds.slice(0, 12).join(', '));
     if (missingIds.length) warnings.push('Two generated runtime elements are not static HTML IDs: ' + missingIds.join(', '));
     if (outsideHost.length) warnings.push('Some business-engine DOM dependencies are outside the legacy host: ' + outsideHost.slice(0, 12).join(', '));
-    console.log(' - Legacy engine DOM map: ' + hostIds.size + ' hosted IDs; ' + runtimeIds.length + ' unique literal engine lookups; ' + (runtimeIds.length - missingIds.length - outsideHost.length) + ' resolve inside the host');
+    const insideHostCount = runtimeIds.filter((id) => hostIds.has(id)).length;
+    console.log(' - Legacy engine DOM map: ' + hostIds.size + ' hosted IDs; ' + runtimeIds.length + ' unique literal engine lookups; ' + insideHostCount + ' resolve inside the host');
   }
 }
 
