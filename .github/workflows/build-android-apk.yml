@@ -11,8 +11,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Audit mobile source and bundle contract
-        run: npm run audit:mobile
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -25,6 +23,8 @@ jobs:
         run: npm install
       - name: Prepare web bundle
         run: npm run build:web
+      - name: Audit mobile source and prepared bundle
+        run: npm run audit:mobile
       - name: Add Android platform
         run: npx cap add android
       - name: Sync Capacitor
