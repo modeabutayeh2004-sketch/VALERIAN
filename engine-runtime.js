@@ -5416,23 +5416,35 @@ function previewPeriodicReportPrint() {
         },
         createCashbookAdjustment:async payload=>{
           await ready;
-          const direction=payload?.direction==='OUT'?'OUT':'IN',amount=Number(payload?.amount),method=normalizePaymentMethod(payload?.method||'نقدي'),date=String(payload?.date||''),note=String(payload?.note||'').trim();
+          const direction=payload?.direction==='OUT'?'OUT':'IN',amount=roundMoney(Number(payload?.amount)),method=normalizePaymentMethod(payload?.method||'نقدي'),date=String(payload?.date||''),note=String(payload?.note||'').trim();
           if(!Number.isFinite(amount)||amount<=0||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!note)throw new Error('أدخل مبلغ التسوية وتاريخها وسببها بصورة صحيحة.');
-          el('cashAdjustDirection').value=direction;el('cashAdjustAmount').value=String(amount);el('cashAdjustMethod').value=method;el('cashAdjustDate').value=date;el('cashAdjustNote').value=note;
-          const before=(state.cashbookAdjustments||[]).length;addCashbookAdjustment();
-          if((state.cashbookAdjustments||[]).length!==before+1)throw new Error('لم يتم اعتماد التسوية النقدية؛ تحقق من الرصيد والبيانات.');
+          if(direction==='OUT'&&amount>getPaymentMethodBalance(method,date)+0.0001)throw new Error('الرصيد المتاح لا يكفي لإتمام السحب أو التسوية المنصرفة.');
+          const before=structuredClone(state);
+          state.cashbookAdjustments=Array.isArray(state.cashbookAdjustments)?state.cashbookAdjustments:[];
+          const adjustment={id:'CASH-ADJ-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),direction,amount,method,date:new Date(date+'T12:00:00').toISOString(),note,createdAt:new Date().toISOString()};
+          state.cashbookAdjustments.unshift(adjustment);
+          logAudit('CASH_ADJUSTMENT_CREATED',(direction==='IN'?'إيداع ':'سحب ')+amount+' — '+note);
+          if(!saveState()){state=before;throw new Error('تعذر حفظ التسوية النقدية.');}
           await confirmDurableStateCommit();
-          return {ok:true,adjustment:structuredClone(state.cashbookAdjustments[0]),snapshot:snapshot()};
+          renderCashBook();
+          return {ok:true,adjustment:structuredClone(adjustment),snapshot:snapshot()};
         },
         createCashbookTransfer:async payload=>{
           await ready;
-          const fromMethod=normalizePaymentMethod(payload?.fromMethod||''),toMethod=normalizePaymentMethod(payload?.toMethod||''),amount=Number(payload?.amount),date=String(payload?.date||''),note=String(payload?.note||'').trim();
+          const fromMethod=normalizePaymentMethod(payload?.fromMethod||''),toMethod=normalizePaymentMethod(payload?.toMethod||''),amount=roundMoney(Number(payload?.amount)),date=String(payload?.date||''),note=String(payload?.note||'').trim();
           if(!fromMethod||!toMethod||fromMethod===toMethod||!Number.isFinite(amount)||amount<=0||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!note)throw new Error('أدخل حسابي التحويل المختلفين والمبلغ والتاريخ والسبب.');
-          el('cashTransferFrom').value=fromMethod;el('cashTransferTo').value=toMethod;el('cashTransferAmount').value=String(amount);el('cashTransferDate').value=date;el('cashTransferNote').value=note;
-          const before=(state.cashbookTransfers||[]).length;addCashbookTransfer();
-          if((state.cashbookTransfers||[]).length!==before+1)throw new Error('لم يتم اعتماد التحويل؛ قد يكون الرصيد المتاح غير كافٍ.');
+          if(amount>getPaymentMethodBalance(fromMethod,date)+0.0001)throw new Error('الرصيد المتاح في الحساب المصدر لا يكفي لإتمام التحويل.');
+          const before=structuredClone(state);
+          state.cashbookTransfers=Array.isArray(state.cashbookTransfers)?state.cashbookTransfers:[];
+          const transfer={id:'CASH-TR-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),fromMethod,toMethod,amount,date:new Date(date+'T12:00:00').toISOString(),note,createdAt:new Date().toISOString()};
+          state.cashbookTransfers.unshift(transfer);
+          const timelineIssue=getPaymentMethodTimelineIssue(fromMethod,date);
+          if(timelineIssue){state=before;throw new Error('لا يمكن تسجيل التحويل لأنه سيؤدي إلى رصيد سالب في الحساب المصدر.');}
+          logAudit('CASH_TRANSFER_CREATED','تحويل '+amount+' من '+fromMethod+' إلى '+toMethod+' — '+note);
+          if(!saveState()){state=before;throw new Error('تعذر حفظ التحويل بين الحسابات.');}
           await confirmDurableStateCommit();
-          return {ok:true,transfer:structuredClone(state.cashbookTransfers[0]),snapshot:snapshot()};
+          renderCashBook();
+          return {ok:true,transfer:structuredClone(transfer),snapshot:snapshot()};
         },
         updateSettings:async payload=>{
           await ready;
