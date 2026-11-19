@@ -3207,7 +3207,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
   <!-- Hidden Print Areas -->
   <div id="printArea" class="hidden"></div>
   <div id="offersPrintArea" class="hidden"></div>
-<script src="./engine-runtime.js?v=v5-print-modal-portal-20261119"></script>
+<script src="./engine-runtime.js?v=v5-import-calculator-20261119"></script>
 \n<!-- VALERIAN CLOUD CONNECTOR (V18.3) -->
 <div id="cloudStatusPill" style="display:none" aria-hidden="true">غير متصل</div>
 
@@ -4055,27 +4055,53 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       </div>
     </div>
 
-    <!-- SHEET 4: NEW IMPORT -->
+    <!-- SHEET 4: IMPORT INVOICE CALCULATOR -->
     <div id="newImportSheet" class="fixed inset-0 z-50 hidden sheet-backdrop flex items-end justify-center" onclick="if(event.target===this)closeSheet('newImportSheet')">
-      <div class="sheet-panel w-full max-w-md rounded-t-3xl p-5 space-y-4">
+      <div class="sheet-panel w-full max-w-md max-h-[94vh] overflow-y-auto rounded-t-3xl p-5 space-y-4">
         <div class="w-10 h-1 rounded-full bg-slate-300/30 mx-auto"></div>
         <div class="flex items-center justify-between">
-          <h3 class="text-base font-black text-white">🚢 تسجيل شحنة استيراد خارجية</h3>
+          <div><h3 class="text-base font-black text-white">🚢 حاسبة فاتورة الاستيراد</h3><p class="text-[10px] text-slate-400 mt-1">احسب التكلفة والمدفوع والمتبقي قبل اعتماد الفاتورة</p></div>
           <button onclick="closeSheet('newImportSheet')" class="w-8 h-8 rounded-full glass-pill text-xs">✕</button>
         </div>
-        <div class="space-y-2.5 text-xs">
-          <input id="impFormSupplier" type="text" placeholder="اسم المورد الخارجي *" class="w-full glass-pill rounded-xl px-3 py-2 text-white" />
-          <select id="impFormProduct" class="w-full glass-pill rounded-xl px-3 py-2 text-white bg-[#04121a] font-bold"></select>
-          <div class="grid grid-cols-3 gap-2">
-            <div><span class="text-[10px] text-slate-400">الكمية</span><input id="impFormQty" type="number" placeholder="0" class="w-full glass-pill rounded-xl px-2.5 py-1.5 text-white font-bold bidi-ltr" /></div>
-            <div><span class="text-[10px] text-slate-400">سعر الوحدة ($)</span><input id="impFormForeign" type="number" placeholder="0" class="w-full glass-pill rounded-xl px-2.5 py-1.5 text-white font-bold bidi-ltr" /></div>
-            <div><span class="text-[10px] text-slate-400">سعر الصرف</span><input id="impFormRate" type="number" placeholder="0" class="w-full glass-pill rounded-xl px-2.5 py-1.5 text-white font-bold bidi-ltr" /></div>
+        <div class="space-y-3 text-xs">
+          <div class="grid grid-cols-2 gap-2">
+            <label class="block text-[10px] text-slate-300">اسم المورد *
+              <input id="impFormSupplier" type="text" placeholder="اسم المورد الخارجي" class="w-full mt-1 glass-pill rounded-xl px-3 py-2 text-white text-xs"/>
+            </label>
+            <label class="block text-[10px] text-slate-300">تاريخ الفاتورة
+              <input id="impFormDate" type="date" class="w-full mt-1 glass-pill rounded-xl px-2 py-2 text-white text-xs"/>
+            </label>
+          </div>
+          <label class="block text-[10px] text-slate-300">سعر الصرف (ج.م لكل وحدة عملة)
+            <input id="impFormRate" type="number" min="0.01" step="0.01" value="53" oninput="updateMobileImportTotals()" class="w-full mt-1 glass-pill rounded-xl px-3 py-2 text-white font-bold bidi-ltr"/>
+          </label>
+          <div class="glass-card rounded-2xl p-3 space-y-2">
+            <div class="flex items-center justify-between"><b class="text-white">أصناف الفاتورة</b><button type="button" onclick="addMobileImportLine()" class="silver-btn rounded-full px-3 py-1.5 text-[10px] font-black">＋ إضافة صنف</button></div>
+            <div id="impFormLines" class="space-y-2"></div>
           </div>
           <div class="grid grid-cols-2 gap-2">
-            <div><span class="text-[10px] text-slate-400">شحن وجمارك (EGP)</span><input id="impFormFees" type="number" placeholder="0" class="w-full glass-pill rounded-xl px-2.5 py-1.5 text-white font-bold bidi-ltr" /></div>
-            <div><span class="text-[10px] text-slate-400">المدفوع الآن (EGP)</span><input id="impFormPaid" type="number" placeholder="0" class="w-full glass-pill rounded-xl px-2.5 py-1.5 text-white font-bold bidi-ltr" /></div>
+            <label class="block text-[10px] text-slate-300">الشحن الدولي (ج.م)
+              <input id="impFormShipping" type="number" min="0" step="0.01" value="0" oninput="updateMobileImportTotals()" class="w-full mt-1 glass-pill rounded-xl px-3 py-2 text-white font-bold bidi-ltr"/>
+            </label>
+            <label class="block text-[10px] text-slate-300">الجمارك والضرائب (ج.م)
+              <input id="impFormCustoms" type="number" min="0" step="0.01" value="0" oninput="updateMobileImportTotals()" class="w-full mt-1 glass-pill rounded-xl px-3 py-2 text-white font-bold bidi-ltr"/>
+            </label>
           </div>
-          <button onclick="saveMobileImportInvoice()" class="w-full py-3 rounded-full silver-btn text-xs font-black mt-2">اعتماد الفاتورة وتحديث متوسط التكلفة</button>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="glass-card rounded-xl p-3"><span class="block text-[10px] text-slate-400">إجمالي الأصناف بالعملة الأجنبية</span><strong id="impFormForeignTotal" class="block mt-1 text-white font-black bidi-ltr">0</strong></div>
+            <div class="glass-card rounded-xl p-3"><span class="block text-[10px] text-slate-400">إجمالي الفاتورة بالجنيه</span><strong id="impFormGrandTotal" class="block mt-1 text-white font-black bidi-ltr">0 EGP</strong></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="block text-[10px] text-slate-300">المدفوع الآن (ج.م)
+              <input id="impFormPaid" type="number" min="0" step="0.01" value="0" oninput="updateMobileImportTotals()" class="w-full mt-1 glass-pill rounded-xl px-3 py-2 text-white font-bold bidi-ltr"/>
+            </label>
+            <label class="block text-[10px] text-slate-300">وسيلة الدفع
+              <select id="impFormPaymentMethod" class="w-full mt-1 glass-pill rounded-xl px-3 py-2 text-white bg-[#04121a]"><option>نقدي</option><option>تحويل بنكي</option><option>محفظة إلكترونية</option><option>بطاقة</option><option>أخرى</option></select>
+            </label>
+          </div>
+          <div class="glass-card rounded-xl p-3 flex items-center justify-between gap-3 border border-rose-300/20"><span class="text-[11px] text-slate-300">المتبقي المستحق للمورد</span><strong id="impFormRemaining" class="text-sm font-black text-rose-300 bidi-ltr">0 EGP</strong></div>
+          <p class="text-[10px] text-slate-400 leading-5">سيتم توزيع الشحن والجمارك على الأصناف حسب قيمة كل صنف، وتحديث متوسط التكلفة والمخزون. يُسجل المدفوع في الخزنة، ويُرحّل المتبقي تلقائيًا إلى حساب المورد.</p>
+          <button id="saveMobileImportInvoiceBtn" onclick="saveMobileImportInvoice()" class="w-full py-3 rounded-full silver-btn text-xs font-black mt-1">اعتماد الفاتورة وتحديث المخزون والحسابات</button>
         </div>
       </div>
     </div>
@@ -5273,50 +5299,89 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     }
 
     function populateImportSheet() {
-      const origs = appState.products.filter(p => !isDecantCategory(p));
-      document.getElementById('impFormProduct').innerHTML = origs.length
-        ? origs.map(p => `<option value="${p.id}">${p.name}</option>`).join('')
-        : `<option value="">أضف صنفاً أولاً في المخزون</option>`;
+      const supplier=document.getElementById('impFormSupplier');
+      if(supplier)supplier.value='';
+      const date=document.getElementById('impFormDate');
+      if(date)date.value=new Date().toISOString().slice(0,10);
+      const defaults={impFormRate:53,impFormShipping:0,impFormCustoms:0,impFormPaid:0};
+      Object.entries(defaults).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.value=String(value);});
+      const method=document.getElementById('impFormPaymentMethod');if(method)method.value='نقدي';
+      const lines=document.getElementById('impFormLines');if(lines)lines.innerHTML='';
+      addMobileImportLine();
+      updateMobileImportTotals();
     }
 
-    function saveMobileImportInvoice() {
-      const supplier = document.getElementById('impFormSupplier').value.trim();
-      const prod = appState.products.find(p => p.id === document.getElementById('impFormProduct').value);
-      if (!supplier || !prod) return showToast('يرجى إدخال اسم المورد واختيار الصنف');
-      const qty = Math.max(1, Number(document.getElementById('impFormQty').value || 1));
-      const foreign = Number(document.getElementById('impFormForeign').value || 0);
-      const rate = Number(document.getElementById('impFormRate').value || 1);
-      const fees = Number(document.getElementById('impFormFees').value || 0);
-      const paid = Number(document.getElementById('impFormPaid').value || 0);
-
-      const totalEgp = Math.round(qty * foreign * rate + fees);
-      const unitCost = Math.round(totalEgp / qty);
-      prod.averageCost = Math.round(((prod.stock * prod.averageCost) + totalEgp) / (prod.stock + qty));
-      prod.stock += qty;
-
-      appState.imports.unshift({
-        id: 'IMP-' + Date.now().toString().slice(-4),
-        date: new Date().toISOString().slice(0, 10),
-        supplier,
-        itemsSummary: `${prod.name} (${qty} وحدة)`,
-        exchangeRate: rate,
-        foreignTotal: qty * foreign,
-        shippingCustoms: fees,
-        totalEgp,
-        paidAmount: Math.min(totalEgp, paid)
-      });
-
-      closeSheet('newImportSheet');
-      renderImportsScreen();
-      showToast(`تم اعتماد الشحنة وتحديث التكلفة إلى ${fmtEgp(unitCost)} 🚢`);
+    function addMobileImportLine(productId='') {
+      const host=document.getElementById('impFormLines');if(!host)return;
+      const row=document.createElement('div');row.className='mobile-import-line rounded-xl border border-white/10 bg-[#061722]/70 p-2.5 space-y-2';
+      row.innerHTML='<div class="flex items-center justify-between gap-2"><span class="text-[10px] font-extrabold text-slate-300">صنف الفاتورة</span><button type="button" class="remove-import-line text-[10px] font-bold text-rose-300">حذف</button></div><select class="mobile-import-product w-full glass-pill rounded-lg px-2.5 py-2 text-white text-xs bg-[#04121a]"></select><div class="grid grid-cols-2 gap-2"><label class="text-[10px] text-slate-400">الكمية<input type="number" min="1" step="1" value="1" class="mobile-import-qty w-full mt-1 glass-pill rounded-lg px-2.5 py-2 text-white font-bold bidi-ltr"/></label><label class="text-[10px] text-slate-400">سعر الوحدة (عملة أجنبية)<input type="number" min="0.01" step="0.01" value="0" class="mobile-import-unit w-full mt-1 glass-pill rounded-lg px-2.5 py-2 text-white font-bold bidi-ltr"/></label></div>';
+      const select=row.querySelector('.mobile-import-product');
+      const empty=document.createElement('option');empty.value='';empty.textContent='— اختر المنتج —';select.appendChild(empty);
+      (appState.products||[]).filter(p=>!p.archived&&!isDecantCategory(p)).forEach(product=>{const option=document.createElement('option');option.value=String(product.id);option.textContent=product.name+(product.size?' ('+product.size+')':'');select.appendChild(option);});
+      select.value=productId||'';
+      row.querySelectorAll('input').forEach(input=>input.addEventListener('input',updateMobileImportTotals));
+      select.addEventListener('change',updateMobileImportTotals);
+      row.querySelector('.remove-import-line').addEventListener('click',()=>{row.remove();updateMobileImportTotals();});
+      host.appendChild(row);updateMobileImportTotals();
     }
 
-    function settleSupplierDue(invId) {
-      const inv = appState.imports.find(i => i.id === invId);
-      if (!inv) return;
-      inv.paidAmount = inv.totalEgp;
-      renderImportsScreen();
-      showToast('تم تسجيل سداد مستحقات المورد بالكامل ✓');
+    function readMobileImportLines(){
+      return [...document.querySelectorAll('#impFormLines .mobile-import-line')].map(row=>({
+        productId:row.querySelector('.mobile-import-product')?.value||'',
+        qty:Number(row.querySelector('.mobile-import-qty')?.value||0),
+        unitForeign:Number(row.querySelector('.mobile-import-unit')?.value||0)
+      }));
+    }
+
+    function updateMobileImportTotals(){
+      const lines=readMobileImportLines();
+      const foreign=lines.reduce((sum,line)=>sum+Math.max(0,Number(line.qty)||0)*Math.max(0,Number(line.unitForeign)||0),0);
+      const rate=Number(document.getElementById('impFormRate')?.value||0);
+      const shipping=Number(document.getElementById('impFormShipping')?.value||0);
+      const customs=Number(document.getElementById('impFormCustoms')?.value||0);
+      const paid=Number(document.getElementById('impFormPaid')?.value||0);
+      const grand=Math.round((foreign*rate+shipping+customs)*100)/100;
+      const put=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value;};
+      put('impFormForeignTotal',foreign.toLocaleString('en-US',{maximumFractionDigits:2}));
+      put('impFormGrandTotal',fmtEgp(grand));
+      put('impFormRemaining',fmtEgp(Math.max(0,grand-paid)));
+      const remaining=document.getElementById('impFormRemaining');
+      if(remaining){remaining.classList.toggle('text-rose-300',grand-paid>0);remaining.classList.toggle('text-emerald-300',grand-paid<=0);}
+      return {lines,foreign,rate,shipping,customs,paid,grand};
+    }
+
+    async function saveMobileImportInvoice(){
+      const button=document.getElementById('saveMobileImportInvoiceBtn');
+      if(button?.dataset.busy==='1')return;
+      const supplier=document.getElementById('impFormSupplier')?.value.trim()||'';
+      const calc=updateMobileImportTotals();
+      const date=document.getElementById('impFormDate')?.value||'';
+      const paymentMethod=document.getElementById('impFormPaymentMethod')?.value||'نقدي';
+      const validLines=calc.lines.length>0&&calc.lines.every(line=>line.productId&&Number.isSafeInteger(line.qty)&&line.qty>0&&Number.isFinite(line.unitForeign)&&line.unitForeign>0&&(appState.products||[]).some(p=>String(p.id)===String(line.productId)&&!p.archived&&!isDecantCategory(p)));
+      if(!supplier||!date||!validLines||!Number.isFinite(calc.rate)||calc.rate<=0||!Number.isFinite(calc.shipping)||calc.shipping<0||!Number.isFinite(calc.customs)||calc.customs<0||!Number.isFinite(calc.paid)||calc.paid<0||calc.paid>calc.grand+0.0001||calc.grand<=0){
+        showToast('راجع المورد والتاريخ وسعر الصرف والأصناف والكميات والأسعار والمدفوع. لا يمكن أن يتجاوز المدفوع إجمالي الفاتورة.','error');return;
+      }
+      const payload={supplier,date,exchangeRate:calc.rate,shippingCost:calc.shipping,customsCost:calc.customs,paidAmount:calc.paid,paymentMethod,lines:calc.lines};
+      try{
+        if(button){button.dataset.busy='1';button.disabled=true;button.textContent='جارٍ اعتماد الفاتورة…';}
+        const result=await runEngine('createImportInvoice',payload);
+        if(result?.ok!==true)throw new Error(result?.error||'لم يؤكد محرك الأعمال اعتماد الفاتورة.');
+        closeSheet('newImportSheet');
+        showToast(result.cloudSyncOk===false?'تم حفظ الفاتورة محليًا، لكن المزامنة السحابية لم تتأكد بعد. راجع حالة الاتصال.':'تم اعتماد الفاتورة وتحديث المخزون والخزنة وحساب المورد بنجاح.','success');
+      }catch(err){reportError(err);}
+      finally{if(button){button.dataset.busy='0';button.disabled=false;button.textContent='اعتماد الفاتورة وتحديث المخزون والحسابات';}}
+    }
+
+    async function settleSupplierDue(invId){
+      const inv=(appState.imports||[]).find(i=>String(i.id)===String(invId));
+      if(!inv)return;
+      const due=Math.max(0,Number(inv.totalEgp||0)-Number(inv.paidAmount||0));
+      if(due<=0)return showToast('الفاتورة مسددة بالكامل.');
+      try{
+        const result=await runEngine('paySupplierInvoice',{invoiceId:inv.id,amount:due,method:'نقدي'});
+        if(result?.ok!==true)throw new Error(result?.error||'لم يؤكد محرك الأعمال تسجيل السداد.');
+        showToast('تم تسجيل سداد المورد وتحديث الخزنة وكشف الحساب.','success');
+      }catch(err){reportError(err);}
     }
 
     function setMoreTab(tab) {
@@ -6774,7 +6839,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
     };
 
     if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
-      window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=valerian-v20-137-orders-tabs',{scope:'./',updateViaCache:'none'}).catch(err=>console.warn('VALERIAN V20 offline registration failed',err)));
+      window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=valerian-v20-141-import-calculator',{scope:'./',updateViaCache:'none'}).catch(err=>console.warn('VALERIAN V20 offline registration failed',err)));
     }
     connectEngine().catch(reportError);
     // Fallback for browser restore/cloud events that occur after the first frame load.
