@@ -20,7 +20,7 @@ module.exports = {
           600: 'var(--brand-600, #7c3aed)',
           700: 'var(--brand-700, #6d28d9)',
           800: 'var(--brand-800, #5b21b6)',
-          900: 'var(--brand-900, #4c1d b6)'
+          900: 'var(--brand-900, #4c1db6)'
         }
       },
       fontFamily: {
