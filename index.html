@@ -5833,9 +5833,6 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       captureHost.appendChild(captureNode);
       (source.parentElement || document.body).appendChild(captureHost);
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-      const captureRect = captureNode.getBoundingClientRect();
-      const height = Math.ceil(Math.max(captureNode.scrollHeight, captureRect.height));
-      if (!width || !height) { captureHost.remove(); throw new Error('تعذر تحديد أبعاد المعاينة.'); }
       const imageNodes=[...captureNode.querySelectorAll('img')];
       await Promise.all(imageNodes.map(async img=>{
         img.loading='eager'; img.decoding='sync';
@@ -5849,7 +5846,12 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         }
         if(!img.naturalWidth||!img.naturalHeight)throw new Error('إحدى صور المستند غير متاحة للتصدير.');
       }));
+      // Image decoding can change intrinsic layout after the clone is attached.
+      // Wait for that layout to settle before measuring the final capture bounds.
+      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       const captureBounds = captureNode.getBoundingClientRect();
+      const height = Math.ceil(Math.max(captureNode.scrollHeight, captureBounds.height));
+      if (!width || !height) { captureHost.remove(); throw new Error('تعذر تحديد أبعاد المعاينة.'); }
       const oldPriceStrikeRects = [...captureNode.querySelectorAll('.offer-old-price')].map(node => {
         const r = node.getBoundingClientRect();
         return {left:r.left-captureBounds.left,right:r.right-captureBounds.left,midY:r.top-captureBounds.top+(r.height/2)};
