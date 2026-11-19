@@ -5108,14 +5108,25 @@ function previewPeriodicReportPrint() {
             if(updatePriceCheckbox)updatePriceCheckbox.checked=false;
           });
           updateImportTotals();
-          await saveImportShipment({preventDefault(){}});
+          // Use the original synchronous business-save core directly. The legacy async wrapper
+          // waits for cloud sync and can leave the V20 submit action pending indefinitely.
+          const saved=saveImportShipmentCore({preventDefault(){}},{deferRefresh:true,deferToast:true});
+          if(saved!==true){
+            const detail=window.__valerianLastSaveError;
+            throw new Error(detail?.message?'تعذر حفظ الفاتورة محليًا: '+detail.message:'لم يعتمد المحرك الفاتورة. راجع بيانات الأصناف والمورد والتكاليف.');
+          }
           if(state.imports.length!==beforeCount+1)throw new Error('لم يعتمد المحرك الفاتورة. راجع رسالة التحقق الظاهرة وتأكد من صحة بيانات الأصناف.');
           const invoice=state.imports[0];
           await valDurableWritePromise;
           if(valDurableWriteError)throw new Error('لم يكتمل الحفظ الدائم للفاتورة: '+String(valDurableWriteError.message||valDurableWriteError));
           await valIdbFlush();
           if(!state.imports.some(item=>String(item.id)===String(invoice.id)))throw new Error('تعذر تأكيد وجود الفاتورة في سجل الاستيراد بعد الحفظ.');
-          return {ok:true,invoice:structuredClone(invoice),cloudSyncOk:!(typeof cloudReady!=='undefined'&&cloudReady&&(cloudConflict||cloudDirty)),snapshot:snapshot()};
+          refreshAllViews();
+          // Cloud synchronization is best-effort and must never block local invoice approval.
+          if(typeof cloudReady!=='undefined'&&cloudReady&&typeof cloudSyncNow==='function'){
+            Promise.resolve().then(()=>cloudSyncNow(true)).catch(err=>console.error('VALERIAN import background cloud sync failed:',err));
+          }
+          return {ok:true,invoice:structuredClone(invoice),cloudSyncOk:!(typeof cloudReady!=='undefined'&&cloudReady&&(cloudConflict||cloudDirty||!navigator.onLine)),snapshot:snapshot()};
         },
         addShippingCompany:async name=>{
           await ready;const value=String(name||'').trim().replace(/\s+/g,' ');if(!value)throw new Error('اسم شركة الشحن مطلوب.');
