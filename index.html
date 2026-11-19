@@ -2875,6 +2875,244 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
 }
 </style>
 
+<style id="v20-navy-inventory-refinement">
+/* V20.9 — inventory workspace visual refinement. CSS only; preserve inventory data and behavior. */
+@media screen{
+  #tab-inventory>div:first-child{
+    background:linear-gradient(145deg,rgba(29,47,70,.97),rgba(11,23,39,.99))!important;
+    border:1px solid rgba(195,210,229,.2)!important;border-radius:18px!important;
+    box-shadow:0 14px 32px rgba(0,0,0,.22)!important;
+  }
+  #tab-inventory>div:first-child h2{color:#f0f4f8!important;line-height:1.65!important;}
+  #tab-inventory>div:first-child p{color:#afbed0!important;line-height:1.7!important;}
+  #tab-inventory>div:first-child>div:last-child{
+    display:flex!important;flex-wrap:wrap!important;gap:8px!important;
+  }
+  #tab-inventory>div:first-child>div:last-child button{
+    min-height:42px!important;border-radius:11px!important;padding:9px 13px!important;
+    background:linear-gradient(135deg,#e8edf3,#b8c6d5)!important;
+    color:#142238!important;border:1px solid rgba(239,244,250,.78)!important;
+    box-shadow:0 5px 14px rgba(0,0,0,.18)!important;
+  }
+  #tab-inventory>div:first-child>div:last-child button:hover{
+    filter:brightness(1.045);transform:translateY(-1px);
+  }
+  #tab-inventory #legacyDecantWarning{
+    background:rgba(177,119,45,.13)!important;color:#f0d7aa!important;
+    border-color:rgba(210,166,96,.38)!important;border-radius:13px!important;
+    line-height:1.8!important;
+  }
+  #tab-inventory .inventory-subnav{
+    background:rgba(7,17,30,.58)!important;border:1px solid rgba(195,210,229,.17)!important;
+    border-radius:16px!important;box-shadow:inset 0 1px rgba(255,255,255,.025)!important;
+  }
+  #tab-inventory .inventory-subnav button{
+    min-height:41px!important;border-radius:11px!important;
+    background:rgba(195,210,229,.065)!important;color:#d5dfeb!important;
+    border:1px solid rgba(195,210,229,.17)!important;
+    transition:background .18s ease,border-color .18s ease,transform .18s ease!important;
+  }
+  #tab-inventory .inventory-subnav button:hover{
+    background:rgba(195,210,229,.12)!important;border-color:rgba(210,224,240,.3)!important;
+  }
+  #tab-inventory .inventory-subnav button.active{
+    background:linear-gradient(135deg,#e8edf3,#b9c7d6)!important;
+    color:#142238!important;border-color:#e8edf3!important;
+    box-shadow:0 6px 16px rgba(0,0,0,.2)!important;
+  }
+  #tab-inventory .inventory-pane{color:#dce5ef!important;}
+  #tab-inventory .inventory-pane.bg-white,
+  #tab-inventory .inventory-pane>.bg-white,
+  #tab-inventory .inventory-pane>div.bg-white{
+    background:linear-gradient(150deg,rgba(27,45,68,.96),rgba(12,24,40,.98))!important;
+    border:1px solid rgba(195,210,229,.17)!important;border-radius:17px!important;
+    box-shadow:0 12px 28px rgba(0,0,0,.17)!important;
+  }
+  #tab-inventory .inventory-pane>div.bg-white>div:first-child,
+  #tab-inventory .inventory-pane.bg-white>div:first-child{
+    border-color:rgba(195,210,229,.14)!important;
+  }
+  #tab-inventory .inventory-pane h3,
+  #tab-inventory .inventory-pane b{color:#edf2f7!important;}
+  #tab-inventory .inventory-pane p,
+  #tab-inventory .inventory-pane .text-slate-500,
+  #tab-inventory .inventory-pane .text-slate-400{color:#aebdd0!important;}
+  #tab-inventory .inventory-pane table{
+    color:#dce5ef!important;border-collapse:separate!important;border-spacing:0!important;
+  }
+  #tab-inventory .inventory-pane table thead th{
+    background:rgba(195,210,229,.075)!important;color:#dbe5ef!important;
+    border-color:rgba(195,210,229,.14)!important;white-space:nowrap!important;
+  }
+  #tab-inventory .inventory-pane table tbody td{
+    border-color:rgba(195,210,229,.1)!important;color:#d6e0ec!important;
+  }
+  #tab-inventory .inventory-pane table tbody tr:hover td{
+    background:rgba(195,210,229,.045)!important;
+  }
+  #tab-inventory .inventory-pane .overflow-x-auto{
+    scrollbar-width:thin!important;scrollbar-color:rgba(180,197,217,.35) transparent!important;
+  }
+  #tab-inventory .inventory-pane .overflow-x-auto::-webkit-scrollbar{height:7px!important;}
+  #tab-inventory .inventory-pane .overflow-x-auto::-webkit-scrollbar-thumb{
+    background:rgba(180,197,217,.3)!important;border-radius:20px!important;
+  }
+  #tab-inventory .inventory-pane input{
+    min-height:38px!important;background:rgba(5,14,26,.72)!important;
+    color:#f0f4f8!important;border:1px solid rgba(195,210,229,.22)!important;
+    border-radius:9px!important;
+  }
+  #tab-inventory .inventory-pane input:focus-visible,
+  #tab-inventory .inventory-pane button:focus-visible{
+    outline:2px solid rgba(210,224,240,.72)!important;outline-offset:2px!important;
+  }
+  #tab-inventory .inventory-pane button{border-radius:9px!important;}
+  #tab-inventory #inventoryPane-stock>div:last-child{
+    background:linear-gradient(150deg,rgba(27,45,68,.96),rgba(12,24,40,.98))!important;
+    border:1px solid rgba(195,210,229,.17)!important;border-radius:17px!important;
+    box-shadow:0 12px 28px rgba(0,0,0,.17)!important;
+  }
+  #tab-inventory #inventoryPane-stock>div:last-child>div:first-child{
+    border-color:rgba(195,210,229,.14)!important;
+  }
+  #tab-inventory #inventoryTableBody .product-thumb{
+    width:42px!important;height:42px!important;flex:0 0 42px!important;
+    object-fit:contain!important;border-radius:9px!important;
+    background:#e9edf2!important;border:1px solid rgba(195,210,229,.22)!important;
+    padding:3px!important;
+  }
+  #tab-inventory #lowStockAlertBanner{
+    background:rgba(174,116,44,.13)!important;color:#f1d8ae!important;
+    border-color:rgba(210,166,96,.38)!important;border-radius:15px!important;
+  }
+  #tab-inventory #lowStockAlertSummary{color:#e2c99e!important;}
+  #tab-inventory #lowStockAlertCount{
+    background:rgba(210,166,96,.2)!important;color:#f5dfb9!important;
+    border:1px solid rgba(210,166,96,.3)!important;
+  }
+  #tab-inventory #lowStockAlertItems>div{
+    background:rgba(5,14,26,.42)!important;border-color:rgba(210,166,96,.25)!important;
+    border-radius:12px!important;
+  }
+}
+@media screen and (max-width:767px){
+  #tab-inventory>div:first-child{align-items:stretch!important;padding:14px!important;}
+  #tab-inventory>div:first-child h2{font-size:14px!important;}
+  #tab-inventory>div:first-child>div:last-child{
+    display:grid!important;grid-template-columns:minmax(0,1fr)!important;width:100%!important;
+  }
+  #tab-inventory>div:first-child>div:last-child button{
+    width:100%!important;justify-content:center!important;font-size:11px!important;
+  }
+  #tab-inventory .inventory-subnav{
+    margin-inline:-2px!important;padding:7px!important;gap:6px!important;
+  }
+  #tab-inventory .inventory-subnav button{font-size:10px!important;padding:8px 11px!important;}
+  #tab-inventory .inventory-pane>.bg-white,
+  #tab-inventory .inventory-pane>div.bg-white{border-radius:14px!important;}
+  #tab-inventory #inventoryPane-stock>div:last-child{
+    overflow:visible!important;background:transparent!important;
+    border:0!important;box-shadow:none!important;
+  }
+  #tab-inventory #inventoryPane-stock>div:last-child>div:first-child{
+    background:linear-gradient(145deg,rgba(27,45,68,.97),rgba(12,24,40,.99))!important;
+    border:1px solid rgba(195,210,229,.17)!important;border-radius:14px!important;
+    padding:12px!important;margin-bottom:10px!important;
+  }
+  #tab-inventory #inventoryPane-stock table{
+    display:block!important;width:100%!important;min-width:0!important;
+  }
+  #tab-inventory #inventoryPane-stock table thead{display:none!important;}
+  #tab-inventory #inventoryTableBody{
+    display:grid!important;gap:10px!important;width:100%!important;
+  }
+  #tab-inventory #inventoryTableBody tr{
+    display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:11px 13px!important;padding:13px!important;
+    background:linear-gradient(145deg,rgba(27,45,68,.98),rgba(12,24,40,.99))!important;
+    border:1px solid rgba(195,210,229,.18)!important;border-radius:15px!important;
+    box-shadow:0 9px 22px rgba(0,0,0,.18)!important;
+  }
+  #tab-inventory #inventoryTableBody td{
+    display:flex!important;flex-direction:column!important;align-items:flex-start!important;
+    justify-content:flex-start!important;gap:5px!important;min-width:0!important;
+    padding:0!important;border:0!important;background:transparent!important;
+    color:#dbe4ef!important;text-align:right!important;font-size:11px!important;
+    line-height:1.6!important;overflow-wrap:anywhere!important;
+  }
+  #tab-inventory #inventoryTableBody td::before{
+    display:block;content:"";width:100%;color:#91a5bd!important;
+    font-size:9px!important;font-weight:800!important;line-height:1.35!important;
+  }
+  #tab-inventory #inventoryTableBody td:nth-child(1){
+    display:grid!important;grid-column:1/-1!important;
+    grid-template-columns:48px minmax(0,1fr)!important;align-items:center!important;
+    column-gap:10px!important;
+  }
+  #tab-inventory #inventoryTableBody td:nth-child(1)::before{
+    grid-column:1/-1!important;grid-row:1!important;
+  }
+  #tab-inventory #inventoryTableBody td:nth-child(1)::before{content:"اسم العطر";}
+  #tab-inventory #inventoryTableBody td:nth-child(2)::before{content:"النوع";}
+  #tab-inventory #inventoryTableBody td:nth-child(3)::before{content:"المخزون المتاح";}
+  #tab-inventory #inventoryTableBody td:nth-child(4)::before{content:"سعر البيع";}
+  #tab-inventory #inventoryTableBody td:nth-child(5)::before{content:"آخر تكلفة شراء";}
+  #tab-inventory #inventoryTableBody td:nth-child(6)::before{content:"الإجراءات";}
+  #tab-inventory #inventoryTableBody td:nth-child(1) .product-thumb{
+    grid-column:1!important;grid-row:2!important;width:44px!important;height:44px!important;
+  }
+  #tab-inventory #inventoryTableBody td:nth-child(1) span{
+    grid-column:2!important;grid-row:2!important;min-width:0!important;
+  }
+  #tab-inventory #inventoryTableBody td:nth-child(3){color:#e2eaf3!important;}
+  #tab-inventory #inventoryTableBody td:nth-child(4){color:#e6edf5!important;}
+  #tab-inventory #inventoryTableBody td:nth-child(5){grid-column:1/-1!important;}
+  #tab-inventory #inventoryTableBody td:nth-child(6){
+    grid-column:1/-1!important;border-top:1px solid rgba(195,210,229,.14)!important;
+    padding-top:10px!important;
+  }
+  #tab-inventory #inventoryTableBody td:nth-child(6)>div{
+    display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    width:100%!important;gap:7px!important;
+  }
+  #tab-inventory #inventoryTableBody td:nth-child(6) button{
+    width:100%!important;min-height:38px!important;font-size:10px!important;
+    padding:7px 6px!important;
+  }
+  #tab-inventory #inventoryTableBody td[colspan="6"]{
+    grid-column:1/-1!important;align-items:center!important;text-align:center!important;
+    padding:22px 10px!important;
+  }
+  #tab-inventory #inventoryTableBody td[colspan="6"]::before{display:none!important;}
+  #tab-inventory .inventory-pane .overflow-x-auto table{min-width:640px!important;}
+  #tab-inventory #inventoryPane-stock .overflow-x-auto table{min-width:0!important;}
+  #tab-inventory #inventoryPane-supplies>div:first-child{padding:13px!important;}
+  #tab-inventory #inventoryPane-supplies>div:first-child button{width:100%!important;}
+}
+@media screen and (max-width:390px){
+  #tab-inventory #inventoryTableBody tr{gap:9px!important;padding:11px!important;}
+  #tab-inventory #inventoryTableBody td:nth-child(6)>div{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+}
+@media print{
+  #tab-inventory>div:first-child,
+  #tab-inventory .inventory-pane.bg-white,
+  #tab-inventory .inventory-pane>div.bg-white,
+  #tab-inventory #inventoryPane-stock>div:last-child{
+    background:#fff!important;color:#111!important;box-shadow:none!important;border-color:#ddd!important;
+  }
+  #tab-inventory .inventory-pane table{display:table!important;min-width:0!important;}
+  #tab-inventory .inventory-pane table thead{display:table-header-group!important;}
+  #tab-inventory .inventory-pane table tbody{display:table-row-group!important;}
+  #tab-inventory .inventory-pane table tr{display:table-row!important;background:#fff!important;box-shadow:none!important;}
+  #tab-inventory .inventory-pane table td{display:table-cell!important;color:#111!important;padding:8px!important;}
+  #tab-inventory .inventory-pane table td::before{display:none!important;content:none!important;}
+  #tab-inventory .inventory-subnav{overflow:visible!important;background:#fff!important;}
+  #tab-inventory .inventory-subnav button{background:#fff!important;color:#111!important;border-color:#ddd!important;}
+}
+</style>
+
 </head>
 <!-- V19.30: smart operating supplies inventory; preserve original layout and schemaVersion 18 -->
 <!-- V19.37: compact A4 landscape inventory print with fixed image thumbnails -->
