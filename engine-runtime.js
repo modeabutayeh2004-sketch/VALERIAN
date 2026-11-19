@@ -3891,9 +3891,19 @@ function previewPeriodicReportPrint() {
       // Treat carried/opening balance as the starting capital, then subtract ALL outflows
       // (expenses, supplier payments, refunds, adjustments and prior transfers) and add
       // inflows/transfers. Exclude opening rows from the movement sum to avoid double count.
-      const opening=(state.cashbookOpenings||[]).filter(op=>normalizePaymentMethod(op.method)===key&&(!op.date||new Date(op.date)<=cutoff)).reduce((sum,op)=>sum+Number(op.amount||0),0);
-      const movements=getCashBookRows().filter(row=>row.reference!=='OPENING'&&normalizePaymentMethod(row.method)===key&&new Date(row.date)<=cutoff)
-        .reduce((sum,row)=>sum+Number(row.incoming||0)-Number(row.outgoing||0),0);
+      const sameLocalDay=(left,right)=>left.getFullYear()===right.getFullYear()&&left.getMonth()===right.getMonth()&&left.getDate()===right.getDate();
+      // Opening balances and cashbook movements are date-based, not scheduled for noon.
+      // Treat all records on the selected local day as effective for that day even when
+      // legacy records were stored at 12:00 and the current clock is earlier than noon.
+      const opening=(state.cashbookOpenings||[]).filter(op=>{
+        if(normalizePaymentMethod(op.method)!==key)return false;
+        if(!op.date)return true;
+        const at=new Date(op.date);return Number.isFinite(at.getTime())&&(at<=cutoff||sameLocalDay(at,cutoff));
+      }).reduce((sum,op)=>sum+Number(op.amount||0),0);
+      const movements=getCashBookRows().filter(row=>{
+        if(row.reference==='OPENING'||normalizePaymentMethod(row.method)!==key)return false;
+        const at=new Date(row.date);return Number.isFinite(at.getTime())&&(at<=cutoff||sameLocalDay(at,cutoff));
+      }).reduce((sum,row)=>sum+Number(row.incoming||0)-Number(row.outgoing||0),0);
       return roundMoney(opening+movements);
     }
 
