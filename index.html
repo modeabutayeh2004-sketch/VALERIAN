@@ -4400,10 +4400,10 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const dateStr = new Intl.DateTimeFormat('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
       document.getElementById('liveArabicDate').textContent = dateStr;
 
-      const deliveredSales = appState.orders.filter(o => o.stockDeducted).reduce((s, o) => s + Number(o.grandTotal || 0), 0);
+      const deliveredSales = appState.orders.filter(isMobileOrderDelivered).reduce((s, o) => s + Math.max(0,Number(o.grandTotal||0)-Number(o.returnedValue||0)), 0);
       const origStock = appState.products.filter(p => !isDecantCategory(p)).reduce((s, p) => s + getAvail(p), 0);
       const decStock = appState.products.filter(p => isDecantCategory(p)).reduce((s, p) => s + getAvail(p), 0);
-      const pendingCount = appState.orders.filter(o => !o.stockDeducted).length;
+      const pendingCount = appState.orders.filter(o => !o.stockDeducted && !isMobileOrderDelivered(o) && !String(o.status||'').includes('ملغي')).length;
 
       document.getElementById('kpiTotalSales').innerHTML = `<span class="kpi-sales-amount text-3xl md:text-4xl font-black">${Math.round(Number(deliveredSales||0)).toLocaleString('en-US')}</span><span class="kpi-sales-currency text-sm md:text-base font-bold">EGP</span>`;
       document.getElementById('kpiOriginalStock').innerHTML = `<bdi dir="ltr">${origStock}</bdi> زجاجة`;
@@ -5337,6 +5337,11 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       if (tab === 'reports') renderMoreReports();
     }
 
+    function isMobileOrderDelivered(order) {
+      const status=String(order?.status||'');
+      return !!order?.deliveredAt || status.includes('تم التسليم') || order?.mode==='direct' || (!!order?.stockDeducted && !order?.shippedAt && order?.mode!=='reservation');
+    }
+
     let currentMoreOrdersView = 'reserved';
     function setMoreOrdersView(view) {
       currentMoreOrdersView = ['reserved','shipped','delivered'].includes(view) ? view : 'reserved';
@@ -5347,7 +5352,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const box = document.getElementById('moreOrdersContainer');
       if (!box) return;
       const all = Array.isArray(appState.orders) ? appState.orders : [];
-      const delivered = o => !!o.deliveredAt || String(o.status||'').includes('تم التسليم') || o.mode === 'direct';
+      const delivered = isMobileOrderDelivered;
       const shipped = o => !delivered(o) && !!o.stockDeducted && (!!o.shippedAt || String(o.status||'').includes('تم شحنه'));
       const returned = o => String(o.status||'').includes('مرتجع بالكامل') || (Array.isArray(o.items) && o.items.length && o.items.every(i=>Number(i.returnedQty||0)>=Number(i.qty||0)));
       const active = all.filter(o => !returned(o) && !String(o.status||'').includes('ملغي'));
@@ -5981,7 +5986,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     }
 
     function renderMoreReports() {
-      const sales = appState.orders.filter(o => o.stockDeducted).reduce((s, o) => s + Number(o.grandTotal || 0), 0);
+      const sales = appState.orders.filter(isMobileOrderDelivered).reduce((s, o) => s + Math.max(0,Number(o.grandTotal||0)-Number(o.returnedValue||0)), 0);
       const deposits = appState.orders.filter(o => !o.stockDeducted).reduce((s, o) => s + Number(o.depositAmount || 0), 0);
       const exp = appState.expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
       const net = Math.max(0, Math.round(sales * 0.34 - exp));
@@ -6671,7 +6676,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
     };
 
     window.openMobileReportsPreview=function(){
-      const delivered=appState.orders.filter(o=>o.stockDeducted||String(o.status||'').includes('تم التسليم'));
+      const delivered=appState.orders.filter(isMobileOrderDelivered);
       const sales=delivered.reduce((sum,o)=>sum+Math.max(0,Number(o.grandTotal||0)-Number(o.returnedValue||0)),0);
       const deposits=appState.orders.filter(o=>!o.stockDeducted&&!String(o.status||'').includes('مرتجع')).reduce((sum,o)=>sum+Number(o.depositAmount||0),0);
       const expenses=appState.expenses.reduce((sum,x)=>sum+Number(x.amount||0),0);
