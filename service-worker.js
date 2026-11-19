@@ -1,15 +1,16 @@
-/* VALERIAN V20 — versioned, network-first application shell */
+/* VALERIAN V20 — canonical offline shell with network-first updates */
 'use strict';
 
-// Change this value whenever the HTML or application engine changes.
-const CACHE_NAME = 'valerian-app-shell-v20-20261119-cleanup6';
+// Bump this value whenever the HTML, application engine, or offline strategy changes.
+const CACHE_NAME = 'valerian-app-shell-v20-20261119-cleanup7';
 const APP_SHELL = [
-  './',
   './index.html',
-  './engine-runtime.js?v=v20-20261119-cleanup6',
+  './engine-runtime.js?v=v20-20261119-cleanup7',
   './manifest.webmanifest',
   './assets/valerian-icon.jpg'
 ];
+
+const INDEX_URL = new URL('./index.html', self.registration.scope).href;
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
@@ -40,28 +41,31 @@ self.addEventListener('fetch', event => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  // The worker script itself must always be fetched by the browser update mechanism.
+  // Let the browser's update mechanism fetch the worker itself.
   if (url.pathname.endsWith('/service-worker.js')) return;
 
-  const appRoot = new URL('./', self.location).pathname;
+  const appRoot = new URL('./', self.registration.scope).pathname;
   if (!url.pathname.startsWith(appRoot)) return;
 
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
+    const isNavigation = request.mode === 'navigate';
     try {
-      // Always prefer the currently deployed HTML/JS over an older cached copy.
+      // Network-first keeps online users on the deployed V20 release.
       const response = await fetch(request, { cache: 'no-store' });
       if (response && response.ok) {
-        const cacheKey = request.mode === 'navigate' ? './index.html' : request;
-        cache.put(cacheKey, response.clone()).catch(() => {});
+        // All document navigations share ONE canonical cached document.
+        // Never keep a separate stale cache entry for "./" and "index.html".
+        cache.put(isNavigation ? INDEX_URL : request, response.clone()).catch(() => {});
         return response;
       }
     } catch (error) {
-      // Offline fallback below.
+      // Continue with the canonical offline application shell.
     }
 
-    return (await cache.match(request)) ||
-           (request.mode === 'navigate' ? await cache.match('./index.html') : null) ||
-           Response.error();
+    if (isNavigation) {
+      return (await cache.match(INDEX_URL)) || Response.error();
+    }
+    return (await cache.match(request)) || Response.error();
   })());
 });
