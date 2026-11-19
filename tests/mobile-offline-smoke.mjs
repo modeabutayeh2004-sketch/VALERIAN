@@ -52,7 +52,7 @@ try{
     const hidden=getComputedStyle(e).display;e.remove();
     return {online:navigator.onLine,controlled:!!navigator.serviceWorker.controller,engineVersion:window.ValerianEngine.version,hidden,mainVisible:!!document.getElementById('tab-pos')&&document.getElementById('tab-pos').getBoundingClientRect().width>0,products:Array.isArray(window.ValerianEngine.getSnapshot()?.products)};
   });
-  if(offline.online||!offline.controlled||hidden!=='none'||!offline.mainVisible||!offline.products)throw new Error('Offline reload failed: '+JSON.stringify(offline));
+  if(offline.online||!offline.controlled||offline.hidden!=='none'||!offline.mainVisible||!offline.products)throw new Error('Offline reload failed: '+JSON.stringify(offline));
   if(errors.length)throw new Error('Browser runtime errors: '+errors.join(' | '));
   console.log('VALERIAN mobile offline browser test: PASSED');
   console.log(JSON.stringify({onlineCheck,offline}));
