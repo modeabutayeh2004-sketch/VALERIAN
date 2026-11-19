@@ -5394,7 +5394,7 @@ function previewPeriodicReportPrint() {
         setCashOpeningBalance:async payload=>{
           await ready;
           const method=normalizePaymentMethod(payload?.method||'نقدي'),amount=Number(payload?.amount),date=String(payload?.date||''),note=String(payload?.note||'').trim();
-          if(!Number.isFinite(amount)||amount<0||!/^\\d{4}-\\d{2}-\\d{2}$/.test(date))throw new Error('أدخل رصيدًا افتتاحيًا صحيحًا وتاريخًا صالحًا.');
+          if(!Number.isFinite(amount)||amount<0||!/^\d{4}-\d{2}-\d{2}$/.test(date))throw new Error('أدخل رصيدًا افتتاحيًا صحيحًا وتاريخًا صالحًا.');
           if((state.cashbookOpenings||[]).some(x=>normalizePaymentMethod(x.method)===method))throw new Error('يوجد رصيد افتتاحي لهذا الحساب بالفعل؛ استخدم التعديل المخصص بدل إنشاء رصيد مكرر.');
           el('cashOpeningMethod').value=method;el('cashOpeningAmount').value=String(amount);el('cashOpeningDate').value=date;el('cashOpeningNote').value=note;
           const before=(state.cashbookOpenings||[]).length;saveCashOpeningBalance();
@@ -5405,7 +5405,7 @@ function previewPeriodicReportPrint() {
         createCashbookAdjustment:async payload=>{
           await ready;
           const direction=payload?.direction==='OUT'?'OUT':'IN',amount=Number(payload?.amount),method=normalizePaymentMethod(payload?.method||'نقدي'),date=String(payload?.date||''),note=String(payload?.note||'').trim();
-          if(!Number.isFinite(amount)||amount<=0||!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||!note)throw new Error('أدخل مبلغ التسوية وتاريخها وسببها بصورة صحيحة.');
+          if(!Number.isFinite(amount)||amount<=0||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!note)throw new Error('أدخل مبلغ التسوية وتاريخها وسببها بصورة صحيحة.');
           el('cashAdjustDirection').value=direction;el('cashAdjustAmount').value=String(amount);el('cashAdjustMethod').value=method;el('cashAdjustDate').value=date;el('cashAdjustNote').value=note;
           const before=(state.cashbookAdjustments||[]).length;addCashbookAdjustment();
           if((state.cashbookAdjustments||[]).length!==before+1)throw new Error('لم يتم اعتماد التسوية النقدية؛ تحقق من الرصيد والبيانات.');
@@ -5415,7 +5415,7 @@ function previewPeriodicReportPrint() {
         createCashbookTransfer:async payload=>{
           await ready;
           const fromMethod=normalizePaymentMethod(payload?.fromMethod||''),toMethod=normalizePaymentMethod(payload?.toMethod||''),amount=Number(payload?.amount),date=String(payload?.date||''),note=String(payload?.note||'').trim();
-          if(!fromMethod||!toMethod||fromMethod===toMethod||!Number.isFinite(amount)||amount<=0||!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||!note)throw new Error('أدخل حسابي التحويل المختلفين والمبلغ والتاريخ والسبب.');
+          if(!fromMethod||!toMethod||fromMethod===toMethod||!Number.isFinite(amount)||amount<=0||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!note)throw new Error('أدخل حسابي التحويل المختلفين والمبلغ والتاريخ والسبب.');
           el('cashTransferFrom').value=fromMethod;el('cashTransferTo').value=toMethod;el('cashTransferAmount').value=String(amount);el('cashTransferDate').value=date;el('cashTransferNote').value=note;
           const before=(state.cashbookTransfers||[]).length;addCashbookTransfer();
           if((state.cashbookTransfers||[]).length!==before+1)throw new Error('لم يتم اعتماد التحويل؛ قد يكون الرصيد المتاح غير كافٍ.');
