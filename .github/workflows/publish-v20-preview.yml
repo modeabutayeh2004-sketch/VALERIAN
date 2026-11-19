@@ -2,6 +2,7 @@ name: Publish VALERIAN V20 and V21 mobile previews
 on:
   push:
     branches:
+      - work/v20-cleanup-baseline
       - work/v20-single-document-integration
       - v21/mobile-app-release
     paths:
@@ -12,6 +13,8 @@ on:
       - 'manifest.webmanifest'
       - 'assets/**'
       - 'scripts/**'
+      - 'styles/tailwind.audit.css'
+      - 'tailwind.audit.config.cjs'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/publish-v20-preview.yml'
@@ -27,10 +30,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout V20 preview source
+      - name: Checkout V20 cleanup preview source
         uses: actions/checkout@v4
         with:
-          ref: work/v20-single-document-integration
+          ref: work/v20-cleanup-baseline
           path: v20-src
       - name: Checkout V21 mobile source
         uses: actions/checkout@v4
@@ -41,12 +44,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Build both isolated web bundles
+      - name: Build V20 with offline CSS completion
         run: |
           cd v20-src
           npm install --no-audit --no-fund
           npm run build:web
-          cd ../v21-src
+          npm run build:css-audit
+          npm run build:css-completion
+      - name: Build V21 web bundle
+        run: |
+          cd v21-src
           npm install --no-audit --no-fund
           npm run build:web
       - name: Assemble V20 root and isolated V21 preview path
@@ -69,7 +76,7 @@ jobs:
           const indexPath = 'site/v21/index.html';
           let html = fs.readFileSync(indexPath, 'utf8');
           html = html.replaceAll('v20-20261119-0607', version);
-          html = html.replace(/<title>[^<]*<\/title>/, '<title>VALERIAN V21 Mobile Preview</title>');
+          html = html.replace(/<title>[^<]*<\\/title>/, '<title>VALERIAN V21 Mobile Preview</title>');
           html = html.replace(/<meta name="app-version" content="[^"]*">/, '<meta name="app-version" content="V21 Mobile Preview">');
           fs.writeFileSync(indexPath, html);
           console.log('V21 preview cache isolated as ' + version);
