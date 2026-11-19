@@ -39,3 +39,5 @@ jobs:
         run: node tests/mobile-offline-smoke.mjs
       - name: Verify decant production, supplies, and supplier ledger in a browser
         run: node tests/mobile-inventory-smoke.mjs
+      - name: Verify reservation, shipping, and delivery in a browser
+        run: node tests/mobile-reservation-shipping-smoke.mjs
