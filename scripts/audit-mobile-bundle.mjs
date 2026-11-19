@@ -70,6 +70,46 @@ for (const method of ['saveImage', 'printHtml', 'printImage']) {
   if (!methodPattern.test(bridge)) failures.push('Android native bridge is missing ' + method + '().');
 }
 
+// Protect the off-screen legacy ERP DOM until every business-engine dependency is migrated.
+const hostOpen = /<div\b[^>]*\bid=["']valerian-legacy-engine-host["'][^>]*>/i.exec(html);
+if (!hostOpen) {
+  failures.push('The legacy engine DOM host is missing.');
+} else {
+  const divTags = /<\/?div\b[^>]*>/gi;
+  divTags.lastIndex = hostOpen.index + hostOpen[0].length;
+  let depth = 1;
+  let hostEnd = -1;
+  let tag;
+  while ((tag = divTags.exec(html))) {
+    if (/^<\/div/i.test(tag[0])) {
+      depth--;
+      if (depth === 0) {
+        hostEnd = tag.index;
+        break;
+      }
+    } else if (/^<div\b/i.test(tag[0]) && !/\/\s*>$/.test(tag[0])) {
+      depth++;
+    }
+  }
+  if (hostEnd < 0) {
+    failures.push('Could not safely determine the end of the legacy engine DOM host.');
+  } else {
+    const hostHtml = html.slice(hostOpen.index + hostOpen[0].length, hostEnd);
+    const allIds = [...html.matchAll(/\bid\s*=\s*["']([^"']+)["']/gi)].map((m) => m[1]);
+    const hostIds = new Set([...hostHtml.matchAll(/\bid\s*=\s*["']([^"']+)["']/gi)].map((m) => m[1]));
+    const duplicates = [...new Set(allIds.filter((id, index) => allIds.indexOf(id) !== index))];
+    if (duplicates.length) failures.push('Duplicate HTML IDs detected: ' + duplicates.slice(0, 12).join(', '));
+    const runtimeIds = [...new Set([...runtime.matchAll(/document\.getElementById\(\s*["']([^"']+)["']\s*\)/g)].map((m) => m[1]))];
+    const htmlIdSet = new Set(allIds);
+    const missingIds = runtimeIds.filter((id) => !htmlIdSet.has(id));
+    const outsideHost = runtimeIds.filter((id) => id !== 'valerian-legacy-engine-host' && htmlIdSet.has(id) && !hostIds.has(id));
+    if (missingIds.length > 2) failures.push('Business runtime references missing HTML IDs: ' + missingIds.slice(0, 12).join(', '));
+    if (missingIds.length) warnings.push('Two generated runtime elements are not static HTML IDs: ' + missingIds.join(', '));
+    if (outsideHost.length) warnings.push('Some business-engine DOM dependencies are outside the legacy host: ' + outsideHost.slice(0, 12).join(', '));
+    console.log(' - Legacy engine DOM map: ' + hostIds.size + ' hosted IDs; ' + runtimeIds.length + ' unique literal engine lookups; ' + (runtimeIds.length - missingIds.length - outsideHost.length) + ' resolve inside the host');
+  }
+}
+
 const duplicateImportDefinitions = (runtime.match(/createImportInvoice\s*:/g) || []).length;
 const legacyDomLookups = (runtime.match(/document\.getElementById\s*\(/g) || []).length;
 if (duplicateImportDefinitions > 1) warnings.push('Runtime defines createImportInvoice ' + duplicateImportDefinitions + ' times; the last object property wins and needs deliberate reconciliation.');
