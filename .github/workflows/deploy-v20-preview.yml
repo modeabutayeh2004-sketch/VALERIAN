@@ -38,6 +38,8 @@ jobs:
         run: npm run build:web
       - name: Generate isolated Tailwind CSS audit output
         run: npm run build:css-audit
+      - name: Embed missing Tailwind utilities for offline preview
+        run: npm run build:css-completion
       - name: Upload browser preview package
         uses: actions/upload-artifact@v4
         with:
