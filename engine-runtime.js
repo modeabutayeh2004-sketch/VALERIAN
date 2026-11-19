@@ -4858,11 +4858,13 @@ function previewPeriodicReportPrint() {
         permanentlyDeleteProduct:async payload=>{
           await ready;
           const result=await permanentlyDeleteProduct(String(payload?.id||''),String(payload?.password||''));
+          if(result?.ok)await confirmDurableStateCommit();
           return {...result,snapshot:snapshot()};
         },
         toggleProductSalesAvailability:async id=>{
           await ready;
           const ok=toggleProductSalesAvailability(String(id));
+          if(ok===true)await confirmDurableStateCommit();
           return {ok:ok===true,snapshot:snapshot()};
         },
         cloudStatus:()=>({
@@ -5064,7 +5066,9 @@ function previewPeriodicReportPrint() {
           el('stockAdjReason').value=String(payload.reason||'');
           const before=JSON.stringify(state);
           saveStockAdjustment({preventDefault(){}});
-          return {ok:JSON.stringify(state)!==before,snapshot:snapshot()};
+          const changed=JSON.stringify(state)!==before;
+          if(changed)await confirmDurableStateCommit();
+          return {ok:changed,snapshot:snapshot()};
         },
         produceDecants:async payload=>{
           await ready;
@@ -5074,7 +5078,9 @@ function previewPeriodicReportPrint() {
           el('decantProductionQty').value=String(payload.quantity||0);
           const before=(state.decantProductionLog||[]).length;
           produceDecants({preventDefault(){}});
-          return {ok:(state.decantProductionLog||[]).length>before,snapshot:snapshot()};
+          const created=(state.decantProductionLog||[]).length>before;
+          if(created)await confirmDurableStateCommit();
+          return {ok:created,snapshot:snapshot()};
         },
         addShippingCompany:async name=>{
           await ready;const value=String(name||'').trim().replace(/\s+/g,' ');if(!value)throw new Error('اسم شركة الشحن مطلوب.');
@@ -5102,6 +5108,7 @@ function previewPeriodicReportPrint() {
           saveOrderShippingDetails();
           const updated=state.orders[idx];
           if(!updated?.stockDeducted||!updated?.shippedAt||JSON.stringify(updated)===before)throw new Error(window.__valerianLastSaveError?.message||'لم يؤكد المحرك خصم المخزون واعتماد الشحنة.');
+          await confirmDurableStateCommit();
           return {ok:true,snapshot:snapshot()};
         },
         updateOrderShippingDetails:async payload=>{
@@ -5258,7 +5265,9 @@ function previewPeriodicReportPrint() {
           if(!Number.isFinite(amount)||amount<=0||amount>due+0.0001)throw new Error('أدخل مبلغ سداد صحيحاً لا يتجاوز مستحق المورد.');
           pendingSupplierInvoiceId=inv.id;el('supplierPaymentAmount').value=String(amount);el('supplierPaymentMethod').value=method;
           const before=(state.supplierPayments||[]).length;confirmSupplierPayment();
-          return {ok:(state.supplierPayments||[]).length>before,error:(state.supplierPayments||[]).length>before?'':(window.__valerianLastSaveError?.message||'لم يتم اعتماد السداد.'),snapshot:snapshot()};
+          const paid=(state.supplierPayments||[]).length>before;
+          if(paid)await confirmDurableStateCommit();
+          return {ok:paid,error:paid?'':(window.__valerianLastSaveError?.message||'لم يتم اعتماد السداد.'),snapshot:snapshot()};
         },
         deliverOrder:async payload=>{
           await ready;
@@ -5358,7 +5367,7 @@ function previewPeriodicReportPrint() {
           });
           logAudit('LOYALTY_SETTINGS_UPDATED','تحديث إعدادات برنامج الولاء والنقاط');
           if(!saveState()){state.settings=before;refreshAllViews();throw new Error('تعذر حفظ إعدادات النقاط.');}
-          await valDurableWritePromise;try{await valIdbFlush();}catch(_){}
+          await confirmDurableStateCommit();
           refreshAllViews();return {ok:true,snapshot:snapshot()};
         },
         exportSnapshot:snapshot,
