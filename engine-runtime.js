@@ -5395,12 +5395,14 @@ function previewPeriodicReportPrint() {
           await ready;
           const method=normalizePaymentMethod(payload?.method||'نقدي'),amount=Number(payload?.amount),date=String(payload?.date||''),note=String(payload?.note||'').trim();
           if(!Number.isFinite(amount)||amount<0||!/^\d{4}-\d{2}-\d{2}$/.test(date))throw new Error('أدخل رصيدًا افتتاحيًا صحيحًا وتاريخًا صالحًا.');
-          if((state.cashbookOpenings||[]).some(x=>normalizePaymentMethod(x.method)===method))throw new Error('يوجد رصيد افتتاحي لهذا الحساب بالفعل؛ استخدم التعديل المخصص بدل إنشاء رصيد مكرر.');
-          el('cashOpeningMethod').value=method;el('cashOpeningAmount').value=String(amount);el('cashOpeningDate').value=date;el('cashOpeningNote').value=note;
-          const before=(state.cashbookOpenings||[]).length;saveCashOpeningBalance();
-          if((state.cashbookOpenings||[]).length!==before+1)throw new Error('لم يتم حفظ الرصيد الافتتاحي.');
-          await confirmDurableStateCommit();
-          return {ok:true,snapshot:snapshot()};
+          const before=structuredClone(state);state.cashbookOpenings=Array.isArray(state.cashbookOpenings)?state.cashbookOpenings:[];
+          const existing=state.cashbookOpenings.find(x=>normalizePaymentMethod(x.method)===method);
+          const record={id:existing?.id||('CASH-OPEN-'+Date.now()),method,amount,date:new Date(date+'T12:00:00').toISOString(),note,updatedAt:new Date().toISOString()};
+          if(existing)Object.assign(existing,record);else state.cashbookOpenings.push(record);
+          logAudit('CASH_OPENING_SET','تحديد رصيد افتتاحي '+method+': '+amount);
+          if(!saveState()){state=before;throw new Error('تعذر حفظ الرصيد الافتتاحي.');}
+          await confirmDurableStateCommit();renderCashBook();
+          return {ok:true,opening:structuredClone(record),snapshot:snapshot()};
         },
         createCashbookAdjustment:async payload=>{
           await ready;
