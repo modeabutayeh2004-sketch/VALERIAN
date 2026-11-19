@@ -5196,9 +5196,12 @@ function previewPeriodicReportPrint() {
           const isDecantable=productType==='عطور'&&category!=='تقسيم'&&(payload?.isDecantable===undefined?!!product.isDecantable:!!payload.isDecantable);
           const decantSizeMl=Number(payload?.decantSizeMl??product.decantSizeMl??product.decantSize??10),decantBottleCost=Number(payload?.decantBottleCost??product.decantBottleCost??15);
           if(!name)throw new Error('اسم المنتج مطلوب.');
-          if(!Number.isFinite(price)||price<=0||!Number.isFinite(averageCost)||averageCost<0||price+0.0001<averageCost)throw new Error('راجع سعر البيع والتكلفة؛ يجب ألا يقل سعر البيع عن التكلفة.');
+          const lastPurchaseCost=Math.max(0,Number(product.lastPurchaseUnitCost??0));
+          const protectedCostFloor=Math.max(averageCost,lastPurchaseCost);
+          if(!Number.isFinite(price)||price<=0||!Number.isFinite(averageCost)||averageCost<0||price+0.0001<protectedCostFloor)throw new Error('تم رفض السعر: لا يمكن أن يقل سعر البيع عن أعلى قيمة بين متوسط التكلفة وآخر تكلفة استيراد ('+formatCurrency(protectedCostFloor)+').');
           if(!Number.isSafeInteger(minimumStock)||minimumStock<0||!Number.isSafeInteger(stock)||stock<0)throw new Error('الكمية وحد التنبيه يجب أن يكونا رقمين صحيحين غير سالبين.');
           if(isOffer&&(!Number.isFinite(offerPrice)||offerPrice<=0||offerPrice>=price))throw new Error('سعر العرض يجب أن يكون أكبر من صفر وأقل من سعر البيع.');
+          if(isOffer&&offerPrice+0.0001<protectedCostFloor)throw new Error('تم رفض سعر العرض: لا يمكن أن يقل عن أعلى قيمة بين متوسط التكلفة وآخر تكلفة استيراد ('+formatCurrency(protectedCostFloor)+').');
           if(isDecantable&&(!Number.isFinite(decantSizeMl)||decantSizeMl<=0||!Number.isFinite(decantBottleCost)||decantBottleCost<0))throw new Error('راجع بيانات التقسيم وتكلفة العبوة.');
           const before=structuredClone(product),productsBefore=structuredClone(state.products),movementsBefore=structuredClone(state.inventoryMovements||[]),stockDelta=stock-Number(product.stock||0);
           Object.assign(product,{name,price,averageCost,totalCost:averageCost,stock,minimumStock,notes,isOffer,offerPrice:isOffer?offerPrice:0,productType,category,stockUnit,size,image:String(payload?.image??product.image??''),isDecantable,decantSize:decantSizeMl,decantSizeMl,decantBottleCost});
