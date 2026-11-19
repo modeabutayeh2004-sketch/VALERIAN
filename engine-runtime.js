@@ -5078,7 +5078,7 @@ function previewPeriodicReportPrint() {
           const shipping=Number(payload.shippingCost??payload.shipping??0);
           const customs=Number(payload.customsCost??payload.fees??0);
           const paid=Number(payload.paidAmount??payload.paid??0);
-          if(!supplier||!date||!/^\\d{4}-\\d{2}-\\d{2}$/.test(date))throw new Error('اسم المورد وتاريخ الفاتورة مطلوبان.');
+          if(!supplier||!date||!/^\d{4}-\d{2}-\d{2}$/.test(date))throw new Error('اسم المورد وتاريخ الفاتورة مطلوبان.');
           if(!Number.isFinite(rate)||rate<=0||!Number.isFinite(shipping)||shipping<0||!Number.isFinite(customs)||customs<0||!Number.isFinite(paid)||paid<0)throw new Error('راجع سعر الصرف وتكاليف الشحن والجمارك والمبلغ المدفوع.');
           if(!lines.length)throw new Error('أضف صنفًا واحدًا على الأقل إلى فاتورة الاستيراد.');
           const normalizedLines=lines.map((line,index)=>{
