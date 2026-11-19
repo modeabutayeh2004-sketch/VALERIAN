@@ -5222,7 +5222,9 @@ function previewPeriodicReportPrint() {
             const saved=saveImportShipmentCore();
             if(saved!==true)throw new Error(window.__valerianLastSaveError?.message||'لم يتم اعتماد فاتورة الاستيراد.');
             await valDurableWritePromise;
+            if(valDurableWriteError)throw new Error('فشل الحفظ الدائم لبيانات فاتورة الاستيراد: '+String(valDurableWriteError.message||valDurableWriteError));
             await valIdbFlush();
+            if(valDurableWriteError)throw new Error('لم يتم تأكيد تثبيت فاتورة الاستيراد في قاعدة البيانات المحلية: '+String(valDurableWriteError.message||valDurableWriteError));
             committed=true;
             const latest=state.imports[0];
             if(!latest||latest.supplier!==supplier||Number(latest.totalEgp||0)!==Number(calc.grand.toFixed(2)))throw new Error('لم يتم العثور على الفاتورة المعتمدة في سجل المحرك.');
