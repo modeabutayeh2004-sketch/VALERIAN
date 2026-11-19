@@ -34,6 +34,8 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Build browser preview only
         run: npm run build:web
+      - name: Generate isolated Tailwind CSS audit output
+        run: npx --yes tailwindcss@3.4.17 -c tailwind.audit.config.cjs -i styles/tailwind.audit.css -o www/tailwind.audit.css --minify
       - name: Upload browser preview package
         uses: actions/upload-artifact@v4
         with:
