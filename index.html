@@ -5396,13 +5396,25 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
 
     async function confirmMobileOrderDelivery(orderId) {
       const method=document.getElementById('mobileDeliveryPaymentMethod')?.value||'نقدي';
+      const confirmRoot=document.getElementById('mobileDeliveryConfirm');
       try{
+        // Hide the custom confirmation layer BEFORE the engine opens the invoice preview.
+        // This avoids stacking-context issues on mobile WebViews, even if z-index values differ.
+        if(confirmRoot)confirmRoot.style.setProperty('display','none','important');
         const result=await window.ValerianShippingAction('deliverOrder',{orderId,method});
         if(result?.ok!==true)throw new Error(result?.error||'لم يؤكد المحرك تسليم الطلب.');
-        document.getElementById('mobileDeliveryConfirm')?.remove();
+        confirmRoot?.remove();
         setMoreOrdersView('delivered');
+        const invoicePreview=document.getElementById('printPreviewModal');
+        if(invoicePreview){
+          invoicePreview.style.setProperty('z-index','12001','important');
+          invoicePreview.style.setProperty('position','fixed','important');
+        }
         showToast('تم تأكيد الاستلام وتسجيل التحصيل بنجاح.');
-      }catch(err){reportError(err);}
+      }catch(err){
+        if(confirmRoot&&confirmRoot.isConnected)confirmRoot.style.removeProperty('display');
+        reportError(err);
+      }
     }
 
     function deliverReservedOrder(orderId) {
