@@ -5071,40 +5071,51 @@ function previewPeriodicReportPrint() {
         createImportInvoice:async payload=>{
           await ready;
           if(!payload)throw new Error('بيانات فاتورة الاستيراد مطلوبة.');
+          const lines=Array.isArray(payload.lines)?payload.lines:[];
+          const supplier=String(payload.supplier||'').trim();
+          const date=String(payload.date||'').trim();
+          const rate=Number(payload.exchangeRate??payload.rate);
+          const shipping=Number(payload.shippingCost??payload.shipping??0);
+          const customs=Number(payload.customsCost??payload.fees??0);
+          const paid=Number(payload.paidAmount??payload.paid??0);
+          if(!supplier||!date||!/^\\d{4}-\\d{2}-\\d{2}$/.test(date))throw new Error('اسم المورد وتاريخ الفاتورة مطلوبان.');
+          if(!Number.isFinite(rate)||rate<=0||!Number.isFinite(shipping)||shipping<0||!Number.isFinite(customs)||customs<0||!Number.isFinite(paid)||paid<0)throw new Error('راجع سعر الصرف وتكاليف الشحن والجمارك والمبلغ المدفوع.');
+          if(!lines.length)throw new Error('أضف صنفًا واحدًا على الأقل إلى فاتورة الاستيراد.');
+          const normalizedLines=lines.map((line,index)=>{
+            const productId=String(line?.productId||'').trim(),qty=Number(line?.qty),unitForeign=Number(line?.unitForeign);
+            if(!productId||!Number.isSafeInteger(qty)||qty<=0||!Number.isFinite(unitForeign)||unitForeign<=0)throw new Error('بيانات الصنف رقم '+(index+1)+' غير مكتملة أو غير صحيحة.');
+            if(!state.products.some(p=>String(p.id)===productId&&!p.archived&&p.category!=='تقسيم'))throw new Error('المنتج المحدد في الصنف رقم '+(index+1)+' غير موجود أو غير متاح للاستيراد.');
+            return {productId,qty,unitForeign};
+          });
+          const foreign=normalizedLines.reduce((sum,line)=>sum+line.qty*line.unitForeign,0);
+          const grand=Math.round((foreign*rate+shipping+customs)*100)/100;
+          if(!Number.isFinite(grand)||grand<=0||paid>grand+0.0001)throw new Error('المبلغ المدفوع لا يمكن أن يتجاوز إجمالي الفاتورة.');
           const beforeCount=state.imports.length;
           openImportModal();
-          el('impSupplier').value=String(payload.supplier||'').trim();
-          el('impExchangeRate').value=String(Number(payload.rate||0));
-          el('impShippingCost').value=String(Math.max(0,Number(payload.shipping||0)));
-          el('impCustomsCost').value=String(Math.max(0,Number(payload.fees||0)));
-          el('impPaidAmount').value=String(Math.max(0,Number(payload.paid||0)));
+          el('impSupplier').value=supplier;
+          el('impInvoiceDate').value=date;
+          el('impExchangeRate').value=String(rate);
+          el('impShippingCost').value=String(shipping);
+          el('impCustomsCost').value=String(customs);
+          el('impPaidAmount').value=String(paid);
           if(el('impPaymentMethod'))el('impPaymentMethod').value=String(payload.paymentMethod||'نقدي');
-          el('impNotes').value='فاتورة من واجهة VALERIAN V5';
+          el('impNotes').value='فاتورة استيراد من واجهة VALERIAN V20';
           el('importLinesBody').innerHTML='';
-          addImportLine(String(payload.productId||''),Math.floor(Number(payload.quantity||0)),Number(payload.foreignUnitPrice||0));
+          normalizedLines.forEach(line=>{
+            addImportLine(line.productId,line.qty,line.unitForeign);
+            const row=document.querySelector('#importLinesBody .import-line:last-child');
+            const updatePriceCheckbox=row?.querySelector('.imp-update-retail');
+            if(updatePriceCheckbox)updatePriceCheckbox.checked=false;
+          });
           updateImportTotals();
-          const importedProduct=state.products.find(p=>String(p.id)===String(payload.productId||''));
-          const importLine=document.querySelector('#importLinesBody .import-line');
-          const updatePriceCheckbox=importLine?.querySelector('.imp-update-retail');
-          if(updatePriceCheckbox)updatePriceCheckbox.checked=false;
-          if(importedProduct){
-            const qty=Math.max(1,Math.floor(Number(payload.quantity||0)));
-            const rate=Math.max(0,Number(payload.rate||0)),foreign=Math.max(0,Number(payload.foreignUnitPrice||0))*qty;
-            const grand=foreign*rate+Math.max(0,Number(payload.shipping||0))+Math.max(0,Number(payload.fees||0));
-            const landed=grand/qty,oldQty=Math.max(0,Number(importedProduct.stock||0)),oldCost=Math.max(0,Number(importedProduct.averageCost??importedProduct.totalCost??0));
-            const nextAverage=((oldQty*oldCost)+grand)/(oldQty+qty);
-            const replacement=Math.max(nextAverage,landed);
-            const currentMargin=replacement>0&&Number(importedProduct.price||0)>0?Math.max(0,((Number(importedProduct.price)-replacement)/Number(importedProduct.price))*100):0;
-            const suggested=roundMoney(replacement/(1-Math.max(currentMargin,20)/100));
-            if(suggested>Number(importedProduct.price||0)+0.01){
-              const accept=confirm('تنبيه تحديث تكلفة الاستيراد\n\nسعر البيع الحالي: '+formatCurrency(importedProduct.price)+'\nتكلفة إعادة الشراء بعد الفاتورة: '+formatCurrency(replacement)+'\nالسعر المقترح لحماية هامش الربح: '+formatCurrency(suggested)+'\n\nموافق: تحديث سعر البيع إلى السعر المقترح.\nإلغاء: الاحتفاظ بالسعر الحالي وتسجيل تنبيه مراجعة.');
-              if(updatePriceCheckbox)updatePriceCheckbox.checked=accept;
-              updateImportTotals();
-            }
-          }
           await saveImportShipment({preventDefault(){}});
-          const created=state.imports.length>beforeCount;
-          return {ok:created,invoice:created?structuredClone(state.imports[0]):null,snapshot:snapshot()};
+          if(state.imports.length!==beforeCount+1)throw new Error('لم يعتمد المحرك الفاتورة. راجع رسالة التحقق الظاهرة وتأكد من صحة بيانات الأصناف.');
+          const invoice=state.imports[0];
+          await valDurableWritePromise;
+          if(valDurableWriteError)throw new Error('لم يكتمل الحفظ الدائم للفاتورة: '+String(valDurableWriteError.message||valDurableWriteError));
+          await valIdbFlush();
+          if(!state.imports.some(item=>String(item.id)===String(invoice.id)))throw new Error('تعذر تأكيد وجود الفاتورة في سجل الاستيراد بعد الحفظ.');
+          return {ok:true,invoice:structuredClone(invoice),cloudSyncOk:!(typeof cloudReady!=='undefined'&&cloudReady&&(cloudConflict||cloudDirty)),snapshot:snapshot()};
         },
         addShippingCompany:async name=>{
           await ready;const value=String(name||'').trim().replace(/\s+/g,' ');if(!value)throw new Error('اسم شركة الشحن مطلوب.');
