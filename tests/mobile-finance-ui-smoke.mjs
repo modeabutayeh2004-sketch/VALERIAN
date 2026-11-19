@@ -26,16 +26,19 @@ try{
  await page.locator('#mobileCashOpeningAmount').fill('1000');
  await page.locator('#mobileCashOpeningDate').fill(date);
  await page.locator('form[onsubmit="submitMobileCashOpening(event)"] button[type="submit"]').click();
+ await page.waitForFunction(()=>document.querySelector('#mobileToast div')?.textContent.includes('تم حفظ الرصيد الافتتاحي'));
  await page.locator('#mobileCashAdjustAmount').fill('100');
  await page.locator('#mobileCashAdjustDate').fill(date);
  await page.locator('#mobileCashAdjustNote').fill('إيداع اختبار واجهة الموبايل');
  await page.locator('form[onsubmit="submitMobileCashAdjustment(event)"] button[type="submit"]').click();
+ await page.waitForFunction(()=>document.querySelector('#mobileToast div')?.textContent.includes('تم تسجيل التسوية النقدية'));
  await page.locator('[data-more="transfers"]').click();
  await page.locator('#more-transfers').waitFor({state:'visible'});
  await page.locator('#mobileCashTransferAmount').fill('300');
  await page.locator('#mobileCashTransferDate').fill(date);
  await page.locator('#mobileCashTransferNote').fill('تحويل اختبار واجهة الموبايل');
  await page.locator('form[onsubmit="submitMobileCashTransfer(event)"] button[type="submit"]').click();
+ await page.waitForFunction(()=>document.querySelector('#mobileToast div')?.textContent.includes('تم تسجيل التحويل بين الحسابات'));
  const result=await page.evaluate(async()=>{
   const f=await window.ValerianEngine.getFinanceSnapshot(),cash=f.balances.find(x=>x.method==='نقدي'),bank=f.balances.find(x=>x.method==='تحويل بنكي');
   return {expenses:f.expenses.length,expense:f.expenses[0]?.note,cash:cash?.balance,bank:bank?.balance,rows:f.cashbookRows.length,transferCount:f.cashbookTransfers?.length||0};
