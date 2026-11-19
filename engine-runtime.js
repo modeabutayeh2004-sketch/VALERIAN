@@ -5216,12 +5216,12 @@ function previewPeriodicReportPrint() {
             for(const [productId,addedQty] of expectedByProduct){
               const current=(state.products||[]).find(product=>String(product.id)===productId);
               const stored=(durableState.products||[]).find(product=>String(product.id)===productId);
-              if(!current||!stored||Number(stored.stock)!==Number(current.stock))throw new Error('لم يتم تأكيد تحديث مخزون المنتج '+(current?.name||productId)+'.');
+              if(!current||!stored||Number(stored.stock)!==Number(current.stock)||Number(stored.averageCost)!==Number(current.averageCost)||Number(stored.lastPurchaseUnitCost)!==Number(current.lastPurchaseUnitCost))throw new Error('لم يتم تأكيد تحديث المخزون ومتوسط التكلفة وآخر تكلفة شراء للمنتج '+(current?.name||productId)+'.');
               const movements=(durableState.inventoryMovements||[]).filter(move=>String(move.reference)===String(invoice.id)&&String(move.productId)===productId&&move.type==='IMPORT_PURCHASE').reduce((sum,move)=>sum+Number(move.quantity||0),0);
               if(movements!==addedQty)throw new Error('لم يتم تأكيد حركة دخول المخزون للمنتج '+current.name+'.');
             }
             const durablePaid=(durableState.supplierPayments||[]).filter(payment=>String(payment.invoiceId)===String(invoice.id)).reduce((sum,payment)=>sum+Number(payment.amount||0),0);
-            if(Math.abs(durablePaid-paidAmount)>0.01)throw new Error('لم يتم تأكيد تسجيل الدفعة الأولى للمورد.');
+            if(Math.abs(durablePaid-paidAmount)>0.01||Math.abs(Number(durableInvoice.paidAmount||0)-paidAmount)>0.01||Math.abs(Number(durableSupplier.paidAmount||0)-paidAmount)>0.01)throw new Error('لم يتم تأكيد تسجيل الدفعة الأولى للمورد في الفاتورة ودفتر المدفوعات.');
             if(Math.abs(Number(durableInvoice.totalEgp||0)-grand)>0.01||Math.abs(Number(durableSupplier.totalAmount||0)-grand)>0.01)throw new Error('إجمالي الفاتورة لا يطابق سجل المورد بعد الحفظ.');
             const cloudSyncPending=!!(cloudReady&&cloudUser&&navigator.onLine&&!cloudConflict);
             if(cloudSyncPending){
