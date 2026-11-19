@@ -695,6 +695,13 @@
       }
     }
 
+    async function confirmDurableStateCommit(){
+      await valDurableWritePromise;
+      if(valDurableWriteError)throw new Error('لم يكتمل الحفظ الدائم على هذا الجهاز: '+String(valDurableWriteError?.message||valDurableWriteError));
+      if(window.__valerianDurableStateReady!==true)throw new Error('لم يؤكد محرك التخزين اكتمال حفظ البيانات على هذا الجهاز.');
+      return true;
+    }
+
     function escapeHTML(value) {
       return String(value ?? '').replace(/[&<>\"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[ch]));
     }
@@ -4924,6 +4931,7 @@ function previewPeriodicReportPrint() {
           completeOrder(false);
           const created=state.orders.length>count;
           if(!created)return {ok:false,error:window.__valerianLastSaveError?.message||'تعذر اعتماد الطلب من محرك الأعمال.',snapshot:snapshot()};
+          await confirmDurableStateCommit();
           return {ok:true,order:structuredClone(state.orders[0]),snapshot:snapshot()};
         },
         addProduct:async payload=>{
@@ -5260,7 +5268,9 @@ function previewPeriodicReportPrint() {
           if(state.orders[idx].deliveredAt)return {ok:false,error:'الطلب مسجل بالفعل كطلب تم تسليمه.',snapshot:snapshot()};
           pendingDeliveryOrderIndex=idx;el('deliveryConfirmMethod').value=method;
           const before=JSON.stringify(state.orders[idx]);confirmCollectAndDeliver();
-          return {ok:JSON.stringify(state.orders[idx])!==before&&!!state.orders[idx].deliveredAt,snapshot:snapshot()};
+          const delivered=JSON.stringify(state.orders[idx])!==before&&!!state.orders[idx].deliveredAt;
+          if(delivered)await confirmDurableStateCommit();
+          return {ok:delivered,snapshot:snapshot()};
         },
         returnOrder:async payload=>{
           await ready;
@@ -5268,7 +5278,9 @@ function previewPeriodicReportPrint() {
           const selections=payload&&typeof payload==='object'&&Array.isArray(payload.selections)?payload.selections:null;
           const idx=findOrder(orderId);if(idx<0)throw new Error('الطلب غير موجود.');
           const before=JSON.stringify(state.orders[idx]);markAsReturned(idx,selections);
-          return {ok:JSON.stringify(state.orders[idx])!==before,snapshot:snapshot()};
+          const changed=JSON.stringify(state.orders[idx])!==before;
+          if(changed)await confirmDurableStateCommit();
+          return {ok:changed,snapshot:snapshot()};
         },
         settleRefund:async payload=>{
           await ready;
@@ -5283,6 +5295,7 @@ function previewPeriodicReportPrint() {
           const before=Number(order.refundedAmount||0);
           confirmCustomerRefund();
           const updated=Number(order.refundedAmount||0)>before;
+          if(updated)await confirmDurableStateCommit();
           return {ok:updated,error:updated?'':(window.__valerianLastSaveError?.message||'لم يتم اعتماد التسوية.'),snapshot:snapshot()};
         },
         updateProduct:async payload=>{
