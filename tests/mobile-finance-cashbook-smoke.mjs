@@ -23,11 +23,11 @@ try{
   const cash=finance.balances.find(x=>x.method==='نقدي'),bank=finance.balances.find(x=>x.method==='تحويل بنكي');
   if(Number(cash?.balance)!==600||Number(bank?.balance)!==300)throw new Error('Cash balances mismatch: '+JSON.stringify({cash,bank}));
   if(finance.expenses.length!==1||Number(finance.expenses[0].amount)!==200)throw new Error('Expense record missing from finance ledger.');
-  if(finance.cashbookRows.length!==4)throw new Error('Expected opening, expense, deposit and two-sided transfer rows; got '+finance.cashbookRows.length);
+  if(finance.cashbookRows.length!==5)throw new Error('Expected opening, expense, deposit and two-sided transfer rows; got '+finance.cashbookRows.length);
   return {expenseId:expense.expense.id,openingAmount:1000,expenseAmount:200,deposit:100,transfer:300,cashBalance:cash.balance,bankBalance:bank.balance,cashbookRows:finance.cashbookRows.length};
  });
  await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>!!window.ValerianEngine&&!!window.ValerianEngine.ready,null,{timeout:60000});
- const persisted=await page.evaluate(async({expenseId})=>{await window.ValerianEngine.ready;const f=await window.ValerianEngine.getFinanceSnapshot();const expense=f.expenses.find(x=>String(x.id)===String(expenseId)),cash=f.balances.find(x=>x.method==='نقدي'),bank=f.balances.find(x=>x.method==='تحويل بنكي');return !!expense&&Number(expense.amount)===200&&Number(cash.balance)===600&&Number(bank.balance)===300&&f.cashbookRows.length===4;},{expenseId:result.expenseId});
+ const persisted=await page.evaluate(async({expenseId})=>{await window.ValerianEngine.ready;const f=await window.ValerianEngine.getFinanceSnapshot();const expense=f.expenses.find(x=>String(x.id)===String(expenseId)),cash=f.balances.find(x=>x.method==='نقدي'),bank=f.balances.find(x=>x.method==='تحويل بنكي');return !!expense&&Number(expense.amount)===200&&Number(cash.balance)===600&&Number(bank.balance)===300&&f.cashbookRows.length===5;},{expenseId:result.expenseId});
  if(!persisted)throw new Error('Expense/cashbook records did not survive reload.');
  if(errors.length)throw new Error('Browser runtime errors: '+errors.join(' | '));
  console.log('VALERIAN mobile finance/cashbook browser test: PASSED');console.log(JSON.stringify(result));console.log(' - Expense entry, opening balance, cash deposit, inter-account transfer, balance calculations, and reload persistence verified.');
