@@ -4101,6 +4101,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           </div>
           <div class="glass-card rounded-xl p-3 flex items-center justify-between gap-3 border border-rose-300/20"><span class="text-[11px] text-slate-300">المتبقي المستحق للمورد</span><strong id="impFormRemaining" class="text-sm font-black text-rose-300 bidi-ltr">0 EGP</strong></div>
           <p class="text-[10px] text-slate-400 leading-5">سيتم توزيع الشحن والجمارك على الأصناف حسب قيمة كل صنف، وتحديث متوسط التكلفة والمخزون. يُسجل المدفوع في الخزنة، ويُرحّل المتبقي تلقائيًا إلى حساب المورد.</p>
+          <div id="impFormError" role="alert" aria-live="assertive" class="hidden rounded-xl border border-rose-400/40 bg-rose-500/10 px-3 py-2 text-xs leading-6 text-rose-200"></div>
           <button id="saveMobileImportInvoiceBtn" type="button" onclick="window.saveMobileImportInvoice()" class="w-full py-3 rounded-full silver-btn text-xs font-black mt-1">اعتماد الفاتورة وتحديث المخزون والحسابات</button>
         </div>
       </div>
@@ -5300,6 +5301,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     }
 
     function populateImportSheet() {
+      const errorBox=document.getElementById('impFormError');if(errorBox){errorBox.textContent='';errorBox.classList.add('hidden');}
       const supplier=document.getElementById('impFormSupplier');
       if(supplier)supplier.value='';
       const date=document.getElementById('impFormDate');
@@ -5389,13 +5391,18 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         const payload={supplier,date,exchangeRate:calc.rate,shippingCost:calc.shipping,customsCost:calc.customs,paidAmount:calc.paid,paymentMethod,lines:calc.lines};
         if(button)button.textContent='جارٍ اعتماد الفاتورة…';
         await new Promise(resolve=>requestAnimationFrame(()=>resolve()));
-        const result=await runEngine('createImportInvoice',payload);
+        if(typeof window.ValerianRunEngine!=='function')throw new Error('موصل محرك الأعمال غير متاح في واجهة اعتماد الفاتورة.');
+        const result=await window.ValerianRunEngine('createImportInvoice',payload);
         if(result?.ok!==true)throw new Error(result?.error||'محرك الأعمال لم يؤكد اعتماد الفاتورة.');
         closeSheet('newImportSheet');
         showToast(result.cloudSyncOk===false?'تم حفظ الفاتورة محليًا، لكن المزامنة السحابية لم تتأكد بعد. راجع حالة الاتصال.':'تم اعتماد الفاتورة وتحديث المخزون والخزنة وحساب المورد بنجاح.','success');
       }catch(err){
         console.error('VALERIAN import invoice UI failed before/during engine call:',err);
-        reportError(err);
+        const message=String(err?.message||err||'تعذر اعتماد فاتورة الاستيراد.');
+        console.error('Import invoice approval failed:',message,err);
+        const errorBox=document.getElementById('impFormError');
+        if(errorBox){errorBox.textContent=message;errorBox.classList.remove('hidden');}
+        showToast(message);
       }finally{
         if(button){button.dataset.busy='0';button.disabled=false;button.textContent=originalLabel;}
       }
@@ -5410,10 +5417,11 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const due=Math.max(0,Number(inv.totalEgp||0)-Number(inv.paidAmount||0));
       if(due<=0)return showToast('الفاتورة مسددة بالكامل.');
       try{
-        const result=await runEngine('paySupplierInvoice',{invoiceId:inv.id,amount:due,method:'نقدي'});
+        if(typeof window.ValerianRunEngine!=='function')throw new Error('موصل محرك الأعمال غير متاح لسداد المورد.');
+        const result=await window.ValerianRunEngine('paySupplierInvoice',{invoiceId:inv.id,amount:due,method:'نقدي'});
         if(result?.ok!==true)throw new Error(result?.error||'لم يؤكد محرك الأعمال تسجيل السداد.');
         showToast('تم تسجيل سداد المورد وتحديث الخزنة وكشف الحساب.','success');
-      }catch(err){reportError(err);}
+      }catch(err){showToast(String(err?.message||err||'تعذر تسجيل سداد المورد.'));}
     }
 
     function setMoreTab(tab) {
@@ -6482,6 +6490,9 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
       if(result&&result.ok===false)showToast(result.error||'لم يعتمد محرك الأعمال العملية.');
       return result;
     }
+    // Explicit cross-scope bridge for handlers declared before this adapter IIFE.
+    window.ValerianRunEngine=runEngine;
+    window.ValerianReportError=reportError;
     window.v5DeleteAllBusinessData=async function(){
       const password=await openV5DeleteCredential({title:'حذف جميع بيانات النشاط',description:'سيتم حذف بيانات النشاط من السحابة وهذا الجهاز وجميع الأجهزة المتزامنة. سيتم تنزيل نسخة احتياطية تلقائيًا قبل الحذف. لا يمكن التراجع عن هذه العملية. أدخل كلمة مرور حساب VALERIAN CLOUD للتحقق من صلاحية الحذف.',label:'كلمة مرور VALERIAN CLOUD',inputType:'password',placeholder:'أدخل كلمة المرور',confirmText:'تحقق وابدأ الحذف'});
       if(password===null){showToast('تم إلغاء الحذف.');return;}
