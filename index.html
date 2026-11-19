@@ -5518,7 +5518,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         showToast('تم تأكيد الاستلام وتسجيل التحصيل بنجاح.');
       }catch(err){
         if(confirmRoot&&confirmRoot.isConnected)confirmRoot.style.removeProperty('display');
-        reportError(err);
+        window.ValerianReportError(err);
       }
     }
 
@@ -5561,7 +5561,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         console.error('VALERIAN add shipping company failed',err);
         const message=String(err?.message||err||'تعذر تنفيذ الإضافة.');
         if(status){status.textContent='تعذر الإضافة: '+message;status.classList.remove('text-emerald-300');status.classList.add('text-rose-300');}
-        reportError(err);return false;
+        window.ValerianReportError(err);return false;
       }finally{if(button){button.disabled=false;button.textContent='＋ إضافة';}}
     };
     // Delegated click handling survives renderMoreTracking() replacing its innerHTML.
@@ -5606,7 +5606,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         renderMoreOrders();
         showToast(dispatch?'✓ تم اعتماد الشحن وخصم المخزون ومستلزمات التغليف.':'✓ تم حفظ شركة الشحن ورقم التتبع بنجاح.');
         return true;
-      }catch(err){reportError(err);return false;}
+      }catch(err){window.ValerianReportError(err);return false;}
       finally{if(button){button.disabled=false;button.textContent='حفظ البيانات';}}
     };
     
@@ -5662,7 +5662,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         renderMoreTracking();
         renderMoreOrders();
         showToast('تم تسجيل المرتجع وتحديث المخزون / الهالك / رصيد التقسيم حسب الحالة.');
-      }catch(err){reportError(err);}
+      }catch(err){window.ValerianReportError(err);}
     }
 
     function renderCrmMobile(){
@@ -6504,7 +6504,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
         syncFromEngine(result.snapshot);
         closeSheet('settingsSheet');
         showToast('تم حذف بيانات النشاط من السحابة والأجهزة المتزامنة بعد التحقق من كلمة المرور.','success');
-      }catch(err){reportError(err);}
+      }catch(err){window.ValerianReportError(err);}
     };
 
     // All write paths below call the ERP engine. V5's local appState is only a view model.
@@ -6561,7 +6561,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
           showToast('المنتج محفوظ على الجهاز، لكن رفعه للسحابة لم يتأكد: '+detail+localWarning);
           paintCloudStatus(cloud&&cloud.status||engine&&engine.cloudStatus&&engine.cloudStatus());
         }
-      }catch(err){reportError(err);}
+      }catch(err){window.ValerianReportError(err);}
       finally{
         if(button){button.disabled=false;button.textContent='حفظ وإدراج في المخزون';}
       }
@@ -6591,7 +6591,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
         if(openReceipt&&r.order)openThermalReceiptPreview(r.order);
         showToast(currentPosMode==='reservation'?'تم تسجيل الحجز من محرك الأعمال وتجميد الكميات.':'تم تسجيل البيع وتحديث المخزون والحسابات.');
         syncFromEngine();
-      }catch(err){reportError(err);}
+      }catch(err){window.ValerianReportError(err);}
     };
     window.executeDecantProduction=async function(){
       try{
@@ -6600,7 +6600,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
           quantity:Number(document.getElementById('labDecantQty').value||0)
         });
         if(r.ok){closeSheet('decantLabSheet');showToast('تم تجهيز التقسيم وتسجيل حركات السائل والعبوات والمخزون.');}
-      }catch(err){reportError(err);}
+      }catch(err){window.ValerianReportError(err);}
     };
     window.applyMobileStockAdjustment=async function(){
       const id=document.getElementById('adjProductSelect').value;
@@ -6611,7 +6611,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
         const reasonType=document.getElementById('adjType').value==='SHORTAGE'?'COUNT_SHORTAGE':'WASTAGE';
         const r=await runEngine('adjustStock',{kind:'packaging',id,quantity:qty,reason,reasonType});
         if(r.ok){closeSheet('stockAdjustSheet');showToast('تم تسجيل التسوية في سجل حركات المخزون الأصلي.');}
-      }catch(err){reportError(err);}
+      }catch(err){window.ValerianReportError(err);}
     };
     let pendingMoneyAction=null;
     window.closeMoneyActionModal=function(){const modal=document.getElementById('moneyActionModal');if(modal)modal.classList.add('hidden');pendingMoneyAction=null;};
@@ -6767,7 +6767,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
             showToast('تم تحديث المنتج. وإذا كان له تقسيم سابق فقد تم إيقافه مع الاحتفاظ بسجله.');
           }else showToast('تم تحديث المنتج، لكن لم يؤكد المحرك إنشاء صنف التقسيم؛ راجع المخزون قبل المتابعة.');
         }
-      }catch(err){reportError(err);}finally{button.disabled=false;button.textContent='حفظ جميع التعديلات';}
+      }catch(err){window.ValerianReportError(err);}finally{button.disabled=false;button.textContent='حفظ جميع التعديلات';}
     };
 
     window.openMobileReportsPreview=function(){
@@ -6805,7 +6805,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
           pointValue:Number(document.getElementById('v5PointValue').value)
         });
         if(r.ok)showToast('تم حفظ إعدادات برنامج الولاء والنقاط.');
-      }catch(err){reportError(err);}
+      }catch(err){window.ValerianReportError(err);}
     };
     window.settleMobileRefund=function(orderId){ openMoneyActionModal('refund',orderId); };
     window.renderMoreReports=function(){
