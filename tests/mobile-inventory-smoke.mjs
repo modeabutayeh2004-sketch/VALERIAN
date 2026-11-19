@@ -21,7 +21,7 @@ try{
   await page.waitForFunction(()=>!!window.ValerianEngine&&!!window.ValerianEngine.ready,null,{timeout:60000});
   const result=await page.evaluate(async()=>{
     const api=window.ValerianEngine;await api.ready;
-    const original=await api.addProduct({name:'VALERIAN-AUTOTEST-DECANT-'+Date.now(),productType:'عطور',category:'رجالي',size:'100 مل',price:250,averageCost:100,stock:0,stockUnit:'زجاجة أصلية',isDecantable:true,decantSizeMl:10,decantBottleCost:15});
+    const original=await api.addProduct({name:'VALERIAN-AUTOTEST-DECANT-'+Date.now(),productType:'عطور',category:'رجالي',size:'100 مل',price:250,averageCost:100,stock:0,stockUnit:'زجاجة أصلية',image:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lN8AAAAASUVORK5CYII=',isDecantable:true,decantSizeMl:10,decantBottleCost:15});
     if(!original?.ok||!original.decantProduct?.id)throw new Error('Decantable perfume and linked SKU were not created.');
     const imported=await api.createImportInvoice({supplier:'VALERIAN TEST PERFUME SUPPLIER',date:new Date().toISOString().slice(0,10),exchangeRate:50,shippingCost:0,customsCost:0,paidAmount:0,paymentMethod:'نقدي',lines:[{productId:original.product.id,qty:2,unitForeign:10}]});
     if(!imported?.ok)throw new Error(imported?.error||'Perfume import failed.');
@@ -62,7 +62,7 @@ try{
   const persisted=await page.evaluate(async({perfumeId,decantProductId,supplyId,invoiceId})=>{
     await window.ValerianEngine.ready;const s=window.ValerianEngine.getSnapshot();
     const p=s.products.find(x=>String(x.id)===String(perfumeId)),d=s.products.find(x=>String(x.id)===String(decantProductId)),u=s.operatingSupplies.find(x=>String(x.id)===String(supplyId)),i=s.supplierInvoices.find(x=>String(x.id)===String(invoiceId));
-    return !!p&&Number(p.stock)===1&&Number(p.decantMlAvailable)===70&&!!d&&Number(d.stock)===3&&!!u&&Number(u.quantity)===8&&!!i&&Number(i.paidAmount)===100;
+    return !!p&&Number(p.stock)===1&&Number(p.decantMlAvailable)===70&&String(p.image||'').startsWith('data:image/png;base64,')&&!!d&&Number(d.stock)===3&&!!u&&Number(u.quantity)===8&&!!i&&Number(i.paidAmount)===100;
   },{perfumeId:result.perfumeId,decantProductId:result.decantProductId,supplyId:result.operatingSupplyId,invoiceId:result.supplierInvoiceId});
   if(!persisted)throw new Error('Decant, packaging, supplier payment, or supply stock did not survive reload.');
   if(errors.length)throw new Error('Browser runtime errors: '+errors.join(' | '));
