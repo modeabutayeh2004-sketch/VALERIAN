@@ -5260,12 +5260,19 @@ function previewPeriodicReportPrint() {
             const latest=state.imports?.find(item=>String(item.supplier)===supplier&&Number(item.totalEgp||0)===Number(calc.grand.toFixed(2)));
             const committedInvoice=state.imports?.[0];
             if(!committedInvoice||!latest||!state.supplierInvoices?.some(item=>String(item.id)===String(committedInvoice.id)))throw new Error('لم يتم تأكيد تسجيل الفاتورة في سجل الاستيراد وحساب المورد.');
-            let cloudSyncOk=true;
-            if(cloudReady&&cloudUser&&navigator.onLine&&!cloudConflict){
-              try{clearTimeout(cloudSaveTimer);await cloudSyncNow(true);cloudSyncOk=!cloudConflict&&!cloudDirty;}
-              catch(_){cloudSyncOk=false;}
+            // A committed local invoice must not wait for the network before the V20
+            // screen can refresh. Cloud sync is best-effort and runs independently.
+            const cloudSyncPending=!!(cloudReady&&cloudUser&&navigator.onLine&&!cloudConflict);
+            if(cloudSyncPending){
+              clearTimeout(cloudSaveTimer);
+              Promise.resolve().then(()=>cloudSyncNow(true)).then(()=>{
+                if(!cloudConflict&&!cloudDirty)emit('valerian:cloud-sync-state',{ok:true,source:'import-invoice'});
+              }).catch(error=>{
+                console.warn('Import invoice saved locally; background cloud sync failed:',error);
+                emit('valerian:cloud-sync-state',{ok:false,source:'import-invoice',message:String(error?.message||error)});
+              });
             }
-            return {ok:true,invoice:structuredClone(committedInvoice),cloudSyncOk,snapshot:snapshot()};
+            return {ok:true,invoice:structuredClone(committedInvoice),cloudSyncOk:!cloudSyncPending,snapshot:snapshot()};
           }catch(error){
             state=before;
             try{persistLocal(before);await valQueueDurableState(before);await valIdbFlush();}catch(rollbackError){console.error('Import invoice rollback failed',rollbackError);}
