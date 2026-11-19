@@ -6,7 +6,8 @@
   "scripts": {
     "build:web": "node scripts/prepare-web.mjs",
     "build:android": "npm run build:web && cap sync android",
-    "build:css-audit": "tailwindcss -i styles/tailwind.audit.css -o www/tailwind.audit.css --minify"
+    "build:css-audit": "tailwindcss -i styles/tailwind.audit.css -o www/tailwind.audit.css --minify",
+    "build:css-completion": "node scripts/embed-tailwind-completion.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.6.2",
