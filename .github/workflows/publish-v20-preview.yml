@@ -76,7 +76,7 @@ jobs:
           const indexPath = 'site/v21/index.html';
           let html = fs.readFileSync(indexPath, 'utf8');
           html = html.replaceAll('v20-20261119-0607', version);
-          html = html.replace(/<title>[^<]*<\\/title>/, '<title>VALERIAN V21 Mobile Preview</title>');
+          html = html.replace(/<title>[^<]*<\/title>/, '<title>VALERIAN V21 Mobile Preview</title>');
           html = html.replace(/<meta name="app-version" content="[^"]*">/, '<meta name="app-version" content="V21 Mobile Preview">');
           fs.writeFileSync(indexPath, html);
           console.log('V21 preview cache isolated as ' + version);
