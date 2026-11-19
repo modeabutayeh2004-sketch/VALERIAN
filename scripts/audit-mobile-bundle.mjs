@@ -124,7 +124,7 @@ if (!runtime.includes('if(updateRetail)updateRetail.checked=line.updateRetail===
 const legacyDomLookups = (runtime.match(/document\.getElementById\s*\(/g) || []).length;
 if (duplicateImportDefinitions > 1) warnings.push('Runtime defines createImportInvoice ' + duplicateImportDefinitions + ' times; the last object property wins and needs deliberate reconciliation.');
 if (legacyDomLookups > 0) warnings.push('Business runtime still performs ' + legacyDomLookups + ' direct DOM lookups; do not remove legacy DOM dependencies until they are mapped.');
-if (/<script\s+src=["']https:\/\/cdn\.tailwindcss\.com/i.test(html)) warnings.push('The page still references the Tailwind CDN; verify offline behavior before removing it.');
+if (/<script\s+src=["']https:\/\/cdn\.tailwindcss\.com/i.test(html)) failures.push('External Tailwind CDN runtime must not be required; use the bundled offline CSS.');
 
 if (failures.length) {
   console.error('VALERIAN mobile bundle audit: FAILED');
