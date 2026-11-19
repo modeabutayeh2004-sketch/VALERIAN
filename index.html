@@ -3690,6 +3690,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           <button onclick="setMoreTab('crm')" data-more="crm" class="more-pill px-4 py-2 rounded-full text-xs font-bold glass-pill text-slate-200 shrink-0">👑 العملاء والولاء</button>
           <button onclick="setMoreTab('offers')" data-more="offers" class="more-pill px-4 py-2 rounded-full text-xs font-bold glass-pill text-slate-200 shrink-0">🎁 كتالوج العروض</button>
           <button onclick="setMoreTab('reports')" data-more="reports" class="more-pill px-4 py-2 rounded-full text-xs font-bold glass-pill text-slate-200 shrink-0">📊 التقارير والذكاء</button>
+          <button onclick="setMoreTab('finance')" data-more="finance" class="more-pill px-4 py-2 rounded-full text-xs font-bold glass-pill text-slate-200 shrink-0">💸 المصروفات</button>
+          <button onclick="setMoreTab('cashbook')" data-more="cashbook" class="more-pill px-4 py-2 rounded-full text-xs font-bold glass-pill text-slate-200 shrink-0">🏦 الخزنة</button>
         </div>
 
         <div id="more-orders" class="more-view space-y-3">
@@ -3762,6 +3764,92 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
             <div id="mobileBiOutput" class="bg-[#02080c]/85 rounded-2xl p-3 text-xs text-slate-200 leading-6 border border-white/[0.08]">
               أضف بيانات المنتجات والمبيعات لعرض التحليل الآلي الفوري هنا.
             </div>
+          </div>
+        </div>
+
+        <div id="more-finance" class="more-view hidden space-y-4">
+          <div class="grid grid-cols-2 gap-2">
+            <div class="glass-card rounded-2xl p-3"><span class="text-[10px] text-slate-400">إجمالي المصروفات</span><strong id="mobileFinanceTotalExpenses" class="block text-lg font-black text-rose-300 mt-1 bidi-ltr">0 EGP</strong></div>
+            <div class="glass-card rounded-2xl p-3"><span class="text-[10px] text-slate-400">عدد القيود</span><strong id="mobileFinanceExpenseCount" class="block text-lg font-black text-white mt-1">0</strong></div>
+          </div>
+          <form id="mobileExpenseForm" onsubmit="submitMobileExpense(event)" class="glass-card rounded-2xl p-4 space-y-3">
+            <h3 class="text-xs font-black text-white">＋ تسجيل مصروف جديد</h3>
+            <label class="block text-[10px] text-slate-300">بند المصروف
+              <select id="mobileExpenseCategory" class="mt-1 w-full rounded-xl bg-slate-900 border border-white/15 text-white p-3 text-xs">
+                <option value="إعلانات ممولة (Meta/TikTok)">إعلانات ممولة (Meta/TikTok)</option>
+                <option value="شحن ونثريات">شحن ونثريات</option>
+                <option value="إيجار ومرافق">إيجار ومرافق</option>
+                <option value="تسوية ودفع دين مرتجع للعميل">تسوية ودفع دين مرتجع للعميل</option>
+              </select>
+            </label>
+            <label class="block text-[10px] text-slate-300">البيان / الوصف
+              <input id="mobileExpenseNote" required maxlength="180" class="mt-1 w-full rounded-xl bg-slate-900 border border-white/15 text-white p-3 text-xs" placeholder="اكتب سبب المصروف بالتفصيل">
+            </label>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="block text-[10px] text-slate-300">المبلغ بالجنيه
+                <input id="mobileExpenseAmount" required type="number" min="1" step="0.01" class="mt-1 w-full rounded-xl bg-slate-900 border border-white/15 text-white p-3 text-xs" placeholder="0.00">
+              </label>
+              <label class="block text-[10px] text-slate-300">وسيلة الدفع
+                <select id="mobileExpenseMethod" class="mt-1 w-full rounded-xl bg-slate-900 border border-white/15 text-white p-3 text-xs">
+                  <option>نقدي</option><option>تحويل بنكي</option><option>محفظة إلكترونية</option><option>بطاقة</option><option>أخرى</option>
+                </select>
+              </label>
+            </div>
+            <button type="submit" class="w-full rounded-full silver-btn py-3 text-xs font-black">حفظ المصروف</button>
+          </form>
+          <div class="glass-card rounded-2xl p-4 space-y-3">
+            <h3 class="text-xs font-black text-white">سجل المصروفات</h3>
+            <div id="mobileExpensesList" class="space-y-2"></div>
+          </div>
+        </div>
+
+        <div id="more-cashbook" class="more-view hidden space-y-4">
+          <div class="grid grid-cols-2 gap-2" id="mobileCashBalances"></div>
+          <form onsubmit="submitMobileCashOpening(event)" class="glass-card rounded-2xl p-4 space-y-3">
+            <h3 class="text-xs font-black text-white">رصيد افتتاحي للحساب</h3>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="block text-[10px] text-slate-300">وسيلة الدفع
+                <select id="mobileCashOpeningMethod" class="mt-1 w-full rounded-xl bg-slate-900 border border-white/15 text-white p-3 text-xs"><option>نقدي</option><option>تحويل بنكي</option><option>محفظة إلكترونية</option><option>بطاقة</option><option>أخرى</option></select>
+              </label>
+              <label class="block text-[10px] text-slate-300">الرصيد بالجنيه
+                <input id="mobileCashOpeningAmount" required type="number" min="0" step="0.01" class="mt-1 w-full rounded-xl bg-slate-900 border border-white/15 text-white p-3 text-xs" placeholder="0.00">
+              </label>
+            </div>
+            <label class="block text-[10px] text-slate-300">تاريخ الرصيد
+              <input id="mobileCashOpeningDate" required type="date" class="mt-1 w-full rounded-xl bg-slate-900 border border-white/15 text-white p-3 text-xs">
+            </label>
+            <input id="mobileCashOpeningNote" maxlength="180" class="w-full rounded-xl bg-slate-900 border border-white/15 text-white p-3 text-xs" placeholder="ملاحظة اختيارية">
+            <button type="submit" class="w-full rounded-full silver-btn py-3 text-xs font-black">حفظ الرصيد الافتتاحي</button>
+          </form>
+          <form onsubmit="submitMobileCashAdjustment(event)" class="glass-card rounded-2xl p-4 space-y-3">
+            <h3 class="text-xs font-black text-white">تسوية نقدية / إيداع / سحب</h3>
+            <div class="grid grid-cols-2 gap-2">
+              <select id="mobileCashAdjustDirection" class="rounded-xl bg-slate-900 border border-white/15 text-white p-3 text-xs"><option value="IN">إيداع / إضافة</option><option value="OUT">سحب / خصم</option></select>
+              <select id="mobileCashAdjustMethod" class="rounded-xl bg-slate-900 border border-white/15 text-white p-3 text-xs"><option>نقدي</option><option>تحويل بنكي</option><option>محفظة إلكترونية</option><option>بطاقة</option><option>أخرى</option></select>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <input id="mobileCashAdjustAmount" required type="number" min="0.01" step="0.01" class="rounded-xl bg-slate-900 border border-white/15 text-white p-3 text-xs" placeholder="المبلغ">
+              <input id="mobileCashAdjustDate" required type="date" class="rounded-xl bg-slate-900 border border-white/15 text-white p-3 text-xs">
+            </div>
+            <input id="mobileCashAdjustNote" required maxlength="180" class="w-full rounded-xl bg-slate-900 border border-white/15 text-white p-3 text-xs" placeholder="سبب التسوية (إجباري)">
+            <button type="submit" class="w-full rounded-full silver-btn py-3 text-xs font-black">تسجيل التسوية</button>
+          </form>
+          <form onsubmit="submitMobileCashTransfer(event)" class="glass-card rounded-2xl p-4 space-y-3">
+            <h3 class="text-xs font-black text-white">تحويل بين وسائل الدفع</h3>
+            <div class="grid grid-cols-2 gap-2">
+              <select id="mobileCashTransferFrom" class="rounded-xl bg-slate-900 border border-white/15 text-white p-3 text-xs"><option>نقدي</option><option>تحويل بنكي</option><option>محفظة إلكترونية</option><option>بطاقة</option><option>أخرى</option></select>
+              <select id="mobileCashTransferTo" class="rounded-xl bg-slate-900 border border-white/15 text-white p-3 text-xs"><option>تحويل بنكي</option><option>نقدي</option><option>محفظة إلكترونية</option><option>بطاقة</option><option>أخرى</option></select>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <input id="mobileCashTransferAmount" required type="number" min="0.01" step="0.01" class="rounded-xl bg-slate-900 border border-white/15 text-white p-3 text-xs" placeholder="المبلغ">
+              <input id="mobileCashTransferDate" required type="date" class="rounded-xl bg-slate-900 border border-white/15 text-white p-3 text-xs">
+            </div>
+            <input id="mobileCashTransferNote" required maxlength="180" class="w-full rounded-xl bg-slate-900 border border-white/15 text-white p-3 text-xs" placeholder="سبب التحويل (إجباري)">
+            <button type="submit" class="w-full rounded-full silver-btn py-3 text-xs font-black">تسجيل التحويل</button>
+          </form>
+          <div class="glass-card rounded-2xl p-4 space-y-3">
+            <h3 class="text-xs font-black text-white">آخر حركات الخزنة</h3>
+            <div id="mobileCashbookRows" class="space-y-2"></div>
           </div>
         </div>
       </section>
@@ -5427,6 +5515,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       if (tab === 'crm') renderCrmMobile();
       if (tab === 'offers') renderMoreOffers();
       if (tab === 'reports') renderMoreReports();
+      if (tab === 'finance') renderMoreFinance();
+      if (tab === 'cashbook') renderMoreCashbook();
     }
 
     function isMobileOrderDelivered(order) {
@@ -6099,6 +6189,55 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       document.getElementById('repMobileDeposits').textContent = fmtEgp(deposits);
       document.getElementById('repMobileExpenses').textContent = fmtEgp(exp);
       document.getElementById('repMobileNet').textContent = fmtEgp(net);
+    }
+
+    async function renderMoreFinance() {
+      const list=document.getElementById('mobileExpensesList');if(!list)return;
+      try{
+        const data=await runEngine('getFinanceSnapshot');
+        const expenses=Array.isArray(data?.expenses)?data.expenses:[];
+        const total=expenses.filter(x=>!String(x.category||'').includes('استبدال نقاط عملاء')).reduce((sum,x)=>sum+Number(x.amount||0),0);
+        document.getElementById('mobileFinanceTotalExpenses').textContent=fmtEgp(total);
+        document.getElementById('mobileFinanceExpenseCount').textContent=String(expenses.length);
+        list.innerHTML=expenses.length?[...expenses].sort((a,b)=>Date.parse(b.date)-Date.parse(a.date)).map(x=>'<article class="rounded-xl border border-white/10 bg-white/[0.035] p-3 flex items-start justify-between gap-3"><div class="min-w-0"><strong class="block text-[11px] text-white">'+escapeHtmlMobile(x.category||'مصروف')+'</strong><p class="text-[10px] text-slate-300 mt-1 break-words">'+escapeHtmlMobile(x.note||'')+'</p><span class="block text-[9px] text-slate-500 mt-1">'+escapeHtmlMobile(new Date(x.date).toLocaleDateString('ar-EG'))+' • '+escapeHtmlMobile(x.method||'غير محدد')+'</span></div><div class="shrink-0 text-left"><b class="block text-xs text-rose-300 bidi-ltr">'+fmtEgp(x.amount)+'</b><button type="button" onclick="deleteMobileExpense(\''+String(x.id).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')" class="mt-2 text-[10px] text-rose-300">حذف</button></div></article>').join(''):'<p class="text-center text-[11px] text-slate-400 py-5">لا توجد مصروفات مسجلة.</p>';
+      }catch(err){list.innerHTML='<p class="text-center text-[11px] text-rose-300">'+escapeHtmlMobile(err?.message||'تعذر تحميل المصروفات')+'</p>';}
+    }
+    async function submitMobileExpense(event){
+      event.preventDefault();
+      const payload={category:document.getElementById('mobileExpenseCategory').value,note:document.getElementById('mobileExpenseNote').value.trim(),amount:Number(document.getElementById('mobileExpenseAmount').value),method:document.getElementById('mobileExpenseMethod').value};
+      try{const result=await runEngine('createExpense',payload);if(!result?.ok)throw new Error(result?.error||'تعذر تسجيل المصروف.');document.getElementById('mobileExpenseForm').reset();showToast('تم تسجيل المصروف وحفظه.');await renderMoreFinance();}
+      catch(err){showToast(err?.message||'تعذر تسجيل المصروف.');}
+    }
+    async function deleteMobileExpense(id){
+      if(!confirm('هل تريد حذف هذا المصروف من السجل؟'))return;
+      try{const result=await runEngine('deleteExpense',id);if(!result?.ok)throw new Error(result?.error||'تعذر حذف المصروف.');showToast('تم حذف المصروف.');await renderMoreFinance();}
+      catch(err){showToast(err?.message||'تعذر حذف المصروف.');}
+    }
+    async function renderMoreCashbook(){
+      const balances=document.getElementById('mobileCashBalances');if(!balances)return;
+      try{
+        const data=await runEngine('getFinanceSnapshot');
+        balances.innerHTML=(data?.balances||[]).map(x=>'<div class="glass-card rounded-2xl p-3"><span class="text-[10px] text-slate-400">'+escapeHtmlMobile(x.method)+'</span><strong class="block text-base font-black silver-text mt-1 bidi-ltr">'+fmtEgp(x.balance)+'</strong></div>').join('');
+        const rows=document.getElementById('mobileCashbookRows'),items=[...(data?.cashbookRows||[])].sort((a,b)=>Date.parse(b.date)-Date.parse(a.date)).slice(0,30);
+        rows.innerHTML=items.length?items.map(x=>'<article class="rounded-xl border border-white/10 bg-white/[0.035] p-3 flex items-start justify-between gap-3"><div class="min-w-0"><strong class="block text-[11px] text-white">'+escapeHtmlMobile(x.title||'حركة نقدية')+'</strong><p class="text-[10px] text-slate-400 mt-1">'+escapeHtmlMobile(x.reference||'—')+' • '+escapeHtmlMobile(x.method||'غير محدد')+'</p><span class="block text-[9px] text-slate-500 mt-1">'+escapeHtmlMobile(new Date(x.date).toLocaleString('ar-EG'))+'</span></div><div class="shrink-0 text-left"><b class="block text-xs '+(Number(x.incoming)>0?'text-emerald-300':'text-rose-300')+' bidi-ltr">'+(Number(x.incoming)>0?'+':'−')+fmtEgp(Number(x.incoming)>0?x.incoming:x.outgoing)+'</b></div></article>').join(''):'<p class="text-center text-[11px] text-slate-400 py-5">لا توجد حركات خزنة مسجلة.</p>';
+        const today=new Date().toISOString().slice(0,10);
+        ['mobileCashOpeningDate','mobileCashAdjustDate','mobileCashTransferDate'].forEach(id=>{const input=document.getElementById(id);if(input&&!input.value)input.value=today;});
+      }catch(err){balances.innerHTML='<p class="text-center text-[11px] text-rose-300">'+escapeHtmlMobile(err?.message||'تعذر تحميل الخزنة')+'</p>';}
+    }
+    async function submitMobileCashOpening(event){
+      event.preventDefault();
+      try{const result=await runEngine('setCashOpeningBalance',{method:document.getElementById('mobileCashOpeningMethod').value,amount:Number(document.getElementById('mobileCashOpeningAmount').value),date:document.getElementById('mobileCashOpeningDate').value,note:document.getElementById('mobileCashOpeningNote').value.trim()});if(!result?.ok)throw new Error(result?.error||'تعذر حفظ الرصيد الافتتاحي.');showToast('تم حفظ الرصيد الافتتاحي.');await renderMoreCashbook();}
+      catch(err){showToast(err?.message||'تعذر حفظ الرصيد الافتتاحي.');}
+    }
+    async function submitMobileCashAdjustment(event){
+      event.preventDefault();
+      try{const result=await runEngine('createCashbookAdjustment',{direction:document.getElementById('mobileCashAdjustDirection').value,amount:Number(document.getElementById('mobileCashAdjustAmount').value),method:document.getElementById('mobileCashAdjustMethod').value,date:document.getElementById('mobileCashAdjustDate').value,note:document.getElementById('mobileCashAdjustNote').value.trim()});if(!result?.ok)throw new Error(result?.error||'تعذر تسجيل التسوية.');document.getElementById('mobileCashAdjustAmount').value='';document.getElementById('mobileCashAdjustNote').value='';showToast('تم تسجيل التسوية النقدية.');await renderMoreCashbook();}
+      catch(err){showToast(err?.message||'تعذر تسجيل التسوية.');}
+    }
+    async function submitMobileCashTransfer(event){
+      event.preventDefault();
+      try{const result=await runEngine('createCashbookTransfer',{fromMethod:document.getElementById('mobileCashTransferFrom').value,toMethod:document.getElementById('mobileCashTransferTo').value,amount:Number(document.getElementById('mobileCashTransferAmount').value),date:document.getElementById('mobileCashTransferDate').value,note:document.getElementById('mobileCashTransferNote').value.trim()});if(!result?.ok)throw new Error(result?.error||'تعذر تسجيل التحويل.');document.getElementById('mobileCashTransferAmount').value='';document.getElementById('mobileCashTransferNote').value='';showToast('تم تسجيل التحويل بين الحسابات.');await renderMoreCashbook();}
+      catch(err){showToast(err?.message||'تعذر تسجيل التحويل.');}
     }
 
     function askMobileBi(topic) {
