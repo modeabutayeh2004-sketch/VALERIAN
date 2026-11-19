@@ -10,6 +10,8 @@ on:
       - 'manifest.webmanifest'
       - 'assets/**'
       - 'scripts/**'
+      - 'styles/tailwind.audit.css'
+      - 'tailwind.audit.config.cjs'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/deploy-v20-preview.yml'
