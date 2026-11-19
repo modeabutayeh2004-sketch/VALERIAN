@@ -3365,9 +3365,9 @@ function previewPeriodicReportPrint() {
       let totalCogs = 0;
       let totalWriteoffLoss = 0;
 
-      filteredOrders.forEach(o => {
-        // Damaged returns are removed from sold COGS with the returned quantity,
-        // then recognized separately as a loss at the immutable sale-time unit cost.
+      // Losses follow the actual return date, not the original order date.
+      // This keeps a damaged return from an older sale visible in the current report period.
+      state.orders.forEach(o => {
         (Array.isArray(o.returnItems) ? o.returnItems : []).forEach(ret => {
           if (ret.disposition !== 'writeoff') return;
           const returnDate = new Date(ret.date || o.returnedAt || o.date || 0);
@@ -3381,6 +3381,9 @@ function previewPeriodicReportPrint() {
           const unitCost = Math.max(0, Number(original?.unitCostAtSale ?? product?.averageCost ?? product?.totalCost ?? 0));
           totalWriteoffLoss += unitCost * Math.max(0, Number(ret.qty || 0));
         });
+      });
+
+      filteredOrders.forEach(o => {
         const returnedValue = Math.max(0, Number(o.returnedValue || 0));
         totalReturns += returnedValue;
         const netOrderValue = Math.max(0, Number(o.grandTotal || 0) - returnedValue);
