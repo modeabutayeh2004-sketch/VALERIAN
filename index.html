@@ -5353,28 +5353,50 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     async function saveMobileImportInvoice(){
       const button=document.getElementById('saveMobileImportInvoiceBtn');
       if(button?.dataset.busy==='1')return;
-      // Give immediate feedback before reading or validating any form values.
+      const originalLabel='اعتماد الفاتورة وتحديث المخزون والحسابات';
+      const fail=(message,targetId)=>{
+        showToast(message,'error');
+        const target=targetId?document.getElementById(targetId):null;
+        if(target){target.focus({preventScroll:true});target.scrollIntoView({behavior:'smooth',block:'center'});}
+      };
       if(button){button.dataset.busy='1';button.disabled=true;button.textContent='جارٍ فحص بيانات الفاتورة…';}
       try{
+        // Yield one frame so the loading state is visible before validation or engine work.
+        await new Promise(resolve=>requestAnimationFrame(()=>resolve()));
         const supplier=document.getElementById('impFormSupplier')?.value?.trim()||'';
         const calc=updateMobileImportTotals();
         const date=document.getElementById('impFormDate')?.value||'';
         const paymentMethod=document.getElementById('impFormPaymentMethod')?.value||'نقدي';
-        const validLines=calc.lines.length>0&&calc.lines.every(line=>line.productId&&Number.isSafeInteger(line.qty)&&line.qty>0&&Number.isFinite(line.unitForeign)&&line.unitForeign>0&&(appState.products||[]).some(p=>String(p.id)===String(line.productId)&&!p.archived&&!isDecantCategory(p)));
-        if(!supplier||!date||!validLines||!Number.isFinite(calc.rate)||calc.rate<=0||!Number.isFinite(calc.shipping)||calc.shipping<0||!Number.isFinite(calc.customs)||calc.customs<0||!Number.isFinite(calc.paid)||calc.paid<0||calc.paid>calc.grand+0.0001||calc.grand<=0){
-          showToast('راجع المورد والتاريخ وسعر الصرف والأصناف والكميات والأسعار والمدفوع. لا يمكن أن يتجاوز المدفوع إجمالي الفاتورة.','error');return;
+        if(!supplier)return fail('اكتب اسم المورد أولاً.','impFormSupplier');
+        if(!date)return fail('حدد تاريخ فاتورة الاستيراد.','impFormDate');
+        if(!Number.isFinite(calc.rate)||calc.rate<=0)return fail('سعر الصرف يجب أن يكون رقمًا أكبر من صفر.','impFormRate');
+        if(!Number.isFinite(calc.shipping)||calc.shipping<0)return fail('تكلفة الشحن لا يمكن أن تكون سالبة.','impFormShipping');
+        if(!Number.isFinite(calc.customs)||calc.customs<0)return fail('الجمارك والضرائب لا يمكن أن تكون قيمة سالبة.','impFormCustoms');
+        if(!calc.lines.length)return fail('أضف صنفًا واحدًا على الأقل إلى الفاتورة.');
+        for(let i=0;i<calc.lines.length;i++){
+          const line=calc.lines[i];
+          const row=document.querySelectorAll('#impFormLines .mobile-import-line')[i];
+          if(!line.productId)return fail('اختر المنتج في الصنف رقم '+(i+1)+'.',null);
+          if(!Number.isSafeInteger(line.qty)||line.qty<=0)return fail('كمية الصنف رقم '+(i+1)+' يجب أن تكون عددًا صحيحًا أكبر من صفر.',null);
+          if(!Number.isFinite(line.unitForeign)||line.unitForeign<=0)return fail('أدخل سعر الوحدة بالعملة الأجنبية للصنف رقم '+(i+1)+' بقيمة أكبر من صفر.',null);
+          if(!(appState.products||[]).some(p=>String(p.id)===String(line.productId)&&!p.archived&&!isDecantCategory(p)))return fail('المنتج المختار في الصنف رقم '+(i+1)+' غير موجود أو غير متاح للاستيراد.',null);
+          if(row){const input=row.querySelector('.mobile-import-unit');if(input&&(!Number.isFinite(line.unitForeign)||line.unitForeign<=0))input.focus();}
         }
+        if(!Number.isFinite(calc.paid)||calc.paid<0)return fail('المبلغ المدفوع لا يمكن أن يكون سالبًا.','impFormPaid');
+        if(!Number.isFinite(calc.grand)||calc.grand<=0)return fail('إجمالي الفاتورة يساوي صفرًا؛ راجع كميات وأسعار الأصناف وسعر الصرف.');
+        if(calc.paid>calc.grand+0.0001)return fail('المبلغ المدفوع ('+fmtEgp(calc.paid)+') أكبر من إجمالي الفاتورة ('+fmtEgp(calc.grand)+').','impFormPaid');
         const payload={supplier,date,exchangeRate:calc.rate,shippingCost:calc.shipping,customsCost:calc.customs,paidAmount:calc.paid,paymentMethod,lines:calc.lines};
         if(button)button.textContent='جارٍ اعتماد الفاتورة…';
+        await new Promise(resolve=>requestAnimationFrame(()=>resolve()));
         const result=await runEngine('createImportInvoice',payload);
-        if(result?.ok!==true)throw new Error(result?.error||'لم يؤكد محرك الأعمال اعتماد الفاتورة.');
+        if(result?.ok!==true)throw new Error(result?.error||'محرك الأعمال لم يؤكد اعتماد الفاتورة.');
         closeSheet('newImportSheet');
         showToast(result.cloudSyncOk===false?'تم حفظ الفاتورة محليًا، لكن المزامنة السحابية لم تتأكد بعد. راجع حالة الاتصال.':'تم اعتماد الفاتورة وتحديث المخزون والخزنة وحساب المورد بنجاح.','success');
       }catch(err){
         console.error('VALERIAN import invoice UI failed before/during engine call:',err);
         reportError(err);
       }finally{
-        if(button){button.dataset.busy='0';button.disabled=false;button.textContent='اعتماد الفاتورة وتحديث المخزون والحسابات';}
+        if(button){button.dataset.busy='0';button.disabled=false;button.textContent=originalLabel;}
       }
     }
 
