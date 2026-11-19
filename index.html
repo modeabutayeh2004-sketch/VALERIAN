@@ -4101,7 +4101,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           </div>
           <div class="glass-card rounded-xl p-3 flex items-center justify-between gap-3 border border-rose-300/20"><span class="text-[11px] text-slate-300">المتبقي المستحق للمورد</span><strong id="impFormRemaining" class="text-sm font-black text-rose-300 bidi-ltr">0 EGP</strong></div>
           <p class="text-[10px] text-slate-400 leading-5">سيتم توزيع الشحن والجمارك على الأصناف حسب قيمة كل صنف، وتحديث متوسط التكلفة والمخزون. يُسجل المدفوع في الخزنة، ويُرحّل المتبقي تلقائيًا إلى حساب المورد.</p>
-          <button id="saveMobileImportInvoiceBtn" onclick="saveMobileImportInvoice()" class="w-full py-3 rounded-full silver-btn text-xs font-black mt-1">اعتماد الفاتورة وتحديث المخزون والحسابات</button>
+          <button id="saveMobileImportInvoiceBtn" type="button" onclick="window.saveMobileImportInvoice()" class="w-full py-3 rounded-full silver-btn text-xs font-black mt-1">اعتماد الفاتورة وتحديث المخزون والحسابات</button>
         </div>
       </div>
     </div>
@@ -5399,6 +5399,9 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         if(button){button.dataset.busy='0';button.disabled=false;button.textContent=originalLabel;}
       }
     }
+    // Publish the import action immediately after its definition so later optional UI setup
+    // cannot prevent the button's global handler from being registered.
+    window.saveMobileImportInvoice=saveMobileImportInvoice;
 
     async function settleSupplierDue(invId){
       const inv=(appState.imports||[]).find(i=>String(i.id)===String(invId));
@@ -6598,8 +6601,6 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
         if(r.ok){closeSheet('stockAdjustSheet');showToast('تم تسجيل التسوية في سجل حركات المخزون الأصلي.');}
       }catch(err){reportError(err);}
     };
-    window.saveMobileImportInvoice=saveMobileImportInvoice;
-
     let pendingMoneyAction=null;
     window.closeMoneyActionModal=function(){const modal=document.getElementById('moneyActionModal');if(modal)modal.classList.add('hidden');pendingMoneyAction=null;};
     window.openMoneyActionModal=function(type,id){
