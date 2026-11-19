@@ -6089,17 +6089,29 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     }
 
     function renderMoreReports() {
-      const sales = appState.orders.filter(isMobileOrderDelivered).reduce((s, o) => s + Math.max(0,Number(o.grandTotal||0)-Number(o.returnedValue||0)), 0);
-      const deposits = appState.orders.filter(o => !o.stockDeducted).reduce((s, o) => s + Number(o.depositAmount || 0), 0);
-      const exp = appState.expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
-      const net = Math.max(0, Math.round(sales * 0.34 - exp));
-
-      document.getElementById('repMobileSales').textContent = fmtEgp(sales);
-      document.getElementById('repMobileDeposits').textContent = fmtEgp(deposits);
-      document.getElementById('repMobileExpenses').textContent = fmtEgp(exp);
-      document.getElementById('repMobileNet').textContent = fmtEgp(net);
+      const delivered=appState.orders.filter(isMobileOrderDelivered);
+      const sales=delivered.reduce((sum,order)=>sum+Math.max(0,Number(order.grandTotal||0)-Number(order.returnedValue||0)),0);
+      const deposits=appState.orders.filter(order=>!order.stockDeducted&&!String(order.status||'').includes('مرتجع')&&!String(order.status||'').includes('ملغي')).reduce((sum,order)=>sum+Number(order.depositAmount||0),0);
+      const expenses=appState.expenses.reduce((sum,item)=>sum+Number(item.amount||0),0);
+      const cogs=delivered.reduce((sum,order)=>sum+(order.items||[]).reduce((lineSum,item)=>{
+        const qty=Math.max(0,Number(item.qty||0)-Number(item.returnedQty||0));
+        const product=appState.products.find(p=>String(p.id)===String(item.id));
+        const unitCost=Number(item.unitCostAtSale??product?.averageCost??product?.totalCost??0);
+        return lineSum+qty*Math.max(0,unitCost);
+      },0),0);
+      const writeoffLoss=appState.orders.reduce((sum,order)=>sum+(Array.isArray(order.returnItems)?order.returnItems:[]).filter(item=>item.disposition==='writeoff').reduce((lineSum,item)=>{
+        const original=(order.items||[]).find(line=>String(line.id)===String(item.productId));
+        const product=appState.products.find(p=>String(p.id)===String(item.productId));
+        const unitCost=Number(original?.unitCostAtSale??product?.averageCost??product?.totalCost??0);
+        return lineSum+Math.max(0,unitCost)*Math.max(0,Number(item.qty||0));
+      },0),0);
+      const net=sales-cogs-expenses-writeoffLoss;
+      document.getElementById('repMobileSales').textContent=fmtEgp(sales);
+      document.getElementById('repMobileDeposits').textContent=fmtEgp(deposits);
+      document.getElementById('repMobileExpenses').textContent=fmtEgp(expenses);
+      document.getElementById('repMobileLosses').textContent=fmtEgp(writeoffLoss);
+      document.getElementById('repMobileNet').textContent=fmtEgp(net);
     }
-
     function askMobileBi(topic) {
       const out = document.getElementById('mobileBiOutput');
       if (!appState.products.length && !appState.orders.length) {
