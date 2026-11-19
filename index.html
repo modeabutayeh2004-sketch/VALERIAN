@@ -3207,7 +3207,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
   <!-- Hidden Print Areas -->
   <div id="printArea" class="hidden"></div>
   <div id="offersPrintArea" class="hidden"></div>
-<script src="./engine-runtime.js?v=v20-20261119-cleanup1"></script>
+<script src="./engine-runtime.js?v=v20-20261119-cleanup4"></script>
 \n<!-- VALERIAN CLOUD CONNECTOR (V18.3) -->
 <div id="cloudStatusPill" style="display:none" aria-hidden="true">غير متصل</div>
 
@@ -6845,7 +6845,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
     };
 
     if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
-      window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=v20-20261119-cleanup3',{scope:'./',updateViaCache:'none'}).catch(err=>console.warn('VALERIAN V20 offline registration failed',err)));
+      window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=v20-20261119-cleanup4',{scope:'./',updateViaCache:'none'}).catch(err=>console.warn('VALERIAN V20 offline registration failed',err)));
     }
     connectEngine().catch(reportError);
     // Fallback for browser restore/cloud events that occur after the first frame load.
