@@ -5221,10 +5221,9 @@ function previewPeriodicReportPrint() {
             if(paid>calc.grand+0.0001)throw new Error('المبلغ المدفوع لا يمكن أن يتجاوز إجمالي الفاتورة.');
             const saved=saveImportShipmentCore();
             if(saved!==true)throw new Error(window.__valerianLastSaveError?.message||'لم يتم اعتماد فاتورة الاستيراد.');
-            committed=true;
             await valDurableWritePromise;
             await valIdbFlush();
-            const invoice=state.imports.find(item=>String(item.id)===String('IMP-'+Date.now()));
+            committed=true;
             const latest=state.imports[0];
             if(!latest||latest.supplier!==supplier||Number(latest.totalEgp||0)!==Number(calc.grand.toFixed(2)))throw new Error('لم يتم العثور على الفاتورة المعتمدة في سجل المحرك.');
             let cloudSyncOk=true;
