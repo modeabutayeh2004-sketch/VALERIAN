@@ -1,7 +1,7 @@
 /* VALERIAN V20.117 — single-document engine integration */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-135-return-losses';
-const APP_SHELL = ['./', './index.html', './engine-runtime.js?v=v5-return-losses-20261119', './manifest.webmanifest', './assets/valerian-icon.jpg'];
+const CACHE_NAME = 'valerian-app-shell-v20-136-orders-returns-losses';
+const APP_SHELL = ['./', './index.html', './engine-runtime.js?v=v5-orders-returns-losses-20261119', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
