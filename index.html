@@ -5519,24 +5519,41 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     }
 
     function processMobileReturn(orderId) {
-      const o = appState.orders.find(x => x.id === orderId);
-      if (!o) return;
-      if (o.stockDeducted) {
-        o.items.forEach(i => {
-          const p = appState.products.find(x => x.id === i.id);
-          if (p) p.stock += i.qty;
-        });
-      } else {
-        o.items.forEach(i => {
-          const p = appState.products.find(x => x.id === i.id);
-          if (p) p.reservedStock = Math.max(0, p.reservedStock - i.qty);
-        });
-      }
-      const cust = appState.customers.find(c => c.phone === o.phone);
-      if (cust && o.depositAmount > 0) cust.debtToCustomer += o.depositAmount;
-      o.status = 'مرتجع بالكامل';
-      renderMoreTracking();
-      showToast(`تم استرداد المخزون وتسجيل ${fmtEgp(o.depositAmount)} كالتزام للعميل`);
+      const order=(appState.orders||[]).find(o=>String(o.id)===String(orderId));
+      if(!order)return showToast('الطلب غير موجود.');
+      const pending=(order.items||[]).filter(item=>Number(item.qty||0)>Number(item.returnedQty||0));
+      if(!pending.length)return showToast('تم إرجاع كامل كميات هذا الطلب بالفعل.');
+      const alreadyShipped=!!order.stockDeducted;
+      let root=document.getElementById('mobileReturnEditor');if(!root){root=document.createElement('div');root.id='mobileReturnEditor';document.body.appendChild(root);}
+      const rows=pending.map(item=>{
+        const remaining=Math.max(0,Number(item.qty||0)-Number(item.returnedQty||0));
+        return '<div class="rounded-xl border border-white/10 bg-white/5 p-3 space-y-2" data-mobile-return-row data-product-id="'+escapeHtmlMobile(item.id)+'"><div class="flex justify-between gap-2"><strong class="text-white text-xs">'+escapeHtmlMobile(item.name||item.productName||'منتج')+'</strong><span class="text-[10px] text-slate-400">المتاح إرجاعه: '+remaining+'</span></div><label class="block text-[10px] text-slate-300">الكمية المرتجعة<input class="mobile-return-qty mt-1 w-full rounded-lg bg-slate-900 border border-white/15 p-2 text-white" type="number" min="0" max="'+remaining+'" step="1" value="0"></label>'+(alreadyShipped?'<label class="block text-[10px] text-slate-300">حالة المرتجع<select class="mobile-return-disposition mt-1 w-full rounded-lg bg-slate-900 border border-white/15 p-2 text-white"><option value="restock">سليم ومغلق — يعود للمخزون</option><option value="open">مفتوح — يعود لرصيد التقسيم</option><option value="writeoff">مكسور / تالف — يُسجل هالك</option></select></label><label class="mobile-return-openml-wrap hidden block text-[10px] text-slate-300">الملليلترات المتبقية<input class="mobile-return-openml mt-1 w-full rounded-lg bg-slate-900 border border-white/15 p-2 text-white" type="number" min="0" step="0.1" placeholder="أدخل المتبقي بالملليلتر"></label>':'<p class="text-[10px] text-amber-200">سيتم تحرير الكمية من الحجز دون خصم أو إضافة مخزون.</p>')+'</div>';
+      }).join('');
+      root.className='fixed inset-0 z-[145] flex items-center justify-center p-4 bg-black/85';
+      root.innerHTML='<section dir="rtl" class="w-full max-w-md max-h-[88dvh] overflow-y-auto rounded-3xl border border-white/15 bg-[#07131d] p-5 space-y-4"><div class="flex items-center justify-between"><h3 class="font-black text-white">تسجيل مرتجع — '+escapeHtmlMobile(order.id)+'</h3><button type="button" onclick="document.getElementById(\'mobileReturnEditor\').remove()" class="text-slate-300 text-xl">×</button></div><p class="text-[10px] leading-5 text-slate-300">'+(alreadyShipped?'حدد كمية كل صنف وحالته؛ المفتوح يُضاف إلى رصيد الملليلترات المتاح للتقسيم، والتالف يُسجل هالكًا.':'هذا الطلب لم يُشحن بعد؛ تسجيل المرتجع سيحرر الكميات المحجوزة فقط.')+'</p><div class="space-y-2">'+rows+'</div><div class="flex gap-2"><button type="button" onclick="document.getElementById(\'mobileReturnEditor\').remove()" class="flex-1 rounded-xl border border-white/15 py-3 text-slate-200">إلغاء</button><button type="button" onclick="confirmMobileReturn(\''+String(order.id).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')" class="flex-1 rounded-xl bg-rose-500/20 border border-rose-300/30 py-3 text-rose-100 font-black">اعتماد المرتجع</button></div></section>';
+      root.querySelectorAll('.mobile-return-disposition').forEach(select=>select.addEventListener('change',()=>{
+        const wrap=select.closest('[data-mobile-return-row]')?.querySelector('.mobile-return-openml-wrap');
+        if(wrap)wrap.classList.toggle('hidden',select.value!=='open');
+      }));
+    }
+
+    async function confirmMobileReturn(orderId) {
+      const root=document.getElementById('mobileReturnEditor');if(!root)return;
+      const selections=[...root.querySelectorAll('[data-mobile-return-row]')].map(row=>({
+        productId:row.dataset.productId,
+        qty:Number(row.querySelector('.mobile-return-qty')?.value||0),
+        disposition:row.querySelector('.mobile-return-disposition')?.value||'release',
+        openMl:Number(row.querySelector('.mobile-return-openml')?.value||0)
+      })).filter(item=>item.qty>0);
+      if(!selections.length)return showToast('حدد كمية مرتجعة واحدة على الأقل.');
+      try{
+        const result=await window.ValerianShippingAction('returnOrder',{orderId,selections});
+        if(result?.ok!==true)throw new Error(result?.error||'لم يؤكد محرك الأعمال اعتماد المرتجع.');
+        root.remove();
+        renderMoreTracking();
+        renderMoreOrders();
+        showToast('تم تسجيل المرتجع وتحديث المخزون / الهالك / رصيد التقسيم حسب الحالة.');
+      }catch(err){reportError(err);}
     }
 
     function renderCrmMobile(){
