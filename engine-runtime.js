@@ -1949,11 +1949,7 @@
       document.getElementById('emptyContainersSupplier').value='';document.getElementById('emptyContainersPaid').value='0';document.getElementById('emptyContainersMethod').value='نقدي';
       updatePackagingPurchaseInfo();openModal('emptyContainersModal');
     }
-    function openEmptyContainersModal(productId){
-      const p=state.products.find(x=>x.id===productId&&x.category==='تقسيم');
-      if(!p){showToast('منتج التقسيم غير موجود.','error');return;}
-      openPackagingPurchaseModal(Number(p.decantSize||10));
-    }
+    
     function addPackagingMovement(size,qty,reference,note,type='PURCHASE'){
       state.packagingMovements=Array.isArray(state.packagingMovements)?state.packagingMovements:[];
       const entry=getPackagingEntry(size);
@@ -2043,7 +2039,7 @@
       state.operatingSupplyMovements=Array.isArray(state.operatingSupplyMovements)?state.operatingSupplyMovements:[];
       state.operatingSupplyMovements.unshift({id:'OSM-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),date:new Date().toISOString(),supplyId:supply.id,supplyName:supply.name,type,quantity:Number(qty||0),unit:supply.unit||'قطعة',balanceAfter:Number(supply.quantity||0),reference:String(reference||''),note:String(note||'')});
     }
-    function openSupplyPurchaseModal(){document.querySelector('#supplyPurchaseModal form')?.reset();document.getElementById('supplyPaid').value='0';openModal('supplyPurchaseModal');}
+    
     function saveOperatingSupplyInvoice(e){
       e.preventDefault();
       const supplier=document.getElementById('supplySupplier').value.trim(),name=document.getElementById('supplyName').value.trim(),category=document.getElementById('supplyCategory').value,unit=document.getElementById('supplyUnit').value.trim(),qty=Number(document.getElementById('supplyQty').value),total=roundMoney(Number(document.getElementById('supplyTotalCost').value)),paid=roundMoney(Number(document.getElementById('supplyPaid').value||0)),method=normalizePaymentMethod(document.getElementById('supplyMethod').value);
@@ -2711,18 +2707,7 @@ function previewPeriodicReportPrint() {
       setOrdersView(currentOrdersView);
     }
 
-    function openOrdersHistoryModal() {
-      const body=document.getElementById('ordersHistoryBody');
-      body.replaceChildren();
-      (state.orders||[]).forEach(o=>{
-        const tr=document.createElement('tr');
-        const values=[o.id,new Date(o.date).toLocaleString('ar-EG'),`${o.name||''} (${o.phone||''})`,formatCurrency(o.grandTotal),formatCurrency(o.depositAmount),formatCurrency(o.remainingAmount),o.status||'غير محدد'];
-        values.forEach((value,index)=>{const td=document.createElement('td');td.className='p-3';td.textContent=String(value??'');if(index===0)td.classList.add('font-bold','text-brand-700');tr.appendChild(td);});
-        body.appendChild(tr);
-      });
-      if(!state.orders?.length){const tr=document.createElement('tr');const td=document.createElement('td');td.colSpan=7;td.className='p-6 text-center text-slate-400';td.textContent='لا توجد طلبات مسجلة بعد';tr.appendChild(td);body.appendChild(tr);}
-      openModal('ordersHistoryModal');
-    }
+    
 
     function renderShippingCompanies(){
       state.shippingCompanies=Array.isArray(state.shippingCompanies)?state.shippingCompanies:[];
@@ -3531,14 +3516,7 @@ function previewPeriodicReportPrint() {
       document.getElementById('customerProfileNotes').value=c.profileNotes||'';
       openModal('customerProfileModal');
     }
-    function saveCustomerProfileAndOpenPrint(){
-      const idx=Number(document.getElementById('customerProfileIndex').value);
-      const form=document.querySelector('#customerProfileModal form');
-      if(!form||!form.reportValidity()) return;
-      const saved=saveCustomerProfile({preventDefault(){}});
-      if(saved!==true) return;
-      printCustomerFullProfile(idx);
-    }
+    
     function saveCustomerProfile(e){
       e.preventDefault(); const idx=Number(document.getElementById('customerProfileIndex').value),c=state.customers[idx]; if(!c)return false;
       const name=document.getElementById('customerProfileName').value.trim(),oldPhone=String(c.phone||''),phone=document.getElementById('customerProfilePhone').value.trim().replace(/[\s()-]/g,'');
@@ -3709,24 +3687,7 @@ function previewPeriodicReportPrint() {
       v1953SyncPrintPreviewSize();
       openModal('printPreviewModal');
     }
-    async function resetLocalOnlyData() {
-      const typed = prompt('تحذير: سيتم مسح بيانات النشاط من هذا الجهاز فقط. ستظل بيانات السحابة والأجهزة الأخرى كما هي وقد تعود عند المزامنة لاحقًا. سيتم تنزيل نسخة احتياطية كاملة بالصور أولًا.\n\nاكتب العبارة التالية للتأكيد:\nامسح كل البيانات');
-      if (typed !== 'امسح كل البيانات') { showToast('تم إلغاء عملية التفريغ.'); return; }
-      if (!confirm('هل أنت متأكد؟ سيتم مسح بيانات النشاط من هذا الجهاز فقط مع الاحتفاظ بإعداداتك وهوية البراند.')) return;
-      const before=structuredClone(state),oldLocal=localStorage.getItem(STORAGE_KEY);
-      try {
-        await valDownloadStateBackup('valerian_before_local_reset');
-        clearTimeout(valIdb.flushTimer); await valIdbFlush();
-        const fresh=valFreshActivityState();
-        persistLocal(fresh); state=fresh;
-        await valClearUnreferencedImages(fresh);
-        refreshAllViews();loadSettingsToUI();
-        showToast('تم تفريغ بيانات النشاط على هذا الجهاز مع الاحتفاظ بإعداداتك وهوية البراند. بيانات السحابة لم تتغير.','success');
-      } catch(err) {
-        state=before;try{if(oldLocal===null)localStorage.removeItem(STORAGE_KEY);else localStorage.setItem(STORAGE_KEY,oldLocal);}catch(_){}
-        console.error('VALERIAN local reset failed',err);showToast('لم يكتمل التفريغ؛ تم استرجاع الحالة المحلية قدر الإمكان. السبب: '+(err?.message||'خطأ غير معروف'),'error');
-      }
-    }
+    
     async function resetAllSystemData(password) {
       if (!cloudClient || !cloudReady || !cloudUser || !navigator.onLine) throw new Error('يجب تسجيل الدخول إلى حساب المزامنة والاتصال بالإنترنت قبل حذف جميع البيانات.');
       if (cloudDirty || cloudSaveInFlight || cloudConflict) throw new Error('هناك تغييرات لم تكتمل مزامنتها أو تعارض بين الأجهزة. نفّذ المزامنة وحل التعارض أولًا.');
