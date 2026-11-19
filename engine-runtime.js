@@ -5351,6 +5351,77 @@ function previewPeriodicReportPrint() {
           await valDurableWritePromise;try{await valIdbFlush();}catch(_){}
           refreshAllViews();return {ok:true,product:structuredClone(product),snapshot:snapshot()};
         },
+        getFinanceSnapshot:async()=>{
+          await ready;
+          const methods=['نقدي','تحويل بنكي','محفظة إلكترونية','بطاقة','أخرى','غير محدد'];
+          return {
+            expenses:structuredClone(state.expenses||[]),
+            cashbookRows:structuredClone(getCashBookRows()),
+            cashbookOpenings:structuredClone(state.cashbookOpenings||[]),
+            cashbookAdjustments:structuredClone(state.cashbookAdjustments||[]),
+            cashbookTransfers:structuredClone(state.cashbookTransfers||[]),
+            balances:methods.map(method=>({method,balance:getPaymentMethodBalance(method)})),
+            totals:{
+              expenses:(state.expenses||[]).filter(x=>!String(x.category||'').includes('استبدال نقاط عملاء')).reduce((sum,x)=>sum+Number(x.amount||0),0),
+              cashIn:getCashBookRows().reduce((sum,x)=>sum+Number(x.incoming||0),0),
+              cashOut:getCashBookRows().reduce((sum,x)=>sum+Number(x.outgoing||0),0)
+            }
+          };
+        },
+        createExpense:async payload=>{
+          await ready;
+          const amount=Number(payload?.amount),category=String(payload?.category||'').trim(),note=String(payload?.note||'').trim(),method=normalizePaymentMethod(payload?.method||'نقدي');
+          if(!category||!note||!Number.isFinite(amount)||amount<=0)throw new Error('أدخل بند المصروف والبيان ومبلغًا أكبر من صفر.');
+          const before=(state.expenses||[]).length;
+          el('expCategory').value=category;el('expNote').value=note;el('expAmount').value=String(amount);el('expPaymentMethod').value=method;
+          saveExpense({preventDefault(){}});
+          if((state.expenses||[]).length!==before+1)throw new Error(window.__valerianLastSaveError?.message||'لم يتم تسجيل المصروف.');
+          await confirmDurableStateCommit();
+          return {ok:true,expense:structuredClone(state.expenses[0]),snapshot:snapshot()};
+        },
+        deleteExpense:async id=>{
+          await ready;
+          const target=(state.expenses||[]).find(x=>String(x.id)===String(id));
+          if(!target)throw new Error('المصروف غير موجود.');
+          const before=structuredClone(state);
+          state.expenses=state.expenses.filter(x=>String(x.id)!==String(id));
+          logAudit('EXPENSE_DELETED','حذف مصروف '+target.id+' بقيمة '+target.amount);
+          if(!saveState()){state=before;throw new Error('تعذر حفظ حذف المصروف.');}
+          await confirmDurableStateCommit();
+          renderExpenses();refreshAllViews();
+          return {ok:true,snapshot:snapshot()};
+        },
+        setCashOpeningBalance:async payload=>{
+          await ready;
+          const method=normalizePaymentMethod(payload?.method||'نقدي'),amount=Number(payload?.amount),date=String(payload?.date||''),note=String(payload?.note||'').trim();
+          if(!Number.isFinite(amount)||amount<0||!/^\\d{4}-\\d{2}-\\d{2}$/.test(date))throw new Error('أدخل رصيدًا افتتاحيًا صحيحًا وتاريخًا صالحًا.');
+          if((state.cashbookOpenings||[]).some(x=>normalizePaymentMethod(x.method)===method))throw new Error('يوجد رصيد افتتاحي لهذا الحساب بالفعل؛ استخدم التعديل المخصص بدل إنشاء رصيد مكرر.');
+          el('cashOpeningMethod').value=method;el('cashOpeningAmount').value=String(amount);el('cashOpeningDate').value=date;el('cashOpeningNote').value=note;
+          const before=(state.cashbookOpenings||[]).length;saveCashOpeningBalance();
+          if((state.cashbookOpenings||[]).length!==before+1)throw new Error('لم يتم حفظ الرصيد الافتتاحي.');
+          await confirmDurableStateCommit();
+          return {ok:true,snapshot:snapshot()};
+        },
+        createCashbookAdjustment:async payload=>{
+          await ready;
+          const direction=payload?.direction==='OUT'?'OUT':'IN',amount=Number(payload?.amount),method=normalizePaymentMethod(payload?.method||'نقدي'),date=String(payload?.date||''),note=String(payload?.note||'').trim();
+          if(!Number.isFinite(amount)||amount<=0||!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||!note)throw new Error('أدخل مبلغ التسوية وتاريخها وسببها بصورة صحيحة.');
+          el('cashAdjustDirection').value=direction;el('cashAdjustAmount').value=String(amount);el('cashAdjustMethod').value=method;el('cashAdjustDate').value=date;el('cashAdjustNote').value=note;
+          const before=(state.cashbookAdjustments||[]).length;addCashbookAdjustment();
+          if((state.cashbookAdjustments||[]).length!==before+1)throw new Error('لم يتم اعتماد التسوية النقدية؛ تحقق من الرصيد والبيانات.');
+          await confirmDurableStateCommit();
+          return {ok:true,adjustment:structuredClone(state.cashbookAdjustments[0]),snapshot:snapshot()};
+        },
+        createCashbookTransfer:async payload=>{
+          await ready;
+          const fromMethod=normalizePaymentMethod(payload?.fromMethod||''),toMethod=normalizePaymentMethod(payload?.toMethod||''),amount=Number(payload?.amount),date=String(payload?.date||''),note=String(payload?.note||'').trim();
+          if(!fromMethod||!toMethod||fromMethod===toMethod||!Number.isFinite(amount)||amount<=0||!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||!note)throw new Error('أدخل حسابي التحويل المختلفين والمبلغ والتاريخ والسبب.');
+          el('cashTransferFrom').value=fromMethod;el('cashTransferTo').value=toMethod;el('cashTransferAmount').value=String(amount);el('cashTransferDate').value=date;el('cashTransferNote').value=note;
+          const before=(state.cashbookTransfers||[]).length;addCashbookTransfer();
+          if((state.cashbookTransfers||[]).length!==before+1)throw new Error('لم يتم اعتماد التحويل؛ قد يكون الرصيد المتاح غير كافٍ.');
+          await confirmDurableStateCommit();
+          return {ok:true,transfer:structuredClone(state.cashbookTransfers[0]),snapshot:snapshot()};
+        },
         updateSettings:async payload=>{
           await ready;
           const before=structuredClone(state.settings||{});
