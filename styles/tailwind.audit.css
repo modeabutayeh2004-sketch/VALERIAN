@@ -1,4 +1,2 @@
-/* Isolated Tailwind v3 audit input. Keep separate from production styles. */
-@tailwind base;
-@tailwind components;
+/* Isolated Tailwind v3 utility-only audit input. No base reset or components. */
 @tailwind utilities;
