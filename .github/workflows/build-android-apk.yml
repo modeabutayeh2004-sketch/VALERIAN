@@ -11,6 +11,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Audit mobile source and bundle contract
+        run: npm run audit:mobile
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
