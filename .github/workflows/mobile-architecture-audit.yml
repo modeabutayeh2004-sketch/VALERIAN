@@ -22,7 +22,7 @@ jobs:
       - name: Report dependency security advisories
         run: |
           npm audit --json > /tmp/valerian-npm-audit.json || true
-          node -e 'const a=require("/tmp/valerian-npm-audit.json"); const rows=Object.entries(a.vulnerabilities||{}); console.log("npm audit: "+rows.length+" vulnerable packages"); rows.forEach(([name,v])=>{console.log(name+" | "+v.severity+" | "+v.range); (v.via||[]).forEach(x=>{if(typeof x==="object") console.log("  "+x.title+" | "+(x.url||""));});});'
+          node -e 'const a=require("/tmp/valerian-npm-audit.json"); const rows=Object.entries(a.vulnerabilities||{}); console.log("npm audit: "+rows.length+" vulnerable packages"); rows.forEach(([name,v])=>{console.log(name+" | "+v.severity+" | "+v.range); (v.via||[]).forEach(x=>{if(typeof x==="object") console.log("  "+x.title+" | "+(x.url||""));});}); if(rows.some(([,v])=>["high","critical"].includes(v.severity))) process.exit(1);'
       - name: Prepare mobile web bundle
         run: npm run build:web
       - name: Audit source and prepared bundle
