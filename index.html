@@ -5834,18 +5834,23 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       (source.parentElement || document.body).appendChild(captureHost);
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       const imageNodes=[...captureNode.querySelectorAll('img')];
-      await Promise.all(imageNodes.map(async img=>{
-        img.loading='eager'; img.decoding='sync';
-        const src=img.currentSrc||img.getAttribute('src')||'';
-        if(src.startsWith('data:')||src.startsWith('blob:'))img.removeAttribute('crossorigin');
-        if(typeof img.decode==='function'){
-          try{await Promise.race([img.decode(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('انتهت مهلة تحميل صورة داخل المستند.')),15000))]);}
-          catch(err){if(!img.complete||!img.naturalWidth)throw err;}
-        }else if(!img.complete||!img.naturalWidth){
-          await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('تعذر تحميل صورة داخل المستند.')),15000);img.onload=()=>{clearTimeout(timer);resolve();};img.onerror=()=>{clearTimeout(timer);reject(new Error('تعذر تحميل صورة داخل المستند.'));};});
-        }
-        if(!img.naturalWidth||!img.naturalHeight)throw new Error('إحدى صور المستند غير متاحة للتصدير.');
-      }));
+      try {
+        await Promise.all(imageNodes.map(async img=>{
+          img.loading='eager'; img.decoding='sync';
+          const src=img.currentSrc||img.getAttribute('src')||'';
+          if(src.startsWith('data:')||src.startsWith('blob:'))img.removeAttribute('crossorigin');
+          if(typeof img.decode==='function'){
+            try{await Promise.race([img.decode(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('انتهت مهلة تحميل صورة داخل المستند.')),15000))]);}
+            catch(err){if(!img.complete||!img.naturalWidth)throw err;}
+          }else if(!img.complete||!img.naturalWidth){
+            await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('تعذر تحميل صورة داخل المستند.')),15000);img.onload=()=>{clearTimeout(timer);resolve();};img.onerror=()=>{clearTimeout(timer);reject(new Error('تعذر تحميل صورة داخل المستند.'));};});
+          }
+          if(!img.naturalWidth||!img.naturalHeight)throw new Error('إحدى صور المستند غير متاحة للتصدير.');
+        }));
+      } catch(err) {
+        captureHost.remove();
+        throw err;
+      }
       // Image decoding can change intrinsic layout after the clone is attached.
       // Wait for that layout to settle before measuring the final capture bounds.
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
