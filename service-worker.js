@@ -1,6 +1,6 @@
 /* VALERIAN V20.117 — single-document engine integration */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-138-delivery-invoice-layer';
+const CACHE_NAME = 'valerian-app-shell-v20-139-delivery-preview-hidden';
 const APP_SHELL = ['./', './index.html', './engine-runtime.js?v=v5-orders-tabs-20261119', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
