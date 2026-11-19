@@ -5210,46 +5210,76 @@ function previewPeriodicReportPrint() {
         },
         createImportInvoice:async payload=>{
           await ready;
-          const supplier=String(payload?.supplier||'').trim();
-          const dateValue=String(payload?.date||new Date().toISOString().slice(0,10));
-          const rate=Number(payload?.exchangeRate),shipping=Number(payload?.shippingCost||0),customs=Number(payload?.customsCost||0),paid=Number(payload?.paidAmount||0);
-          const lines=Array.isArray(payload?.lines)?payload.lines.map(line=>({productId:String(line?.productId||''),qty:Number(line?.qty),unitForeign:Number(line?.unitForeign)})):[];
-          if(!supplier||!/^\d{4}-\d{2}-\d{2}$/.test(dateValue)||!Number.isFinite(rate)||rate<=0||!lines.length||lines.some(line=>!line.productId||!Number.isSafeInteger(line.qty)||line.qty<=0||!Number.isFinite(line.unitForeign)||line.unitForeign<=0||!state.products.some(p=>String(p.id)===line.productId&&!p.archived&&p.category!=='تقسيم'))||!Number.isFinite(shipping)||shipping<0||!Number.isFinite(customs)||customs<0||!Number.isFinite(paid)||paid<0)throw new Error('بيانات فاتورة الاستيراد غير مكتملة أو غير صحيحة.');
+          if(!payload)throw new Error('بيانات فاتورة الاستيراد مطلوبة.');
+          // V20 no longer renders the legacy import modal. The ERP core still uses
+          // its form fields as an internal transaction adapter, so create a hidden bridge.
+          let bridge=document.getElementById('valerianImportEngineBridge');
+          if(!bridge){
+            bridge=document.createElement('div');
+            bridge.id='valerianImportEngineBridge';
+            bridge.style.display='none';
+            bridge.innerHTML=`<div id="importModal" class="hidden">
+              <input id="impSupplier" type="text"><input id="impInvoiceDate" type="date">
+              <input id="impExchangeRate" type="number"><input id="impShippingCost" type="number">
+              <input id="impCustomsCost" type="number"><input id="impPaidAmount" type="number">
+              <input id="impNotes" type="text">
+              <select id="impPaymentMethod"><option value="نقدي">نقدي</option><option value="تحويل بنكي">تحويل بنكي</option><option value="محفظة إلكترونية">محفظة إلكترونية</option><option value="بطاقة">بطاقة</option><option value="أخرى">أخرى</option></select>
+              <table><tbody id="importLinesBody"></tbody></table>
+              <button id="saveImportInvoiceBtn" type="button"></button>
+            </div>`;
+            document.body.appendChild(bridge);
+          }
+          const supplier=String(payload.supplier||'').trim();
+          const dateValue=String(payload.date||'').trim();
+          const rate=Number(payload.exchangeRate??payload.rate);
+          const shipping=Number(payload.shippingCost??payload.shipping??0);
+          const customs=Number(payload.customsCost??payload.fees??0);
+          const paid=Number(payload.paidAmount??payload.paid??0);
+          const lines=Array.isArray(payload.lines)?payload.lines.map(line=>({productId:String(line?.productId||''),qty:Number(line?.qty),unitForeign:Number(line?.unitForeign)})):[];
+          if(!supplier||!/^\d{4}-\d{2}-\d{2}$/.test(dateValue))throw new Error('اسم المورد وتاريخ الفاتورة مطلوبان.');
+          if(!Number.isFinite(rate)||rate<=0||!Number.isFinite(shipping)||shipping<0||!Number.isFinite(customs)||customs<0||!Number.isFinite(paid)||paid<0)throw new Error('راجع سعر الصرف وتكاليف الشحن والجمارك والمبلغ المدفوع.');
+          if(!lines.length)throw new Error('أضف صنفًا واحدًا على الأقل إلى فاتورة الاستيراد.');
+          for(let i=0;i<lines.length;i++){
+            const line=lines[i];
+            if(!line.productId||!Number.isSafeInteger(line.qty)||line.qty<=0||!Number.isFinite(line.unitForeign)||line.unitForeign<=0)throw new Error('بيانات الصنف رقم '+(i+1)+' غير مكتملة أو غير صحيحة.');
+            if(!state.products.some(p=>String(p.id)===line.productId&&!p.archived&&p.category!=='تقسيم'))throw new Error('المنتج المحدد في الصنف رقم '+(i+1)+' غير موجود أو غير متاح للاستيراد.');
+          }
+          const foreign=lines.reduce((sum,line)=>sum+line.qty*line.unitForeign,0);
+          const grand=roundMoney(foreign*rate+shipping+customs);
+          if(!Number.isFinite(grand)||grand<=0||paid>grand+0.0001)throw new Error('المبلغ المدفوع لا يمكن أن يتجاوز إجمالي الفاتورة.');
           const before=structuredClone(state);
-          let committed=false;
           try{
             el('impSupplier').value=supplier;
-            el('impExchangeRate').value=String(rate);
             el('impInvoiceDate').value=dateValue;
+            el('impExchangeRate').value=String(rate);
             el('impShippingCost').value=String(shipping);
             el('impCustomsCost').value=String(customs);
             el('impPaidAmount').value=String(paid);
-            el('impPaymentMethod').value=normalizePaymentMethod(payload?.paymentMethod||'نقدي');
-            el('impNotes').value=String(payload?.notes||'');
+            el('impPaymentMethod').value=normalizePaymentMethod(payload.paymentMethod||'نقدي');
+            el('impNotes').value=String(payload.notes||'فاتورة استيراد من واجهة VALERIAN V20');
             el('importLinesBody').innerHTML='';
             lines.forEach(line=>addImportLine(line.productId,line.qty,line.unitForeign));
             const calc=updateImportTotals();
-            if(paid>calc.grand+0.0001)throw new Error('المبلغ المدفوع لا يمكن أن يتجاوز إجمالي الفاتورة.');
+            if(Math.abs(calc.grand-grand)>0.01)throw new Error('اختلاف في إجمالي الفاتورة بين واجهة V20 ومحرك الاستيراد.');
             const saved=saveImportShipmentCore();
-            if(saved!==true)throw new Error(window.__valerianLastSaveError?.message||'لم يتم اعتماد فاتورة الاستيراد.');
+            if(saved!==true)throw new Error(window.__valerianLastSaveError?.message||'لم يتم اعتماد فاتورة الاستيراد. راجع بيانات الفاتورة وحاول مرة أخرى.');
             await valDurableWritePromise;
             if(valDurableWriteError)throw new Error('فشل الحفظ الدائم لبيانات فاتورة الاستيراد: '+String(valDurableWriteError.message||valDurableWriteError));
             await valIdbFlush();
             if(valDurableWriteError)throw new Error('لم يتم تأكيد تثبيت فاتورة الاستيراد في قاعدة البيانات المحلية: '+String(valDurableWriteError.message||valDurableWriteError));
-            committed=true;
-            const latest=state.imports[0];
-            if(!latest||latest.supplier!==supplier||Number(latest.totalEgp||0)!==Number(calc.grand.toFixed(2)))throw new Error('لم يتم العثور على الفاتورة المعتمدة في سجل المحرك.');
+            const latest=state.imports?.find(item=>String(item.supplier)===supplier&&Number(item.totalEgp||0)===Number(calc.grand.toFixed(2)));
+            const committedInvoice=state.imports?.[0];
+            if(!committedInvoice||!latest||!state.supplierInvoices?.some(item=>String(item.id)===String(committedInvoice.id)))throw new Error('لم يتم تأكيد تسجيل الفاتورة في سجل الاستيراد وحساب المورد.');
             let cloudSyncOk=true;
             if(cloudReady&&cloudUser&&navigator.onLine&&!cloudConflict){
               try{clearTimeout(cloudSaveTimer);await cloudSyncNow(true);cloudSyncOk=!cloudConflict&&!cloudDirty;}
               catch(_){cloudSyncOk=false;}
             }
-            return {ok:true,invoice:structuredClone(latest),cloudSyncOk,snapshot:snapshot()};
+            return {ok:true,invoice:structuredClone(committedInvoice),cloudSyncOk,snapshot:snapshot()};
           }catch(error){
-            if(!committed){
-              state=before;
-              try{persistLocal(before);await valIdbFlush();}catch(rollbackError){console.error('Import invoice rollback failed',rollbackError);}
-            }
+            state=before;
+            try{persistLocal(before);await valQueueDurableState(before);await valIdbFlush();}catch(rollbackError){console.error('Import invoice rollback failed',rollbackError);}
+            refreshAllViews();
             throw error;
           }
         },
