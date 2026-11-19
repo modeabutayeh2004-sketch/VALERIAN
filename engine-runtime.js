@@ -854,7 +854,22 @@
       if (tab === 'intelligence') renderValerianIntelligence();
     }
 
-    function openModal(id) { if (id === 'purchaseModal') { document.querySelector('#purchaseModal form')?.reset(); populatePurchaseSelect(); } document.getElementById(id).classList.remove('hidden'); if (id === 'logoModal') drawLogoCrop(); }
+    function openModal(id) {
+      const modal=document.getElementById(id);
+      if(!modal)return;
+      // The legacy engine is intentionally hosted off-screen behind the V20 shell.
+      // Portals that must be visible (especially invoice preview) must leave that host
+      // before being displayed; a child's z-index cannot escape its parent's stacking context.
+      if(id==='printPreviewModal'){
+        if(modal.parentElement!==document.body)document.body.appendChild(modal);
+        modal.style.setProperty('position','fixed','important');
+        modal.style.setProperty('inset','0','important');
+        modal.style.setProperty('z-index','12001','important');
+      }
+      if (id === 'purchaseModal') { document.querySelector('#purchaseModal form')?.reset(); populatePurchaseSelect(); }
+      modal.classList.remove('hidden');
+      if (id === 'logoModal') drawLogoCrop();
+    }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     function showToast(msg, type = 'success') {
       let container = document.getElementById('toastContainer');
