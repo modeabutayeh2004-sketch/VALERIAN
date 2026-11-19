@@ -2,7 +2,7 @@
 'use strict';
 
 // Change this value whenever the HTML or application engine changes.
-const CACHE_NAME = 'valerian-app-shell-v20-20261119-cleanup2';
+const CACHE_NAME = 'valerian-app-shell-v20-20261119-cleanup3';
 const APP_SHELL = [
   './',
   './index.html',
