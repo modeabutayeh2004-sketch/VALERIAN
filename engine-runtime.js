@@ -5101,6 +5101,24 @@ function previewPeriodicReportPrint() {
           if(!state.shippingCompanies.includes(value))throw new Error('لم يتم تأكيد تسجيل شركة الشحن داخل المحرك.');
           refreshAllViews();return {ok:true,company:value,snapshot:snapshot()};
         },
+        dispatchOrder:async payload=>{
+          await ready;
+          const idx=findOrder(payload?.orderId);if(idx<0)throw new Error('الطلب غير موجود.');
+          const order=state.orders[idx];
+          if(order.deliveredAt)throw new Error('لا يمكن شحن طلب تم تسليمه بالفعل.');
+          if(order.stockDeducted&&order.shippedAt)throw new Error('الطلب مسجل بالفعل كطلب مشحون.');
+          const company=String(payload?.company||'').trim(),tracking=String(payload?.tracking||'').trim();
+          if(!company||!(state.shippingCompanies||[]).some(x=>String(x)===company))throw new Error('اختر شركة شحن مسجلة قبل اعتماد الشحنة.');
+          const before=JSON.stringify(order);
+          openOrderShippingEditor(idx);
+          el('dispatchCompanySelect').value=company;
+          el('dispatchTrackingNumber').value=tracking;
+          el('dispatchStatus').value='تم التسليم لشركة الشحن';
+          saveOrderShippingDetails();
+          const updated=state.orders[idx];
+          if(!updated?.stockDeducted||!updated?.shippedAt||JSON.stringify(updated)===before)throw new Error(window.__valerianLastSaveError?.message||'لم يؤكد المحرك خصم المخزون واعتماد الشحنة.');
+          return {ok:true,snapshot:snapshot()};
+        },
         updateOrderShippingDetails:async payload=>{
           await ready;const idx=findOrder(payload?.orderId);if(idx<0)throw new Error('الطلب غير موجود.');
           const company=String(payload?.company||'').trim(),tracking=String(payload?.tracking||'').trim();if(!company)throw new Error('اختر شركة الشحن.');
