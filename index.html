@@ -3692,6 +3692,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           <button onclick="setMoreTab('reports')" data-more="reports" class="more-pill px-4 py-2 rounded-full text-xs font-bold glass-pill text-slate-200 shrink-0">📊 التقارير والذكاء</button>
           <button onclick="setMoreTab('finance')" data-more="finance" class="more-pill px-4 py-2 rounded-full text-xs font-bold glass-pill text-slate-200 shrink-0">💸 المصروفات</button>
           <button onclick="setMoreTab('cashbook')" data-more="cashbook" class="more-pill px-4 py-2 rounded-full text-xs font-bold glass-pill text-slate-200 shrink-0">🏦 الخزنة</button>
+          <button onclick="setMoreTab('transfers')" data-more="transfers" class="more-pill px-4 py-2 rounded-full text-xs font-bold glass-pill text-slate-200 shrink-0">↔️ التحويلات</button>
         </div>
 
         <div id="more-orders" class="more-view space-y-3">
@@ -3834,6 +3835,19 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
             <input id="mobileCashAdjustNote" required maxlength="180" class="w-full rounded-xl bg-slate-900 border border-white/15 text-white p-3 text-xs" placeholder="سبب التسوية (إجباري)">
             <button type="submit" class="w-full rounded-full silver-btn py-3 text-xs font-black">تسجيل التسوية</button>
           </form>
+
+          <div class="glass-card rounded-2xl p-4 space-y-3">
+            <h3 class="text-xs font-black text-white">آخر حركات الخزنة</h3>
+            <div id="mobileCashbookRows" class="space-y-2"></div>
+          </div>
+        </div>
+
+        <div id="more-transfers" class="more-view hidden space-y-4">
+          <div class="grid grid-cols-2 gap-2" id="mobileTransferBalances"></div>
+          <div class="glass-card rounded-2xl p-4 space-y-2">
+            <h3 class="text-xs font-black text-white">تحويل الأموال بين الحسابات</h3>
+            <p class="text-[10px] leading-5 text-slate-300">انقل الرصيد بين النقدي والتحويل البنكي والمحافظ ووسائل الدفع الأخرى. يُسجل التحويل كخصم من الحساب المصدر وإضافة للحساب المستلم دون اعتباره إيرادًا أو مصروفًا.</p>
+          </div>
           <form onsubmit="submitMobileCashTransfer(event)" class="glass-card rounded-2xl p-4 space-y-3">
             <h3 class="text-xs font-black text-white">تحويل بين وسائل الدفع</h3>
             <div class="grid grid-cols-2 gap-2">
@@ -3848,10 +3862,11 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
             <button type="submit" class="w-full rounded-full silver-btn py-3 text-xs font-black">تسجيل التحويل</button>
           </form>
           <div class="glass-card rounded-2xl p-4 space-y-3">
-            <h3 class="text-xs font-black text-white">آخر حركات الخزنة</h3>
-            <div id="mobileCashbookRows" class="space-y-2"></div>
+            <h3 class="text-xs font-black text-white">سجل التحويلات بين الحسابات</h3>
+            <div id="mobileTransfersList" class="space-y-2"></div>
           </div>
         </div>
+
       </section>
 
     </main>
@@ -5519,6 +5534,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       if (tab === 'reports') renderMoreReports();
       if (tab === 'finance') renderMoreFinance();
       if (tab === 'cashbook') renderMoreCashbook();
+      if (tab === 'transfers') renderMoreTransfers();
     }
 
     function isMobileOrderDelivered(order) {
@@ -6234,6 +6250,16 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         const today=new Date().toISOString().slice(0,10);
         ['mobileCashOpeningDate','mobileCashAdjustDate','mobileCashTransferDate'].forEach(id=>{const input=document.getElementById(id);if(input&&!input.value)input.value=today;});
       }catch(err){balances.innerHTML='<p class="text-center text-[11px] text-rose-300">'+escapeHtmlMobile(err?.message||'تعذر تحميل الخزنة')+'</p>';}
+    }
+    async function renderMoreTransfers(){
+      const balances=document.getElementById('mobileTransferBalances'),list=document.getElementById('mobileTransfersList');if(!balances||!list)return;
+      try{
+        const api=window.ValerianEngine;if(!api)throw new Error('محرك البيانات غير جاهز.');await api.ready;const data=await api.getFinanceSnapshot();
+        balances.innerHTML=(data?.balances||[]).map(x=>'<div class="glass-card rounded-2xl p-3"><span class="text-[10px] text-slate-400">'+escapeHtmlMobile(x.method)+'</span><strong class="block text-base font-black silver-text mt-1 bidi-ltr">'+fmtEgp(x.balance)+'</strong></div>').join('');
+        const transfers=[...(data?.cashbookTransfers||[])].sort((a,b)=>Date.parse(b.date)-Date.parse(a.date));
+        list.innerHTML=transfers.length?transfers.map(x=>'<article class="rounded-xl border border-white/10 bg-white/[0.035] p-3 flex items-start justify-between gap-3"><div class="min-w-0"><strong class="block text-[11px] text-white">'+escapeHtmlMobile(x.fromMethod)+' ← '+escapeHtmlMobile(x.toMethod)+'</strong><p class="text-[10px] text-slate-400 mt-1">'+escapeHtmlMobile(x.note||'تحويل داخلي')+'</p><span class="block text-[9px] text-slate-500 mt-1">'+escapeHtmlMobile(new Date(x.date).toLocaleString('ar-EG'))+'</span></div><div class="shrink-0 text-left"><b class="block text-xs text-sky-200 bidi-ltr">'+fmtEgp(x.amount)+'</b></div></article>').join(''):'<p class="text-center text-[11px] text-slate-400 py-5">لا توجد تحويلات مسجلة.</p>';
+        const date=document.getElementById('mobileCashTransferDate');if(date&&!date.value)date.value=new Date().toISOString().slice(0,10);
+      }catch(err){list.innerHTML='<p class="text-center text-[11px] text-rose-300">'+escapeHtmlMobile(err?.message||'تعذر تحميل التحويلات')+'</p>';}
     }
     async function submitMobileCashOpening(event){
       event.preventDefault();
