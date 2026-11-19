@@ -1,7 +1,7 @@
 /* VALERIAN V20.117 — single-document engine integration */
 'use strict';
-const CACHE_NAME = 'valerian-app-shell-v20-140-invoice-modal-portal';
-const APP_SHELL = ['./', './index.html', './engine-runtime.js?v=v5-print-modal-portal-20261119', './manifest.webmanifest', './assets/valerian-icon.jpg'];
+const CACHE_NAME = 'valerian-app-shell-v20-141-import-calculator';
+const APP_SHELL = ['./', './index.html', './engine-runtime.js?v=v5-import-calculator-20261119', './manifest.webmanifest', './assets/valerian-icon.jpg'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
