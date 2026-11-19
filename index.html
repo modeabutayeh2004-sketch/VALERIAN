@@ -6196,7 +6196,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     async function renderMoreFinance() {
       const list=document.getElementById('mobileExpensesList');if(!list)return;
       try{
-        const data=await runEngine('getFinanceSnapshot');
+        const api=engine||window.ValerianEngine;if(!api)throw new Error('محرك البيانات غير جاهز.');await api.ready;const data=await api.getFinanceSnapshot();
         const expenses=Array.isArray(data?.expenses)?data.expenses:[];
         const total=expenses.filter(x=>!String(x.category||'').includes('استبدال نقاط عملاء')).reduce((sum,x)=>sum+Number(x.amount||0),0);
         document.getElementById('mobileFinanceTotalExpenses').textContent=fmtEgp(total);
@@ -6218,7 +6218,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     async function renderMoreCashbook(){
       const balances=document.getElementById('mobileCashBalances');if(!balances)return;
       try{
-        const data=await runEngine('getFinanceSnapshot');
+        const api=engine||window.ValerianEngine;if(!api)throw new Error('محرك البيانات غير جاهز.');await api.ready;const data=await api.getFinanceSnapshot();
         balances.innerHTML=(data?.balances||[]).map(x=>'<div class="glass-card rounded-2xl p-3"><span class="text-[10px] text-slate-400">'+escapeHtmlMobile(x.method)+'</span><strong class="block text-base font-black silver-text mt-1 bidi-ltr">'+fmtEgp(x.balance)+'</strong></div>').join('');
         const rows=document.getElementById('mobileCashbookRows'),items=[...(data?.cashbookRows||[])].sort((a,b)=>Date.parse(b.date)-Date.parse(a.date)).slice(0,30);
         rows.innerHTML=items.length?items.map(x=>'<article class="rounded-xl border border-white/10 bg-white/[0.035] p-3 flex items-start justify-between gap-3"><div class="min-w-0"><strong class="block text-[11px] text-white">'+escapeHtmlMobile(x.title||'حركة نقدية')+'</strong><p class="text-[10px] text-slate-400 mt-1">'+escapeHtmlMobile(x.reference||'—')+' • '+escapeHtmlMobile(x.method||'غير محدد')+'</p><span class="block text-[9px] text-slate-500 mt-1">'+escapeHtmlMobile(new Date(x.date).toLocaleString('ar-EG'))+'</span></div><div class="shrink-0 text-left"><b class="block text-xs '+(Number(x.incoming)>0?'text-emerald-300':'text-rose-300')+' bidi-ltr">'+(Number(x.incoming)>0?'+':'−')+fmtEgp(Number(x.incoming)>0?x.incoming:x.outgoing)+'</b></div></article>').join(''):'<p class="text-center text-[11px] text-slate-400 py-5">لا توجد حركات خزنة مسجلة.</p>';
