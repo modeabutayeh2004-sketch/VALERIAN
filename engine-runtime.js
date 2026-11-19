@@ -1198,13 +1198,33 @@
         if(submitBtn){submitBtn.dataset.busy='0';submitBtn.disabled=false;submitBtn.textContent='اعتماد الفاتورة وتحديث المخزون والحسابات';}
       }
     }
-    function saveImportShipmentCore(e, options={}) { const supplier=document.getElementById('impSupplier').value.trim(); const rate=Number(document.getElementById('impExchangeRate').value||0), shipping=Number(document.getElementById('impShippingCost').value||0), customs=Number(document.getElementById('impCustomsCost').value||0), notes=document.getElementById('impNotes').value.trim();
-      const calc=updateImportTotals(), lines=calc.lines; const paid=roundMoney(calc.paid); const dateValue=document.getElementById('impInvoiceDate').value; const date=dateValue?new Date(dateValue+'T12:00:00').toISOString():new Date().toISOString();
-      if(!supplier||!Number.isFinite(rate)||rate<=0||!lines.length||calc.foreign<=0||lines.some(x=>(!x.productId||x.productId==='__NEW__')&&!x.isNew||!Number.isSafeInteger(x.qty)||x.qty<=0||!Number.isFinite(x.unitForeign)||x.unitForeign<=0)||!Number.isFinite(shipping)||shipping<0||!Number.isFinite(customs)||customs<0||!Number.isFinite(paid)||paid<0||paid>calc.grand+0.0001){showToast('راجع المورد وسعر الصرف (يمكن أن يكون عشريًا) والأصناف والكميات وأسعار الوحدات والتكاليف والمدفوع. يجب أن تكون قيمة الأصناف أكبر من صفر.','error');return false;}
-      if(lines.some(x=>x.isNew&&(!x.newName||!x.newSize||!Number.isFinite(x.newMargin)||x.newMargin<0||!Number.isFinite(x.newDiscount)||x.newDiscount<0||x.newDiscount>=100))){showToast('أكمل اسم وحجم المنتج الجديد وتأكد من نسب الربح والخصم.', 'error');return false;}
-      if(lines.some(x=>x.isNew&&x.newDiscount>0&&calc.foreign>0&&roundMoney((calc.grand*(x.qty*x.unitForeign/calc.foreign)/x.qty)*(1+x.newMargin/100)*(1-x.newDiscount/100))<roundMoney((calc.grand*(x.qty*x.unitForeign/calc.foreign)/x.qty)))){showToast('نسبة الخصم تجعل سعر العرض أقل من تكلفة المنتج. قلل الخصم.', 'error');return false;}
-      const before=structuredClone(state); const id='IMP-'+Date.now();
-      if(lines.some(x=>!x.isNew&&(!state.products.some(p=>String(p.id)===String(x.productId)&&p.category!=='تقسيم')))){showToast('أحد المنتجات المختارة لم يعد موجودًا في الكتالوج.', 'error');return false;}
+    function saveImportShipmentCore(e, options={}) {
+      const direct=options.payload||null;
+      const supplier=direct?String(direct.supplier||'').trim():document.getElementById('impSupplier').value.trim();
+      const rate=Number(direct?(direct.exchangeRate??direct.rate):document.getElementById('impExchangeRate').value||0);
+      const shipping=Number(direct?(direct.shippingCost??0):document.getElementById('impShippingCost').value||0);
+      const customs=Number(direct?(direct.customsCost??0):document.getElementById('impCustomsCost').value||0);
+      const notes=direct?String(direct.notes||''):document.getElementById('impNotes').value.trim();
+      const dateValue=direct?String(direct.date||''):document.getElementById('impInvoiceDate').value;
+      const paid=roundMoney(direct?Number(direct.paidAmount||0):Number(document.getElementById('impPaidAmount').value||0));
+      let calc;
+      if(direct){
+        const lines=(Array.isArray(direct.lines)?direct.lines:[]).map(line=>({
+          productId:String(line?.productId||''),qty:Number(line?.qty),unitForeign:Number(line?.unitForeign),
+          isNew:false,updateRetail:line?.updateRetail===true
+        }));
+        const foreign=lines.reduce((sum,line)=>sum+line.qty*line.unitForeign,0);
+        calc={lines,foreign,grand:foreign*rate+shipping+customs,paid};
+      }else calc=updateImportTotals();
+      const lines=calc.lines;
+      const date=dateValue?new Date(dateValue+'T12:00:00').toISOString():new Date().toISOString();
+      window.__valerianLastImportInvoiceError=null;
+      const reject=message=>{window.__valerianLastImportInvoiceError=String(message);if(!direct)showToast(message,'error');return false;};
+      if(!supplier||!Number.isFinite(rate)||rate<=0||!lines.length||calc.foreign<=0||lines.some(x=>(!x.productId||x.productId==='__NEW__')&&!x.isNew||!Number.isSafeInteger(x.qty)||x.qty<=0||!Number.isFinite(x.unitForeign)||x.unitForeign<=0)||!Number.isFinite(shipping)||shipping<0||!Number.isFinite(customs)||customs<0||!Number.isFinite(paid)||paid<0||paid>calc.grand+0.0001)return reject('راجع المورد وسعر الصرف والأصناف والكميات وأسعار الوحدات والتكاليف والمدفوع. يجب أن تكون قيمة الأصناف أكبر من صفر.');
+      if(lines.some(x=>x.isNew&&(!x.newName||!x.newSize||!Number.isFinite(x.newMargin)||x.newMargin<0||!Number.isFinite(x.newDiscount)||x.newDiscount<0||x.newDiscount>=100)))return reject('أكمل اسم وحجم المنتج الجديد وتأكد من نسب الربح والخصم.');
+      if(lines.some(x=>x.isNew&&x.newDiscount>0&&calc.foreign>0&&roundMoney((calc.grand*(x.qty*x.unitForeign/calc.foreign)/x.qty)*(1+x.newMargin/100)*(1-x.newDiscount/100))<roundMoney((calc.grand*(x.qty*x.unitForeign/calc.foreign)/x.qty))))return reject('نسبة الخصم تجعل سعر العرض أقل من تكلفة المنتج. قلل الخصم.');
+      const before=structuredClone(state); const id='IMP-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);
+      if(lines.some(x=>!x.isNew&&(!state.products.some(p=>String(p.id)===String(x.productId)&&!p.archived&&p.category!=='تقسيم'))))return reject('أحد المنتجات المختارة لم يعد موجودًا أو غير متاح في الكتالوج.');
       const foreign=calc.foreign, grand=roundMoney(calc.grand); let allocated=0; const invoiceItems=[];
       lines.forEach((line,index)=>{
         const lineForeign=line.qty*line.unitForeign; const share=roundMoney(index===lines.length-1?grand-allocated:grand*(lineForeign/foreign)); allocated+=share; const unitLanded=share/line.qty;
@@ -1239,10 +1259,32 @@
         }
         addInventoryMovement(prod.id,'IMPORT_PURCHASE',line.qty,id,'فاتورة استيراد '+id+' — '+supplier); invoiceItems.push({productId:prod.id,productName:prod.name,qty:line.qty,unitForeign:line.unitForeign,landedCost:share,newProduct:!!line.isNew,oldRetailPrice:line.oldRetailPrice??null,suggestedRetailPrice:line.suggestedRetailPrice??prod.price,retailPriceUpdated:!!line.updateRetail,appliedRetailPrice:line.appliedRetailPrice??prod.price,previousRetailPrice:line.oldRetailPrice??null,lastPurchaseUnitCost:line.lastPurchaseUnitCost??unitLanded,replacementCost:line.replacementCost??unitLanded,lastPurchaseDate:date});
       });
-      const invoice={id,date,supplier,foreignCost:foreign,exchangeRate:rate,shippingCost:shipping,customsCost:customs,totalEgp:grand,paidAmount:paid,paymentMethod:document.getElementById('impPaymentMethod').value,notes,items:invoiceItems};
+      const invoice={id,date,supplier,foreignCost:foreign,exchangeRate:rate,shippingCost:shipping,customsCost:customs,totalEgp:grand,paidAmount:paid,paymentMethod:direct?normalizePaymentMethod(direct.paymentMethod||'نقدي'):document.getElementById('impPaymentMethod').value,notes,items:invoiceItems};
       state.imports.unshift(invoice); recordSupplierInvoice({id,date,supplier,totalAmount:grand,paidAmount:paid,paymentMethod:invoice.paymentMethod,source:'IMPORT',items:invoice.items});
       logAudit('IMPORT_INVOICE_CREATED','فاتورة استيراد '+id+' بقيمة '+grand+' ج.م، المدفوع '+paid);
-      if(!saveState()){state=before;refreshAllViews();return false;} try { const persisted=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}'); for(const line of lines){ if(line.isNew) continue; const expected=state.products.find(p=>String(p.id)===String(line.productId)); const saved=(persisted.products||[]).find(p=>String(p.id)===String(line.productId)); if(!saved || Number(saved.stock)!==Number(expected.stock) || Number(saved.lastPurchaseUnitCost)!==Number(expected.lastPurchaseUnitCost) || (line.updateRetail===true && Number(saved.price)!==Number(expected.price))) throw new Error('لم تتطابق بيانات المنتج المحفوظة مع الفاتورة: '+(expected?.name||line.productId)); } } catch(verifyError){ state=before; try{persistLocal(before);}catch(_){} showToast('تم إلغاء اعتماد الفاتورة لأن التحقق من حفظ بيانات المنتج فشل: '+verifyError.message,'error'); refreshAllViews(); return false; } closeModal('importModal'); if(!options.deferRefresh)refreshAllViews(); const reviewProducts=lines.filter(x=>!x.isNew&&state.products.find(p=>p.id===x.productId)?.priceReviewRequired).map(x=>state.products.find(p=>p.id===x.productId)?.name).filter(Boolean); if(!options.deferToast)showToast('تم اعتماد الفاتورة وتحديث المخزون.'+(reviewProducts.length?' تنبيه: راجع سعر '+[...new Set(reviewProducts)].join('، ')+'.':' تم تحديث/مراجعة الأسعار حسب اختياراتك.'),'success'); return true;
+      if(!saveState()){state=before;window.__valerianLastImportInvoiceError=window.__valerianLastSaveError?.message||'تعذر حفظ الفاتورة في التخزين المحلي.';if(!options.deferRefresh)refreshAllViews();return false;}
+      try{
+        const persisted=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');
+        for(const line of lines){
+          if(line.isNew)continue;
+          const expected=state.products.find(p=>String(p.id)===String(line.productId));
+          const saved=(persisted.products||[]).find(p=>String(p.id)===String(line.productId));
+          if(!saved||!expected||Number(saved.stock)!==Number(expected.stock)||Number(saved.lastPurchaseUnitCost)!==Number(expected.lastPurchaseUnitCost)||(line.updateRetail===true&&Number(saved.price)!==Number(expected.price)))throw new Error('لم تتطابق بيانات المنتج المحفوظة مع الفاتورة: '+(expected?.name||line.productId));
+        }
+        const storedInvoice=(persisted.imports||[]).find(x=>String(x.id)===id);
+        const storedSupplier=(persisted.supplierInvoices||[]).find(x=>String(x.id)===id);
+        if(!storedInvoice||!storedSupplier)throw new Error('لم تتطابق الفاتورة وحساب المورد مع نسخة الحفظ المحلية.');
+      }catch(verifyError){
+        state=before;window.__valerianLastImportInvoiceError=verifyError.message;
+        try{persistLocal(before);}catch(_){}
+        if(!direct)showToast('تم إلغاء اعتماد الفاتورة لأن التحقق من الحفظ فشل: '+verifyError.message,'error');
+        if(!options.deferRefresh)refreshAllViews();return false;
+      }
+      if(!options.deferClose)closeModal('importModal');
+      if(!options.deferRefresh)refreshAllViews();
+      const reviewProducts=lines.filter(x=>!x.isNew&&state.products.find(p=>String(p.id)===String(x.productId))?.priceReviewRequired).map(x=>state.products.find(p=>String(p.id)===String(x.productId))?.name).filter(Boolean);
+      if(!options.deferToast)showToast('تم اعتماد الفاتورة وتحديث المخزون.'+(reviewProducts.length?' تنبيه: راجع سعر '+[...new Set(reviewProducts)].join('، ')+'.':' تم تحديث/مراجعة الأسعار حسب اختياراتك.'),'success');
+      return true;
     }
 
     // V19.23: Supplier ledger primitives required by import/local/packaging purchases.
@@ -5027,66 +5069,6 @@ function previewPeriodicReportPrint() {
           produceDecants({preventDefault(){}});
           return {ok:(state.decantProductionLog||[]).length>before,snapshot:snapshot()};
         },
-        createImportInvoice:async payload=>{
-          await ready;
-          if(!payload)throw new Error('بيانات فاتورة الاستيراد مطلوبة.');
-          const lines=Array.isArray(payload.lines)?payload.lines:[];
-          const supplier=String(payload.supplier||'').trim();
-          const date=String(payload.date||'').trim();
-          const rate=Number(payload.exchangeRate??payload.rate);
-          const shipping=Number(payload.shippingCost??payload.shipping??0);
-          const customs=Number(payload.customsCost??payload.fees??0);
-          const paid=Number(payload.paidAmount??payload.paid??0);
-          if(!supplier||!date||!/^\d{4}-\d{2}-\d{2}$/.test(date))throw new Error('اسم المورد وتاريخ الفاتورة مطلوبان.');
-          if(!Number.isFinite(rate)||rate<=0||!Number.isFinite(shipping)||shipping<0||!Number.isFinite(customs)||customs<0||!Number.isFinite(paid)||paid<0)throw new Error('راجع سعر الصرف وتكاليف الشحن والجمارك والمبلغ المدفوع.');
-          if(!lines.length)throw new Error('أضف صنفًا واحدًا على الأقل إلى فاتورة الاستيراد.');
-          const normalizedLines=lines.map((line,index)=>{
-            const productId=String(line?.productId||'').trim(),qty=Number(line?.qty),unitForeign=Number(line?.unitForeign);
-            if(!productId||!Number.isSafeInteger(qty)||qty<=0||!Number.isFinite(unitForeign)||unitForeign<=0)throw new Error('بيانات الصنف رقم '+(index+1)+' غير مكتملة أو غير صحيحة.');
-            if(!state.products.some(p=>String(p.id)===productId&&!p.archived&&p.category!=='تقسيم'))throw new Error('المنتج المحدد في الصنف رقم '+(index+1)+' غير موجود أو غير متاح للاستيراد.');
-            return {productId,qty,unitForeign};
-          });
-          const foreign=normalizedLines.reduce((sum,line)=>sum+line.qty*line.unitForeign,0);
-          const grand=Math.round((foreign*rate+shipping+customs)*100)/100;
-          if(!Number.isFinite(grand)||grand<=0||paid>grand+0.0001)throw new Error('المبلغ المدفوع لا يمكن أن يتجاوز إجمالي الفاتورة.');
-          const beforeCount=state.imports.length;
-          openImportModal();
-          el('impSupplier').value=supplier;
-          el('impInvoiceDate').value=date;
-          el('impExchangeRate').value=String(rate);
-          el('impShippingCost').value=String(shipping);
-          el('impCustomsCost').value=String(customs);
-          el('impPaidAmount').value=String(paid);
-          if(el('impPaymentMethod'))el('impPaymentMethod').value=String(payload.paymentMethod||'نقدي');
-          el('impNotes').value='فاتورة استيراد من واجهة VALERIAN V20';
-          el('importLinesBody').innerHTML='';
-          normalizedLines.forEach(line=>{
-            addImportLine(line.productId,line.qty,line.unitForeign);
-            const row=document.querySelector('#importLinesBody .import-line:last-child');
-            const updatePriceCheckbox=row?.querySelector('.imp-update-retail');
-            if(updatePriceCheckbox)updatePriceCheckbox.checked=false;
-          });
-          updateImportTotals();
-          // Use the original synchronous business-save core directly. The legacy async wrapper
-          // waits for cloud sync and can leave the V20 submit action pending indefinitely.
-          const saved=saveImportShipmentCore({preventDefault(){}},{deferRefresh:true,deferToast:true});
-          if(saved!==true){
-            const detail=window.__valerianLastSaveError;
-            throw new Error(detail?.message?'تعذر حفظ الفاتورة محليًا: '+detail.message:'لم يعتمد المحرك الفاتورة. راجع بيانات الأصناف والمورد والتكاليف.');
-          }
-          if(state.imports.length!==beforeCount+1)throw new Error('لم يعتمد المحرك الفاتورة. راجع رسالة التحقق الظاهرة وتأكد من صحة بيانات الأصناف.');
-          const invoice=state.imports[0];
-          await valDurableWritePromise;
-          if(valDurableWriteError)throw new Error('لم يكتمل الحفظ الدائم للفاتورة: '+String(valDurableWriteError.message||valDurableWriteError));
-          await valIdbFlush();
-          if(!state.imports.some(item=>String(item.id)===String(invoice.id)))throw new Error('تعذر تأكيد وجود الفاتورة في سجل الاستيراد بعد الحفظ.');
-          refreshAllViews();
-          // Cloud synchronization is best-effort and must never block local invoice approval.
-          if(typeof cloudReady!=='undefined'&&cloudReady&&typeof cloudSyncNow==='function'){
-            Promise.resolve().then(()=>cloudSyncNow(true)).catch(err=>console.error('VALERIAN import background cloud sync failed:',err));
-          }
-          return {ok:true,invoice:structuredClone(invoice),cloudSyncOk:!(typeof cloudReady!=='undefined'&&cloudReady&&(cloudConflict||cloudDirty||!navigator.onLine)),snapshot:snapshot()};
-        },
         addShippingCompany:async name=>{
           await ready;const value=String(name||'').trim().replace(/\s+/g,' ');if(!value)throw new Error('اسم شركة الشحن مطلوب.');
           state.shippingCompanies=Array.isArray(state.shippingCompanies)?state.shippingCompanies:[];
@@ -5181,57 +5163,65 @@ function previewPeriodicReportPrint() {
         createImportInvoice:async payload=>{
           await ready;
           if(!payload)throw new Error('بيانات فاتورة الاستيراد مطلوبة.');
-          // Use the single legacy ERP form already mounted inside the off-screen engine host.
-          // Creating a second set of identical IDs made document.getElementById/querySelector
-          // resolve inconsistently, so the transaction could read/write a different form.
-          const engineHost=document.getElementById('valerian-legacy-engine-host');
-          if(!engineHost)throw new Error('محرك الاستيراد غير متصل بواجهة VALERIAN.');
-          for(const id of ['impSupplier','impInvoiceDate','impExchangeRate','impShippingCost','impCustomsCost','impPaidAmount','impNotes','impPaymentMethod','importLinesBody','importModal']){
-            if(!engineHost.querySelector('#'+id))throw new Error('عنصر محرك الاستيراد غير موجود: '+id);
-          }
           const supplier=String(payload.supplier||'').trim();
-          const dateValue=String(payload.date||'').trim();
-          const rate=Number(payload.exchangeRate??payload.rate);
-          const shipping=Number(payload.shippingCost??payload.shipping??0);
-          const customs=Number(payload.customsCost??payload.fees??0);
-          const paid=Number(payload.paidAmount??payload.paid??0);
-          const lines=Array.isArray(payload.lines)?payload.lines.map(line=>({productId:String(line?.productId||''),qty:Number(line?.qty),unitForeign:Number(line?.unitForeign)})):[];
-          if(!supplier||!/^\d{4}-\d{2}-\d{2}$/.test(dateValue))throw new Error('اسم المورد وتاريخ الفاتورة مطلوبان.');
-          if(!Number.isFinite(rate)||rate<=0||!Number.isFinite(shipping)||shipping<0||!Number.isFinite(customs)||customs<0||!Number.isFinite(paid)||paid<0)throw new Error('راجع سعر الصرف وتكاليف الشحن والجمارك والمبلغ المدفوع.');
-          if(!lines.length)throw new Error('أضف صنفًا واحدًا على الأقل إلى فاتورة الاستيراد.');
+          const date=String(payload.date||'').trim();
+          const exchangeRate=Number(payload.exchangeRate??payload.rate);
+          const shippingCost=Number(payload.shippingCost??0);
+          const customsCost=Number(payload.customsCost??0);
+          const paidAmount=Number(payload.paidAmount??0);
+          const paymentMethod=normalizePaymentMethod(payload.paymentMethod||'نقدي');
+          const lines=Array.isArray(payload.lines)?payload.lines.map(line=>({
+            productId:String(line?.productId||'').trim(),
+            qty:Number(line?.qty),
+            unitForeign:Number(line?.unitForeign),
+            updateRetail:line?.updateRetail===true
+          })):[];
+          if(!supplier)throw new Error('اكتب اسم المورد أولاً.');
+          if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||!Number.isFinite(Date.parse(date+'T12:00:00')))throw new Error('حدد تاريخ فاتورة صحيحًا.');
+          if(!Number.isFinite(exchangeRate)||exchangeRate<=0)throw new Error('سعر الصرف يجب أن يكون أكبر من صفر.');
+          if(!Number.isFinite(shippingCost)||shippingCost<0||!Number.isFinite(customsCost)||customsCost<0)throw new Error('تكاليف الشحن والجمارك لا يمكن أن تكون سالبة.');
+          if(!Number.isFinite(paidAmount)||paidAmount<0)throw new Error('المبلغ المدفوع لا يمكن أن يكون سالبًا.');
+          if(!lines.length)throw new Error('أضف صنفًا واحدًا على الأقل إلى الفاتورة.');
           for(let i=0;i<lines.length;i++){
             const line=lines[i];
             if(!line.productId||!Number.isSafeInteger(line.qty)||line.qty<=0||!Number.isFinite(line.unitForeign)||line.unitForeign<=0)throw new Error('بيانات الصنف رقم '+(i+1)+' غير مكتملة أو غير صحيحة.');
-            if(!state.products.some(p=>String(p.id)===line.productId&&!p.archived&&p.category!=='تقسيم'))throw new Error('المنتج المحدد في الصنف رقم '+(i+1)+' غير موجود أو غير متاح للاستيراد.');
+            if(!state.products.some(p=>String(p.id)===line.productId&&!p.archived&&p.category!=='تقسيم'))throw new Error('المنتج المختار في الصنف رقم '+(i+1)+' غير موجود أو غير متاح للاستيراد.');
           }
-          const foreign=lines.reduce((sum,line)=>sum+line.qty*line.unitForeign,0);
-          const grand=roundMoney(foreign*rate+shipping+customs);
-          if(!Number.isFinite(grand)||grand<=0||paid>grand+0.0001)throw new Error('المبلغ المدفوع لا يمكن أن يتجاوز إجمالي الفاتورة.');
+          const grand=roundMoney(lines.reduce((sum,line)=>sum+line.qty*line.unitForeign,0)*exchangeRate+shippingCost+customsCost);
+          if(!Number.isFinite(grand)||grand<=0)throw new Error('إجمالي الفاتورة يجب أن يكون أكبر من صفر.');
+          if(paidAmount>grand+0.0001)throw new Error('المبلغ المدفوع أكبر من إجمالي الفاتورة.');
           const before=structuredClone(state);
+          const beforeIds=new Set((state.imports||[]).map(item=>String(item.id)));
           try{
-            el('impSupplier').value=supplier;
-            el('impInvoiceDate').value=dateValue;
-            el('impExchangeRate').value=String(rate);
-            el('impShippingCost').value=String(shipping);
-            el('impCustomsCost').value=String(customs);
-            el('impPaidAmount').value=String(paid);
-            el('impPaymentMethod').value=normalizePaymentMethod(payload.paymentMethod||'نقدي');
-            el('impNotes').value=String(payload.notes||'فاتورة استيراد من واجهة VALERIAN V20');
-            el('importLinesBody').innerHTML='';
-            lines.forEach(line=>addImportLine(line.productId,line.qty,line.unitForeign));
-            const calc=updateImportTotals();
-            if(roundMoney(calc.grand)!==grand)throw new Error('اختلاف في إجمالي الفاتورة بين واجهة V20 ومحرك الاستيراد.');
-            const saved=saveImportShipmentCore(null,{deferRefresh:true,deferToast:true});
-            if(saved!==true)throw new Error(window.__valerianLastSaveError?.message||'لم يتم اعتماد فاتورة الاستيراد. راجع بيانات الفاتورة وحاول مرة أخرى.');
+            const saved=saveImportShipmentCore(null,{
+              payload:{supplier,date,exchangeRate,shippingCost,customsCost,paidAmount,paymentMethod,notes:String(payload.notes||'فاتورة استيراد من واجهة VALERIAN V20'),lines},
+              deferClose:true,deferRefresh:true,deferToast:true
+            });
+            if(saved!==true)throw new Error(window.__valerianLastImportInvoiceError||window.__valerianLastSaveError?.message||'تعذر اعتماد فاتورة الاستيراد.');
+            const invoice=(state.imports||[]).find(item=>!beforeIds.has(String(item.id))&&String(item.supplier)===supplier);
+            if(!invoice)throw new Error('لم تظهر الفاتورة الجديدة في سجل الاستيراد بعد الحفظ.');
             await valDurableWritePromise;
-            if(valDurableWriteError)throw new Error('فشل الحفظ الدائم لبيانات فاتورة الاستيراد: '+String(valDurableWriteError.message||valDurableWriteError));
+            if(valDurableWriteError)throw new Error('فشل الحفظ الدائم: '+String(valDurableWriteError.message||valDurableWriteError));
             await valIdbFlush();
-            if(valDurableWriteError)throw new Error('لم يتم تأكيد تثبيت فاتورة الاستيراد في قاعدة البيانات المحلية: '+String(valDurableWriteError.message||valDurableWriteError));
-            const latest=state.imports?.find(item=>String(item.supplier)===supplier&&Number(item.totalEgp||0)===Number(calc.grand.toFixed(2)));
-            const committedInvoice=state.imports?.[0];
-            if(!committedInvoice||!latest||!state.supplierInvoices?.some(item=>String(item.id)===String(committedInvoice.id)))throw new Error('لم يتم تأكيد تسجيل الفاتورة في سجل الاستيراد وحساب المورد.');
-            // A committed local invoice must not wait for the network before the V20
-            // screen can refresh. Cloud sync is best-effort and runs independently.
+            if(valDurableWriteError)throw new Error('لم يتم تأكيد الحفظ الدائم: '+String(valDurableWriteError.message||valDurableWriteError));
+            const durableRow=await valIdbGet('appstate','current');
+            if(!durableRow?.json)throw new Error('لم يتم العثور على نسخة البيانات المؤكدة في قاعدة البيانات المحلية.');
+            const durableState=JSON.parse(durableRow.json);
+            const durableInvoice=(durableState.imports||[]).find(item=>String(item.id)===String(invoice.id));
+            const durableSupplier=(durableState.supplierInvoices||[]).find(item=>String(item.id)===String(invoice.id));
+            if(!durableInvoice||!durableSupplier)throw new Error('قاعدة البيانات لم تؤكد تسجيل الفاتورة وحساب المورد معًا.');
+            const expectedByProduct=new Map();
+            lines.forEach(line=>expectedByProduct.set(line.productId,(expectedByProduct.get(line.productId)||0)+line.qty));
+            for(const [productId,addedQty] of expectedByProduct){
+              const current=(state.products||[]).find(product=>String(product.id)===productId);
+              const stored=(durableState.products||[]).find(product=>String(product.id)===productId);
+              if(!current||!stored||Number(stored.stock)!==Number(current.stock))throw new Error('لم يتم تأكيد تحديث مخزون المنتج '+(current?.name||productId)+'.');
+              const movements=(durableState.inventoryMovements||[]).filter(move=>String(move.reference)===String(invoice.id)&&String(move.productId)===productId&&move.type==='IMPORT_PURCHASE').reduce((sum,move)=>sum+Number(move.quantity||0),0);
+              if(movements!==addedQty)throw new Error('لم يتم تأكيد حركة دخول المخزون للمنتج '+current.name+'.');
+            }
+            const durablePaid=(durableState.supplierPayments||[]).filter(payment=>String(payment.invoiceId)===String(invoice.id)).reduce((sum,payment)=>sum+Number(payment.amount||0),0);
+            if(Math.abs(durablePaid-paidAmount)>0.01)throw new Error('لم يتم تأكيد تسجيل الدفعة الأولى للمورد.');
+            if(Math.abs(Number(durableInvoice.totalEgp||0)-grand)>0.01||Math.abs(Number(durableSupplier.totalAmount||0)-grand)>0.01)throw new Error('إجمالي الفاتورة لا يطابق سجل المورد بعد الحفظ.');
             const cloudSyncPending=!!(cloudReady&&cloudUser&&navigator.onLine&&!cloudConflict);
             if(cloudSyncPending){
               clearTimeout(cloudSaveTimer);
@@ -5242,10 +5232,15 @@ function previewPeriodicReportPrint() {
                 emit('valerian:cloud-sync-state',{ok:false,source:'import-invoice',message:String(error?.message||error)});
               });
             }
-            return {ok:true,invoice:structuredClone(committedInvoice),cloudSyncOk:!cloudSyncPending,snapshot:snapshot()};
+            return {ok:true,invoice:structuredClone(invoice),cloudSyncOk:!cloudSyncPending,snapshot:snapshot()};
           }catch(error){
             state=before;
-            try{persistLocal(before);await valQueueDurableState(before);await valIdbFlush();}catch(rollbackError){console.error('Import invoice rollback failed',rollbackError);}
+            try{
+              persistLocal(before);
+              await valQueueDurableState(before);
+              await valDurableWritePromise;
+              await valIdbFlush();
+            }catch(rollbackError){console.error('Import invoice rollback failed',rollbackError);}
             refreshAllViews();
             throw error;
           }
