@@ -6577,23 +6577,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
         if(r.ok){closeSheet('stockAdjustSheet');showToast('تم تسجيل التسوية في سجل حركات المخزون الأصلي.');}
       }catch(err){reportError(err);}
     };
-    window.saveMobileImportInvoice=async function(){
-      const supplier=document.getElementById('impFormSupplier').value.trim();
-      const productId=document.getElementById('impFormProduct').value;
-      if(!supplier||!productId)return showToast('يرجى إدخال اسم المورد واختيار الصنف');
-      try{
-        const r=await runEngine('createImportInvoice',{
-          supplier,productId,
-          quantity:Number(document.getElementById('impFormQty').value||0),
-          foreignUnitPrice:Number(document.getElementById('impFormForeign').value||0),
-          rate:Number(document.getElementById('impFormRate').value||0),
-          fees:Number(document.getElementById('impFormFees').value||0),
-          paid:Number(document.getElementById('impFormPaid').value||0),
-          paymentMethod:'نقدي'
-        });
-        if(r.ok){closeSheet('newImportSheet');showToast('تم اعتماد فاتورة الاستيراد وتحديث متوسط التكلفة والموردين والمخزون.');syncFromEngine();}
-      }catch(err){reportError(err);}
-    };
+    window.saveMobileImportInvoice=saveMobileImportInvoice;
 
     let pendingMoneyAction=null;
     window.closeMoneyActionModal=function(){const modal=document.getElementById('moneyActionModal');if(modal)modal.classList.add('hidden');pendingMoneyAction=null;};
