@@ -35,3 +35,5 @@ jobs:
         run: node tests/mobile-import-smoke.mjs
       - name: Verify mobile sales, returns, refunds, and persistence in a browser
         run: node tests/mobile-sales-returns-smoke.mjs
+      - name: Verify offline app shell and local styles in a browser
+        run: node tests/mobile-offline-smoke.mjs
