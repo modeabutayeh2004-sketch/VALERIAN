@@ -1,4 +1,5 @@
 name: Publish VALERIAN V20 preview
+# Publish the isolated V20 preview branch to the existing preview Pages target.
 on:
   push:
     branches: [work/v20-single-document-integration]
