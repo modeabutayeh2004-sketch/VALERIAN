@@ -41,3 +41,5 @@ jobs:
         run: node tests/mobile-inventory-smoke.mjs
       - name: Verify reservation, shipping, and delivery in a browser
         run: node tests/mobile-reservation-shipping-smoke.mjs
+      - name: Verify expenses and cashbook balances in a browser
+        run: node tests/mobile-finance-cashbook-smoke.mjs
