@@ -33,3 +33,5 @@ jobs:
         run: npx --yes playwright@1.56.1 install chromium
       - name: Verify mobile import and local persistence in a browser
         run: node tests/mobile-import-smoke.mjs
+      - name: Verify mobile sales, returns, refunds, and persistence in a browser
+        run: node tests/mobile-sales-returns-smoke.mjs
