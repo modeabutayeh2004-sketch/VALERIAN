@@ -2664,27 +2664,36 @@ function previewPeriodicReportPrint() {
 
     // ==================== SHIPMENTS & RETURNS (DEBT TO CUSTOMER) ====================
     function setOrdersView(view) {
-      currentOrdersView=view==='sold'?'sold':'reserved';
+      currentOrdersView=view==='sold'?'delivered':['reserved','shipped','delivered'].includes(view)?view:'reserved';
       document.getElementById('reservedOrdersPage').classList.toggle('hidden',currentOrdersView!=='reserved');
-      document.getElementById('soldOrdersPage').classList.toggle('hidden',currentOrdersView!=='sold');
-      document.getElementById('ordersReservedTab').className=currentOrdersView==='reserved'?'px-4 py-2 rounded-xl bg-amber-100 text-amber-900 border border-amber-200 text-xs font-extrabold':'px-4 py-2 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 text-xs font-extrabold';
-      document.getElementById('ordersSoldTab').className=currentOrdersView==='sold'?'px-4 py-2 rounded-xl bg-emerald-100 text-emerald-900 border border-emerald-200 text-xs font-extrabold':'px-4 py-2 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 text-xs font-extrabold';
+      document.getElementById('shippedOrdersPage').classList.toggle('hidden',currentOrdersView!=='shipped');
+      document.getElementById('soldOrdersPage').classList.toggle('hidden',currentOrdersView!=='delivered');
+      const base='px-4 py-2 rounded-xl border text-xs font-extrabold';
+      document.getElementById('ordersReservedTab').className=base+(currentOrdersView==='reserved'?' bg-amber-100 text-amber-900 border-amber-200':' bg-slate-100 text-slate-700 border-slate-200');
+      document.getElementById('ordersShippedTab').className=base+(currentOrdersView==='shipped'?' bg-sky-100 text-sky-900 border-sky-200':' bg-slate-100 text-slate-700 border-slate-200');
+      document.getElementById('ordersSoldTab').className=base+(currentOrdersView==='delivered'?' bg-emerald-100 text-emerald-900 border-emerald-200':' bg-slate-100 text-slate-700 border-slate-200');
     }
     function renderOrdersPage() {
       const orders=state.orders||[];
       const reserved=orders.filter(o=>o.mode==='reservation'&&!o.stockDeducted&&!String(o.status||'').includes('مرتجع بالكامل')&&!String(o.status||'').includes('ملغي'));
-      const sold=orders.filter(o=>!!o.stockDeducted);
+      const shipped=orders.filter(o=>!!o.stockDeducted&&!!o.shippedAt&&!isOrderDeliveredForLoyalty(o));
+      const delivered=orders.filter(o=>!!o.stockDeducted&&isOrderDeliveredForLoyalty(o));
       document.getElementById('reservedOrdersCount').textContent=reserved.length;
-      document.getElementById('soldOrdersCount').textContent=sold.length;
+      document.getElementById('shippedOrdersCount').textContent=shipped.length;
+      document.getElementById('soldOrdersCount').textContent=delivered.length;
       const renderRows=(list,bodyId,kind)=>{
         const body=document.getElementById(bodyId); if(!body)return;
         body.innerHTML=list.length?list.map(o=>{
           const idx=orders.indexOf(o), paid=Math.max(0,Number(o.depositAmount||0));
-          const action=kind==='reserved'?`<button onclick="previewDocumentPrint(state.orders[${idx}], 'reservation_invoice')" class="px-2 py-1 rounded bg-amber-100 text-amber-900 font-bold">فاتورة الحجز</button>`:`<button onclick="previewDocumentPrint(state.orders[${idx}], 'final_invoice')" class="px-2 py-1 rounded bg-emerald-100 text-emerald-900 font-bold">فاتورة البيع</button>`;
+          const invoiceType=kind==='reserved'?'reservation_invoice':kind==='shipped'?'shipping_waybill':'final_invoice';
+          const invoiceLabel=kind==='reserved'?'فاتورة الحجز':kind==='shipped'?'بوليصة الشحن':'فاتورة البيع';
+          const action='<button onclick="previewDocumentPrint(state.orders['+idx+'], &quot;'+invoiceType+'&quot;)" class="px-2 py-1 rounded '+(kind==='reserved'?'bg-amber-100 text-amber-900':kind==='shipped'?'bg-sky-100 text-sky-900':'bg-emerald-100 text-emerald-900')+' font-bold">'+invoiceLabel+'</button>';
           return `<tr class="border-t hover:bg-slate-50"><td class="p-3 font-bold text-brand-700">${escapeHTML(o.id)}</td><td class="p-3">${o.date?new Date(o.date).toLocaleDateString('ar-EG'):'—'}</td><td class="p-3"><b>${escapeHTML(o.name||'—')}</b><div class="text-[10px] text-slate-500">${escapeHTML(o.phone||'')}</div></td><td class="p-3 font-bold">${formatCurrency(o.grandTotal)}</td><td class="p-3 text-emerald-700">${formatCurrency(paid)}</td><td class="p-3 text-rose-700">${formatCurrency(o.remainingAmount)}</td><td class="p-3">${escapeHTML(o.status||'—')}</td><td class="p-3 flex gap-1">${action}<button onclick="switchTab('tracking')" class="px-2 py-1 rounded bg-slate-100 font-bold">تفاصيل / شحن</button></td></tr>`;
-        }).join(''):`<tr><td colspan="8" class="p-7 text-center text-slate-400">لا توجد ${kind==='reserved'?'طلبات محجوزة':'طلبات مباعة'} حتى الآن.</td></tr>`;
+        }).join(''):'<tr><td colspan="8" class="p-7 text-center text-slate-400">لا توجد '+(kind==='reserved'?'طلبات محجوزة':kind==='shipped'?'طلبات مشحونة':'طلبات مسلّمة')+' حتى الآن.</td></tr>';
       };
-      renderRows(reserved,'reservedOrdersBody','reserved'); renderRows(sold,'soldOrdersBody','sold');
+      renderRows(reserved,'reservedOrdersBody','reserved');
+      renderRows(shipped,'shippedOrdersBody','shipped');
+      renderRows(delivered,'soldOrdersBody','delivered');
       setOrdersView(currentOrdersView);
     }
 
