@@ -1218,14 +1218,15 @@
       }else calc=updateImportTotals();
       const lines=calc.lines;
       const date=dateValue?new Date(dateValue+'T12:00:00').toISOString():new Date().toISOString();
+      const roundedGrand=roundMoney(calc.grand);
       window.__valerianLastImportInvoiceError=null;
       const reject=message=>{window.__valerianLastImportInvoiceError=String(message);if(!direct)showToast(message,'error');return false;};
-      if(!supplier||!Number.isFinite(rate)||rate<=0||!lines.length||calc.foreign<=0||lines.some(x=>(!x.productId||x.productId==='__NEW__')&&!x.isNew||!Number.isSafeInteger(x.qty)||x.qty<=0||!Number.isFinite(x.unitForeign)||x.unitForeign<=0)||!Number.isFinite(shipping)||shipping<0||!Number.isFinite(customs)||customs<0||!Number.isFinite(paid)||paid<0||paid>calc.grand+0.0001)return reject('راجع المورد وسعر الصرف والأصناف والكميات وأسعار الوحدات والتكاليف والمدفوع. يجب أن تكون قيمة الأصناف أكبر من صفر.');
+      if(!supplier||!Number.isFinite(rate)||rate<=0||!lines.length||calc.foreign<=0||lines.some(x=>(!x.productId||x.productId==='__NEW__')&&!x.isNew||!Number.isSafeInteger(x.qty)||x.qty<=0||!Number.isFinite(x.unitForeign)||x.unitForeign<=0)||!Number.isFinite(shipping)||shipping<0||!Number.isFinite(customs)||customs<0||!Number.isFinite(paid)||paid<0||paid>roundedGrand+0.0001)return reject('راجع المورد وسعر الصرف والأصناف والكميات وأسعار الوحدات والتكاليف والمدفوع. يجب أن تكون قيمة الأصناف أكبر من صفر.');
       if(lines.some(x=>x.isNew&&(!x.newName||!x.newSize||!Number.isFinite(x.newMargin)||x.newMargin<0||!Number.isFinite(x.newDiscount)||x.newDiscount<0||x.newDiscount>=100)))return reject('أكمل اسم وحجم المنتج الجديد وتأكد من نسب الربح والخصم.');
       if(lines.some(x=>x.isNew&&x.newDiscount>0&&calc.foreign>0&&roundMoney((calc.grand*(x.qty*x.unitForeign/calc.foreign)/x.qty)*(1+x.newMargin/100)*(1-x.newDiscount/100))<roundMoney((calc.grand*(x.qty*x.unitForeign/calc.foreign)/x.qty))))return reject('نسبة الخصم تجعل سعر العرض أقل من تكلفة المنتج. قلل الخصم.');
       const before=structuredClone(state); const id='IMP-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);
       if(lines.some(x=>!x.isNew&&(!state.products.some(p=>String(p.id)===String(x.productId)&&!p.archived&&p.category!=='تقسيم'))))return reject('أحد المنتجات المختارة لم يعد موجودًا أو غير متاح في الكتالوج.');
-      const foreign=calc.foreign, grand=roundMoney(calc.grand); let allocated=0; const invoiceItems=[];
+      const foreign=calc.foreign, grand=roundedGrand; let allocated=0; const invoiceItems=[];
       lines.forEach((line,index)=>{
         const lineForeign=line.qty*line.unitForeign; const share=roundMoney(index===lines.length-1?grand-allocated:grand*(lineForeign/foreign)); allocated+=share; const unitLanded=share/line.qty;
         let prod;
