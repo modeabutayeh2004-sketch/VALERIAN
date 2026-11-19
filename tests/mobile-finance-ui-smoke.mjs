@@ -19,7 +19,7 @@ try{
  await page.locator('#mobileExpenseForm button[type="submit"]').click();
  await page.waitForTimeout(500);
  const financeDiag=await page.evaluate(async()=>({submitHandler:typeof window.submitMobileExpense,moreVisible:!document.getElementById('more-finance').classList.contains('hidden'),formVisible:document.getElementById('mobileExpenseForm').getBoundingClientRect().height>0,toast:document.getElementById('mobileToast')?.innerText||'',listText:document.getElementById('mobileExpensesList')?.innerText||'',listHtml:document.getElementById('mobileExpensesList')?.innerHTML||'',renderFunction:typeof window.renderMoreFinance,engineFunction:typeof window.ValerianEngine?.createExpense,expenses:(await window.ValerianEngine.getFinanceSnapshot()).expenses.map(x=>({note:x.note,amount:x.amount}))}));
- if(!financeDiag.expenses.some(x=>x.note==='VALERIAN mobile finance UI test'))throw new Error('Mobile expense form did not reach the engine: '+JSON.stringify(financeDiag)+' pageErrors='+JSON.stringify(errors));
+ if(!financeDiag.expenses.some(x=>x.note==='VALERIAN mobile finance UI test')||!financeDiag.listText.includes('VALERIAN mobile finance UI test'))throw new Error('Mobile expense form/render did not complete: '+JSON.stringify(financeDiag)+' pageErrors='+JSON.stringify(errors));
  await page.locator('#mobileExpensesList').getByText('VALERIAN mobile finance UI test').waitFor({timeout:10000});
  await page.locator('[data-more="cashbook"]').click();
  const date=await page.evaluate(()=>new Date().toISOString().slice(0,10));
