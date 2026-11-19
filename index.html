@@ -5244,54 +5244,46 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     }
 
     function renderImportsScreen() {
-      const total = appState.imports.reduce((s, i) => s + Number(i.totalEgp || 0), 0);
-      const due = appState.imports.reduce((s, i) => s + Math.max(0, Number(i.totalEgp || 0) - Number(i.paidAmount || 0)), 0);
-      document.getElementById('impSummaryTotal').textContent = fmtEgp(total);
-      document.getElementById('impSummaryDue').textContent = fmtEgp(due);
-
-      const shipList = document.getElementById('importShipmentsList');
-      const ledList = document.getElementById('supplierLedgerList');
-
-      if (!appState.imports.length) {
-        shipList.innerHTML = renderEmptyPlaceholder('🚢', 'لا توجد شحنات استيراد مسجلة', 'سجل فواتير الموردين الدوليين لحساب التكلفة ومتوسط سعر الوحدة تلقائياً.', '+ تسجيل شحنة استيراد', "openSheet('newImportSheet')");
-        ledList.innerHTML = renderEmptyPlaceholder('📒', 'كشف حساب الموردين فارغ', 'تظهر هنا مستحقات الموردين عند تسجيل أول فاتورة استيراد.');
-        return;
-      }
-
-      shipList.innerHTML = appState.imports.map(inv => {
-        const rem = Math.max(0, inv.totalEgp - inv.paidAmount);
-        return `
-          <div class="glass-card rounded-2xl p-4 space-y-2.5 text-xs">
-            <div class="flex items-center justify-between">
-              <strong class="text-white font-extrabold">${inv.supplier}</strong>
-              <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-slate-300 bidi-ltr">${inv.id}</span>
-            </div>
-            <p class="text-[11px] text-slate-300">${inv.itemsSummary}</p>
-            <div class="grid grid-cols-3 gap-2 pt-2 border-t border-white/[0.08] text-[10px]">
-              <div><span class="text-slate-400 block">سعر الصرف</span><strong class="bidi-ltr">${inv.exchangeRate} EGP</strong></div>
-              <div><span class="text-slate-400 block">الإجمالي</span><strong class="bidi-ltr">${fmtEgp(inv.totalEgp)}</strong></div>
-              <div><span class="text-slate-400 block">المتبقي</span><strong class="${rem > 0 ? 'text-rose-300' : 'text-emerald-300'} bidi-ltr">${fmtEgp(rem)}</strong></div>
-            </div>
-          </div>
-        `;
+      const imports=Array.isArray(appState.imports)?appState.imports:[];
+      const invoices=Array.isArray(appState.supplierInvoices)?appState.supplierInvoices:[];
+      const payments=Array.isArray(appState.supplierPayments)?appState.supplierPayments:[];
+      const total=imports.reduce((sum,inv)=>sum+Number(inv.totalEgp||0),0);
+      const importDue=imports.reduce((sum,inv)=>sum+Math.max(0,Number(inv.totalEgp||0)-Number(inv.paidAmount||0)),0);
+      document.getElementById('impSummaryTotal').textContent=fmtEgp(total);
+      document.getElementById('impSummaryDue').textContent=fmtEgp(importDue);
+      const shipList=document.getElementById('importShipmentsList');
+      const ledList=document.getElementById('supplierLedgerList');
+      const safe=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+      const dateLabel=value=>{const d=new Date(value||'');return Number.isFinite(d.getTime())?d.toLocaleDateString('ar-EG'):'—';};
+      shipList.innerHTML=imports.length?imports.map(inv=>{
+        const rem=Math.max(0,Number(inv.totalEgp||0)-Number(inv.paidAmount||0));
+        return '<div class="glass-card rounded-2xl p-4 space-y-2.5 text-xs"><div class="flex items-center justify-between"><strong class="text-white font-extrabold">'+safe(inv.supplier)+'</strong><span class="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-slate-300 bidi-ltr">'+safe(inv.id)+'</span></div><p class="text-[11px] text-slate-300">'+safe(inv.itemsSummary||'فاتورة استيراد')+'</p><div class="grid grid-cols-3 gap-2 pt-2 border-t border-white/[0.08] text-[10px]"><div><span class="text-slate-400 block">سعر الصرف</span><strong class="bidi-ltr">'+safe(inv.exchangeRate)+' EGP</strong></div><div><span class="text-slate-400 block">الإجمالي</span><strong class="bidi-ltr">'+fmtEgp(inv.totalEgp)+'</strong></div><div><span class="text-slate-400 block">المتبقي</span><strong class="'+(rem>0?'text-rose-300':'text-emerald-300')+' bidi-ltr">'+fmtEgp(rem)+'</strong></div></div></div>';
+      }).join(''):renderEmptyPlaceholder('🚢','لا توجد شحنات استيراد مسجلة','سجل فواتير الموردين الدوليين لحساب التكلفة ومتوسط سعر الوحدة تلقائياً.','+ تسجيل شحنة استيراد',"openSheet('newImportSheet')");
+      const paymentByInvoice=new Map();
+      payments.forEach(payment=>{const id=String(payment.invoiceId||'');if(!id)return;paymentByInvoice.set(id,(paymentByInvoice.get(id)||0)+Number(payment.amount||0));});
+      const rows=invoices.map(inv=>{
+        const invoiceTotal=Math.max(0,Number(inv.totalAmount||0));
+        const linkedPaid=paymentByInvoice.get(String(inv.id))||0;
+        const paid=Math.max(0,Number(inv.paidAmount||0),linkedPaid);
+        return {...inv,_total:invoiceTotal,_paid:paid,_due:Math.max(0,invoiceTotal-paid)};
+      });
+      const groups=new Map();
+      rows.forEach(inv=>{const name=String(inv.supplier||'مورد غير محدد').trim()||'مورد غير محدد';const key=name.toLocaleLowerCase('ar-EG');if(!groups.has(key))groups.set(key,{name,invoices:[],total:0,paid:0,due:0});const group=groups.get(key);group.invoices.push(inv);group.total+=inv._total;group.paid+=inv._paid;group.due+=inv._due;});
+      const supplierGroups=[...groups.values()].sort((a,b)=>a.name.localeCompare(b.name,'ar'));
+      const grandTotal=rows.reduce((sum,inv)=>sum+inv._total,0);
+      const grandPaid=rows.reduce((sum,inv)=>sum+inv._paid,0);
+      const grandDue=rows.reduce((sum,inv)=>sum+inv._due,0);
+      const openCount=rows.filter(inv=>inv._due>0).length;
+      const summary='<div class="grid grid-cols-2 gap-2 mb-3"><div class="glass-card rounded-2xl p-3"><span class="block text-[10px] text-slate-400">إجمالي فواتير الموردين</span><strong class="block mt-1 text-sm font-black text-white bidi-ltr">'+fmtEgp(grandTotal)+'</strong></div><div class="glass-card rounded-2xl p-3"><span class="block text-[10px] text-slate-400">إجمالي المدفوع</span><strong class="block mt-1 text-sm font-black text-emerald-300 bidi-ltr">'+fmtEgp(grandPaid)+'</strong></div><div class="glass-card rounded-2xl p-3"><span class="block text-[10px] text-slate-400">إجمالي المستحق</span><strong class="block mt-1 text-sm font-black text-rose-300 bidi-ltr">'+fmtEgp(grandDue)+'</strong></div><div class="glass-card rounded-2xl p-3"><span class="block text-[10px] text-slate-400">الموردون / الفواتير المفتوحة</span><strong class="block mt-1 text-sm font-black text-white">'+supplierGroups.length+' مورد · '+openCount+' فاتورة</strong></div></div>';
+      const supplierCards=supplierGroups.map(group=>{
+        const invoiceCards=[...group.invoices].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0)).map(inv=>'<div class="rounded-xl border border-white/10 bg-black/10 p-3"><div class="flex items-center justify-between gap-2"><strong class="text-[11px] text-white">'+safe(inv.id)+'</strong><span class="text-[10px] text-slate-400">'+dateLabel(inv.date)+'</span></div><div class="grid grid-cols-3 gap-2 mt-2 text-[10px]"><div><span class="block text-slate-400">الإجمالي</span><b class="text-white bidi-ltr">'+fmtEgp(inv._total)+'</b></div><div><span class="block text-slate-400">المدفوع</span><b class="text-emerald-300 bidi-ltr">'+fmtEgp(inv._paid)+'</b></div><div><span class="block text-slate-400">المتبقي</span><b class="'+(inv._due>0?'text-rose-300':'text-emerald-300')+' bidi-ltr">'+fmtEgp(inv._due)+'</b></div></div>'+(inv._due>0?'<button type="button" data-supplier-settle="'+safe(inv.id)+'" class="mt-2 w-full rounded-full silver-btn py-2 text-[10px] font-black">سداد المتبقي '+fmtEgp(inv._due)+'</button>':'<div class="mt-2 text-[10px] font-bold text-emerald-300">مسددة بالكامل ✓</div>')+'</div>').join('');
+        return '<section class="glass-card rounded-2xl p-3.5 space-y-3"><div class="flex items-start justify-between gap-3"><div><h3 class="text-sm font-black text-white">'+safe(group.name)+'</h3><p class="text-[10px] text-slate-400 mt-1">'+group.invoices.length+' فاتورة مسجلة</p></div><div class="text-left"><strong class="block text-sm font-black '+(group.due>0?'text-rose-300':'text-emerald-300')+' bidi-ltr">'+fmtEgp(group.due)+'</strong><span class="text-[9px] text-slate-400">الرصيد المستحق</span></div></div><div class="grid grid-cols-2 gap-2 text-[10px]"><div class="rounded-lg bg-white/5 p-2"><span class="block text-slate-400">إجمالي الفواتير</span><b class="text-white bidi-ltr">'+fmtEgp(group.total)+'</b></div><div class="rounded-lg bg-white/5 p-2"><span class="block text-slate-400">إجمالي المدفوع</span><b class="text-emerald-300 bidi-ltr">'+fmtEgp(group.paid)+'</b></div></div><div class="space-y-2">'+invoiceCards+'</div></section>';
       }).join('');
-
-      ledList.innerHTML = appState.imports.map(inv => {
-        const rem = Math.max(0, inv.totalEgp - inv.paidAmount);
-        return `
-          <div class="glass-card rounded-2xl p-3.5 flex items-center justify-between gap-3 text-xs">
-            <div>
-              <div class="font-extrabold text-white">${inv.supplier}</div>
-              <div class="text-[10px] text-slate-400 bidi-ltr mt-0.5">مدفوع: ${fmtEgp(inv.paidAmount)} / ${fmtEgp(inv.totalEgp)}</div>
-            </div>
-            ${rem > 0
-              ? `<button onclick="settleSupplierDue('${inv.id}')" class="px-3 py-1.5 rounded-full silver-btn text-[10px] font-black">سداد ${fmtEgp(rem)}</button>`
-              : `<span class="text-[10px] font-extrabold text-emerald-300">مسددة بالكامل ✓</span>`}
-          </div>
-        `;
-      }).join('');
+      const recentPayments=[...payments].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0)).slice(0,8);
+      const paymentsHtml=recentPayments.length?'<section class="glass-card rounded-2xl p-3.5 space-y-2"><h3 class="text-xs font-black text-white">آخر مدفوعات الموردين</h3>'+recentPayments.map(p=>'<div class="flex items-center justify-between gap-2 border-t border-white/10 pt-2 text-[10px]"><div class="min-w-0"><strong class="block text-slate-200">'+safe(p.supplier||'—')+'</strong><span class="text-slate-400">'+safe(p.invoiceId||'—')+' · '+dateLabel(p.date)+'</span></div><strong class="text-emerald-300 bidi-ltr">'+fmtEgp(p.amount)+'</strong></div>').join('')+'</section>':'';
+      ledList.innerHTML=rows.length?summary+(supplierCards||'')+paymentsHtml:renderEmptyPlaceholder('📒','كشف حساب الموردين فارغ','تظهر هنا فواتير الموردين والمدفوعات والأرصدة المستحقة بمجرد تسجيل أول فاتورة.');
+      ledList.querySelectorAll('[data-supplier-settle]').forEach(button=>button.addEventListener('click',()=>{if(typeof window.settleSupplierDue==='function')window.settleSupplierDue(button.dataset.supplierSettle);else showToast('خدمة سداد المورد غير متاحة حالياً.');}));
     }
-
     function toggleImportSubView(view) {
       const isShip = view === 'shipments';
       document.getElementById('importShipmentsList').classList.toggle('hidden', !isShip);
