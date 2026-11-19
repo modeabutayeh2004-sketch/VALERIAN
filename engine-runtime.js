@@ -5178,7 +5178,7 @@ function previewPeriodicReportPrint() {
             updateRetail:line?.updateRetail===true
           })):[];
           if(!supplier)throw new Error('اكتب اسم المورد أولاً.');
-          if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||!Number.isFinite(Date.parse(date+'T12:00:00')))throw new Error('حدد تاريخ فاتورة صحيحًا.');
+          if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(Date.parse(date+'T12:00:00')))throw new Error('حدد تاريخ فاتورة صحيحًا.');
           if(!Number.isFinite(exchangeRate)||exchangeRate<=0)throw new Error('سعر الصرف يجب أن يكون أكبر من صفر.');
           if(!Number.isFinite(shippingCost)||shippingCost<0||!Number.isFinite(customsCost)||customsCost<0)throw new Error('تكاليف الشحن والجمارك لا يمكن أن تكون سالبة.');
           if(!Number.isFinite(paidAmount)||paidAmount<0)throw new Error('المبلغ المدفوع لا يمكن أن يكون سالبًا.');
