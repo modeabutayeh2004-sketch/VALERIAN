@@ -120,13 +120,13 @@ try {
 
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => !!window.ValerianEngine && !!window.ValerianEngine.ready, null, { timeout: 60000 });
-  const restored = await page.evaluate(async (productId, invoiceId) => {
+  const restored = await page.evaluate(async ({ productId, invoiceId }) => {
     await window.ValerianEngine.ready;
     const snapshot = window.ValerianEngine.getSnapshot();
     const product = snapshot.products.find((item) => String(item.id) === String(productId));
     const invoice = snapshot.imports.find((item) => String(item.id) === String(invoiceId));
     return !!product && Number(product.stock) === 2 && !!invoice;
-  }, fixture.productId, fixture.invoiceId);
+  }, { productId: fixture.productId, invoiceId: fixture.invoiceId });
 
   if (!restored) throw new Error('The imported product/invoice did not survive a full page reload.');
   if (pageErrors.length) throw new Error('Browser runtime errors: ' + pageErrors.join(' | '));
