@@ -3064,6 +3064,9 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
   #tab-inventory #inventoryTableBody td:nth-child(1) span{
     grid-column:2!important;grid-row:2!important;min-width:0!important;
   }
+  #tab-inventory #inventoryTableBody td:nth-child(1) span:first-child{
+    grid-column:1/-1!important;grid-row:2!important;
+  }
   #tab-inventory #inventoryTableBody td:nth-child(3){color:#e2eaf3!important;}
   #tab-inventory #inventoryTableBody td:nth-child(4){color:#e6edf5!important;}
   #tab-inventory #inventoryTableBody td:nth-child(5){grid-column:1/-1!important;}
@@ -3071,7 +3074,7 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
     grid-column:1/-1!important;border-top:1px solid rgba(195,210,229,.14)!important;
     padding-top:10px!important;
   }
-  #tab-inventory #inventoryTableBody td:nth-child(6)>div{
+  #tab-inventory #inventoryTableBody td:nth-child(6){
     display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
     width:100%!important;gap:7px!important;
   }
@@ -3091,7 +3094,7 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
 }
 @media screen and (max-width:390px){
   #tab-inventory #inventoryTableBody tr{gap:9px!important;padding:11px!important;}
-  #tab-inventory #inventoryTableBody td:nth-child(6)>div{
+  #tab-inventory #inventoryTableBody td:nth-child(6){
     grid-template-columns:minmax(0,1fr)!important;
   }
 }
