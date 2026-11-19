@@ -4072,7 +4072,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
 
     <!-- SHEET 5: PREVIEW & LOYALTY -->
     <!-- PRODUCT IMAGE CROP EDITOR -->
-    <div id="productCropModal" class="fixed inset-0 z-[80] hidden sheet-backdrop flex items-center justify-center p-4" onclick="if(event.target===this)cancelProductImageCrop()">
+    <div id="productCropModal" class="fixed inset-0 z-[10001] hidden sheet-backdrop flex items-center justify-center p-4" onclick="if(event.target===this)cancelProductImageCrop()">
       <div class="sheet-panel w-full max-w-sm rounded-3xl p-5 space-y-4">
         <div class="flex items-center justify-between"><h3 class="text-sm font-black text-white">قص صورة المنتج</h3><button type="button" onclick="cancelProductImageCrop()" class="w-8 h-8 rounded-full glass-pill">✕</button></div>
         <p class="text-[11px] text-slate-300 text-center">اضبط التكبير ومركز الصورة، ثم اعتمد القص قبل حفظ المنتج.</p>
@@ -4186,6 +4186,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     let redeemPointsActive = false;
     let pendingNewProductImage = '';
     let pendingEditedProductImage = '';
+    let pendingEditedProductImageId = '';
     let pendingCropTarget = 'new';
     let activePreviewShareContext = null;
     window.__v5ImageProcessing = false;
@@ -4497,7 +4498,10 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         document.getElementById('productCropX').value='50';
         document.getElementById('productCropY').value='50';
         updateProductCropPreview();
-        document.getElementById('productCropModal').classList.remove('hidden');
+        const cropModal=document.getElementById('productCropModal');
+        if(cropModal.parentElement!==document.body)document.body.appendChild(cropModal);
+        cropModal.style.zIndex='10001';
+        cropModal.classList.remove('hidden');
         if(status)status.textContent='اضبط القص ثم اضغط اعتماد القص.';
       }catch(err){
         if(status)status.textContent='تعذر فتح الصورة. جرّب صورة أخرى.';
@@ -6555,7 +6559,10 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
       const unit=String(p.stockUnit||String(p.size||'').split(/\s+/).slice(1).join(' ')||'مل');
       const sizeMatch=String(p.size||'').match(/\d+(?:\.\d+)?/);
       const set=(id,value)=>{const el=document.getElementById(id);if(el)el.value=value??'';};
-      pendingEditedProductImage=p.image||'';
+      if(pendingEditedProductImageId!==String(p.id)){
+        pendingEditedProductImage=p.image||'';
+        pendingEditedProductImageId=String(p.id);
+      }
       set('editProdId',p.id);set('editProdName',p.name);set('editProdType',p.productType||'عطور');set('editProdCategory',p.category||'غير محدد');
       set('editProdSize',sizeMatch?sizeMatch[0]:'');set('editProdUnit',unit);set('editProdPrice',p.price);set('editProdCost',p.averageCost??p.totalCost??0);
       set('editProdStock',p.stock);const stockField=document.getElementById('editProdStock');if(stockField)stockField.readOnly=p.productType==='عطور'||p.category==='تقسيم';set('editProdMin',p.minimumStock??2);set('editProdNotes',p.notes||'');
@@ -6563,7 +6570,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
       document.getElementById('editProdDecantable').checked=!!p.isDecantable;
       toggleEditDecantFields();
       document.getElementById('editProdOffer').checked=!!p.isOffer;
-      const img=document.getElementById('editProdImagePreview');img.src=p.image||'';img.classList.toggle('hidden',!p.image);
+      const img=document.getElementById('editProdImagePreview');img.src=pendingEditedProductImage||p.image||'';img.classList.toggle('hidden',!img.src);
       document.getElementById('editProdImage').value='';
       openSheet('editProductSheet');
     };
