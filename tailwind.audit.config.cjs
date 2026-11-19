@@ -1,8 +1,10 @@
 /**
  * Isolated Tailwind CSS audit build for VALERIAN V20.
  * This output is NOT linked into the app until visual/offline parity is verified.
- * Keep the custom theme tokens aligned with the existing Tailwind v4 theme.
+ * Keep custom tokens aligned with the existing Tailwind v4 theme.
  */
+const brand = (fallback) => `rgb(from var(--brand-color, ${fallback}) r g b / <alpha-value>)`;
+
 module.exports = {
   content: [
     './index.html',
@@ -12,16 +14,20 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          50: 'var(--brand-50, #f5f3ff)',
-          100: 'var(--brand-100, #ede9fe)',
-          200: 'var(--brand-200, #ddd6fe)',
-          300: 'var(--brand-300, #c4b5fd)',
-          500: 'var(--brand-500, #8b5cf6)',
-          600: 'var(--brand-600, #7c3aed)',
-          700: 'var(--brand-700, #6d28d9)',
-          800: 'var(--brand-800, #5b21b6)',
-          900: 'var(--brand-900, #4c1db6)'
+          50: brand('#f5f3ff'),
+          100: brand('#ede9fe'),
+          200: brand('#ddd6fe'),
+          300: brand('#c4b5fd'),
+          500: brand('#8b5cf6'),
+          600: brand('#7c3aed'),
+          700: brand('#6d28d9'),
+          800: brand('#5b21b6'),
+          900: brand('#4c1db6')
         }
+      },
+      boxShadow: {
+        '2xs': '0 1px var(--tw-shadow-color, rgb(0 0 0 / 0.05))',
+        'xs': '0 1px 2px 0 var(--tw-shadow-color, rgb(0 0 0 / 0.05))'
       },
       fontFamily: {
         sans: ['Cairo', 'Tahoma', 'Arial', 'sans-serif'],
