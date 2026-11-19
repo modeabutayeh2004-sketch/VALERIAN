@@ -2364,16 +2364,21 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         <div><h2 class="text-lg font-extrabold">🧾 إدارة الطلبات</h2><p class="text-xs text-slate-500 mt-1">افصل الحجوزات المنتظرة عن الطلبات المباعة/المسلّمة، مع متابعة سريعة لكل طلب.</p></div>
         <button onclick="switchTab('pos')" class="px-4 py-2 rounded-xl bg-brand-600 text-white text-xs font-bold">＋ إنشاء طلب جديد</button>
       </div>
-      <div class="flex gap-2">
+      <div class="flex flex-wrap gap-2">
         <button id="ordersReservedTab" onclick="setOrdersView('reserved')" class="px-4 py-2 rounded-xl bg-amber-100 text-amber-900 border border-amber-200 text-xs font-extrabold">⏳ المحجوز (<span id="reservedOrdersCount">0</span>)</button>
-        <button id="ordersSoldTab" onclick="setOrdersView('sold')" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 text-xs font-extrabold">✅ المباع (<span id="soldOrdersCount">0</span>)</button>
+        <button id="ordersShippedTab" onclick="setOrdersView('shipped')" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 text-xs font-extrabold">🚚 تم شحنه (<span id="shippedOrdersCount">0</span>)</button>
+        <button id="ordersSoldTab" onclick="setOrdersView('delivered')" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 text-xs font-extrabold">✅ تم تسليمه (<span id="soldOrdersCount">0</span>)</button>
       </div>
       <div id="reservedOrdersPage" class="bg-white rounded-2xl border border-slate-200/80 overflow-hidden">
-        <div class="p-3 border-b bg-amber-50"><h3 class="font-extrabold text-amber-900">الطلبات المحجوزة — لم يتم التسليم بعد</h3></div>
+        <div class="p-3 border-b bg-amber-50"><h3 class="font-extrabold text-amber-900">الطلبات المحجوزة — لم يتم خصم المخزون</h3></div>
         <div class="overflow-x-auto"><table class="w-full text-right text-xs min-w-[850px]"><thead class="bg-slate-50"><tr><th class="p-3">رقم الطلب</th><th class="p-3">التاريخ</th><th class="p-3">العميل</th><th class="p-3">الإجمالي</th><th class="p-3">المدفوع</th><th class="p-3">المتبقي</th><th class="p-3">الحالة</th><th class="p-3">إجراءات</th></tr></thead><tbody id="reservedOrdersBody"></tbody></table></div>
       </div>
+      <div id="shippedOrdersPage" class="hidden bg-white rounded-2xl border border-slate-200/80 overflow-hidden">
+        <div class="p-3 border-b bg-sky-50"><h3 class="font-extrabold text-sky-900">الطلبات التي خرجت من المخزون ولم يؤكد استلامها بعد</h3></div>
+        <div class="overflow-x-auto"><table class="w-full text-right text-xs min-w-[850px]"><thead class="bg-slate-50"><tr><th class="p-3">رقم الطلب</th><th class="p-3">التاريخ</th><th class="p-3">العميل</th><th class="p-3">الإجمالي</th><th class="p-3">المدفوع</th><th class="p-3">المتبقي</th><th class="p-3">الحالة</th><th class="p-3">إجراءات</th></tr></thead><tbody id="shippedOrdersBody"></tbody></table></div>
+      </div>
       <div id="soldOrdersPage" class="hidden bg-white rounded-2xl border border-slate-200/80 overflow-hidden">
-        <div class="p-3 border-b bg-emerald-50"><h3 class="font-extrabold text-emerald-900">الطلبات المباعة — تم تسليمها أو بيعها مباشرة</h3></div>
+        <div class="p-3 border-b bg-emerald-50"><h3 class="font-extrabold text-emerald-900">الطلبات التي تم تأكيد استلامها وتسليمها</h3></div>
         <div class="overflow-x-auto"><table class="w-full text-right text-xs min-w-[850px]"><thead class="bg-slate-50"><tr><th class="p-3">رقم الطلب</th><th class="p-3">التاريخ</th><th class="p-3">العميل</th><th class="p-3">الإجمالي</th><th class="p-3">المدفوع</th><th class="p-3">المتبقي</th><th class="p-3">الحالة</th><th class="p-3">إجراءات</th></tr></thead><tbody id="soldOrdersBody"></tbody></table></div>
       </div>
     </section>
