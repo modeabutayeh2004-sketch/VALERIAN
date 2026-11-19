@@ -276,7 +276,6 @@
     }
     function valIdbPutMany(store,obj){return valIdbTx(store,'readwrite',os=>{Object.keys(obj).forEach(k=>os.put(obj[k],k));});}
     function valIdbDeleteMany(store,keys){return valIdbTx(store,'readwrite',os=>{keys.forEach(k=>os.delete(k));});}
-    function valIdbClear(store){return valIdbTx(store,'readwrite',os=>{os.clear();});}
 
     // V19.63: durable full-state mirror in IndexedDB. localStorage is retained only
     // as a fast compatibility snapshot; it is no longer the only place for business data.
