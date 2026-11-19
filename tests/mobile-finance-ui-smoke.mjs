@@ -30,18 +30,20 @@ try{
  await page.locator('#mobileCashAdjustDate').fill(date);
  await page.locator('#mobileCashAdjustNote').fill('إيداع اختبار واجهة الموبايل');
  await page.locator('form[onsubmit="submitMobileCashAdjustment(event)"] button[type="submit"]').click();
+ await page.locator('[data-more="transfers"]').click();
+ await page.locator('#more-transfers').waitFor({state:'visible'});
  await page.locator('#mobileCashTransferAmount').fill('300');
  await page.locator('#mobileCashTransferDate').fill(date);
  await page.locator('#mobileCashTransferNote').fill('تحويل اختبار واجهة الموبايل');
  await page.locator('form[onsubmit="submitMobileCashTransfer(event)"] button[type="submit"]').click();
  const result=await page.evaluate(async()=>{
   const f=await window.ValerianEngine.getFinanceSnapshot(),cash=f.balances.find(x=>x.method==='نقدي'),bank=f.balances.find(x=>x.method==='تحويل بنكي');
-  return {expenses:f.expenses.length,expense:f.expenses[0]?.note,cash:cash?.balance,bank:bank?.balance,rows:f.cashbookRows.length};
+  return {expenses:f.expenses.length,expense:f.expenses[0]?.note,cash:cash?.balance,bank:bank?.balance,rows:f.cashbookRows.length,transferCount:f.cashbookTransfers?.length||0};
  });
- if(result.expenses!==1||result.expense!=='VALERIAN mobile finance UI test'||Number(result.cash)!==600||Number(result.bank)!==300||result.rows!==5)throw new Error('Mobile finance UI did not update the finance engine correctly: '+JSON.stringify(result));
+ if(result.expenses!==1||result.expense!=='VALERIAN mobile finance UI test'||Number(result.cash)!==600||Number(result.bank)!==300||result.rows!==5||result.transferCount!==1)throw new Error('Mobile finance UI did not update the finance engine correctly: '+JSON.stringify(result));
  await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>!!window.ValerianEngine&&!!window.ValerianEngine.ready,null,{timeout:60000});
- const persisted=await page.evaluate(async()=>{await window.ValerianEngine.ready;const f=await window.ValerianEngine.getFinanceSnapshot();return {expenses:f.expenses.length,cash:f.balances.find(x=>x.method==='نقدي')?.balance,bank:f.balances.find(x=>x.method==='تحويل بنكي')?.balance,rows:f.cashbookRows.length};});
- if(persisted.expenses!==1||Number(persisted.cash)!==600||Number(persisted.bank)!==300||persisted.rows!==5)throw new Error('Mobile finance UI data did not survive reload: '+JSON.stringify(persisted));
+ const persisted=await page.evaluate(async()=>{await window.ValerianEngine.ready;const f=await window.ValerianEngine.getFinanceSnapshot();return {expenses:f.expenses.length,cash:f.balances.find(x=>x.method==='نقدي')?.balance,bank:f.balances.find(x=>x.method==='تحويل بنكي')?.balance,rows:f.cashbookRows.length,transferCount:f.cashbookTransfers?.length||0};});
+ if(persisted.expenses!==1||Number(persisted.cash)!==600||Number(persisted.bank)!==300||persisted.rows!==5||persisted.transferCount!==1)throw new Error('Mobile finance UI data did not survive reload: '+JSON.stringify(persisted));
  if(errors.length)throw new Error('Browser runtime errors: '+errors.join(' | '));
  console.log('VALERIAN mobile finance UI browser test: PASSED');console.log(JSON.stringify({result,persisted}));console.log(' - Finance/cashbook navigation, expense form, opening balance, cash deposit, transfer form, calculated balances, and reload persistence verified.');
  await context.close();
