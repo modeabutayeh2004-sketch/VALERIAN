@@ -6853,6 +6853,39 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
   })();
   </script>
 
+<script id="valerianImportApprovalClickGuard">
+// Capture the import approval click before inline handlers or other UI listeners.
+// This also gives a visible diagnostic if the main UI handler was not initialized.
+document.addEventListener('click', function(event) {
+  const button = event.target && event.target.closest ? event.target.closest('#saveMobileImportInvoiceBtn') : null;
+  if (!button) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  if (button.dataset.guardBusy === '1') return;
+  button.dataset.guardBusy = '1';
+  const original = 'اعتماد الفاتورة وتحديث المخزون والحسابات';
+  button.textContent = 'جارٍ تشغيل اعتماد الفاتورة…';
+  button.disabled = true;
+  Promise.resolve().then(function() {
+    if (typeof window.saveMobileImportInvoice !== 'function') {
+      throw new Error('دالة اعتماد الفاتورة غير متاحة؛ يبدو أن تهيئة واجهة V20 توقفت قبل اكتمالها.');
+    }
+    return window.saveMobileImportInvoice();
+  }).catch(function(error) {
+    console.error('VALERIAN import approval click guard:', error);
+    const message = error && error.message ? error.message : String(error);
+    const toast = document.getElementById('mobileToast');
+    if (typeof window.showToast === 'function') window.showToast(message, 'error');
+    else if (toast) { toast.textContent = message; toast.classList.remove('hidden'); }
+    else alert(message);
+  }).finally(function() {
+    button.dataset.guardBusy = '0';
+    button.disabled = false;
+    if (button.isConnected) button.textContent = original;
+  });
+}, true);
+</script>
+
 <script>
 (function(){
  const $=id=>document.getElementById(id),diag=window.__VALERIAN_DIAG;
