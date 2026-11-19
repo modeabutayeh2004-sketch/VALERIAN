@@ -4816,7 +4816,6 @@ function previewPeriodicReportPrint() {
         if(ok) setTimeout(()=>emit('valerian:state-changed',{source:'save'}),0);
         return ok;
       };
-      const savedRefresh=refreshAllViews;
       refreshAllViews=function(...args){
         // The original ERP document is now a hidden data engine behind V5.
         // Do not repaint its legacy POS/catalog/reports DOM after each transaction.
