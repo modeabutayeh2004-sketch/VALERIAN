@@ -3906,7 +3906,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         <div class="w-10 h-1 rounded-full bg-slate-300/30 mx-auto"></div>
         <div class="flex items-center justify-between"><h3 class="text-base font-black text-white">تعديل بيانات المنتج بالكامل</h3><button onclick="closeSheet('editProductSheet')" class="w-8 h-8 rounded-full glass-pill">✕</button></div>
         <input id="editProdId" type="hidden">
-        <div class="space-y-1"><label class="text-[10px] text-slate-400">صورة المنتج</label><input id="editProdImage" type="file" accept="image/*" class="w-full text-xs text-slate-300"><img id="editProdImagePreview" class="hidden w-24 h-24 object-cover rounded-xl border border-white/20"></div>
+        <div class="space-y-1"><label class="text-[10px] text-slate-400">صورة المنتج</label><input id="editProdImage" type="file" accept="image/*" class="w-full text-xs text-slate-300" onchange="handleNewProdImage(event, 'edit')"><img id="editProdImagePreview" class="hidden w-24 h-24 object-cover rounded-xl border border-white/20"></div>
         <input id="editProdName" type="text" placeholder="اسم المنتج" class="w-full glass-pill rounded-xl px-3 py-2.5 text-white">
         <div class="grid grid-cols-2 gap-2">
           <select id="editProdType" class="glass-pill rounded-xl px-3 py-2 text-white bg-[#04121a]"><option>عطور</option><option>مزيلات عرق</option><option>شامبو</option><option>كريمات</option><option>عناية بالبشرة</option><option>عناية بالشعر</option><option>مستحضرات تجميل</option><option>منتجات أخرى</option></select>
@@ -4185,6 +4185,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     let mobileCart = [];
     let redeemPointsActive = false;
     let pendingNewProductImage = '';
+    let pendingEditedProductImage = '';
+    let pendingCropTarget = 'new';
     let activePreviewShareContext = null;
     window.__v5ImageProcessing = false;
     window.__v5ImageToken = 0;
@@ -4476,9 +4478,10 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       img.style.objectPosition=x+'% '+y+'%';
       img.style.transform='scale('+zoom+')';
     }
-    async function handleNewProdImage(e){
+    async function handleNewProdImage(e,target='new'){
       const file=e.target.files&&e.target.files[0];if(!file)return;
-      const status=document.getElementById('newProdImageStatus');
+      pendingCropTarget=target;
+      const status=target==='new'?document.getElementById('newProdImageStatus'):null;
       try{
         if(!String(file.type||'').startsWith('image/'))throw new Error('الملف المختار ليس صورة.');
         if(file.size>25*1024*1024)throw new Error('حجم الصورة الأصلية أكبر من 25 ميجابايت.');
@@ -4508,12 +4511,14 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const modal=document.getElementById('productCropModal');if(modal)modal.classList.add('hidden');
       if(pendingCropObjectUrl)URL.revokeObjectURL(pendingCropObjectUrl);
       pendingCropObjectUrl='';pendingCropImage=null;
-      const input=document.getElementById('newProdImgInput');if(input)input.value='';
-      const status=document.getElementById('newProdImageStatus');if(status)status.textContent=pendingNewProductImage?'الصورة السابقة ما زالت محفوظة.':'لم يتم اعتماد صورة بعد.';
+      const input=document.getElementById(pendingCropTarget==='edit'?'editProdImage':'newProdImgInput');if(input)input.value='';
+      const status=document.getElementById('newProdImageStatus');if(status&&pendingCropTarget==='new')status.textContent=pendingNewProductImage?'الصورة السابقة ما زالت محفوظة.':'لم يتم اعتماد صورة بعد.';
+      pendingCropTarget='new';
     }
     async function applyProductImageCrop(){
       if(!pendingCropImage)return showToast('اختر صورة أولاً.');
-      const saveBtn=document.getElementById('saveNewProductBtn'),status=document.getElementById('newProdImageStatus');
+      const isEdit=pendingCropTarget==='edit';
+      const saveBtn=document.getElementById(isEdit?'saveEditProductBtn':'saveNewProductBtn'),status=isEdit?null:document.getElementById('newProdImageStatus');
       const token=++window.__v5ImageToken;
       window.__v5ImageProcessing=true;if(saveBtn)saveBtn.disabled=true;
       if(status)status.textContent='جارٍ قص الصورة وضغطها...';
@@ -4534,15 +4539,21 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         if(!blob||!blob.size)throw new Error('ملف الصورة الناتج فارغ.');
         const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||''));reader.onerror=()=>reject(new Error('تعذر قراءة الصورة بعد القص.'));reader.readAsDataURL(blob);});
         if(token!==window.__v5ImageToken)return;
-        pendingNewProductImage=dataUrl;
-        const preview=document.getElementById('newProdImgPreview');preview.src=dataUrl;preview.classList.remove('hidden');
-        document.getElementById('newProdImgPlaceholder').classList.add('hidden');
-        document.getElementById('clearProdImgBtn').classList.remove('hidden');
+        if(isEdit){
+          pendingEditedProductImage=dataUrl;
+          const preview=document.getElementById('editProdImagePreview');preview.src=dataUrl;preview.classList.remove('hidden');
+        }else{
+          pendingNewProductImage=dataUrl;
+          const preview=document.getElementById('newProdImgPreview');preview.src=dataUrl;preview.classList.remove('hidden');
+          document.getElementById('newProdImgPlaceholder').classList.add('hidden');
+          document.getElementById('clearProdImgBtn').classList.remove('hidden');
+        }
         document.getElementById('productCropModal').classList.add('hidden');
         if(status)status.textContent='تم اعتماد القص — '+Math.round(blob.size/1024)+' كيلوبايت بعد الضغط.';
         if(pendingCropObjectUrl)URL.revokeObjectURL(pendingCropObjectUrl);
         pendingCropObjectUrl='';pendingCropImage=null;
-        document.getElementById('newProdImgInput').value='';
+        document.getElementById(isEdit?'editProdImage':'newProdImgInput').value='';
+        pendingCropTarget='new';
       }catch(err){showToast(String(err&&err.message||'تعذر قص الصورة.'));if(status)status.textContent='تعذر اعتماد القص؛ الصورة السابقة لم تتغير.';}
       finally{window.__v5ImageProcessing=false;if(saveBtn)saveBtn.disabled=false;}
     }
@@ -6544,6 +6555,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
       const unit=String(p.stockUnit||String(p.size||'').split(/\s+/).slice(1).join(' ')||'مل');
       const sizeMatch=String(p.size||'').match(/\d+(?:\.\d+)?/);
       const set=(id,value)=>{const el=document.getElementById(id);if(el)el.value=value??'';};
+      pendingEditedProductImage=p.image||'';
       set('editProdId',p.id);set('editProdName',p.name);set('editProdType',p.productType||'عطور');set('editProdCategory',p.category||'غير محدد');
       set('editProdSize',sizeMatch?sizeMatch[0]:'');set('editProdUnit',unit);set('editProdPrice',p.price);set('editProdCost',p.averageCost??p.totalCost??0);
       set('editProdStock',p.stock);const stockField=document.getElementById('editProdStock');if(stockField)stockField.readOnly=p.productType==='عطور'||p.category==='تقسيم';set('editProdMin',p.minimumStock??2);set('editProdNotes',p.notes||'');
@@ -6609,7 +6621,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
           minimumStock:Number(document.getElementById('editProdMin').value),notes:document.getElementById('editProdNotes').value,
           isDecantable:document.getElementById('editProdDecantable').checked,decantSizeMl:Number(document.getElementById('editProdDecantSize').value||10),
           decantBottleCost:Number(document.getElementById('editProdDecantCost').value||15),isOffer:document.getElementById('editProdOffer').checked,
-          offerPrice:Number(document.getElementById('editProdOfferPrice').value||0),image:file?await readFile(file):current.image||''};
+          offerPrice:Number(document.getElementById('editProdOfferPrice').value||0),image:pendingEditedProductImage||current.image||''};
         if(!payload.name||!Number.isFinite(payload.price)||payload.price<=0||!Number.isFinite(payload.averageCost)||payload.averageCost<0||!Number.isSafeInteger(payload.stock)||payload.stock<0)return showToast('راجع الاسم والسعر والتكلفة والكمية.');
         button.disabled=true;button.textContent='جارٍ الحفظ...';
         const r=await runEngine('updateProduct',payload);if(r?.ok){
@@ -6624,7 +6636,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
         }
       }catch(err){reportError(err);}finally{button.disabled=false;button.textContent='حفظ جميع التعديلات';}
     };
-    document.getElementById('editProdImage')?.addEventListener('change',function(){const f=this.files?.[0],img=document.getElementById('editProdImagePreview');if(!f)return;const r=new FileReader();r.onload=()=>{img.src=String(r.result);img.classList.remove('hidden');};r.readAsDataURL(f);});
+
     window.openMobileReportsPreview=function(){
       const delivered=appState.orders.filter(o=>o.stockDeducted||String(o.status||'').includes('تم التسليم'));
       const sales=delivered.reduce((sum,o)=>sum+Math.max(0,Number(o.grandTotal||0)-Number(o.returnedValue||0)),0);
