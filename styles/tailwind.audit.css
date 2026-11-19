@@ -1,6 +1,6 @@
 /* Isolated Tailwind v4.1.10 utility-only completion audit. No preflight or components. */
 @import "tailwindcss/theme.css" layer(theme);
-@import "tailwindcss/utilities.css" layer(utilities);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
 
 @theme {
   --color-brand-50: var(--brand-50, #f5f3ff);
