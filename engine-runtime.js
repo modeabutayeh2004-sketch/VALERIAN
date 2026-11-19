@@ -5211,23 +5211,13 @@ function previewPeriodicReportPrint() {
         createImportInvoice:async payload=>{
           await ready;
           if(!payload)throw new Error('بيانات فاتورة الاستيراد مطلوبة.');
-          // V20 no longer renders the legacy import modal. The ERP core still uses
-          // its form fields as an internal transaction adapter, so create a hidden bridge.
-          let bridge=document.getElementById('valerianImportEngineBridge');
-          if(!bridge){
-            bridge=document.createElement('div');
-            bridge.id='valerianImportEngineBridge';
-            bridge.style.display='none';
-            bridge.innerHTML=`<div id="importModal" class="hidden">
-              <input id="impSupplier" type="text"><input id="impInvoiceDate" type="date">
-              <input id="impExchangeRate" type="number"><input id="impShippingCost" type="number">
-              <input id="impCustomsCost" type="number"><input id="impPaidAmount" type="number">
-              <input id="impNotes" type="text">
-              <select id="impPaymentMethod"><option value="نقدي">نقدي</option><option value="تحويل بنكي">تحويل بنكي</option><option value="محفظة إلكترونية">محفظة إلكترونية</option><option value="بطاقة">بطاقة</option><option value="أخرى">أخرى</option></select>
-              <table><tbody id="importLinesBody"></tbody></table>
-              <button id="saveImportInvoiceBtn" type="button"></button>
-            </div>`;
-            document.body.appendChild(bridge);
+          // Use the single legacy ERP form already mounted inside the off-screen engine host.
+          // Creating a second set of identical IDs made document.getElementById/querySelector
+          // resolve inconsistently, so the transaction could read/write a different form.
+          const engineHost=document.getElementById('valerian-legacy-engine-host');
+          if(!engineHost)throw new Error('محرك الاستيراد غير متصل بواجهة VALERIAN.');
+          for(const id of ['impSupplier','impInvoiceDate','impExchangeRate','impShippingCost','impCustomsCost','impPaidAmount','impNotes','impPaymentMethod','importLinesBody','importModal']){
+            if(!engineHost.querySelector('#'+id))throw new Error('عنصر محرك الاستيراد غير موجود: '+id);
           }
           const supplier=String(payload.supplier||'').trim();
           const dateValue=String(payload.date||'').trim();
