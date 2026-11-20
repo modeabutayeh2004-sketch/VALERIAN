@@ -17,11 +17,121 @@ import android.widget.Toast;
 import android.util.Base64;
 
 import java.io.OutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import org.json.JSONObject;
 
 public final class NativeFileBridge {
     private final Activity activity;
+    private final WebView webView;
+    private final ConcurrentHashMap<String, ImageSaveSession> imageSaveSessions = new ConcurrentHashMap<>();
 
-    public NativeFileBridge(Activity activity) { this.activity = activity; }
+    private static final class ImageSaveSession {
+        final File tempFile;
+        final FileOutputStream output;
+        final String fileName;
+        final String mimeType;
+        ImageSaveSession(File tempFile, FileOutputStream output, String fileName, String mimeType) {
+            this.tempFile = tempFile; this.output = output; this.fileName = fileName; this.mimeType = mimeType;
+        }
+    }
+
+    public NativeFileBridge(Activity activity) { this(activity, null); }
+    public NativeFileBridge(Activity activity, WebView webView) { this.activity = activity; this.webView = webView; }
+
+    private static String safeImageName(String fileName) {
+        String name = (fileName == null ? "VALERIAN-image.png" : fileName).replaceAll("[^A-Za-z0-9._-]", "_");
+        return name.isEmpty() ? "VALERIAN-image.png" : name;
+    }
+
+    // Chunked transfer keeps large Base64 payloads out of a single blocking WebView bridge call.
+    @JavascriptInterface
+    public String beginImageSave(String fileName, String mimeType) {
+        try {
+            File temp = File.createTempFile("valerian-image-", ".part", activity.getCacheDir());
+            FileOutputStream output = new FileOutputStream(temp);
+            String id = UUID.randomUUID().toString();
+            imageSaveSessions.put(id, new ImageSaveSession(temp, output, safeImageName(fileName),
+                (mimeType == null || mimeType.isEmpty()) ? "image/png" : mimeType));
+            return id;
+        } catch (Exception e) { return ""; }
+    }
+
+    @JavascriptInterface
+    public boolean appendImageSaveChunk(String saveId, String base64Chunk) {
+        ImageSaveSession session = imageSaveSessions.get(saveId);
+        if (session == null || base64Chunk == null) return false;
+        try {
+            byte[] bytes = Base64.decode(base64Chunk, Base64.DEFAULT);
+            synchronized (session) { session.output.write(bytes); }
+            return true;
+        } catch (Exception e) { return false; }
+    }
+
+    @JavascriptInterface
+    public void cancelImageSave(String saveId) {
+        ImageSaveSession session = imageSaveSessions.remove(saveId);
+        if (session == null) return;
+        try { synchronized (session) { session.output.close(); } } catch (Exception ignored) {}
+        try { session.tempFile.delete(); } catch (Exception ignored) {}
+    }
+
+    @JavascriptInterface
+    public void finishImageSave(String saveId, String callbackId) {
+        final ImageSaveSession session = imageSaveSessions.remove(saveId);
+        if (session == null) { notifyImageSave(callbackId, false, "جلسة حفظ الصورة غير موجودة."); return; }
+        try { synchronized (session) { session.output.flush(); session.output.close(); } }
+        catch (Exception e) { session.tempFile.delete(); notifyImageSave(callbackId, false, "تعذر تجهيز ملف الصورة: " + e.getMessage()); return; }
+
+        new Thread(() -> {
+            Uri uri = null;
+            boolean success = false;
+            String error = "";
+            try {
+                ContentValues values = new ContentValues();
+                values.put(MediaStore.Images.Media.DISPLAY_NAME, session.fileName);
+                values.put(MediaStore.Images.Media.MIME_TYPE, session.mimeType);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    values.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/VALERIAN");
+                    values.put(MediaStore.Images.Media.IS_PENDING, 1);
+                }
+                uri = activity.getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+                if (uri == null) throw new IllegalStateException("تعذر إنشاء ملف في معرض الصور.");
+                try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(session.tempFile));
+                     BufferedOutputStream out = new BufferedOutputStream(activity.getContentResolver().openOutputStream(uri))) {
+                    if (out == null) throw new IllegalStateException("تعذر فتح ملف الصورة.");
+                    byte[] buffer = new byte[64 * 1024];
+                    int count;
+                    while ((count = in.read(buffer)) != -1) out.write(buffer, 0, count);
+                    out.flush();
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    ContentValues done = new ContentValues(); done.put(MediaStore.Images.Media.IS_PENDING, 0);
+                    activity.getContentResolver().update(uri, done, null, null);
+                }
+                success = true;
+            } catch (Exception e) {
+                error = e.getMessage() == null ? "تعذر حفظ الصورة." : e.getMessage();
+                if (uri != null) try { activity.getContentResolver().delete(uri, null, null); } catch (Exception ignored) {}
+            } finally {
+                try { session.tempFile.delete(); } catch (Exception ignored) {}
+            }
+            notifyImageSave(callbackId, success, error);
+        }, "ValerianImageSave").start();
+    }
+
+    private void notifyImageSave(String callbackId, boolean success, String message) {
+        if (webView == null) return;
+        final String safeId = JSONObject.quote(callbackId == null ? "" : callbackId);
+        final String safeMessage = JSONObject.quote(message == null ? "" : message);
+        activity.runOnUiThread(() -> webView.evaluateJavascript(
+            "window.__valerianNativeSaveComplete&&window.__valerianNativeSaveComplete(" + safeId + "," + success + "," + safeMessage + ")", null));
+    }
 
     @JavascriptInterface
     public boolean saveImage(String base64, String fileName, String mimeType) {
