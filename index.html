@@ -4250,7 +4250,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
           <div class="flex items-center justify-between gap-2"><div><h4 class="text-sm font-black">روابط منصات VALERIAN ورموز QR</h4><p class="text-[10px] mt-1" style="color:#806a48">أضف اسم كل منصة ورابطها، وسيظهر رمزها تلقائيًا على الفواتير والصور.</p></div><span style="color:#9a783b;font-size:20px">▦</span></div>
           <label class="flex items-center gap-2 text-xs font-bold"><input id="settingsSheetEnableQr" type="checkbox" checked class="w-4 h-4"> تفعيل رموز QR في الفواتير والصور</label>
           <div id="settingsSheetQrEditor" class="space-y-2"></div>
-          <div class="grid grid-cols-2 gap-2"><button type="button" onclick="addSettingsSheetQrLink()" class="rounded-xl py-2.5 text-xs font-black" style="background:#ead9b8;color:#493719;border:1px solid #c6a66b">＋ إضافة منصة</button><button type="button" onclick="saveSettingsSheetQrLinks()" class="rounded-xl py-2.5 text-xs font-black" style="background:#9b783d;color:white">حفظ روابط QR</button></div>
+          <div class="grid grid-cols-2 gap-2"><button type="button" onclick="ValerianEngine.addSettingsSheetQrLink()" class="rounded-xl py-2.5 text-xs font-black" style="background:#ead9b8;color:#493719;border:1px solid #c6a66b">＋ إضافة منصة</button><button type="button" onclick="ValerianEngine.saveSettingsSheetQrLinks()" class="rounded-xl py-2.5 text-xs font-black" style="background:#9b783d;color:white">حفظ روابط QR</button></div>
           <p class="text-[10px]" style="color:#806a48">حتى 4 منصات. اكتب الرابط كاملًا ويبدأ بـ https://</p>
         </div>
         <div class="glass-card rounded-2xl p-3.5 space-y-3">
@@ -4483,7 +4483,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         if(percentage)percentage.value=Number(settings.loyaltyPercentage??5);
         if(start)start.value=Number(settings.loyaltyStartOrder??2);
         if(value)value.value=Number(settings.pointValue??1);
-        if(typeof renderSettingsSheetQrEditor==='function')renderSettingsSheetQrEditor();
+        if(window.ValerianEngine?.renderSettingsSheetQrEditor)window.ValerianEngine.renderSettingsSheetQrEditor();
       }
     }
 
