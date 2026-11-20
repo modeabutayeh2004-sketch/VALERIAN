@@ -88,6 +88,7 @@ try {
         const state = {chunks:[],completed:false,fileName:'',mimeType:'',base64Length:0};
         window.__valerianNativeSaveSmoke = state;
         window.ValerianNative = {
+          saveImage(){throw new Error('Legacy single-call save must not be used by the chunked smoke test');},
           beginImageSave(fileName,mimeType){state.fileName=fileName;state.mimeType=mimeType;return 'smoke-save-session';},
           appendImageSaveChunk(saveId,chunk){if(saveId!=='smoke-save-session'||chunk.length>131072)return false;state.chunks.push(chunk);return true;},
           finishImageSave(saveId,callbackId){state.base64Length=state.chunks.reduce((n,x)=>n+x.length,0);setTimeout(()=>{state.completed=true;window.__valerianNativeSaveComplete(callbackId,true,'');},0);},
