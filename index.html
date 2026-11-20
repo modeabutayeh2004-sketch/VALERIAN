@@ -6288,7 +6288,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       let canvas;
       try {
         canvas = await capture(captureNode, {scale,foreignObjectRendering:false,backgroundColor:null,useCORS:true,allowTaint:false,logging:false,
-          scrollX:0,scrollY:0,width,height,windowWidth:isInvoiceCapture?width:Math.max(width,document.documentElement.clientWidth,window.innerWidth||0),windowHeight:Math.max(height,document.documentElement.clientHeight,window.innerHeight||0),imageTimeout:15000});
+          scrollX:0,scrollY:0,width,height,windowWidth:isInvoiceCapture?Math.max(document.documentElement.clientWidth,window.innerWidth||0):Math.max(width,document.documentElement.clientWidth,window.innerWidth||0),windowHeight:Math.max(height,document.documentElement.clientHeight,window.innerHeight||0),imageTimeout:15000});
       } finally { captureHost.remove(); }
       // Paint a true horizontal strike through the center of each old price
       // after html2canvas has finished, so it cannot drift onto the new price.
