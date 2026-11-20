@@ -3025,19 +3025,23 @@ function previewPeriodicReportPrint() {
       const summary=document.getElementById('orderReturnSummary');
       if(summary)summary.textContent='الطلب '+order.id+' — '+(order.name||'')+' — '+(order.phone||'');
       const guidance=document.getElementById('orderReturnGuidance');
-      if(guidance)guidance.textContent=delivered?'حدد كمية كل صنف وحالته بعد الاستلام: سليم يعود للمخزون، مفتوح يُضاف رصيده بالملليلتر إلى الزجاجات المتاحة للتقسيم، ومكسور يُسجل كهالك وخسارة.':'هذا الطلب لم يُخصم من المخزون بعد؛ اعتماد المرتجع سيحرر الكمية المحجوزة فقط دون إضافة مستلزمات تغليف أو حركة بيع.';
+      if(guidance)guidance.textContent=delivered?'حدد كمية كل صنف وحالته بعد الاستلام. عند اختيار مفتوح أدخل إجمالي المتبقي مرة واحدة، وسيستخدم التطبيق وحدة المنتج تلقائيًا (الكيلو يُسجل بالجرام).':'هذا الطلب لم يُخصم من المخزون بعد؛ اعتماد المرتجع سيحرر الكمية المحجوزة فقط دون إضافة مستلزمات تغليف أو حركة بيع.';
       const host=document.getElementById('orderReturnItems');
       if(!host)return;
       host.innerHTML=(order.items||[]).map(item=>{
         const remaining=Math.max(0,Number(item.qty||0)-Number(item.returnedQty||0));
         if(!remaining)return '';
         const product=state.products.find(p=>String(p.id)===String(item.id));
-        const bottleMl=product?Math.max(1,Number(getBottleVolumeMl(product)||0)):0;
+        const measure=product?getProductMeasureInfo(product):{unit:'وحدة',capacity:0};
+        const unit=String(measure.unit||'وحدة');
+        const capacity=Math.max(0,Number(measure.capacity||0));
+        const max=capacity>0?capacity*remaining:0;
+        const canOpen=!!product&&product.category!=='تقسيم';
         return '<div class="rounded-xl border border-slate-200 p-3 space-y-2" data-return-row="1" data-product-id="'+escapeHTML(item.id)+'">'+
           '<div class="flex items-start justify-between gap-3"><div class="min-w-0"><b class="text-sm">'+escapeHTML(item.name||product?.name||'صنف')+'</b><div class="text-[10px] text-slate-500">الكمية الأصلية: '+Number(item.qty||0)+' — المرتجع سابقًا: '+Number(item.returnedQty||0)+' — المتاح: '+remaining+'</div></div><span class="text-xs font-bold text-slate-600">'+formatCurrency(item.price||0)+'</span></div>'+
           '<div class="grid grid-cols-1 '+(delivered?'sm:grid-cols-2':'')+' gap-2"><label class="text-[10px] font-bold text-slate-600">الكمية المرتجعة<input class="return-qty mt-1 w-full border rounded-lg p-2 text-sm" type="number" min="0" max="'+remaining+'" step="1" value="0"></label>'+
-          (delivered?'<label class="text-[10px] font-bold text-slate-600">حالة المنتج المرتجع<select class="return-disposition mt-1 w-full border rounded-lg p-2 text-sm" onchange="toggleReturnOpenMl(this)"><option value="restock">سليم ومغلق — يعود للمخزون</option><option value="open">مفتوح — رصيد متاح للتقسيم</option><option value="writeoff">مكسور / تالف — هالك</option></select></label>':'')+'</div>'+
-          (delivered?'<label class="return-open-ml-wrap hidden text-[10px] font-bold text-amber-800">كمية العطر المتبقية بالملليلتر<input class="return-open-ml mt-1 w-full border border-amber-300 rounded-lg p-2 text-sm" type="number" min="0" max="'+(bottleMl*remaining)+'" step="0.1" value="0"><span class="block mt-1 font-normal">الحد الأقصى النظري: '+formatNumber(bottleMl*remaining,1)+' مل حسب سعة العبوة.</span></label>':'')+
+          (delivered?'<label class="text-[10px] font-bold text-slate-600">حالة المنتج المرتجع<select class="return-disposition mt-1 w-full border rounded-lg p-2 text-sm" onchange="toggleReturnOpenMl(this)"><option value="restock">سليم ومغلق — يعود للمخزون</option>'+(canOpen?'<option value="open">مفتوح / مستخدم — رصيد مرتجع</option>':'<option value="quarantine">مفتوح / مستخدم — عزل</option>')+'<option value="writeoff">مكسور / تالف — هالك</option></select></label>':'')+'</div>'+
+          (delivered&&canOpen?'<label class="return-open-ml-wrap hidden text-[10px] font-bold text-amber-800">إجمالي المتبقي ('+escapeHTML(unit)+')<input class="return-open-ml mt-1 w-full border border-amber-300 rounded-lg p-2 text-sm" type="number" min="0" '+(max>0?'max="'+max+'"':'')+' step="0.001" value="0"><span class="block mt-1 font-normal">يحدد التطبيق الوحدة تلقائيًا؛ إذا كان المنتج بالكيلو فالإدخال بالجرام.</span></label>':'')+
           '</div>';
       }).join('');
       openModal('orderReturnModal');
@@ -3053,8 +3057,10 @@ function previewPeriodicReportPrint() {
       const selections=[...document.querySelectorAll('#orderReturnItems [data-return-row]')].map(row=>{
         const qty=Number(row.querySelector('.return-qty')?.value||0);
         const disposition=order.stockDeducted?String(row.querySelector('.return-disposition')?.value||'restock'):'release';
-        const openMl=disposition==='open'?Number(row.querySelector('.return-open-ml')?.value||0):0;
-        return {productId:row.dataset.productId,qty,disposition,openMl};
+        const openQty=disposition==='open'?Number(row.querySelector('.return-open-ml')?.value||0):0;
+        const product=state.products.find(p=>String(p.id)===String(row.dataset.productId));
+        const openUnit=product?getProductMeasureInfo(product).unit:'وحدة';
+        return {productId:row.dataset.productId,qty,disposition,openQty,openMl:openUnit==='مل'?openQty:0,openUnit};
       }).filter(x=>x.qty>0);
       if(!selections.length){showToast('حدد كمية واحدة على الأقل للمرتجع.','error');return;}
       try{
