@@ -3943,8 +3943,14 @@ function previewPeriodicReportPrint() {
         .inventory-print-report .inventory-print-table th:nth-child(5),.inventory-print-report .inventory-print-table td:nth-child(5){width:28%!important;}
         .inventory-print-report .inventory-print-table img{width:42px!important;height:42px!important;max-width:42px!important;max-height:42px!important;object-fit:contain!important;}
         .inventory-print-report .inventory-print-table tr{break-inside:avoid!important;page-break-inside:avoid!important;}
-        .customer-print-sheet{border:0;box-shadow:none;padding:8px}
-        .customer-print-head{text-align:center;border-bottom:2px solid #6d28d9;padding-bottom:14px;margin-bottom:16px}
+        .customer-print-sheet{border:1px solid #e7dfcf;border-radius:18px;box-shadow:0 12px 34px rgba(10,24,35,.08);padding:22px;background:linear-gradient(180deg,#fff 0%,#fcfbf8 100%);color:#172b39}
+        .customer-print-sheet h3{font-size:12px;font-weight:900;color:#17384b;border-right:3px solid #b7965b;padding:4px 9px;margin:18px 0 9px}
+        .customer-print-sheet .customer-print-foot{margin-top:18px;padding-top:10px;border-top:1px solid #dfd5c3;text-align:center;color:#8a744f;font-size:9px;letter-spacing:.3px}
+        .customer-print-head{background:linear-gradient(125deg,#091c2b,#173c50 65%,#243f4e);color:#fff;border:0;border-radius:14px;padding:18px 14px 16px;margin-bottom:18px;text-align:center}
+        .customer-print-head h2,.customer-print-head .customer-print-name{color:#fff;font-weight:900}
+        .customer-print-head .muted{color:#d8c7a4}
+        .customer-print-sheet th{background:#f2eee5;color:#6e5835;font-weight:900}
+        .customer-print-sheet tbody tr:nth-child(even){background:#faf8f3}
         .customer-print-head .brand-title{font-family:'Playfair Display','Cairo',serif;font-size:25px;font-weight:900;letter-spacing:3px;color:#4c1d95}
         .customer-print-head h2{font-size:19px;font-weight:900;margin:5px 0}.customer-print-name{font-size:17px;font-weight:900;margin:8px 0}
         .muted{font-size:10px;color:#64748b}.customer-print-sheet h3{font-size:14px;font-weight:900;color:#4c1d95;margin:18px 0 8px}
