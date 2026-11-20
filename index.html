@@ -6128,7 +6128,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       // Keep the clone at the preview's real viewport coordinates. foreignObject
       // rendering clips content placed far outside the viewport; opacity must stay
       // fully opaque because SVG foreignObject inherits ancestor opacity.
-      captureHost.style.cssText = 'position:fixed;left:'+rect.left+'px;top:'+rect.top+'px;z-index:2147483647;opacity:1;pointer-events:none;width:'+width+'px;max-width:'+width+'px;background:transparent;direction:rtl;overflow:visible;';
+      captureHost.style.cssText = 'position:fixed;left:'+rect.left+'px;top:'+rect.top+'px;z-index:-1;opacity:1;pointer-events:none;width:'+width+'px;max-width:'+width+'px;background:transparent;direction:rtl;overflow:visible;';
       captureHost.appendChild(captureNode);
       (source.parentElement || document.body).appendChild(captureHost);
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
