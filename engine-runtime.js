@@ -2613,7 +2613,7 @@
 
     // ==================== PRINT PREVIEW ENGINE ====================
     async function previewDocumentPrint(order, type) {
-      pendingOffersBlob=null; pendingOffersImageUrl=""; pendingPreviewImageBlob=null;
+      pendingOffersBlob=null; pendingOffersFiles=null; pendingOffersImageUrl=""; pendingPreviewImageBlob=null;
       pendingDocumentArchiveOrder=(order&&order.id)?{id:String(order.id),type:String(type||'document')}:null;
       pendingInvoiceShareOrder=(type==='reservation_invoice'||type==='final_invoice')?{id:String(order.id||''),name:String(order.name||''),phone:String(order.phone||''),type,grandTotal:Number(order.grandTotal||0),remainingAmount:Number(order.remainingAmount||0)}:null;
       pendingCustomerImageShare=(order&&order.phone)?{id:String(order.id||''),name:String(order.name||''),phone:String(order.phone||''),type,grandTotal:Number(order.grandTotal||0),remainingAmount:Number(order.remainingAmount||0)}:null;
@@ -2661,7 +2661,7 @@
     }
 
 function previewPeriodicReportPrint() {
-      pendingOffersBlob=null;pendingOffersImageUrl="";pendingPreviewImageBlob=null;pendingInvoiceShareOrder=null;
+      pendingOffersBlob=null;pendingOffersFiles=null;pendingOffersImageUrl="";pendingPreviewImageBlob=null;pendingInvoiceShareOrder=null;
       pendingDocumentArchiveOrder={id:'periodic-report-'+Date.now(),type:'periodic_report'};pendingCustomerImageShare=null;
       document.getElementById('invoiceWhatsAppBtn')?.classList.add('hidden');
       document.getElementById('invoiceOpenWhatsAppBtn')?.classList.add('hidden');
@@ -2861,13 +2861,15 @@ function previewPeriodicReportPrint() {
           const old=prior.find(x=>Number(x.page)===i+1);
           if(old?.storagePath===path)cloudSaved=true;
           else{
-            const {error}=await cloudClient.storage.from(VAL_IMAGE_BUCKET).upload(path,blob,{upsert:true,contentType:blob.type||'image/png',cacheControl:'31536000'});
-            if(error)throw new Error('تعذر أرشفة صفحة العروض '+(i+1)+' سحابياً: '+cloudErrorMessage(error));
-            cloudSaved=true;
+            try{
+              const {error}=await cloudClient.storage.from(VAL_IMAGE_BUCKET).upload(path,blob,{upsert:true,contentType:blob.type||'image/png',cacheControl:'31536000'});
+              if(error)throw new Error(cloudErrorMessage(error));
+              cloudSaved=true;
+            }catch(uploadErr){result.cloudError=String(uploadErr?.message||uploadErr);}
           }
         }
         if(cloudSaved)result.cloudArchived++;
-        pages.push({page:i+1,key,storagePath:cloudSaved?path:(prior.find(x=>Number(x.page)===i+1)?.storagePath||''),fileName,savedAt:Date.now(),hash});
+        pages.push({page:i+1,key,storagePath:cloudSaved?path:'',fileName,savedAt:Date.now(),hash});
       }
       archive.pageImages=pages;archive.pageCount=pages.length;archive.savedAt=Date.now();
       if(!saveState())throw new Error('تم تجهيز صور الصفحات لكن تعذر حفظ سجل الأرشيف');
@@ -4036,6 +4038,7 @@ function previewPeriodicReportPrint() {
     }
 
     function printAllCustomerLoyaltySummary() {
+      pendingOffersBlob=null;pendingOffersFiles=null;pendingOffersImageUrl='';pendingPreviewImageBlob=null;
       const customers=(state.customers||[]).map(c=>({name:c.name||'عميل',phone:c.phone||'',orders:Number(c.ordersCount||0),spent:Number(c.totalSpent||0),points:calculateCurrentLoyaltyPoints(c.phone)})).sort((a,b)=>b.points-a.points);
       if(!customers.length){showToast('لا يوجد عملاء لطباعة كشف النقاط.','error');return;}
       const cards=customers.map(c=>'<tr><td>'+escapeHTML(c.name)+'</td><td dir="ltr">'+escapeHTML(c.phone)+'</td><td class="v20-num">'+formatNumber(c.orders,0)+'</td><td class="v20-num">'+formatNumber(c.points,0)+' نقطة</td><td class="v20-num">'+formatCurrency(c.points*Number(state.settings.pointValue||0))+'</td></tr>').join('');
