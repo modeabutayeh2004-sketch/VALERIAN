@@ -73,7 +73,7 @@ try {
         const pixels=pixelContext.getImageData(0,0,bitmap.width,bitmap.height).data;
         let visibleSamples=0;
         for(let y=24;y<bitmap.height-24;y+=4){for(let x=24;x<bitmap.width-24;x+=4){const p=(y*bitmap.width+x)*4;const r=pixels[p],g=pixels[p+1],b=pixels[p+2];if((r<225||g<215||b<195||Math.max(r,g,b)-Math.min(r,g,b)>24)&&pixels[p+3]>0)visibleSamples++;}}
-        const dimensionsValid=bitmap.width===1080&&bitmap.height<=2100&&bitmap.height>=900;
+        const dimensionsValid=bitmap.width===1880&&bitmap.height<=6000&&bitmap.height>=1000;
         const visibleContentValid=visibleSamples>=1500;
         const dataUrl=await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||''));reader.readAsDataURL(blob);});
         return {qrImages:qrImages.length,exportBytes:blob.size,width:bitmap.width,height:bitmap.height,visibleSamples,dimensionsValid,visibleContentValid,dataUrl};
@@ -82,7 +82,7 @@ try {
       delete invoiceCheck.dataUrl;
       await page.screenshot({path:'www/visual-invoice.png',fullPage:true,animations:'disabled'});
       console.log(JSON.stringify({invoiceExport:invoiceCheck.visibleContentValid&&invoiceCheck.dimensionsValid?'ok':'failed',...invoiceCheck}));
-      if(!invoiceCheck.dimensionsValid)throw new Error('Invoice export canvas is not content-fitted: '+invoiceCheck.width+'x'+invoiceCheck.height);
+      if(!invoiceCheck.dimensionsValid)throw new Error('Invoice export canvas does not preserve the original 940px paper width: '+invoiceCheck.width+'x'+invoiceCheck.height);
       if(!invoiceCheck.visibleContentValid)throw new Error('Invoice export appears blank or missing rendered poster content; visible pixel samples: '+invoiceCheck.visibleSamples);
       await page.evaluate(() => {
         const state = {chunks:[],completed:false,fileName:'',mimeType:'',base64Length:0};
