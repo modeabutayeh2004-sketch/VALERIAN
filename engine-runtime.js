@@ -5214,12 +5214,30 @@ function previewPeriodicReportPrint() {
         produceDecants:async payload=>{
           await ready;
           if(!payload)throw new Error('بيانات الإنتاج مطلوبة.');
-          openDecantProductionModal();
           el('decantProductionProduct').value=String(payload.productId||'');
           el('decantProductionQty').value=String(payload.quantity||0);
+          if(el('decantProductionSource'))el('decantProductionSource').value=payload.sourceMode==='priority'?'priority':'returned';
           const before=(state.decantProductionLog||[]).length;
           produceDecants({preventDefault(){}});
-          return {ok:(state.decantProductionLog||[]).length>before,snapshot:snapshot()};
+          const ok=(state.decantProductionLog||[]).length>before;
+          if(ok){
+            try{await valDurableWritePromise;if(valDurableWriteError)throw valDurableWriteError;await valIdbFlush();}
+            catch(err){throw new Error('تم تنفيذ التجهيز لكن تعذر تأكيد الحفظ الدائم: '+String(err?.message||err));}
+          }
+          return {ok,snapshot:snapshot()};
+        },
+        openOriginalBottleForDecant:async payload=>{
+          await ready;
+          if(!payload)throw new Error('اختر منتج التقسيم أولاً.');
+          el('decantProductionProduct').value=String(payload.productId||'');
+          const before=(state.decantBottleOpeningLog||[]).length;
+          openOriginalBottleForDecant();
+          const ok=(state.decantBottleOpeningLog||[]).length>before;
+          if(ok){
+            try{await valDurableWritePromise;if(valDurableWriteError)throw valDurableWriteError;await valIdbFlush();}
+            catch(err){throw new Error('تم فتح الزجاجة لكن تعذر تأكيد الحفظ الدائم: '+String(err?.message||err));}
+          }
+          return {ok,snapshot:snapshot()};
         },
         addShippingCompany:async name=>{
           await ready;const value=String(name||'').trim().replace(/\s+/g,' ');if(!value)throw new Error('اسم شركة الشحن مطلوب.');
