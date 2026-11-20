@@ -3116,6 +3116,73 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
 }
 </style>
 
+<style id="v20-navy-suppliers-refinement">
+/* V20.10 — supplier accounts workspace refinement. CSS only; preserve invoices, balances and payment behavior. */
+@media screen{
+  #tab-suppliers>div:first-child{
+    background:radial-gradient(circle at 96% 0%,rgba(205,218,234,.13),transparent 36%),linear-gradient(145deg,rgba(29,47,70,.98),rgba(11,23,39,.99))!important;
+    border:1px solid rgba(195,210,229,.2)!important;border-radius:18px!important;box-shadow:0 14px 32px rgba(0,0,0,.2)!important;
+  }
+  #tab-suppliers>div:first-child h2{color:#f1f4f8!important;line-height:1.65!important;}
+  #tab-suppliers>div:first-child p{color:#afbed0!important;line-height:1.7!important;}
+  #tab-suppliers>#supplierAccountsPanel,#tab-suppliers>div:nth-child(3),#tab-suppliers>div:last-child{
+    background:linear-gradient(150deg,rgba(27,45,68,.97),rgba(12,24,40,.99))!important;
+    border:1px solid rgba(195,210,229,.18)!important;border-radius:17px!important;box-shadow:0 12px 28px rgba(0,0,0,.17)!important;
+  }
+  #tab-suppliers h3{color:#edf2f7!important;line-height:1.6!important;}
+  #tab-suppliers p,#tab-suppliers .text-slate-500,#tab-suppliers .text-slate-400{color:#aebdd0!important;}
+  #tab-suppliers .border-b{border-color:rgba(195,210,229,.14)!important;}
+  #tab-suppliers .bg-slate-50{background:rgba(195,210,229,.065)!important;border-color:rgba(195,210,229,.15)!important;}
+  #tab-suppliers .grid>div{
+    background:linear-gradient(145deg,rgba(35,54,78,.82),rgba(17,31,49,.94))!important;
+    border:1px solid rgba(195,210,229,.16)!important;border-radius:14px!important;box-shadow:0 8px 20px rgba(0,0,0,.13)!important;
+  }
+  #tab-suppliers .grid>div>div:first-child{color:#aebdd0!important;}
+  #tab-suppliers #supplierStatementInvoices,#tab-suppliers #supplierStatementPaid,#tab-suppliers #supplierStatementDue,
+  #tab-suppliers #supplierTotalInvoices,#tab-suppliers #supplierTotalPaid,#tab-suppliers #supplierTotalDue{
+    font-variant-numeric:tabular-nums!important;letter-spacing:.01em!important;
+  }
+  #tab-suppliers #supplierStatementInvoices,#tab-suppliers #supplierTotalInvoices{color:#edf2f7!important;}
+  #tab-suppliers #supplierStatementPaid,#tab-suppliers #supplierTotalPaid{color:#a9d7c5!important;}
+  #tab-suppliers #supplierStatementDue,#tab-suppliers #supplierTotalDue{color:#e6b8c2!important;}
+  #tab-suppliers .overflow-x-auto{max-width:100%!important;scrollbar-width:thin!important;scrollbar-color:rgba(180,197,217,.35) transparent!important;overscroll-behavior-inline:contain!important;}
+  #tab-suppliers .overflow-x-auto::-webkit-scrollbar{height:7px!important;}
+  #tab-suppliers .overflow-x-auto::-webkit-scrollbar-thumb{background:rgba(180,197,217,.3)!important;border-radius:20px!important;}
+  #tab-suppliers table{color:#dce5ef!important;border-collapse:separate!important;border-spacing:0!important;}
+  #tab-suppliers table thead th{background:rgba(195,210,229,.09)!important;color:#dfe7f0!important;border-bottom:1px solid rgba(195,210,229,.17)!important;font-weight:800!important;white-space:nowrap!important;}
+  #tab-suppliers table tbody td{color:#d6e0ec!important;border-bottom:1px solid rgba(195,210,229,.1)!important;vertical-align:middle!important;}
+  #tab-suppliers table tbody tr:last-child td{border-bottom:0!important;}
+  #tab-suppliers table tbody tr:hover td{background:rgba(195,210,229,.045)!important;}
+  #tab-suppliers table tbody td button{min-height:36px!important;border-radius:9px!important;padding:7px 11px!important;}
+  #tab-suppliers button{min-height:38px!important;border-radius:10px!important;transition:filter .18s ease,transform .18s ease!important;}
+  #tab-suppliers button:hover{filter:brightness(1.06);}
+  #tab-suppliers button:focus-visible,#tab-suppliers select:focus-visible,#tab-suppliers input:focus-visible{outline:2px solid rgba(210,224,240,.72)!important;outline-offset:2px!important;}
+  #tab-suppliers select,#tab-suppliers input{min-height:40px!important;background:rgba(5,14,26,.72)!important;color:#edf2f7!important;border:1px solid rgba(195,210,229,.23)!important;border-radius:10px!important;}
+  #tab-suppliers select option{background:#142238!important;color:#edf2f7!important;}
+}
+@media screen and (max-width:767px){
+  #tab-suppliers>div:first-child{padding:14px!important;}
+  #tab-suppliers>#supplierAccountsPanel>div:first-child,#tab-suppliers>div:nth-child(3)>div:first-child,#tab-suppliers>div:last-child>div:first-child{padding:13px!important;}
+  #tab-suppliers>div:nth-child(3)>div:first-child{align-items:stretch!important;}
+  #tab-suppliers #supplierStatementSelect{width:100%!important;min-width:0!important;max-width:100%!important;}
+  #tab-suppliers>div:nth-child(4){grid-template-columns:minmax(0,1fr)!important;}
+  #tab-suppliers .overflow-x-auto{border-top:1px solid rgba(195,210,229,.1)!important;}
+  #tab-suppliers table{min-width:640px!important;}
+  #tab-suppliers table th,#tab-suppliers table td{padding:11px 12px!important;}
+  #tab-suppliers table tbody td button{min-height:39px!important;}
+}
+@media print{
+  #tab-suppliers>div:first-child,#tab-suppliers>#supplierAccountsPanel,#tab-suppliers>div:nth-child(3),#tab-suppliers>div:last-child,#tab-suppliers .grid>div{
+    background:#fff!important;color:#111!important;box-shadow:none!important;border-color:#ddd!important;
+  }
+  #tab-suppliers h2,#tab-suppliers h3,#tab-suppliers p,#tab-suppliers .text-slate-500,#tab-suppliers .text-slate-400,
+  #tab-suppliers .grid>div>div:first-child,#tab-suppliers table,#tab-suppliers table th,#tab-suppliers table td{color:#111!important;}
+  #tab-suppliers table{min-width:0!important;}
+  #tab-suppliers table th,#tab-suppliers table td{background:#fff!important;border-color:#ddd!important;}
+}
+</style>
+
+
 </head>
 <!-- V19.30: smart operating supplies inventory; preserve original layout and schemaVersion 18 -->
 <!-- V19.37: compact A4 landscape inventory print with fixed image thumbnails -->
