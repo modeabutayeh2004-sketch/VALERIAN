@@ -2,10 +2,10 @@
 'use strict';
 
 // Bump this value whenever the HTML, application engine, or offline strategy changes.
-const CACHE_NAME = 'valerian-app-shell-v20-20261120-invoice-qr-gold81';
+const CACHE_NAME = 'valerian-app-shell-v20-20261120-invoice-qr-gold82';
 const APP_SHELL = [
   './index.html',
-  './engine-runtime.js?v=v20-20261120-invoice-qr-gold81',
+  './engine-runtime.js?v=v20-20261120-invoice-qr-gold82',
   './manifest.webmanifest',
   './assets/valerian-icon.jpg'
 ];
