@@ -4926,8 +4926,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       mobileCart.forEach(item => {
         const p = appState.products.find(x => x.id === item.id);
         if (p) {
-          if (currentPosMode === 'reservation') p.reservedStock += item.qty;
-          else p.stock -= item.qty;
+          p.reservedStock = Number(p.reservedStock||0) + Number(item.qty||0);
         }
       });
 
@@ -4935,12 +4934,14 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         id: 'VAL-' + Date.now().toString().slice(-4),
         date: new Date().toISOString().slice(0, 10),
         mode: currentPosMode,
-        status: currentPosMode === 'reservation' ? 'حجز مسبق (30%)' : 'مؤكد / تم التسليم',
+        createdAt: new Date().toISOString(),
+        reservedAt: new Date().toISOString(),
+        status: currentPosMode === 'reservation' ? 'حجز مسبق (30%)' : 'مؤكد / مدفوع بالكامل — بانتظار الشحن',
         phone, name, address,
         grandTotal: totals.grand,
         depositAmount: deposit,
         remainingAmount: Math.max(0, totals.grand - deposit),
-        stockDeducted: currentPosMode === 'direct',
+        stockDeducted: false,
         shippingCompany: '—',
         trackingNumber: '—',
         items: structuredClone(mobileCart)
@@ -4949,14 +4950,14 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       appState.orders.unshift(order);
 
       let cust = appState.customers.find(c => c.phone === phone);
-      const earned = currentPosMode === 'direct' ? Math.round(totals.grand * (appState.settings.loyaltyPercentage / 100)) : 0;
+      const earned = 0;
       if (cust) {
         if (redeemPointsActive) cust.points = Math.max(0, cust.points - totals.ptsDiscount);
         cust.points += earned;
         cust.ordersCount += 1;
-        if (currentPosMode === 'direct') cust.totalSpent += totals.grand;
+        // Customer spend is recognized when delivery is confirmed.
       } else {
-        appState.customers.unshift({ phone, name, address, ordersCount: 1, totalSpent: currentPosMode === 'direct' ? totals.grand : 0, points: earned, debtToCustomer: 0 });
+        appState.customers.unshift({ phone, name, address, ordersCount: 1, totalSpent: 0, points: earned, debtToCustomer: 0 });
       }
 
       mobileCart = [];
