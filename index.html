@@ -2202,6 +2202,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
     .inventory-metrics-row .inventory-metric{min-width:0;min-height:48px;flex:1 1 0;padding:5px 2px;border-radius:9px}
     .inventory-metrics-row .inventory-metric span{min-height:22px;font-size:clamp(7px,2.05vw,9px);line-height:1.15;overflow-wrap:anywhere}
     .inventory-metrics-row .inventory-metric strong{font-size:clamp(9px,2.5vw,11px);line-height:1.15;margin-top:2px;white-space:normal;overflow-wrap:anywhere}
+    .inventory-metric bdi[dir="ltr"]{direction:ltr;unicode-bidi:isolate;display:inline-block;white-space:nowrap}
     .inventory-metrics-row-decant{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
     .inventory-metrics-row-decant .inventory-metric{min-width:0;min-height:48px;padding:5px 2px;border-radius:9px}
     .inventory-metrics-row-decant .inventory-metric span{min-height:22px;font-size:9px;line-height:1.15}
@@ -5187,7 +5188,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
               <div class="inventory-metrics-row ${isDecantCategory(p) ? 'inventory-metrics-row-decant' : ''}" aria-label="ملخص أرصدة المنتج">
                 <div class="inventory-metric"><span>متاح للبيع</span><strong class="${isLow ? 'text-amber-300' : 'text-emerald-300'}">${avail}</strong></div>
                 <div class="inventory-metric"><span>محجوز</span><strong class="text-amber-200">${p.reservedStock || 0}</strong></div>
-                <div class="inventory-metric"><span>حجم العبوة</span><strong class="text-sky-300">${Number(isDecantCategory(p) ? (p.decantSize || parseFloat(p.size) || 0) : (p.volumeMl || (parseFloat(p.size) || p.decantSize) || 0))} مل</strong></div>
+                <div class="inventory-metric"><span>حجم العبوة</span><strong class="text-sky-300"><bdi dir="ltr">${Number(isDecantCategory(p) ? (p.decantSize || parseFloat(p.size) || 0) : (p.volumeMl || (parseFloat(p.size) || p.decantSize) || 0))} مل</bdi></strong></div>
                 ${!isDecantCategory(p) ? `
                 <div class="inventory-metric"><span>سائل مفتوح</span><strong class="text-cyan-200">${String(p.productType||'')==='عطور' ? Number(p.decantMlOpenedAvailable || 0).toFixed(1)+' مل' : '—'}</strong></div>
                 <div class="inventory-metric"><strong class="text-emerald-200">${(()=>{const rows=(p.openReturnedBottles||[]).filter(b=>!['consumed','depleted'].includes(String(b.status||'available')));const totals={};rows.forEach(b=>{let u=String(b.unit||p.stockUnit||'وحدة').trim();if(String(p.productType||'')==='عطور'&&/^(وحدة|زجاجة أصلية|زجاجة|عبوة)$/i.test(u))u='مل';if(/^(ml|ملل)$/i.test(u))u='مل';else if(/^(g|جرام|غرام)$/i.test(u))u='جم';else if(/^(kg|كيلوجرام|كيلو)$/i.test(u))u='كجم';else if(/^l$/i.test(u)||/^لتر$/i.test(u))u='لتر';else if(/^وحدة$/i.test(u))u='وحدة';totals[u]=(totals[u]||0)+Math.max(0,Number(b.remainingQty??b.remainingMl??0));});const keys=Object.keys(totals);return keys.length?keys.map(u=>Number(totals[u].toFixed(2)).toString()+' '+u).join(' / '):'0';})()}</strong></div>
@@ -5195,7 +5196,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
               </div>
               <div class="grid grid-cols-3 gap-1.5">
                 <button onclick="editMobileProduct('${p.id}')" class="py-2 rounded-xl border border-white/15 bg-white/5 text-slate-100 text-[10px] font-extrabold">تعديل البيانات ✎</button>
-                <button onclick="permanentlyDeleteInventoryProduct('${encodeURIComponent(String(p.id))}')" class="py-2 px-1 rounded-xl bg-black/75 border border-slate-500/60 text-white text-[10px] font-black">🗑 حذف</button>
+                <button onclick="permanentlyDeleteInventoryProduct('${encodeURIComponent(String(p.id))}')" class="py-2 px-1 rounded-xl bg-black/75 border border-slate-500/60 text-white text-[10px] font-black" style="color:#fff!important;-webkit-text-fill-color:#fff!important">🗑 حذف</button>
                 <button onclick="toggleInventoryProductAvailability('${encodeURIComponent(String(p.id))}')" class="py-2 rounded-xl ${p.disabledForSales === true ? 'bg-emerald-500/15 border border-emerald-300/35 text-emerald-200' : 'bg-amber-500/15 border border-amber-300/35 text-amber-100'} text-[10px] font-extrabold">${p.disabledForSales === true ? '▶ إعادة التفعيل' : '⏸ تعطيل البيع'}</button>
               </div>
             </div>
