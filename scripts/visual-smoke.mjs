@@ -84,6 +84,26 @@ try {
       console.log(JSON.stringify({invoiceExport:invoiceCheck.visibleContentValid&&invoiceCheck.dimensionsValid?'ok':'failed',...invoiceCheck}));
       if(!invoiceCheck.dimensionsValid)throw new Error('Invoice export canvas is not content-fitted: '+invoiceCheck.width+'x'+invoiceCheck.height);
       if(!invoiceCheck.visibleContentValid)throw new Error('Invoice export appears blank or missing rendered poster content; visible pixel samples: '+invoiceCheck.visibleSamples);
+      await page.evaluate(() => {
+        const state = {chunks:[],completed:false,fileName:'',mimeType:'',base64Length:0};
+        window.__valerianNativeSaveSmoke = state;
+        window.ValerianNative = {
+          beginImageSave(fileName,mimeType){state.fileName=fileName;state.mimeType=mimeType;return 'smoke-save-session';},
+          appendImageSaveChunk(saveId,chunk){if(saveId!=='smoke-save-session'||chunk.length>131072)return false;state.chunks.push(chunk);return true;},
+          finishImageSave(saveId,callbackId){state.base64Length=state.chunks.reduce((n,x)=>n+x.length,0);setTimeout(()=>{state.completed=true;window.__valerianNativeSaveComplete(callbackId,true,'');},0);},
+          cancelImageSave(){}
+        };
+      });
+      await page.locator('#previewModalSheet').getByText('تنزيل الصورة').click();
+      await page.waitForFunction(() => window.__valerianNativeSaveSmoke?.completed === true, null, {timeout:45000});
+      const nativeSaveCheck = await page.evaluate(() => ({
+        chunks:window.__valerianNativeSaveSmoke.chunks.length,
+        maxChunk:Math.max(...window.__valerianNativeSaveSmoke.chunks.map(x=>x.length)),
+        base64Length:window.__valerianNativeSaveSmoke.base64Length,
+        mimeType:window.__valerianNativeSaveSmoke.mimeType
+      }));
+      if(nativeSaveCheck.chunks<2||nativeSaveCheck.maxChunk>131072||nativeSaveCheck.base64Length<10000||nativeSaveCheck.mimeType!=='image/png')throw new Error('Chunked Android image-save bridge smoke test failed: '+JSON.stringify(nativeSaveCheck));
+      console.log(JSON.stringify({nativeChunkedSave:'ok',...nativeSaveCheck}));
     }
     const status = await page.evaluate(() => ({
       title:document.title,
