@@ -745,9 +745,27 @@
       state.paymentTransactions.unshift({ id: 'PAY-' + Date.now() + '-' + Math.random().toString(36).slice(2,6), date: new Date().toISOString(), orderId: order.id, customerPhone: order.phone, customerName: order.name, type, amount: value, note: note || '', method: method || 'غير محدد' });
     }
 
+    function isReturnedMlBottle(product,bottle){
+      const unit=String(bottle?.unit||'').trim();
+      if(/^(مل|ملل|ml)$/i.test(unit))return true;
+      // Older V20 return records could be saved with the generic stock unit
+      // even though the product is a perfume and the entered remainder was ml.
+      return String(product?.productType||'')==='عطور' && (!unit || /^(وحدة|زجاجة أصلية|زجاجة)$/i.test(unit));
+    }
+    function normalizeReturnedPerfumeUnits(product){
+      if(String(product?.productType||'')!=='عطور'||!Array.isArray(product.openReturnedBottles))return;
+      product.openReturnedBottles.forEach(b=>{
+        if(!b||String(b.status||'available')==='consumed'||!isReturnedMlBottle(product,b))return;
+        b.unit='مل';
+        if(b.originalMl==null)b.originalMl=Number(b.originalQty||0);
+        if(b.remainingMl==null)b.remainingMl=Number(b.remainingQty??b.remainingMl??0);
+        if(b.usedMl==null)b.usedMl=Number(b.usedQty||0);
+      });
+    }
     function getReturnedOpenMlBalance(product) {
+      normalizeReturnedPerfumeUnits(product);
       return (Array.isArray(product?.openReturnedBottles)?product.openReturnedBottles:[])
-        .filter(b=>/^(مل|ملل|ml)$/i.test(String(b.unit||'مل')) && String(b.status||'available')!=='consumed')
+        .filter(b=>isReturnedMlBottle(product,b) && !['consumed','depleted'].includes(String(b.status||'available')))
         .reduce((sum,b)=>sum+Math.max(0,Number(b.remainingQty??b.remainingMl??0)),0);
     }
 
@@ -782,6 +800,7 @@
       const raw=String(product?.size||'');
       const match=raw.match(/([0-9]+(?:[.,][0-9]+)?)\s*(كجم|كيلوجرام|كيلو|kg|g|جرام|جم|غرام|لتر|l|ml|ملل|مل)/i);
       const amount=match?Number(match[1].replace(',','.')):0;
+      if(String(product?.productType||'')==='عطور')return {unit:'مل',capacity:getBottleVolumeMl(product)};
       const token=String(match?.[2]||product?.stockUnit||'وحدة').toLowerCase();
       if(/^(كجم|كيلوجرام|كيلو|kg)$/.test(token))return {unit:'جم',capacity:amount>0?amount*1000:0};
       if(/^(g|جرام|جم|غرام)$/.test(token))return {unit:'جم',capacity:amount};
@@ -2158,7 +2177,7 @@
       const bottleUsage=[];
       for(const bottle of (parent.openReturnedBottles||[])){
         if(returnedToConsume<=0.0001)break;
-        if(!/^(مل|ملل|ml)$/i.test(String(bottle.unit||'مل'))||String(bottle.status||'available')==='consumed')continue;
+        if(!isReturnedMlBottle(parent,bottle)||['consumed','depleted'].includes(String(bottle.status||'available')))continue;
         const remaining=Math.max(0,Number(bottle.remainingQty??bottle.remainingMl??0));
         if(remaining<=0)continue;
         const used=Number(Math.min(remaining,returnedToConsume).toFixed(3));
