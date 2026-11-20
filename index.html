@@ -6047,25 +6047,25 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       }
       // Social export: render the complete invoice on a crisp 4:5 post or 9:16 story canvas.
       const outputWidth=1080;
-      const fittedHeight=Math.ceil(canvas.height*(outputWidth-120)/canvas.width);
-      const outputHeight=fittedHeight<=1120?1350:1920;
+      const fittedHeight=Math.ceil(canvas.height*(outputWidth-104)/canvas.width);
+      const outputHeight=Math.min(2560,Math.max(fittedHeight+160,fittedHeight<=1120?1350:1920));
       const output=document.createElement('canvas');output.width=outputWidth;output.height=outputHeight;
       const out=output.getContext('2d');if(!out)throw new Error('تعذر تجهيز مقاس المشاركة.');
-      const dayTheme=document.documentElement.getAttribute('data-valerian-theme')==='light';
       const bg=out.createLinearGradient(0,0,outputWidth,outputHeight);
-      bg.addColorStop(0,dayTheme?'#f4f7f9':'#071a2d');bg.addColorStop(.52,dayTheme?'#e9eff3':'#0b2941');bg.addColorStop(1,dayTheme?'#e2eaf0':'#111e38');
+      bg.addColorStop(0,'#fffaf0');bg.addColorStop(.52,'#f4ead7');bg.addColorStop(1,'#eee1c8');
       out.fillStyle=bg;out.fillRect(0,0,outputWidth,outputHeight);
-      out.globalAlpha=.16;out.fillStyle='#9cc9c8';out.beginPath();out.ellipse(150,130,360,220,-.35,0,Math.PI*2);out.fill();
+      out.globalAlpha=.22;out.fillStyle='#d8bf8c';out.beginPath();out.ellipse(140,135,390,245,-.35,0,Math.PI*2);out.fill();
+      out.globalAlpha=.12;out.fillStyle='#ffffff';out.beginPath();out.ellipse(970,outputHeight-100,340,240,.3,0,Math.PI*2);out.fill();
       out.globalAlpha=1;
-      const maxW=outputWidth-120,maxH=outputHeight-180;
+      const maxW=outputWidth-104,maxH=outputHeight-160;
       const factor=Math.min(maxW/canvas.width,maxH/canvas.height);
       const drawW=Math.round(canvas.width*factor),drawH=Math.round(canvas.height*factor);
       const dx=Math.round((outputWidth-drawW)/2),dy=Math.round((outputHeight-drawH)/2);
-      out.shadowColor='rgba(0,0,0,.42)';out.shadowBlur=34;out.shadowOffsetY=14;
-      out.fillStyle='#ffffff';out.fillRect(dx-2,dy-2,drawW+4,drawH+4);
+      out.shadowColor='rgba(93,68,31,.18)';out.shadowBlur=30;out.shadowOffsetY=12;
+      out.fillStyle='#fffdf8';out.fillRect(dx-2,dy-2,drawW+4,drawH+4);
       out.shadowColor='transparent';out.shadowBlur=0;out.shadowOffsetY=0;
       out.drawImage(canvas,dx,dy,drawW,drawH);
-      out.strokeStyle='rgba(211,232,230,.48)';out.lineWidth=2;out.strokeRect(28,28,outputWidth-56,outputHeight-56);
+      out.strokeStyle='rgba(185,149,85,.72)';out.lineWidth=2;out.strokeRect(28,28,outputWidth-56,outputHeight-56);
       const socialBlob=await new Promise(resolve=>output.toBlob(resolve,'image/png'));
       if(!socialBlob||!socialBlob.size)throw new Error('تعذر إنشاء صورة المشاركة.');
       return socialBlob;
