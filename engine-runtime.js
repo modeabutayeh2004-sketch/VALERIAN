@@ -3365,6 +3365,7 @@ function previewPeriodicReportPrint() {
 
 
     let pendingRefundOrderIndex = null;
+    function deferCustomerRefund(){pendingRefundOrderIndex=null;closeModal('refundPaymentModal');}
     function settleRefund(idx,fromReturn=false) {
       const o = state.orders[idx];
       if (!o || Number(o.refundLiability || 0) <= 0) return;
