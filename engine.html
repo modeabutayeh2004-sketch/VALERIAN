@@ -3681,7 +3681,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const configured = Number(product?.volumeMlPerBottle || 0);
       if (Number.isFinite(configured) && configured > 0) return configured;
       const size = String(product?.size || '');
-      const match = size.match(/(\d+(?:\.\d+)?)\s*(?:مل|ملل|ml|mL|ML)\b?/i);
+      const match = size.match(/(\d+(?:\.\d+)?)\s*(?:مل|ملل|ml|mL|ML)/i);
       return match ? Math.max(0, Number(match[1])) : 0;
     }
 
