@@ -6160,11 +6160,19 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         const r = node.getBoundingClientRect();
         return {left:r.left-captureBounds.left,right:r.right-captureBounds.left,midY:r.top-captureBounds.top+(r.height/2)};
       }).filter(r => r.right > r.left);
-      const scale = Math.max(3, Math.min(5, (window.devicePixelRatio || 2) * 2, 9000 / Math.max(width, height)));
+      // Arabic must be painted by the browser's native HTML text engine.
+      // html2canvas's default canvas text renderer can split Arabic shaping into
+      // isolated glyphs or smear joined forms on Android WebView. Its
+      // foreignObject renderer delegates glyph shaping, ligatures and bidi
+      // layout back to Chromium, preserving the live poster typography.
+      captureNode.style.setProperty('text-rendering','geometricPrecision','important');
+      captureNode.style.setProperty('-webkit-font-smoothing','antialiased','important');
+      captureNode.style.setProperty('font-synthesis','none','important');
+      const scale = Math.max(2, Math.min(3, window.devicePixelRatio || 2, 9000 / Math.max(width, height)));
       let canvas;
       try {
-        canvas = await capture(captureNode, {scale,backgroundColor:null,useCORS:true,allowTaint:false,logging:false,
-          scrollX:0,scrollY:0,width,height,windowWidth:Math.max(document.documentElement.clientWidth,window.innerWidth||0),windowHeight:Math.max(document.documentElement.clientHeight,window.innerHeight||0),imageTimeout:10000});
+        canvas = await capture(captureNode, {scale,foreignObjectRendering:true,backgroundColor:null,useCORS:true,allowTaint:false,logging:false,
+          scrollX:0,scrollY:0,width,height,windowWidth:Math.max(document.documentElement.clientWidth,window.innerWidth||0),windowHeight:Math.max(document.documentElement.clientHeight,window.innerHeight||0),imageTimeout:15000});
       } finally { captureHost.remove(); }
       // Paint a true horizontal strike through the center of each old price
       // after html2canvas has finished, so it cannot drift onto the new price.
