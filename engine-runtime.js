@@ -1142,15 +1142,17 @@
     }
 
     function loadProductImageForCrop(e) {
-      const f = e.target.files[0];
-      if (!f) return;
-      const reader = new FileReader();
-      reader.onload = ev => {
-        const img = new Image();
-        img.onload = () => { rawProdImg = img; prodOffset = {x:0, y:0}; drawProdCrop(); };
-        img.src = ev.target.result;
+      const file=e.target.files?.[0];
+      if(!file)return;
+      if(!/^image\//i.test(file.type||'')){showToast('اختر ملف صورة صالحاً للمنتج.','error');e.target.value='';return;}
+      const objectUrl=URL.createObjectURL(file),img=new Image();
+      img.onload=()=>{
+        if(rawProdImg?.__valerianObjectUrl)try{URL.revokeObjectURL(rawProdImg.__valerianObjectUrl);}catch(_){}
+        rawProdImg=img;rawProdImg.__valerianObjectUrl=objectUrl;
+        prodOffset={x:0,y:0};drawProdCrop();
       };
-      reader.readAsDataURL(f);
+      img.onerror=()=>{URL.revokeObjectURL(objectUrl);showToast('تعذر فتح صورة المنتج؛ جرّب صورة بصيغة JPG أو PNG أو WebP.','error');e.target.value='';};
+      img.src=objectUrl;
     }
     function drawProdCrop() {
       const canvas = document.getElementById('prodCropCanvas');
