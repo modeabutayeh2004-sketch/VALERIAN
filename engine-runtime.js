@@ -4428,11 +4428,16 @@ function previewPeriodicReportPrint() {
       const pendingBeforeBootstrap=await valSyncReadOutbox();
       const localHasBusinessData=['products','imports','purchases','supplierInvoices','supplierPayments','customers','orders','expenses','inventoryMovements','packagingPurchases','packagingMovements','operatingSupplies','operatingSupplyInvoices','operatingSupplyMovements','paymentTransactions','returnRecords','refundTransactions'].some(key=>Array.isArray(state[key])&&state[key].length>0);
       let data=null,error=null;
-      let usedMetaOnly=hasStoredCursor&&localHasBusinessData&&!pendingBeforeBootstrap.length;
+      let usedMetaOnly=hasStoredCursor&&storedCursor>0&&localHasBusinessData&&!pendingBeforeBootstrap.length;
 
       if(usedMetaOnly){
         const meta=await cloudClient.rpc('valerian_sync_bootstrap_meta');
         data=meta.data;error=meta.error;
+        if(!error&&data?.ok&&Number(data.cursor||0)>storedCursor){
+          valCloudDiagnostic('مؤشر خط الأساس السحابي أحدث من مؤشر الجهاز؛ تنزيل نسخة السحابة الكاملة قبل متابعة المزامنة.');
+          const full=await cloudClient.rpc('valerian_sync_bootstrap');
+          data=full.data;error=full.error;usedMetaOnly=false;
+        }
         if(error){
           const message=String(error.message||error);
           const missingMeta=message.includes('PGRST202')||message.includes('Could not find the function')||message.includes('does not exist')||message.includes('schema cache');
