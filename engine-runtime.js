@@ -3200,7 +3200,7 @@ function previewPeriodicReportPrint() {
         if(newlyOwed>0){
           // Offer settlement immediately after the return is saved. Closing the
           // payment dialog leaves the liability open for later settlement.
-          settleRefund(idx);
+          settleRefund(idx,true);
         }
       }catch(err){showToast(String(err?.message||err),'error');}
     }
@@ -3365,14 +3365,15 @@ function previewPeriodicReportPrint() {
 
 
     let pendingRefundOrderIndex = null;
-    function settleRefund(idx) {
+    function settleRefund(idx,fromReturn=false) {
       const o = state.orders[idx];
       if (!o || Number(o.refundLiability || 0) <= 0) return;
       const outstanding = Number(o.refundLiability || 0);
       if (!Number.isFinite(outstanding) || outstanding <= 0) { showToast('لا يوجد مبلغ مستحق صالح لهذا الطلب.', 'error'); return; }
       if (!o.phone || !state.customers.some(c => c.phone === o.phone)) { showToast('لا يمكن رد المبلغ قبل ربط الطلب بسجل العميل الصحيح.', 'error'); return; }
       pendingRefundOrderIndex = idx;
-      document.getElementById('refundOrderSummary').textContent = `الطلب ${o.id} — المبلغ المستحق ${formatCurrency(outstanding)}`;
+      document.getElementById('refundOrderSummary').textContent = `الطلب ${o.id} — المبلغ المستحق ${formatCurrency(outstanding)}`+(fromReturn?' — يمكنك السداد الآن أو تأجيل التسوية مع بقاء المبلغ مستحقاً للعميل.':'');
+      const refundCancelBtn=document.getElementById('refundCancelBtn');if(refundCancelBtn)refundCancelBtn.textContent=fromReturn?'تأجيل التسوية':'إلغاء';
       document.getElementById('refundAmountInput').value = roundMoney(outstanding);
       document.getElementById('refundAmountInput').max = roundMoney(outstanding);
       document.getElementById('refundPaymentMethodSelect').value = 'نقدي';
