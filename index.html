@@ -6241,6 +6241,56 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       });
     }
 
+    const pendingNativeImageSaves = new Map();
+    window.__valerianNativeSaveComplete = function(callbackId, success, message) {
+      const pending = pendingNativeImageSaves.get(String(callbackId || ''));
+      if (!pending) return;
+      pendingNativeImageSaves.delete(String(callbackId || ''));
+      clearTimeout(pending.timer);
+      if (success) pending.resolve(true);
+      else pending.reject(new Error(message || 'تعذر حفظ الصورة في معرض الجهاز.'));
+    };
+
+    async function savePreviewImageInNativeBridge(blob, fileName) {
+      const bridge = window.ValerianNative;
+      if (!bridge || typeof bridge.beginImageSave !== 'function' ||
+          typeof bridge.appendImageSaveChunk !== 'function' ||
+          typeof bridge.finishImageSave !== 'function') return false;
+
+      const saveId = bridge.beginImageSave(fileName, 'image/png');
+      if (!saveId) throw new Error('تعذر بدء حفظ الصورة على الجهاز.');
+      let finished = false;
+      try {
+        const dataUrl = await blobToDataUrl(blob);
+        const comma = dataUrl.indexOf(',');
+        if (comma < 0) throw new Error('صيغة الصورة غير صالحة.');
+        const base64 = dataUrl.slice(comma + 1);
+        // 128 KiB Base64 chunks are divisible by four, so each chunk decodes independently.
+        const chunkSize = 128 * 1024;
+        for (let offset = 0; offset < base64.length; offset += chunkSize) {
+          if (!bridge.appendImageSaveChunk(saveId, base64.slice(offset, offset + chunkSize))) {
+            throw new Error('تعذر نقل جزء من الصورة إلى الجهاز.');
+          }
+        }
+        const callbackId = 'valerian-image-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+        const completion = new Promise((resolve, reject) => {
+          const timer = setTimeout(() => {
+            pendingNativeImageSaves.delete(callbackId);
+            reject(new Error('انتهت مهلة حفظ الصورة على الجهاز.'));
+          }, 60000);
+          pendingNativeImageSaves.set(callbackId, {resolve, reject, timer});
+        });
+        bridge.finishImageSave(saveId, callbackId);
+        await completion;
+        finished = true;
+        return true;
+      } finally {
+        if (!finished && typeof bridge.cancelImageSave === 'function') {
+          try { bridge.cancelImageSave(saveId); } catch (_) {}
+        }
+      }
+    }
+
     let previewImageDownloadInProgress = false;
     async function downloadPreviewImage() {
       if (previewImageDownloadInProgress) return;
@@ -6250,6 +6300,11 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         const blob = await createPreviewImageBlob();
         const fileName = previewImageFileName();
         if (window.ValerianNative && typeof window.ValerianNative.saveImage === 'function') {
+          const chunkedSaved = await savePreviewImageInNativeBridge(blob, fileName);
+          if (chunkedSaved) {
+            showToast('تم حفظ الصورة في معرض الصور داخل Pictures/VALERIAN.');
+            return;
+          }
           const saved = window.ValerianNative.saveImage(await blobToDataUrl(blob), fileName, 'image/png');
           if (!saved) throw new Error('لم يستطع Android حفظ الصورة في مجلد Pictures/VALERIAN.');
           showToast('تم حفظ الصورة في معرض الصور داخل Pictures/VALERIAN.');
