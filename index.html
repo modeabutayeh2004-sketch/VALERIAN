@@ -6196,12 +6196,10 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       const capture = await loadPreviewCaptureLibrary();
       if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
       const rect = source.getBoundingClientRect();
-      // Match the live preview's rendered width exactly. Using scrollWidth here
-      // widened the export clone and changed line wrapping/vertical positions.
-      const isInvoiceCapture = source.matches('.valerian-invoice-paper');
-      // Customer invoices use the supplied 940px document layout, not the narrow
-      // mobile preview viewport. Other share cards keep their native rendered width.
-      const width = format==='social' ? 900 : (isInvoiceCapture ? 940 : Math.ceil(rect.width || source.offsetWidth || source.scrollWidth));
+      // Export at the exact CSS width used by the visible preview.
+      // Forcing a desktop-width invoice inside a mobile WebView applies mobile
+      // breakpoints to a 940px canvas and changes the supplied document's layout.
+      const width = format==='social' ? 900 : Math.ceil(rect.width || source.offsetWidth || source.scrollWidth);
       const captureNode = source.cloneNode(true);
       // html2canvas can paint background-clip:text as a rectangular gradient.
       // Keep the live preview untouched; normalize gradient text only in the export clone.
