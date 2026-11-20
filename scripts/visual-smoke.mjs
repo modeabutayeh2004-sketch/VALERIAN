@@ -1,0 +1,55 @@
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { chromium } from 'playwright';
+
+const root = path.resolve('www');
+if (!fs.existsSync(path.join(root, 'index.html'))) throw new Error('www/index.html is missing');
+const mime = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.webmanifest':'application/manifest+json','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.svg':'image/svg+xml','.woff2':'font/woff2'};
+const server = http.createServer((req,res) => {
+  let pathname;
+  try { pathname = decodeURIComponent(new URL(req.url, 'http://127.0.0.1').pathname); } catch { res.writeHead(400).end(); return; }
+  const target = path.resolve(root, '.' + pathname);
+  if (!target.startsWith(root + path.sep) && target !== path.join(root,'index.html')) { res.writeHead(403).end(); return; }
+  const file = fs.existsSync(target) && fs.statSync(target).isDirectory() ? path.join(target,'index.html') : target;
+  if (!fs.existsSync(file) || !fs.statSync(file).isFile()) { res.writeHead(404).end('Not found'); return; }
+  res.writeHead(200, {'content-type':mime[path.extname(file)]||'application/octet-stream','cache-control':'no-store'});
+  fs.createReadStream(file).pipe(res);
+});
+await new Promise(resolve => server.listen(4173, '127.0.0.1', resolve));
+let browser;
+try {
+  browser = await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+  const errors = [];
+  for (const mode of ['dark','light']) {
+    const context = await browser.newContext({viewport:{width:1440,height:1000},deviceScaleFactor:1});
+    await context.addInitScript(value => localStorage.setItem('valerian-theme-preference-v2', value), mode);
+    const page = await context.newPage();
+    page.on('pageerror', error => errors.push(mode + ': ' + error.message));
+    await page.route('**/*', route => {
+      const u = new URL(route.request().url());
+      if (u.origin !== 'http://127.0.0.1:4173') return route.abort();
+      return route.continue();
+    });
+    await page.goto('http://127.0.0.1:4173/', {waitUntil:'domcontentloaded',timeout:30000});
+    await page.waitForFunction(() => !!window.ValerianEngine && !!window.ValerianUI, {timeout:45000});
+    await page.waitForTimeout(1200);
+    await page.screenshot({path:'www/visual-'+mode+'.png',fullPage:true,animations:'disabled'});
+    const status = await page.evaluate(() => ({
+      title:document.title,
+      engine:!!window.ValerianEngine,
+      ui:!!window.ValerianUI,
+      theme:document.documentElement.getAttribute('data-valerian-theme'),
+      bodyHeight:document.body.scrollHeight,
+      width:document.documentElement.scrollWidth
+    }));
+    console.log(JSON.stringify({mode,...status}));
+    await context.close();
+  }
+  if (errors.length) throw new Error('Browser page errors: ' + errors.join(' | '));
+  console.log('VISUAL_SMOKE_OK');
+} finally {
+  if (browser) await browser.close();
+  await new Promise(resolve => server.close(resolve));
+}
