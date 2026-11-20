@@ -30,7 +30,7 @@ try {
     page.on('pageerror', error => errors.push(mode + ': ' + error.message));
     await page.route('**/*', route => {
       const u = new URL(route.request().url());
-      if (u.origin !== 'http://127.0.0.1:4173') return route.abort();
+      if (u.origin !== 'http://127.0.0.1:4173' && u.hostname !== 'cdn.jsdelivr.net') return route.abort();
       return route.continue();
     });
     await page.goto('http://127.0.0.1:4173/', {waitUntil:'domcontentloaded',timeout:30000});
@@ -54,6 +54,24 @@ try {
       await page.waitForFunction(() => window.ValerianEngine?.getSnapshot?.().settings?.invoiceQrLinks?.some(x => x.label === 'Smoke Test' && x.url === 'https://example.com/valerian-smoke'));
       const saved = await page.evaluate(() => window.ValerianEngine.getSnapshot().settings.invoiceQrLinks);
       console.log(JSON.stringify({qrSettings:'ok',savedPlatforms:saved.length}));
+      const invoiceCheck = await page.evaluate(async () => {
+        window.__valerianOpenThermalReceiptPreview({
+          id:'VAL-SMOKE-QR',date:'2026-11-20',mode:'reservation',status:'حجز مسبق',
+          name:'عميل الاختبار',phone:'01000000000',address:'القاهرة',
+          grandTotal:1000,depositAmount:300,remainingAmount:700,
+          items:[{id:'smoke-product',name:'Perfume QR Test',size:'100 ml',qty:1,price:1000,total:1000}]
+        });
+        const until=Date.now()+20000;
+        while(Date.now()<until&&!document.querySelector('#previewSheetBody .valerian-share-qr img')) await new Promise(r=>setTimeout(r,150));
+        const qrImages=document.querySelectorAll('#previewSheetBody .valerian-share-qr img');
+        if(!qrImages.length)throw new Error('Invoice preview did not render any QR image');
+        const blob=await window.__valerianCreatePreviewImageBlob();
+        if(!blob||blob.size<10000)throw new Error('Invoice export image is empty or unexpectedly small');
+        const bitmap=await createImageBitmap(blob);
+        return {qrImages:qrImages.length,exportBytes:blob.size,width:bitmap.width,height:bitmap.height};
+      });
+      await page.screenshot({path:'www/visual-invoice.png',fullPage:true,animations:'disabled'});
+      console.log(JSON.stringify({invoiceExport:'ok',...invoiceCheck}));
     }
     const status = await page.evaluate(() => ({
       title:document.title,
