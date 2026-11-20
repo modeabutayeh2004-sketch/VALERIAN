@@ -2834,7 +2834,7 @@ function previewPeriodicReportPrint() {
       const genericPrint=['periodic_report','loyalty_summary'].includes(documentType);
       const archiveRows=genericPrint?(state.printableDocumentArchive=(Array.isArray(state.printableDocumentArchive)?state.printableDocumentArchive:[])):null;
       let genericArchive=archiveRows?.find(x=>String(x.id)===String(linkedOrder.id)&&String(x.type)===documentType);
-      if(genericPrint&&!genericArchive){genericArchive={id:String(linkedOrder.id),type:documentType,createdAt:new Date().toISOString()};archiveRows.push(genericArchive);}
+      if(genericPrint&&!genericArchive){genericArchive={id:String(linkedOrder.id),type:documentType,createdAt:new Date().toISOString()};archiveRows.push(genericArchive);if(!saveState())throw new Error('تعذر حفظ سجل المستند القابل للطباعة');}
       const storageOwner=linkedRecord||linkedCustomer||genericArchive;
       const storagePathKey=linkedRecord?'invoiceImageStoragePath':(linkedCustomer?(documentType==='loyalty_card'?'loyaltyCardImageStoragePath':'profileImageStoragePath'):'storagePath');
       if(storageOwner&&cloudClient&&cloudUser&&cloudReady&&navigator.onLine){
