@@ -3773,7 +3773,7 @@ function previewPeriodicReportPrint() {
             <td class="py-3 px-3">${c.ordersCount || 0} طلبات</td>
             <td class="py-3 px-3 font-extrabold">${formatCurrency(c.totalSpent)}</td>
             <td class="py-3 px-3 text-brand-700 font-extrabold">${currentDynamicPoints} نقطة <span class="text-xs text-emerald-600 font-normal">(= ${formatCurrency(currentDynamicPoints * state.settings.pointValue)})</span></td>
-            <td class="py-3 px-3 text-rose-600 font-extrabold">${formatCurrency(c.debtToCustomer || 0)}</td>
+            <td class="py-3 px-3"><span class="inline-flex min-w-28 justify-center rounded-lg bg-black px-3 py-2 text-white font-extrabold tabular-nums">${formatCurrency(c.debtToCustomer || 0)}</span></td>
             <td class="py-3 px-4 text-left">
               <div class="flex flex-wrap gap-1 justify-end">
                 <button onclick="editCustomer(${idx})" class="px-3 py-1 rounded-lg bg-slate-100 text-slate-700 font-bold text-xs hover:bg-slate-200">👤 ملف العميل</button>
