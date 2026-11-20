@@ -104,6 +104,30 @@ try {
       console.log(JSON.stringify({invoiceExport:invoiceCheck.visibleContentValid&&invoiceCheck.dimensionsValid?'ok':'failed',...invoiceCheck}));
       if(!invoiceCheck.dimensionsValid)throw new Error('Mobile export does not preserve the original phone-sized paper dimensions: '+invoiceCheck.width+'x'+invoiceCheck.height);
       if(!invoiceCheck.visibleContentValid)throw new Error('Invoice export appears blank or missing rendered poster content; visible pixel samples: '+invoiceCheck.visibleSamples);
+      const documentVariants=await page.evaluate(async()=>{
+        const verify=async(kind)=>{
+          const node=document.querySelector('#previewSheetBody > .valerian-invoice-paper');
+          if(!node)throw new Error(kind+' preview did not render the original mobile paper');
+          const blob=await window.__valerianCreatePreviewImageBlob();
+          if(!blob||blob.type!=='image/png'||blob.size<10000)throw new Error(kind+' PNG export is empty');
+          const bitmap=await createImageBitmap(blob);
+          const result={kind,width:bitmap.width,height:bitmap.height,bytes:blob.size};
+          bitmap.close?.();
+          return result;
+        };
+        appState.imports.push({id:'SMOKE-IMPORT',supplier:'مورد اختبار',date:'2026-11-20',totalEgp:1200,paidAmount:300,exchangeRate:50,shippingCost:100,customsCost:50,items:[{productName:'Smoke Import Perfume',qty:2,unitForeign:12,landedCost:1200}]});
+        window.openValerianSupplierInvoicePreview('SMOKE-IMPORT');
+        const imported=await verify('supplier-import');
+        appState.purchases.push({id:'SMOKE-PURCHASE',supplier:'مورد محلي للاختبار',date:'2026-11-20',productName:'Smoke Local Purchase',qty:2,unitCost:300,totalCost:600,paidAmount:200});
+        window.openValerianSupplierInvoicePreview('SMOKE-PURCHASE');
+        const purchased=await verify('local-purchase');
+        appState.orders.push({id:'SMOKE-WAYBILL',date:'2026-11-20',shippedAt:'2026-11-20',name:'عميل اختبار',phone:'01000000000',address:'القاهرة',shippingCompany:'شركة اختبار',trackingNumber:'TRACK-TEST-01',remainingAmount:700,grandTotal:1000,depositAmount:300,items:[{id:'smoke-product',name:'Smoke Shipping Perfume',size:'100 ml',qty:1,price:1000,total:1000}]});
+        window.printMobileWaybill('SMOKE-WAYBILL');
+        const waybill=await verify('waybill');
+        return [imported,purchased,waybill];
+      });
+      for(const item of documentVariants){if(item.width<900||item.width>1170||item.height<1800||item.height>3000)throw new Error('Mobile '+item.kind+' export dimensions are invalid: '+JSON.stringify(item));}
+      console.log(JSON.stringify({documentVariantExports:'ok',variants:documentVariants}));
       await page.evaluate(() => {
         const state = {chunks:[],completed:false,fileName:'',mimeType:'',base64Length:0};
         window.__valerianNativeSaveSmoke = state;
