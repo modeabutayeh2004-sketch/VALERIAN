@@ -2948,9 +2948,13 @@ function previewPeriodicReportPrint() {
           return;
         }
         const blob=await renderPreviewBlob();if(!blob)throw new Error('تعذر إنشاء الصورة');
-        const file=new File([blob],`VALERIAN-${Date.now()}.png`,{type:'image/png'});
-        if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'VALERIAN'});}
-        else {const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);showToast('تم تنزيل صورة التقرير. يمكنك إرفاقها في واتساب أو ماسنجر.');}
+        const archiveTarget=pendingDocumentArchiveOrder||pendingCustomerImageShare||pendingInvoiceShareOrder;
+        const archiveResult=await archivePrintableBlob(blob,archiveTarget);
+        const file=new File([blob],`VALERIAN-${Date.now()}.png`,{type:blob.type||'image/png'});
+        if(navigator.canShare&&navigator.canShare({files:[file]})){
+          await navigator.share({files:[file],title:'VALERIAN'});
+          if(archiveTarget?.id)showToast(archiveResult.cloudArchived?'تمت المشاركة وأُرشفت الصورة في السحابة.':(archiveResult.archived?'تمت المشاركة وحُفظت الصورة محلياً.':'تمت المشاركة، لكن تعذرت أرشفة الصورة تلقائياً.'),archiveResult.archived||archiveResult.cloudArchived?'success':'warning');
+        }else {const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);showToast('تم تنزيل صورة التقرير. يمكنك إرفاقها في واتساب أو ماسنجر.');}
       } catch(err) { if(err.name!=='AbortError')showToast('تعذر تجهيز الصورة: '+(err.message||'خطأ غير معروف'),'error'); }
     }
 
