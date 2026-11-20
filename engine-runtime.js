@@ -2967,7 +2967,7 @@ function previewPeriodicReportPrint() {
       if (!o || (o.items || []).every(i => Number(i.returnedQty || 0) >= Number(i.qty || 0))) { showToast('تم إرجاع كامل قيمة الطلب بالفعل.', 'error'); return; }
       if(!Array.isArray(suppliedSelections)){openOrderReturnModal(idx);return;}
       const before = structuredClone(state);
-      const stockWasDeducted=!!stockWasDeducted||!!o.deliveredAt||String(o.status||'').includes('تم التسليم')||o.mode==='direct';
+      const stockWasDeducted=!!o.stockDeducted||!!o.deliveredAt||String(o.status||'').includes('تم التسليم')||o.mode==='direct';
       const selections = [];
       let returnValue = 0;
       const subtotal = Math.max(0, Number(o.subtotal || (o.items || []).reduce((a,i)=>a+Number(i.price||0)*Number(i.qty||0),0)));
