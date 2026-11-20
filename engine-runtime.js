@@ -4532,7 +4532,9 @@ function previewPeriodicReportPrint() {
           const pending=await valSyncReadOutbox();
           cloudSyncDiagnostics.outboxCount=pending.length;cloudSyncDiagnostics.cursor=await valSyncReadCursor();
           cloudDirty=pending.length>0 || syncGeneration!==cloudIncrementalGeneration;
-          writeSucceeded=!cloudDirty;
+          // A successful journal round-trip must trigger another pass when edits arrived mid-flight.
+          // Otherwise the timer can fire while cloudSaveInFlight is true and the newer outbox stays idle.
+          writeSucceeded=true;
           if(!cloudDirty){cloudSyncDiagnostics.lastSuccess=new Date().toISOString();cloudSyncDiagnostics.lastError='لا يوجد';}
           cloudSyncDiagnostics.phase='idle';cloudSyncDiagnostics.currentOperation=cloudDirty?'تغييرات محلية أحدث تنتظر دفعة تالية':'لا يوجد';
           setCloudStatus(cloudDirty?'تم رفع دفعة تغييرات — توجد تغييرات أخرى بانتظار المزامنة':'متصل — تمت مزامنة التغييرات الجزئية بنجاح','#047857');
