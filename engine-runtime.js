@@ -4001,20 +4001,21 @@ function previewPeriodicReportPrint() {
       if(genericShareBtn){genericShareBtn.classList.remove('hidden');genericShareBtn.style.display='inline-flex';}
       const logo=(valIdb.cache.brand_logo)||(state.brand?.logo&&state.brand.logo!==VAL_IMG_PH?state.brand.logo:'');
       const loyaltyDesign=state.settings.loyaltyCardDesign||{};
-      const loyaltyColor=/^#[0-9a-f]{6}$/i.test(loyaltyDesign.color||'')?loyaltyDesign.color:'#075653';
+      const loyaltyColor=/^#[0-9a-f]{6}$/i.test(loyaltyDesign.color||'')?loyaltyDesign.color:'#111a22';
       const loyaltyLogoSize=Math.min(88,Math.max(40,Number(loyaltyDesign.logoSize)||62));
       const loyaltyRadius=[24,14,6].includes(Number(loyaltyDesign.radius))?Number(loyaltyDesign.radius):24;
-      const loyaltyBrand=loyaltyDesign.showLogo===false?'':('<div class="v1962-card-brand">'+(logo?'<img src="'+logo+'" alt="VALERIAN"/>':'')+'<span><strong>VALERIAN</strong><small>THE ART OF FRAGRANCE</small></span></div>');
-      pendingPrintHtml = '<div class="v1960-loyalty-card" dir="rtl" style="--loyalty-card-color:'+loyaltyColor+';--loyalty-logo-size:'+loyaltyLogoSize+'px;border-radius:'+loyaltyRadius+'px">' +
+      const loyaltyBrand=loyaltyDesign.showLogo===false?'':('<div class="v1962-card-brand" style="display:flex;align-items:center;gap:12px;direction:ltr;align-self:flex-start;margin-bottom:18px">'+(logo?'<img src="'+logo+'" alt="VALERIAN" style="width:var(--loyalty-logo-size);height:var(--loyalty-logo-size);object-fit:contain;border-radius:10px"/>':'')+'<span style="display:flex;flex-direction:column;text-align:left"><strong style="font:700 25px Georgia,serif;letter-spacing:4px;color:#f2dfb8">VALERIAN</strong><small style="font:700 8px Arial,sans-serif;letter-spacing:2px;color:#d9c69e;margin-top:4px">THE ART OF FRAGRANCE</small></span></div>');
+      pendingPrintHtml = '<div class="v1960-loyalty-card" dir="rtl" style="--loyalty-card-color:'+loyaltyColor+';--loyalty-logo-size:'+loyaltyLogoSize+'px;width:100%;max-width:760px;min-height:410px;aspect-ratio:1.586;box-sizing:border-box;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;gap:10px;padding:28px 32px;border:1px solid #b99a63;border-radius:'+loyaltyRadius+'px;background:radial-gradient(circle at 90% 5%,rgba(194,164,107,.22),transparent 34%),linear-gradient(135deg,#09131c 0%,var(--loyalty-card-color) 54%,#24333b 100%);color:#fff;box-shadow:0 18px 42px rgba(5,14,22,.2);font-family:Cairo,Tahoma,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact">' +
+        '<div style="position:absolute;inset:10px;border:1px solid rgba(220,194,143,.38);border-radius:'+Math.max(4,loyaltyRadius-7)+'px;pointer-events:none"></div>' +
         loyaltyBrand +
-        '<div class="v1960-card-title">بطاقة الولاء</div>' +
-        '<div class="v1960-card-subtitle">امتيازات خاصة — لأن اختياركم يستحق التقدير</div>' +
-        '<div class="v1960-card-name">'+escapeHTML(c.name||'عميلنا')+'</div>' +
-        '<div class="v1960-card-phone" dir="ltr"><bdi dir="ltr">'+escapeHTML(c.phone||'')+'</bdi></div>' +
-        '<div class="v1960-points-panel"><div style="font-size:11px;font-weight:800;color:#475569">رصيد نقاط الولاء الحالي</div>' +
-        '<div class="v1960-points-value">'+formatNumber(pts,0)+'</div><div style="font-size:11px;font-weight:900;color:#334155">نقطة</div>' +
-        '<div class="v1960-card-value">قيمة الاستبدال '+formatCurrency(pts*state.settings.pointValue)+'</div></div>' +
-        '<div class="v1960-card-foot">شكراً لثقتكم — نعتز بكونكم جزءاً من عائلة ڤاليريان</div></div>';
+        '<div class="v1960-card-title" style="font-size:20px;font-weight:900;color:#f2dfb8;text-align:center;letter-spacing:.4px">بطاقة الولاء</div>' +
+        '<div class="v1960-card-subtitle" style="font-size:10px;font-weight:700;color:#d7d0c1;text-align:center;margin-top:-6px">امتيازات خاصة — لأن اختياركم يستحق التقدير</div>' +
+        '<div style="text-align:center;margin:4px 0"><div class="v1960-card-name" style="font-size:25px;font-weight:900;color:#fff;letter-spacing:.2px">'+escapeHTML(c.name||'عميلنا')+'</div>' +
+        '<div class="v1960-card-phone" dir="ltr" style="font-size:12px;font-weight:700;color:#e1d2b4;margin-top:5px"><bdi dir="ltr">'+escapeHTML(c.phone||'')+'</bdi></div></div>' +
+        '<div class="v1960-points-panel" style="align-self:center;width:min(100%,380px);box-sizing:border-box;text-align:center;background:linear-gradient(135deg,#f6f1e7,#e7dcc5);border:1px solid #d2bd94;border-radius:14px;padding:12px 18px;color:#14212b;box-shadow:0 8px 18px rgba(0,0,0,.16)"><div style="font-size:10px;font-weight:900;color:#59636a">رصيد نقاط الولاء الحالي</div>' +
+        '<div class="v1960-points-value" style="font:700 34px Georgia,serif;color:#8a6b3e;line-height:1.15">'+formatNumber(pts,0)+'</div><div style="font-size:10px;font-weight:900;color:#334155">نقطة</div>' +
+        '<div class="v1960-card-value" style="font-size:10px;font-weight:900;color:#6f5734;margin-top:4px">قيمة الاستبدال '+formatCurrency(pts*state.settings.pointValue)+'</div></div>' +
+        '<div class="v1960-card-foot" style="text-align:center;font-size:9px;font-weight:700;color:#d8c69f;border-top:1px solid rgba(220,194,143,.35);padding-top:9px">شكراً لثقتكم — نعتز بكونكم جزءاً من عائلة ڤاليريان</div></div>';
       document.getElementById('printPreviewBody').innerHTML = pendingPrintHtml;
       document.getElementById('printPaperSize').value='a4';
       v1953SyncPrintPreviewSize();
