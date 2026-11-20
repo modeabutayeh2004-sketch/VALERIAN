@@ -2660,7 +2660,7 @@
       openModal('printPreviewModal');
     }
 
-function previewPeriodicReportPrint() {
+async function previewPeriodicReportPrint() {
       pendingOffersBlob=null;pendingOffersFiles=null;pendingOffersImageUrl="";pendingPreviewImageBlob=null;pendingInvoiceShareOrder=null;
       pendingDocumentArchiveOrder={id:'periodic-report-'+Date.now(),type:'periodic_report'};pendingCustomerImageShare=null;
       document.getElementById('invoiceWhatsAppBtn')?.classList.add('hidden');
@@ -2680,6 +2680,7 @@ function previewPeriodicReportPrint() {
       pendingPrintHtml='<div class="v20-report" dir="rtl">'+style+'<header class="v20-report-head"><div class="v20-report-brand">VALERIAN</div><h2>التقرير المالي والتشغيلي</h2><small>'+escapeHTML(periodText)+' · '+escapeHTML(new Date().toLocaleString('ar-EG'))+'</small></header><section class="v20-report-grid">'+cards+'</section><section class="v20-report-profit"><small>صافي الأرباح الحقيقية</small><strong>'+escapeHTML(profit)+'</strong></section>'+buildInvoiceQrHtml()+'<footer class="v20-report-foot">تقرير مستخرج من نظام VALERIAN لإدارة النشاط</footer></div>';
       document.getElementById('printPaperSize').value='a4';
       document.getElementById('printPreviewBody').innerHTML=pendingPrintHtml;
+      try{await ensureInvoiceQrCodes(document.getElementById('printPreviewBody'));}catch(err){showToast(err.message||'تعذر تجهيز رموز QR في المعاينة.','error');}
       v1953SyncPrintPreviewSize();
       openModal('printPreviewModal');
     }
@@ -3946,7 +3947,7 @@ function previewPeriodicReportPrint() {
       printCustomerFullProfile(idx);
     }
 
-    function printCustomerFullProfile(idx) {
+    async function printCustomerFullProfile(idx) {
       const c=(state.customers||[])[idx];
       if(!c){showToast('بيانات العميل غير موجودة.','error');return;}
       const points=calculateCurrentLoyaltyPoints(c.phone);
@@ -3963,6 +3964,7 @@ function previewPeriodicReportPrint() {
       const customerGenericShareBtn=document.getElementById('genericShareImageBtn');if(customerGenericShareBtn){customerGenericShareBtn.classList.remove('hidden');customerGenericShareBtn.style.display='inline-flex';}
       pendingPrintHtml=html;
       document.getElementById('printPreviewBody').innerHTML=v1946EnsureBrandHeader(html);
+      try{await ensureInvoiceQrCodes(document.getElementById('printPreviewBody'));}catch(err){showToast(err.message||'تعذر تجهيز رموز QR في المعاينة.','error');}
       document.getElementById('printPaperSize').value='a4';
       v1953SyncPrintPreviewSize();
       // Close the customer editor first: it is later in the DOM at the same z-index
@@ -4034,7 +4036,7 @@ function previewPeriodicReportPrint() {
       win.document.close();
     }
 
-    function printAllCustomerLoyaltySummary() {
+    async function printAllCustomerLoyaltySummary() {
       pendingOffersBlob=null;pendingOffersFiles=null;pendingOffersImageUrl='';pendingPreviewImageBlob=null;
       const customers=(state.customers||[]).map(c=>({name:c.name||'عميل',phone:c.phone||'',orders:Number(c.ordersCount||0),spent:Number(c.totalSpent||0),points:calculateCurrentLoyaltyPoints(c.phone)})).sort((a,b)=>b.points-a.points);
       if(!customers.length){showToast('لا يوجد عملاء لطباعة كشف النقاط.','error');return;}
@@ -4049,6 +4051,7 @@ function previewPeriodicReportPrint() {
       const saveBtn=document.getElementById('previewSaveImageBtn');if(saveBtn){saveBtn.classList.remove('hidden');saveBtn.style.display='inline-flex';saveBtn.textContent='⬇️ حفظ صورة كشف النقاط';}
       document.getElementById('invoiceSavedImageBtn')?.classList.remove('hidden');
       document.getElementById('printPreviewBody').innerHTML=pendingPrintHtml;
+      try{await ensureInvoiceQrCodes(document.getElementById('printPreviewBody'));}catch(err){showToast(err.message||'تعذر تجهيز رموز QR في المعاينة.','error');}
       document.getElementById('printPaperSize').value='a4';
       v1953SyncPrintPreviewSize();
       openModal('printPreviewModal');
