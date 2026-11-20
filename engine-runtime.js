@@ -2974,33 +2974,42 @@ function previewPeriodicReportPrint() {
       const netFactor = subtotal > 0 ? netMerchandise / subtotal : 0;
       const alreadyPaid = (state.paymentTransactions || []).filter(t => t.orderId === o.id && ['SALE_PAYMENT','DEPOSIT','FINAL_PAYMENT','LEGACY_PAYMENT'].includes(t.type)).reduce((a,t)=>a+Number(t.amount||0),0);
       for (const item of (o.items || [])) {
-        const remainingQty = Math.max(0, Number(item.qty || 0) - Number(item.returnedQty || 0));
-        if (!remainingQty) continue;
-        const supplied=Array.isArray(suppliedSelections)?suppliedSelections.find(x=>String(x.productId||x.id||'')===String(item.id)):null;
-        let qty,disposition='release';
+        const remainingQty=Math.max(0,Number(item.qty||0)-Number(item.returnedQty||0));
+        if(!remainingQty)continue;
+        const prod=state.products.find(p=>String(p.id)===String(item.id));
+        if(!prod)throw new Error('المنتج '+(item.name||item.id)+' غير موجود؛ أُلغي المرتجع.');
+        const unitPrice=Math.max(0,Number(item.price||0));
         if(Array.isArray(suppliedSelections)){
-          qty=Number(supplied?.qty||0);
-          if(!Number.isInteger(qty)||qty<0||qty>remainingQty)throw new Error('كمية المرتجع غير صحيحة للصنف '+(item.name||item.id)+'.');
-          if(!qty)continue;
-          if(o.stockDeducted){disposition=String(supplied?.disposition||'restock');if(!['restock','open','quarantine','writeoff'].includes(disposition))throw new Error('حالة المرتجع غير صحيحة للصنف '+(item.name||item.id)+'.');}
+          const suppliedForItem=suppliedSelections.filter(x=>String(x.productId||x.id||'')===String(item.id));
+          let totalQty=0;
+          for(const supplied of suppliedForItem){
+            const qty=Number(supplied?.qty||0);
+            if(!Number.isInteger(qty)||qty<0||totalQty+qty>remainingQty)throw new Error('إجمالي كمية المرتجع غير صحيح للصنف '+(item.name||item.id)+'.');
+            if(!qty)continue;
+            const disposition=o.stockDeducted?String(supplied?.disposition||'restock'):'release';
+            if(o.stockDeducted&&!['restock','open','quarantine','writeoff'].includes(disposition))throw new Error('حالة المرتجع غير صحيحة للصنف '+(item.name||item.id)+'.');
+            const lineReturnValue=roundMoney(unitPrice*qty*netFactor);
+            const openMl=Number(supplied?.openMl||0);
+            if(disposition==='open'){
+              const capacity=Math.max(1,Number(getBottleVolumeMl(prod)||0))*qty;
+              if(!Number.isFinite(openMl)||openMl<=0||openMl>capacity+0.001)throw new Error('أدخل كمية الملليلترات المتبقية بصورة صحيحة للصنف '+(item.name||item.id)+'.');
+            }
+            selections.push({item,prod,qty,disposition,openMl,lineReturnValue});
+            returnValue+=lineReturnValue;
+            totalQty+=qty;
+          }
         }else{
-          const rawQty=prompt(`مرتجع جزئي — ${item.name||item.id}\nالكمية الأصلية: ${item.qty}\nالمرتجع سابقاً: ${item.returnedQty||0}\nالمتاح إرجاعه الآن: ${remainingQty}\nأدخل الكمية المرتجعة (0 للتخطي):`,String(remainingQty));
-          if(rawQty===null)return;qty=Number(rawQty);
+          const rawQty=prompt('مرتجع جزئي — '+(item.name||item.id)+'\nالكمية الأصلية: '+item.qty+'\nالمرتجع سابقاً: '+(item.returnedQty||0)+'\nالمتاح إرجاعه الآن: '+remainingQty+'\nأدخل الكمية المرتجعة (0 للتخطي):',String(remainingQty));
+          if(rawQty===null)return;
+          const qty=Number(rawQty);
           if(!Number.isInteger(qty)||qty<0||qty>remainingQty){showToast('كمية المرتجع غير صحيحة. لم يتم حفظ أي تغيير.','error');return;}
           if(!qty)continue;
-          if(o.stockDeducted){const answer=prompt(`حالة ${qty} قطعة من ${item.name||item.id}:\n1 = سليم ومغلق (إرجاع للمخزون)\n2 = مفتوح/مستخدم (عزل)\n3 = تالف (هالك)`,'1');if(answer===null)return;if(!['1','2','3'].includes(answer.trim())){showToast('اختيار الحالة غير صحيح.','error');return;}disposition=({'1':'restock','2':'quarantine','3':'writeoff'})[answer.trim()];}
+          let disposition='release';
+          if(o.stockDeducted){const answer=prompt('حالة '+qty+' قطعة من '+(item.name||item.id)+':\n1 = سليم ومغلق (إرجاع للمخزون)\n2 = مفتوح/مستخدم (عزل)\n3 = تالف (هالك)','1');if(answer===null)return;if(!['1','2','3'].includes(answer.trim())){showToast('اختيار الحالة غير صحيح.','error');return;}disposition=({'1':'restock','2':'quarantine','3':'writeoff'})[answer.trim()];}
+          const lineReturnValue=roundMoney(unitPrice*qty*netFactor);
+          returnValue+=lineReturnValue;
+          selections.push({item,prod,qty,disposition,openMl:0,lineReturnValue});
         }
-        const prod=state.products.find(p=>p.id===item.id);
-        if(!prod){showToast(`المنتج ${item.name||item.id} غير موجود؛ أُلغي المرتجع.`,'error');return;}
-        const unitPrice = Math.max(0, Number(item.price || 0));
-        const lineReturnValue = roundMoney(unitPrice * qty * netFactor);
-        returnValue += lineReturnValue;
-        const openMl=Number(supplied?.openMl||0);
-        if(disposition==='open'){
-          const capacity=Math.max(1,Number(getBottleVolumeMl(prod)||0))*qty;
-          if(!Number.isFinite(openMl)||openMl<=0||openMl>capacity+0.001)throw new Error('أدخل كمية الملليلترات المتبقية بصورة صحيحة للصنف '+(item.name||item.id)+'.');
-        }
-        selections.push({ item, prod, qty, disposition, openMl, lineReturnValue });
       }
       if (!selections.length) { showToast('لم يتم تحديد أي كميات للمرتجع.', 'error'); return; }
       const previousReturnedValueForLoyalty=Math.max(0,Number(o.returnedValue||0));
