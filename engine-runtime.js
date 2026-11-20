@@ -2742,57 +2742,74 @@ async function previewPeriodicReportPrint() {
       await ensureInvoiceQrCodes(source);
       if(typeof window.html2canvas!=='function' && !(await loadOptionalLibrary('html2canvas'))) throw new Error('مكتبة تحويل المعاينة إلى صورة غير متاحة. اتصل بالإنترنت مرة واحدة ثم أعد المحاولة.');
       if(document.fonts?.ready){try{await document.fonts.ready;}catch(e){}}
-      const imgs=[...source.querySelectorAll('img')];
-      await Promise.all(imgs.map(img=>img.complete&&img.naturalWidth>0?Promise.resolve():new Promise(resolve=>{img.onload=resolve;img.onerror=resolve;setTimeout(resolve,12000);})));
+      const sourceImgs=[...source.querySelectorAll('img')];
+      await Promise.all(sourceImgs.map(img=>img.complete&&img.naturalWidth>0?Promise.resolve():new Promise(resolve=>{img.onload=resolve;img.onerror=resolve;setTimeout(resolve,12000);})));
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-      const rect=source.getBoundingClientRect();
-      const cssWidth=Math.ceil(Math.max(source.scrollWidth,rect.width));
-      const cssHeight=Math.ceil(Math.max(source.scrollHeight,rect.height));
-      if(!cssWidth||!cssHeight)throw new Error('تعذر تحديد أبعاد المستند في المعاينة');
       const isCard=source.classList.contains('v1960-loyalty-card');
-      // High-resolution invoice PNG export with a bounded canvas size for mobile stability.
-      const maxPixels=isCard?12000000:20000000;
-      const maxSide=9000;
-      const preferredScale=isCard?2.8:3.25;
-      const scale=Math.max(1,Math.min(preferredScale,
-        Math.sqrt(maxPixels/Math.max(1,cssWidth*cssHeight)),
-        maxSide/Math.max(cssWidth,cssHeight)));
-      const canvas=await window.html2canvas(source,{
-        scale,
-        backgroundColor:'#fbf7ee',
-        useCORS:true,
-        allowTaint:false,
-        logging:false,
-        scrollX:0,scrollY:0,
-        width:cssWidth,height:cssHeight,
-        windowWidth:Math.max(document.documentElement.clientWidth,cssWidth),
-        windowHeight:Math.max(document.documentElement.clientHeight,cssHeight),
-        imageTimeout:15000,
-        removeContainer:true,
-        onclone:(clonedDoc)=>{
-          const cloned=clonedDoc.querySelector('#printPreviewBody > *');
-          if(!cloned)return;
-          cloned.style.transform='none';
-          cloned.style.maxWidth='none';
-          cloned.style.width=cssWidth+'px';
-          cloned.style.height=cssHeight+'px';
-          cloned.style.boxSizing='border-box';
-          cloned.style.margin='0';
-          cloned.style.position='relative';
-          cloned.style.inset='auto';
-          if(isCard){
-            // Preserve the designed VALERIAN card palette and inline layout in the exported image.
-            cloned.style.setProperty('border-color','#d8c79d','important');
+      const exportWidth=900;
+      const stage=document.createElement('div');
+      stage.id='val-share-export-stage';
+      stage.style.cssText='position:fixed;left:-12000px;top:0;width:'+exportWidth+'px;max-width:none;z-index:-1;pointer-events:none;overflow:visible;background:#fffaf1;';
+      const clone=source.cloneNode(true);
+      clone.style.setProperty('width',exportWidth+'px','important');
+      clone.style.setProperty('max-width','none','important');
+      clone.style.setProperty('min-width','0','important');
+      clone.style.setProperty('height','auto','important');
+      clone.style.setProperty('margin','0','important');
+      clone.style.setProperty('transform','none','important');
+      clone.style.setProperty('position','relative','important');
+      clone.style.setProperty('inset','auto','important');
+      clone.style.setProperty('box-sizing','border-box','important');
+      stage.appendChild(clone);
+      document.body.appendChild(stage);
+      try {
+        clone.querySelectorAll('.v20-doc,.v20-report,.v20-loyalty-report,.v20-customer-sheet,.v1940-offers-print,.v1960-loyalty-card').forEach(node=>{
+          node.style.setProperty('width','100%','important');
+          node.style.setProperty('max-width','none','important');
+          node.style.setProperty('margin-left','auto','important');
+          node.style.setProperty('margin-right','auto','important');
+        });
+        const cloneImgs=[...clone.querySelectorAll('img')];
+        await Promise.all(cloneImgs.map(img=>img.complete&&img.naturalWidth>0?Promise.resolve():new Promise(resolve=>{img.onload=resolve;img.onerror=resolve;setTimeout(resolve,12000);})));
+        if(document.fonts?.ready){try{await document.fonts.ready;}catch(e){}}
+        await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+        const rect=clone.getBoundingClientRect();
+        const cssWidth=Math.ceil(Math.max(clone.scrollWidth,rect.width,exportWidth));
+        const cssHeight=Math.ceil(Math.max(clone.scrollHeight,rect.height));
+        if(!cssWidth||!cssHeight)throw new Error('تعذر تحديد أبعاد التصميم للتصدير');
+        const maxPixels=isCard?12000000:20000000;
+        const maxSide=9000;
+        const preferredScale=isCard?2.0:1.35;
+        const scale=Math.max(1,Math.min(preferredScale,Math.sqrt(maxPixels/Math.max(1,cssWidth*cssHeight)),maxSide/Math.max(cssWidth,cssHeight)));
+        const canvas=await window.html2canvas(clone,{
+          scale,backgroundColor:'#fffaf1',useCORS:true,allowTaint:false,logging:false,
+          scrollX:0,scrollY:0,width:cssWidth,height:cssHeight,
+          windowWidth:exportWidth,windowHeight:Math.max(document.documentElement.clientHeight,cssHeight),
+          imageTimeout:15000,removeContainer:true,
+          onclone:(clonedDoc)=>{
+            const cloned=clonedDoc.getElementById('val-share-export-stage')?.firstElementChild;
+            if(!cloned)return;
+            cloned.style.setProperty('transform','none','important');
+            cloned.style.setProperty('width',cssWidth+'px','important');
+            cloned.style.setProperty('max-width','none','important');
+            cloned.style.setProperty('height',cssHeight+'px','important');
+            cloned.style.setProperty('box-sizing','border-box','important');
+            cloned.querySelectorAll('.v20-doc,.v20-report,.v20-loyalty-report,.v20-customer-sheet,.v1940-offers-print,.v1960-loyalty-card').forEach(node=>{
+              node.style.setProperty('width','100%','important');
+              node.style.setProperty('max-width','none','important');
+            });
             cloned.querySelectorAll('img').forEach(img=>img.style.setProperty('filter','none','important'));
           }
-        }
-      });
-      let blob=null;
-      try{blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));}catch(_){}
-      if(!blob){try{blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.94));}catch(_){}}
-      if(!blob||!blob.size)throw new Error('المتصفح لم يستطع إنشاء ملف الصورة. جرّب تقليل محتوى الفاتورة أو استخدم الطباعة إلى PDF.');
-      if(pendingInvoiceShareOrder||pendingCustomerImageShare)pendingPreviewImageBlob=blob;
-      return blob;
+        });
+        let blob=null;
+        try{blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));}catch(_){}
+        if(!blob){try{blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.94));}catch(_){}}
+        if(!blob||!blob.size)throw new Error('المتصفح لم يستطع إنشاء ملف الصورة. جرّب تقليل محتوى المستند أو استخدم الطباعة إلى PDF.');
+        if(pendingInvoiceShareOrder||pendingCustomerImageShare)pendingPreviewImageBlob=blob;
+        return blob;
+      } finally {
+        stage.remove();
+      }
     }
         function v1955DownloadBlob(blob,fileName) {
       const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=fileName;a.style.display='none';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
@@ -4071,12 +4088,12 @@ async function previewPeriodicReportPrint() {
       if(chatBtn){chatBtn.classList.toggle('hidden',!pendingCustomerImageShare.phone);chatBtn.style.display=pendingCustomerImageShare.phone?'inline-flex':'none';chatBtn.textContent='💬 فتح محادثة العميل';}
       const genericShareBtn=document.getElementById('genericShareImageBtn');
       if(genericShareBtn){genericShareBtn.classList.remove('hidden');genericShareBtn.style.display='inline-flex';}
-      const logo=(valIdb.cache.brand_logo)||(state.brand?.logo&&state.brand.logo!==VAL_IMG_PH?state.brand.logo:'');
+      const logo=(valIdb.cache.brand_logo)||(state.brand?.logo&&state.brand.logo!==VAL_IMG_PH?state.brand.logo:VALERIAN_INVOICE_EMBLEM);
       const loyaltyDesign=state.settings.loyaltyCardDesign||{};
       const loyaltyColor='#e7d6b5';
       const loyaltyLogoSize=Math.min(88,Math.max(40,Number(loyaltyDesign.logoSize)||62));
       const loyaltyRadius=[24,14,6].includes(Number(loyaltyDesign.radius))?Number(loyaltyDesign.radius):24;
-      const loyaltyBrand=loyaltyDesign.showLogo===false?'':('<div class="v1962-card-brand" style="display:flex;align-items:center;gap:12px;direction:ltr;align-self:flex-start;margin-bottom:8px">'+(logo?'<img src="'+logo+'" alt="VALERIAN" style="width:clamp(24px,6vw,var(--loyalty-logo-size));height:clamp(24px,6vw,var(--loyalty-logo-size));object-fit:contain;border-radius:10px"/>':'')+'<span style="display:flex;flex-direction:column;text-align:left"><strong style="font:700 clamp(12px,3vw,25px) Georgia,serif;letter-spacing:clamp(1px,.45vw,4px);color:#765629">VALERIAN</strong><small style="font:700 clamp(6px,1vw,8px) Arial,sans-serif;letter-spacing:clamp(.5px,.25vw,2px);color:#96743d;margin-top:2px">THE ART OF FRAGRANCE</small></span></div>');
+      const loyaltyBrand=('<div class="v1962-card-brand" style="display:flex;align-items:center;gap:12px;direction:ltr;align-self:flex-start;margin-bottom:8px">'+(logo?'<img src="'+logo+'" alt="VALERIAN" style="width:clamp(24px,6vw,var(--loyalty-logo-size));height:clamp(24px,6vw,var(--loyalty-logo-size));object-fit:contain;border-radius:10px"/>':'')+'<span style="display:flex;flex-direction:column;text-align:left"><strong style="font:700 clamp(12px,3vw,25px) Georgia,serif;letter-spacing:clamp(1px,.45vw,4px);color:#765629">VALERIAN</strong><small style="font:700 clamp(6px,1vw,8px) Arial,sans-serif;letter-spacing:clamp(.5px,.25vw,2px);color:#96743d;margin-top:2px">THE ART OF FRAGRANCE</small></span></div>');
       pendingPrintHtml = '<div class="v1960-loyalty-card" dir="rtl" style="--loyalty-card-color:'+loyaltyColor+';--loyalty-logo-size:'+loyaltyLogoSize+'px;width:100%;max-width:760px;min-height:0;aspect-ratio:1.586;box-sizing:border-box;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;gap:3px;padding:4% 4.5%;border:1px solid #d8c79d;border-radius:'+loyaltyRadius+'px;background:radial-gradient(circle at 90% 5%,rgba(255,255,255,.75),transparent 34%),linear-gradient(135deg,#fffaf1 0%,var(--loyalty-card-color) 54%,#e4d1ac 100%);color:#493719;box-shadow:0 18px 42px rgba(5,14,22,.2);font-family:Cairo,Tahoma,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact">' +
         '<div style="position:absolute;inset:10px;border:1px solid rgba(185,149,85,.55);border-radius:'+Math.max(4,loyaltyRadius-7)+'px;pointer-events:none"></div>' +
         loyaltyBrand +
