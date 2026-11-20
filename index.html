@@ -3686,7 +3686,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       <section id="screen-more" class="app-screen hidden space-y-4">
         <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
           <button onclick="setMoreTab('orders')" data-more="orders" class="more-pill px-4 py-2 rounded-full text-xs font-extrabold silver-btn shrink-0">🧾 الطلبات</button>
-          <button onclick="setMoreTab('tracking')" data-more="tracking" class="more-pill px-4 py-2 rounded-full text-xs font-bold glass-pill text-slate-200 shrink-0">🚚 الشحن والمرتجعات</button>
+          <button onclick="setMoreTab('tracking')" data-more="tracking" class="more-pill px-4 py-2 rounded-full text-xs font-bold glass-pill text-slate-200 shrink-0">🚚 الشحن والتتبع</button>
           <button onclick="setMoreTab('crm')" data-more="crm" class="more-pill px-4 py-2 rounded-full text-xs font-bold glass-pill text-slate-200 shrink-0">👑 العملاء والولاء</button>
           <button onclick="setMoreTab('offers')" data-more="offers" class="more-pill px-4 py-2 rounded-full text-xs font-bold glass-pill text-slate-200 shrink-0">🎁 كتالوج العروض</button>
           <button onclick="setMoreTab('reports')" data-more="reports" class="more-pill px-4 py-2 rounded-full text-xs font-bold glass-pill text-slate-200 shrink-0">📊 التقارير والذكاء</button>
@@ -3702,8 +3702,8 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
 
         <div id="more-tracking" class="more-view hidden space-y-3">
           <div class="glass-card rounded-2xl p-3.5 border-rose-400/30">
-            <div class="text-xs font-extrabold text-rose-200">↩️ تتبع الشحنات والتزامات المرتجعات</div>
-            <p class="text-[10px] text-slate-300 mt-1">عند تسجيل مرتجع لطلب مدفوع، يُسجل الالتزام تلقائياً في ملف العميل ويمكن تسويته من هنا.</p>
+            <div class="text-xs font-extrabold text-rose-200">🚚 تتبع الشحنات</div>
+            <p class="text-[10px] text-slate-300 mt-1">تظهر هنا بيانات شركات الشحن وأرقام التتبع وحالة كل شحنة.</p>
           </div>
           <div id="moreTrackingContainer" data-slot="tracking-container" class="space-y-3"></div>
         </div>
@@ -5495,7 +5495,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           ? '<button type="button" onclick="openMobileShippingEditor(\''+id+'\',true)" class="flex-1 py-2 rounded-full silver-btn text-[11px] font-black">تسليم لشركة الشحن 🚚</button>'
           : currentMoreOrdersView==='shipped'
             ? '<button type="button" onclick="openMobileDeliveryConfirm(\''+id+'\')" class="flex-1 py-2 rounded-full silver-btn text-[11px] font-black">تأكيد استلام العميل والتحصيل ✓</button>'
-            : '<span class="flex-1 text-center py-2 rounded-full bg-emerald-500/10 border border-emerald-300/20 text-emerald-200 text-[10px] font-bold">تم تسجيل البيع والتحصيل</span>';
+            : '<span class="flex-1 text-center py-2 rounded-full bg-emerald-500/10 border border-emerald-300/20 text-emerald-200 text-[10px] font-bold">تم تسجيل البيع والتحصيل</span>' + ((o.items||[]).some(i=>Number(i.returnedQty||0)<Number(i.qty||0)) ? '<button type="button" onclick="processMobileReturn(\\''+id+'\\')" class="flex-1 py-2 rounded-full bg-rose-500/15 border border-rose-300/25 text-[11px] font-bold text-rose-100">تسجيل مرتجع ↩️</button>' : '<span class="flex-1 text-center py-2 rounded-full bg-rose-500/10 text-rose-200 text-[10px] font-bold">اكتمل المرتجع</span>');
         return '<div class="glass-card rounded-2xl p-3.5 space-y-2.5 text-xs"><div class="flex items-center justify-between gap-2"><div><strong class="text-white font-extrabold">'+escapeHtmlMobile(o.name||'عميل')+'</strong><span class="text-[10px] text-slate-400 bidi-ltr block">'+escapeHtmlMobile(o.id)+' • '+escapeHtmlMobile(o.date||'')+'</span></div><span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold '+(currentMoreOrdersView==='delivered'?'bg-emerald-500/20 text-emerald-200':currentMoreOrdersView==='shipped'?'bg-sky-500/20 text-sky-200':'bg-amber-500/20 text-amber-100')+'">'+status+'</span></div><div class="flex justify-between text-[11px] pt-2 border-t border-white/[0.08]"><span>الإجمالي: <strong class="bidi-ltr">'+fmtEgp(o.grandTotal)+'</strong></span><span>المتبقي: <strong class="text-sky-200 bidi-ltr">'+fmtEgp(o.remainingAmount)+'</strong></span></div><div class="flex gap-2"><button type="button" onclick="openThermalReceiptPreview(appState.orders.find(x=>x.id===\''+id+'\'))" class="flex-1 py-2 rounded-full glass-pill text-[11px] font-bold">معاينة الفاتورة 🖨️</button>'+action+'</div></div>';
       }).join('') : renderEmptyPlaceholder('🧾', 'لا توجد طلبات في تصنيف '+labels[currentMoreOrdersView], currentMoreOrdersView==='reserved'?'ستظهر الحجوزات الجديدة هنا حتى اعتماد تسليمها لشركة الشحن.':currentMoreOrdersView==='shipped'?'ستظهر الشحنات هنا حتى تأكيد استلام العميل وتسجيل التحصيل.':'ستظهر هنا الطلبات التي تم تأكيد استلامها.');
       box.innerHTML='<div class="grid grid-cols-3 gap-2">'+tabs+'</div><div class="space-y-3">'+cards+'</div>';
@@ -5634,7 +5634,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const companies=Array.isArray(appState.shippingCompanies)?appState.shippingCompanies:[];
       const manager=`<div class="glass-card rounded-2xl p-4 mb-3 space-y-3"><div class="flex items-center justify-between"><strong class="text-white text-sm">🚚 شركات الشحن</strong><span class="text-[10px] text-slate-400">${companies.length} شركة مسجلة</span></div><div class="flex gap-2"><input id="mobileNewShippingCompany" class="min-w-0 flex-1 rounded-xl glass-pill px-3 py-2 text-xs text-white" maxlength="80" placeholder="اسم شركة الشحن الجديدة"><button id="mobileAddShippingCompanyBtn" type="button" data-action="add-shipping-company" class="rounded-xl silver-btn px-4 text-xs font-black">＋ إضافة</button></div><p id="mobileShippingCompanyStatus" role="status" aria-live="polite" class="text-[10px] leading-5 break-words text-slate-400">جاهز لإضافة شركة شحن.</p><div class="flex flex-wrap gap-2">${companies.map(n=>'<span class="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-slate-200">'+escapeHtmlMobile(n)+'</span>').join('')||'<span class="text-[10px] text-slate-400">لم تتم إضافة شركات بعد.</span>'}</div></div>`;
       if(!appState.orders.length){box.innerHTML=manager+renderEmptyPlaceholder('🚚','لا توجد شحنات قيد التتبع','ستظهر هنا الطلبات وشركات الشحن والمرتجعات.');populateMobileShippingCompanySelect();return;}
-      box.innerHTML=manager+appState.orders.map(o=>`<div class="glass-card rounded-2xl p-3.5 space-y-3 text-xs"><div class="flex justify-between gap-2"><strong class="text-white">${escapeHtmlMobile(o.name)} (<span class="bidi-ltr">${escapeHtmlMobile(o.id)}</span>)</strong><span class="text-[10px] text-sky-300 font-bold">${escapeHtmlMobile(o.shippingCompany||'لم تحدد شركة')}</span></div><div class="text-[11px] text-slate-300">${escapeHtmlMobile(o.address||'—')}</div><div class="flex justify-between text-[10px] text-slate-400"><span>التتبع: <b class="text-white">${escapeHtmlMobile(o.trackingNumber||'—')}</b></span><span>المدفوع: <b class="text-white">${fmtEgp(o.depositAmount)}</b></span></div><div class="grid grid-cols-2 gap-2"><button onclick="openMobileShippingEditor('${String(o.id).replace(/'/g,"\\'")}')" class="rounded-xl border border-white/15 py-2 text-slate-100">شركة الشحن / التتبع ✎</button><button onclick="printMobileWaybill('${String(o.id).replace(/'/g,"\\'")}')" class="rounded-xl silver-btn py-2 font-black">طباعة بوليصة 🖨️</button>${o.stockDeducted&&o.shippedAt&&!o.deliveredAt&&!(o.items||[]).every(i=>Number(i.returnedQty||0)>=Number(i.qty||0))?'<button onclick="deliverReservedOrder(\''+String(o.id).replace(/'/g,"\\'")+'\')" class="col-span-2 rounded-xl silver-btn py-2 font-black">تأكيد استلام العميل والتحصيل ✓</button>':''}${!(o.items||[]).every(i=>Number(i.returnedQty||0)>=Number(i.qty||0))?'<button onclick="processMobileReturn(\''+String(o.id).replace(/'/g,"\\'")+'\')" class="col-span-2 rounded-xl bg-rose-500/15 border border-rose-300/25 py-2 text-rose-200 font-bold">تسجيل مرتجع ↩️</button>':'<span class="col-span-2 text-center text-rose-300">اكتمل إرجاع الطلب</span>'}</div></div>`).join('');
+      box.innerHTML=manager+appState.orders.map(o=>`<div class="glass-card rounded-2xl p-3.5 space-y-3 text-xs"><div class="flex justify-between gap-2"><strong class="text-white">${escapeHtmlMobile(o.name)} (<span class="bidi-ltr">${escapeHtmlMobile(o.id)}</span>)</strong><span class="text-[10px] text-sky-300 font-bold">${escapeHtmlMobile(o.shippingCompany||'لم تحدد شركة')}</span></div><div class="text-[11px] text-slate-300">${escapeHtmlMobile(o.address||'—')}</div><div class="flex justify-between text-[10px] text-slate-400"><span>التتبع: <b class="text-white">${escapeHtmlMobile(o.trackingNumber||'—')}</b></span><span>المدفوع: <b class="text-white">${fmtEgp(o.depositAmount)}</b></span></div><div class="grid grid-cols-2 gap-2"><button onclick="openMobileShippingEditor('${String(o.id).replace(/'/g,"\\'")}')" class="rounded-xl border border-white/15 py-2 text-slate-100">شركة الشحن / التتبع ✎</button><button onclick="printMobileWaybill('${String(o.id).replace(/'/g,"\\'")}')" class="rounded-xl silver-btn py-2 font-black">طباعة بوليصة 🖨️</button>${o.stockDeducted&&o.shippedAt&&!o.deliveredAt&&!(o.items||[]).every(i=>Number(i.returnedQty||0)>=Number(i.qty||0))?'<button onclick="deliverReservedOrder(\''+String(o.id).replace(/'/g,"\\'")+'\')" class="col-span-2 rounded-xl silver-btn py-2 font-black">تأكيد استلام العميل والتحصيل ✓</button>':''</div></div>`).join('');
       populateMobileShippingCompanySelect();
     }
 
@@ -5643,53 +5643,55 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       if(!order)return showToast('الطلب غير موجود.');
       const pending=(order.items||[]).filter(item=>Number(item.qty||0)>Number(item.returnedQty||0));
       if(!pending.length)return showToast('تم إرجاع كامل كميات هذا الطلب بالفعل.');
-      const alreadyShipped=!!order.stockDeducted;
+      const alreadyShipped=!!order.stockDeducted||!!order.deliveredAt||String(order.status||'').includes('تم التسليم')||order.mode==='direct';
       let root=document.getElementById('mobileReturnEditor');if(!root){root=document.createElement('div');root.id='mobileReturnEditor';document.body.appendChild(root);}
       const rows=pending.map(item=>{
         const remaining=Math.max(0,Number(item.qty||0)-Number(item.returnedQty||0));
-        return '<div class="rounded-xl border border-white/10 bg-white/5 p-3 space-y-2" data-mobile-return-row data-product-id="'+escapeHtmlMobile(item.id)+'"><div class="flex justify-between gap-2"><strong class="text-white text-xs">'+escapeHtmlMobile(item.name||item.productName||'منتج')+'</strong><span class="text-[10px] text-slate-400">المتاح إرجاعه: '+remaining+'</span></div><label class="block text-[10px] text-slate-300">الكمية المرتجعة<input class="mobile-return-qty mt-1 w-full rounded-lg bg-slate-900 border border-white/15 p-2 text-white" type="number" min="0" max="'+remaining+'" step="1" value="0"></label>'+(alreadyShipped?'<label class="block text-[10px] text-slate-300">حالة المرتجع<select class="mobile-return-disposition mt-1 w-full rounded-lg bg-slate-900 border border-white/15 p-2 text-white"><option value="restock">سليم ومغلق — يعود للمخزون</option><option value="open">مفتوح — يعود لرصيد التقسيم</option><option value="writeoff">مكسور / تالف — يُسجل هالك</option></select></label><label class="mobile-return-openml-wrap hidden block text-[10px] text-slate-300">الملليلترات المتبقية<input class="mobile-return-openml mt-1 w-full rounded-lg bg-slate-900 border border-white/15 p-2 text-white" type="number" min="0" step="0.1" placeholder="أدخل المتبقي بالملليلتر"></label>':'<p class="text-[10px] text-amber-200">سيتم تحرير الكمية من الحجز دون خصم أو إضافة مخزون.</p>')+'</div>';
+        const fieldClass='mt-1 w-full rounded-lg bg-slate-900 border border-white/15 p-2 text-white';
+        const fields=alreadyShipped
+          ? '<div class="grid grid-cols-3 gap-2"><label class="text-[10px] text-emerald-200">سليم مغلق<input class="mobile-return-good '+fieldClass+'" type="number" min="0" max="'+remaining+'" step="1" value="0"></label><label class="text-[10px] text-amber-200">مفتوح<input class="mobile-return-open '+fieldClass+'" type="number" min="0" max="'+remaining+'" step="1" value="0"></label><label class="text-[10px] text-rose-200">تالف<input class="mobile-return-damaged '+fieldClass+'" type="number" min="0" max="'+remaining+'" step="1" value="0"></label></div><label class="block text-[10px] text-amber-200">إجمالي الملليلترات المتبقية في القطع المفتوحة<input class="mobile-return-openml '+fieldClass+'" type="number" min="0" step="0.1" placeholder="أدخل إجمالي الملليلترات المتبقية"></label><p class="text-[9px] text-slate-400">السليم فقط يعود للمخزون القابل للبيع، والمفتوح لرصيد التقسيم، والتالف للهالك.</p>'
+          : '<label class="block text-[10px] text-slate-300">الكمية المرتجعة<input class="mobile-return-release-qty '+fieldClass+'" type="number" min="0" max="'+remaining+'" step="1" value="0"></label><p class="text-[10px] text-amber-200">سيتم تحرير الكمية من الحجز دون إضافة مخزون.</p>';
+        return '<div class="rounded-xl border border-white/10 bg-white/5 p-3 space-y-2" data-mobile-return-row data-product-id="'+escapeHtmlMobile(item.id)+'" data-remaining="'+remaining+'"><div class="flex justify-between gap-2"><strong class="text-white text-xs">'+escapeHtmlMobile(item.name||item.productName||'منتج')+'</strong><span class="text-[10px] text-slate-400">المتاح إرجاعه: '+remaining+'</span></div>'+fields+'</div>';
       }).join('');
       root.className='fixed inset-0 z-[145] flex items-center justify-center p-4 bg-black/85';
-      root.innerHTML='<section dir="rtl" class="w-full max-w-md max-h-[88dvh] overflow-y-auto rounded-3xl border border-white/15 bg-[#07131d] p-5 space-y-4"><div class="flex items-center justify-between"><h3 class="font-black text-white">تسجيل مرتجع — '+escapeHtmlMobile(order.id)+'</h3><button type="button" onclick="document.getElementById(\'mobileReturnEditor\').remove()" class="text-slate-300 text-xl">×</button></div><p class="text-[10px] leading-5 text-slate-300">'+(alreadyShipped?'حدد كمية كل صنف وحالته؛ المفتوح يُضاف إلى رصيد الملليلترات المتاح للتقسيم، والتالف يُسجل هالكًا.':'هذا الطلب لم يُشحن بعد؛ تسجيل المرتجع سيحرر الكميات المحجوزة فقط.')+'</p><div class="space-y-2">'+rows+'</div><div class="flex gap-2"><button type="button" onclick="document.getElementById(\'mobileReturnEditor\').remove()" class="flex-1 rounded-xl border border-white/15 py-3 text-slate-200">إلغاء</button><button type="button" onclick="confirmMobileReturn(\''+String(order.id).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')" class="flex-1 rounded-xl bg-rose-500/20 border border-rose-300/30 py-3 text-rose-100 font-black">اعتماد المرتجع</button></div></section>';
-      root.querySelectorAll('.mobile-return-disposition').forEach(select=>select.addEventListener('change',()=>{
-        const wrap=select.closest('[data-mobile-return-row]')?.querySelector('.mobile-return-openml-wrap');
-        if(wrap)wrap.classList.toggle('hidden',select.value!=='open');
-      }));
+      root.innerHTML='<section dir="rtl" class="w-full max-w-md max-h-[88dvh] overflow-y-auto rounded-3xl border border-white/15 bg-[#07131d] p-5 space-y-4"><div class="flex items-center justify-between"><h3 class="font-black text-white">تسجيل مرتجع — '+escapeHtmlMobile(order.id)+'</h3><button type="button" onclick="document.getElementById(\'mobileReturnEditor\').remove()" class="text-slate-300 text-xl">×</button></div><p class="text-[10px] leading-5 text-slate-300">'+(alreadyShipped?'وزّع مرتجع كل صنف على السليم المغلق والمفتوح والتالف؛ كل حالة ستُعالج في مخزونها الصحيح.':'هذا الطلب لم يُشحن بعد؛ تسجيل المرتجع سيحرر الكميات المحجوزة فقط.')+'</p><div class="space-y-2">'+rows+'</div><div id="mobileReturnError" role="alert" aria-live="assertive" class="hidden rounded-xl border border-rose-300/30 bg-rose-500/10 px-3 py-2 text-[11px] text-rose-100"></div><div class="flex gap-2"><button type="button" onclick="document.getElementById(\'mobileReturnEditor\').remove()" class="flex-1 rounded-xl border border-white/15 py-3 text-slate-200">إلغاء</button><button type="button" onclick="confirmMobileReturn(\''+String(order.id).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')" class="flex-1 rounded-xl bg-rose-500/20 border border-rose-300/30 py-3 text-rose-100 font-black">اعتماد المرتجع</button></div></section>';
     }
 
     async function confirmMobileReturn(orderId) {
       const root=document.getElementById('mobileReturnEditor');if(!root)return;
-      const section=root.querySelector('section');
-      const button=section?.querySelector('button:last-child');
-      let errorBox=root.querySelector('#mobileReturnError');
-      if(!errorBox&&section){errorBox=document.createElement('div');errorBox.id='mobileReturnError';errorBox.setAttribute('role','alert');errorBox.setAttribute('aria-live','assertive');errorBox.className='rounded-xl border border-rose-300/30 bg-rose-500/10 px-3 py-2 text-[11px] leading-5 text-rose-100';section.insertBefore(errorBox,section.lastElementChild);}
+      const section=root.querySelector('section'),button=section?.querySelector('button:last-child');
+      const errorBox=root.querySelector('#mobileReturnError');
       if(button?.disabled)return;
-      const selections=[...root.querySelectorAll('[data-mobile-return-row]')].map(row=>({
-        productId:row.dataset.productId,
-        qty:Number(row.querySelector('.mobile-return-qty')?.value||0),
-        disposition:row.querySelector('.mobile-return-disposition')?.value||'release',
-        openMl:Number(row.querySelector('.mobile-return-openml')?.value||0)
-      })).filter(item=>item.qty>0);
-      if(!selections.length){if(errorBox){errorBox.textContent='حدد كمية مرتجعة واحدة على الأقل.';}return showToast('حدد كمية مرتجعة واحدة على الأقل.');}
+      const selections=[];
+      for(const row of root.querySelectorAll('[data-mobile-return-row]')){
+        const productId=row.dataset.productId,remaining=Number(row.dataset.remaining||0);
+        const read=selector=>Number(row.querySelector(selector)?.value||0);
+        if(row.querySelector('.mobile-return-release-qty')){
+          const qty=read('.mobile-return-release-qty');
+          if(!Number.isInteger(qty)||qty<0||qty>remaining){errorBox.textContent='راجع كمية المرتجع؛ لا يمكن أن تتجاوز الكمية المتاحة.';errorBox.classList.remove('hidden');return;}
+          if(qty)selections.push({productId,qty,disposition:'release'});
+          continue;
+        }
+        const good=read('.mobile-return-good'),open=read('.mobile-return-open'),damaged=read('.mobile-return-damaged');
+        if([good,open,damaged].some(q=>!Number.isInteger(q)||q<0)||good+open+damaged>remaining){errorBox.textContent='كميات السليم والمفتوح والتالف يجب أن تكون أعدادًا صحيحة ومجموعها لا يتجاوز '+remaining+'.';errorBox.classList.remove('hidden');return;}
+        if(good)selections.push({productId,qty:good,disposition:'restock'});
+        if(open)selections.push({productId,qty:open,disposition:'open',openMl:read('.mobile-return-openml')});
+        if(damaged)selections.push({productId,qty:damaged,disposition:'writeoff'});
+      }
+      if(!selections.length){errorBox.textContent='حدد كمية مرتجعة واحدة على الأقل.';errorBox.classList.remove('hidden');return showToast('حدد كمية مرتجعة واحدة على الأقل.');}
       if(button){button.disabled=true;button.textContent='جارٍ اعتماد المرتجع…';}
-      if(errorBox)errorBox.textContent='';
+      errorBox.textContent='';errorBox.classList.add('hidden');
       try{
         const result=await window.ValerianShippingAction('returnOrder',{orderId,selections});
         if(result?.ok!==true)throw new Error(result?.error||'لم يؤكد محرك الأعمال اعتماد المرتجع.');
-        root.remove();
-        renderMoreTracking();
-        renderMoreOrders();
-        showToast('تم تسجيل المرتجع وتحديث المخزون / الهالك / رصيد التقسيم حسب الحالة.');
+        root.remove();renderMoreTracking();renderMoreOrders();
+        showToast('تم تسجيل المرتجع وتوجيه كل كمية إلى مخزونها الصحيح.');
       }catch(err){
         const message=String(err?.message||err||'تعذر اعتماد المرتجع.');
         console.error('Mobile return approval failed:',message,err);
-        if(errorBox)errorBox.textContent=message;
-        showToast(message);
-      }finally{
-        if(button&&root.isConnected){button.disabled=false;button.textContent='اعتماد المرتجع';}
-      }
+        errorBox.textContent=message;errorBox.classList.remove('hidden');showToast(message);
+      }finally{if(button&&root.isConnected){button.disabled=false;button.textContent='اعتماد المرتجع';}}
     }
-
     function renderCrmMobile(){
       const box=document.getElementById('moreCrmContainer');if(!box)return;
       const q=(document.getElementById('crmSearchMobile')?.value||'').trim().toLowerCase();
