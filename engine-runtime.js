@@ -2092,14 +2092,36 @@
       const requiredMl=qty*Number(p.decantSize||0);
       const before=structuredClone(state);
       const productionRef='DEC-'+Date.now();
-      let availableMl=Number(parent.decantMlAvailable||0);
+      // Returned open bottles are a real source of decant liquid. Reconcile their
+      // per-bottle balances with the aggregate before deciding to open sealed stock.
+      parent.openReturnedBottles=Array.isArray(parent.openReturnedBottles)?parent.openReturnedBottles:[];
+      const returnedBottleBalance=parent.openReturnedBottles
+        .filter(b=>String(b.unit||'')==='مل' && String(b.status||'available')==='available')
+        .reduce((sum,b)=>sum+Math.max(0,Number(b.remainingQty??b.remainingMl??0)),0);
+      let availableMl=Math.max(0,Number(parent.decantMlAvailable||0),returnedBottleBalance);
       if(availableMl<requiredMl){
         const missing=requiredMl-availableMl;
         const bottlesToOpen=Math.ceil(missing/getBottleVolumeMl(parent));
         if(Number(parent.stock||0)<bottlesToOpen){showToast(`السائل غير كافٍ. تحتاج فتح ${bottlesToOpen} زجاجة إضافية ولا يوجد رصيد كافٍ.`,'error');return;}
         parent.stock-=bottlesToOpen;
         availableMl+=bottlesToOpen*getBottleVolumeMl(parent);
-        addInventoryMovement(parent.id,'OPEN_BOTTLE',-bottlesToOpen,productionRef,'فتح زجاجات أصلية للتقسيم');
+        addInventoryMovement(parent.id,'OPEN_BOTTLE',-bottlesToOpen,productionRef,'فتح زجاجات أصلية للتقسيم بعد استنفاد المرتجع المفتوح');
+      }
+      // Consume returned bottles FIFO so their individual remaining quantities
+      // never continue to appear available after production has used them.
+      let returnedToConsume=requiredMl;
+      for(const bottle of parent.openReturnedBottles){
+        if(returnedToConsume<=0.0001)break;
+        if(String(bottle.unit||'')!=='مل' || String(bottle.status||'available')!=='available')continue;
+        const remaining=Math.max(0,Number(bottle.remainingQty??bottle.remainingMl??0));
+        if(remaining<=0)continue;
+        const used=Math.min(remaining,returnedToConsume);
+        bottle.remainingQty=Number((remaining-used).toFixed(3));
+        bottle.usedQty=Number((Math.max(0,Number(bottle.usedQty||bottle.usedMl||0))+used).toFixed(3));
+        if('remainingMl' in bottle)bottle.remainingMl=bottle.remainingQty;
+        if('usedMl' in bottle)bottle.usedMl=bottle.usedQty;
+        if(bottle.remainingQty<=0.0001)bottle.status='consumed';
+        returnedToConsume=Number((returnedToConsume-used).toFixed(3));
       }
       parent.decantMlAvailable=Number((availableMl-requiredMl).toFixed(3));
       packagingEntry.quantity-=qty;
