@@ -2405,15 +2405,15 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
 }
 
 /* Full structural layout matching the supplied VALERIAN receipt, not a recolor-only override. */
-#previewSheetBody .valerian-invoice-paper{max-width:940px!important;border-radius:0!important;display:flex!important;flex-direction:column!important;min-height:100%!important;background:#fcfaf5!important}
-#previewSheetBody .valerian-invoice-paper .valerian-share-head{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:8px!important;text-align:center!important;padding:clamp(16px,2.2vh,22px) 20px 12px!important}
+#previewSheetBody .valerian-invoice-paper{width:100%!important;max-width:940px!important;min-height:0!important;height:auto!important;flex:0 0 auto!important;align-self:center!important;border-radius:0!important;display:flex!important;flex-direction:column!important;background:#fcfaf5!important}
+#previewSheetBody .valerian-invoice-paper .valerian-share-head{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:8px!important;text-align:center!important;padding:20px 20px 12px!important}
 #previewSheetBody .valerian-invoice-brand-center{display:flex;align-items:center;justify-content:center;gap:14px;direction:ltr}
 #previewSheetBody .valerian-invoice-brand-words{text-align:left}
 #previewSheetBody .valerian-invoice-paper .valerian-share-logo{width:58px!important;height:54px!important;margin:0!important;flex:0 0 58px!important;filter:drop-shadow(0 2px 4px rgba(90,66,20,.22)) sepia(1) saturate(1.6) hue-rotate(355deg)!important}
 #previewSheetBody .valerian-invoice-paper .valerian-share-brand{font:800 30px Georgia,serif!important;letter-spacing:3.5px!important;color:#221c12!important}
 #previewSheetBody .valerian-invoice-paper .valerian-share-tag{font:700 9px Arial,sans-serif!important;letter-spacing:2px!important;color:#75571e!important}
 #previewSheetBody .valerian-invoice-paper .valerian-share-headline{margin:2px 0 0!important;padding:3px 18px!important;border:1px solid #a8873e!important;border-radius:50px!important;background:rgba(255,255,255,.72)!important;color:#75571e!important;font:700 9px Arial,sans-serif!important;letter-spacing:1.4px!important}
-#previewSheetBody .valerian-invoice-paper .valerian-share-content{display:flex!important;flex-direction:column!important;gap:clamp(9px,1.1vh,13px)!important;padding:12px clamp(18px,2.5vw,30px)!important;flex:1!important}
+#previewSheetBody .valerian-invoice-paper .valerian-share-content{display:flex!important;flex-direction:column!important;gap:12px!important;padding:12px clamp(18px,2.5vw,30px)!important;flex:0 0 auto!important}
 #previewSheetBody .valerian-invoice-title-status{display:flex;align-items:center;justify-content:space-between;gap:10px}
 #previewSheetBody .valerian-invoice-doc-heading{text-align:right}
 #previewSheetBody .valerian-invoice-doc-heading>span{display:block;font:700 8px Arial,sans-serif;letter-spacing:1px;color:#75571e}
@@ -6277,7 +6277,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       let canvas;
       try {
         canvas = await capture(captureNode, {scale,foreignObjectRendering:false,backgroundColor:null,useCORS:true,allowTaint:false,logging:false,
-          scrollX:0,scrollY:0,width,height,windowWidth:Math.max(document.documentElement.clientWidth,window.innerWidth||0),windowHeight:Math.max(document.documentElement.clientHeight,window.innerHeight||0),imageTimeout:15000});
+          scrollX:0,scrollY:0,width,height,windowWidth:Math.max(width,document.documentElement.clientWidth,window.innerWidth||0),windowHeight:Math.max(height,document.documentElement.clientHeight,window.innerHeight||0),imageTimeout:15000});
       } finally { captureHost.remove(); }
       // Paint a true horizontal strike through the center of each old price
       // after html2canvas has finished, so it cannot drift onto the new price.
