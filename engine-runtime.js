@@ -5304,6 +5304,10 @@ async function previewPeriodicReportPrint() {
       };
       const findOrder=id=>state.orders.findIndex(o=>String(o.id)===String(id));
       window.ValerianEngine=Object.freeze({
+        renderSettingsSheetQrEditor,
+        addSettingsSheetQrLink,
+        removeSettingsSheetQrLink,
+        saveSettingsSheetQrLinks,
         version:'19.67',
         ready,
         getSnapshot:snapshot,
