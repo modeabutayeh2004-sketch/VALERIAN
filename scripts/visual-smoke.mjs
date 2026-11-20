@@ -39,6 +39,22 @@ try {
     await page.waitForFunction(() => window.__valerianSplashDismissed === true, null, {timeout:25000});
     await page.waitForTimeout(500);
     await page.screenshot({path:'www/visual-'+mode+'.png',fullPage:true,animations:'disabled'});
+    if (mode === 'light') {
+      const settingsButton = page.locator('[aria-label="الإعدادات"]');
+      if (await settingsButton.count() !== 1) throw new Error('Primary settings button is missing');
+      await settingsButton.click();
+      await page.waitForFunction(() => !document.getElementById('settingsSheet')?.classList.contains('hidden'));
+      if (await page.locator('#settingsSheetQrEditor').count() !== 1) throw new Error('QR platform editor is missing from the primary settings sheet');
+      await page.locator('#settingsSheet').getByText('＋ إضافة منصة').click();
+      const label = page.locator('#settingsSheetQrEditor [data-sheet-qr-label]').last();
+      const url = page.locator('#settingsSheetQrEditor [data-sheet-qr-url]').last();
+      await label.fill('Smoke Test');
+      await url.fill('https://example.com/valerian-smoke');
+      await page.locator('#settingsSheet').getByText('حفظ روابط QR').click();
+      await page.waitForFunction(() => window.ValerianEngine?.getSnapshot?.().settings?.invoiceQrLinks?.some(x => x.label === 'Smoke Test' && x.url === 'https://example.com/valerian-smoke'));
+      const saved = await page.evaluate(() => window.ValerianEngine.getSnapshot().settings.invoiceQrLinks);
+      console.log(JSON.stringify({qrSettings:'ok',savedPlatforms:saved.length}));
+    }
     const status = await page.evaluate(() => ({
       title:document.title,
       engine:!!window.ValerianEngine,
