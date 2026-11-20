@@ -2840,13 +2840,18 @@ function previewPeriodicReportPrint() {
               const hash=await valImageSha256(blob);
               const ext=valImageExtension(blob.type);
               const path=cloudUser.id+'/print-'+safeArchiveId+'-'+hash+'.'+ext;
-              const {error}=await cloudClient.storage.from(VAL_IMAGE_BUCKET).upload(path,blob,{upsert:true,contentType:blob.type||'image/png',cacheControl:'31536000'});
-              if(error)throw new Error(cloudErrorMessage(error));
-              storageOwner[storagePathKey]=path;
-              storageOwner[storagePathKey+'SavedAt']=Date.now();
-              if(!saveState())throw new Error('تعذر حفظ رابط الصورة داخل سجل المستند');
-              await valDurableWritePromise;
-              cloudArchived=true;
+              if(String(storageOwner[storagePathKey]||'')===path){
+                // The exact content hash is already linked to this record; never upload it again.
+                cloudArchived=true;
+              }else{
+                const {error}=await cloudClient.storage.from(VAL_IMAGE_BUCKET).upload(path,blob,{upsert:true,contentType:blob.type||'image/png',cacheControl:'31536000'});
+                if(error)throw new Error(cloudErrorMessage(error));
+                storageOwner[storagePathKey]=path;
+                storageOwner[storagePathKey+'SavedAt']=Date.now();
+                if(!saveState())throw new Error('تعذر حفظ رابط الصورة داخل سجل المستند');
+                await valDurableWritePromise;
+                cloudArchived=true;
+              }
             }catch(cloudErr){
               console.warn('VALERIAN printable document cloud archive failed',cloudErr);
             }
