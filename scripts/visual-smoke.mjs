@@ -68,9 +68,15 @@ try {
         const blob=await window.__valerianCreatePreviewImageBlob();
         if(!blob||blob.size<10000)throw new Error('Invoice export image is empty or unexpectedly small');
         const bitmap=await createImageBitmap(blob);
-        const dataUrl=await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||''));reader.readAsDataURL(blob);});
+        const pixelCanvas=document.createElement('canvas');pixelCanvas.width=bitmap.width;pixelCanvas.height=bitmap.height;
+        const pixelContext=pixelCanvas.getContext('2d',{willReadFrequently:true});pixelContext.drawImage(bitmap,0,0);
+        const pixels=pixelContext.getImageData(0,0,bitmap.width,bitmap.height).data;
+        let visibleSamples=0;
+        for(let y=24;y<bitmap.height-24;y+=4){for(let x=24;x<bitmap.width-24;x+=4){const p=(y*bitmap.width+x)*4;const r=pixels[p],g=pixels[p+1],b=pixels[p+2];if((r<225||g<215||b<195||Math.max(r,g,b)-Math.min(r,g,b)>24)&&pixels[p+3]>0)visibleSamples++;}}
         if(bitmap.width!==1080||bitmap.height>2100||bitmap.height<900)throw new Error('Invoice export canvas is not content-fitted: '+bitmap.width+'x'+bitmap.height);
-        return {qrImages:qrImages.length,exportBytes:blob.size,width:bitmap.width,height:bitmap.height,dataUrl};
+        if(visibleSamples<1500)throw new Error('Invoice export appears blank or missing rendered poster content; visible pixel samples: '+visibleSamples);
+        const dataUrl=await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||''));reader.readAsDataURL(blob);});
+        return {qrImages:qrImages.length,exportBytes:blob.size,width:bitmap.width,height:bitmap.height,visibleSamples,dataUrl};
       });
       fs.writeFileSync('www/visual-invoice-export.png',Buffer.from(invoiceCheck.dataUrl.split(',')[1],'base64'));
       delete invoiceCheck.dataUrl;
