@@ -2153,25 +2153,24 @@
 
     function produceDecants(e) {
       e.preventDefault();
-      const p=state.products.find(x=>x.id===document.getElementById('decantProductionProduct').value);
+      window.__valerianLastDecantProductionError='';
+      const selectedProductId=String(document.getElementById('decantProductionProduct').value||'');
+      const p=state.products.find(x=>String(x.id)===selectedProductId);
       const qty=Math.floor(Number(document.getElementById('decantProductionQty').value||0));
-      const parent=p?state.products.find(x=>x.id===p.parentId):null;
+      const parent=p?state.products.find(x=>String(x.id)===String(p.parentId)):null;
       const sourceMode=document.getElementById('decantProductionSource')?.value||'returned';
-      if(!p||!parent||p.category!=='تقسيم'||qty<=0){showToast('بيانات تجهيز التقسيم غير صحيحة.','error');return;}
-      if(p.legacyStockNeedsReview){showToast('راجع رصيد العبوات القديمة من بطاقة المنتج أولاً.','error');return;}
+      const rejectProduction=message=>{window.__valerianLastDecantProductionError=message;showToast(message,'error');return;};
+      if(!p||!parent||p.category!=='تقسيم'||qty<=0)return rejectProduction('بيانات تجهيز التقسيم غير صحيحة أو المنتج المرتبط غير موجود.');
+      if(p.legacyStockNeedsReview)return rejectProduction('راجع رصيد العبوات القديمة من بطاقة المنتج أولاً.');
       const packagingEntry=getPackagingEntry(p.decantSize||10,true);
-      if(Number(packagingEntry.quantity||0)<qty){showToast(`مخزون العبوات المشتركة مقاس ${p.decantSize||10} مل غير كافٍ. المتاح ${packagingEntry.quantity||0} عبوة.`,'error');return;}
+      if(Number(packagingEntry.quantity||0)<qty)return rejectProduction(`مخزون العبوات المشتركة مقاس ${p.decantSize||10} مل غير كافٍ. المتاح ${packagingEntry.quantity||0} عبوة.`);
       const requiredMl=qty*Number(p.decantSize||0);
       const balances=syncDecantLiquidBalances(parent);
       const returnedAvailable=balances.returnedMl,openedAvailable=balances.openedMl;
       const returnedUsed=sourceMode==='returned'?requiredMl:Math.min(requiredMl,returnedAvailable);
       const openedUsed=sourceMode==='returned'?0:Number((requiredMl-returnedUsed).toFixed(3));
-      if(sourceMode==='returned'&&returnedAvailable+0.0001<requiredMl){
-        showToast(`رصيد المرتجعات المفتوحة غير كافٍ. المطلوب ${requiredMl} مل والمتاح ${returnedAvailable.toFixed(2)} مل. لم يتم استخدام أي مصدر آخر.`,'error');return;
-      }
-      if(openedUsed>openedAvailable+0.0001){
-        showToast(`بعد استهلاك المرتجع بالأولوية، يتبقى عجز ${(openedUsed-openedAvailable).toFixed(2)} مل. افتح زجاجة أصلية من الإجراء المستقل ثم أعد التجهيز.`,'error');return;
-      }
+      if(sourceMode==='returned'&&returnedAvailable+0.0001<requiredMl)return rejectProduction(`رصيد المرتجعات المفتوحة غير كافٍ. المطلوب ${requiredMl} مل والمتاح ${returnedAvailable.toFixed(2)} مل. لم يتم استخدام أي مصدر آخر.`);
+      if(openedUsed>openedAvailable+0.0001)return rejectProduction(`بعد استهلاك المرتجع بالأولوية، يتبقى عجز ${(openedUsed-openedAvailable).toFixed(2)} مل. افتح زجاجة أصلية من الإجراء المستقل ثم أعد التجهيز.`);
       const before=structuredClone(state),productionRef='DEC-'+Date.now();
       let returnedToConsume=returnedUsed;
       const bottleUsage=[];
@@ -2191,7 +2190,7 @@
         bottleUsage.push({bottleId:bottle.id,orderId:bottle.orderId,usedMl:used,remainingMl:bottle.remainingQty});
         returnedToConsume=Number((returnedToConsume-used).toFixed(3));
       }
-      if(returnedToConsume>0.001){state=before;showToast('تعذر مطابقة رصيد المرتجع مع تفاصيل الزجاجات؛ لم يتم حفظ التجهيز.','error');return;}
+      if(returnedToConsume>0.001){state=before;return rejectProduction('تعذر مطابقة رصيد المرتجع مع تفاصيل الزجاجات؛ لم يتم حفظ التجهيز أو خصم أي عبوات.');}
       parent.decantMlOpenedAvailable=Number((openedAvailable-openedUsed).toFixed(3));
       syncDecantLiquidBalances(parent);
       packagingEntry.quantity-=qty;
@@ -2207,7 +2206,7 @@
       state.decantProductionLog=state.decantProductionLog||[];
       state.decantProductionLog.unshift({id:productionRef,date:new Date().toISOString(),parentId:parent.id,productId:p.id,quantity:qty,mlUsed:requiredMl,returnedMlUsed:returnedUsed,openedPoolMlUsed:openedUsed,sourceMode,sourceBreakdown:{returnedMl:returnedUsed,openedPoolMl:openedUsed},returnedBottleUsage:bottleUsage,returnedBalanceAfter:getReturnedOpenMlBalance(parent),openedPoolBalanceAfter:parent.decantMlOpenedAvailable,totalLiquidBalanceAfter:parent.decantMlAvailable,unitCost});
       logAudit('DECANT_PRODUCTION',`تجهيز ${qty} من ${p.name} باستخدام ${requiredMl} مل — مرتجع ${returnedUsed} مل، سائل مفتوح ${openedUsed} مل`);
-      if(!saveState()){state=before;refreshAllViews();return;}
+      if(!saveState()){state=before;refreshAllViews();return rejectProduction(window.__valerianLastSaveError?.message||'تعذر حفظ عملية التجهيز؛ لم يتم اعتمادها.');}
       closeModal('decantProductionModal');refreshAllViews();
       showToast(`تم تجهيز ${qty} عبوة: ${returnedUsed} مل من المرتجع و${openedUsed} مل من السائل المفتوح، دون فتح زجاجة جديدة تلقائيًا.`,'success');
     }
@@ -5239,23 +5238,29 @@ function previewPeriodicReportPrint() {
         produceDecants:async payload=>{
           await ready;
           if(!payload)throw new Error('بيانات الإنتاج مطلوبة.');
-          el('decantProductionProduct').value=String(payload.productId||'');
+          const selectedProductId=String(payload.productId||'');
+          const selectedProduct=state.products.find(x=>String(x.id)===selectedProductId);
+          if(!selectedProduct||selectedProduct.category!=='تقسيم')throw new Error('منتج التقسيم المحدد غير موجود داخل محرك الأعمال.');
+          el('decantProductionProduct').value=selectedProductId;
           el('decantProductionQty').value=String(payload.quantity||0);
           if(el('decantProductionSource'))el('decantProductionSource').value=payload.sourceMode==='priority'?'priority':'returned';
           const before=(state.decantProductionLog||[]).length;
           produceDecants({preventDefault(){}});
           const ok=(state.decantProductionLog||[]).length===before+1;
-          if(!ok)throw new Error(window.__valerianLastSaveError?.message||'لم يعتمد محرك الأعمال عملية التجهيز؛ لم يتم تأكيد أي تقسيم.');
+          if(!ok)throw new Error(window.__valerianLastDecantProductionError||window.__valerianLastSaveError?.message||'لم يعتمد محرك الأعمال عملية التجهيز؛ لم يتم تأكيد أي تقسيم.');
           try{
             await valDurableWritePromise;
             if(valDurableWriteError)throw valDurableWriteError;
             await valIdbFlush();
             const row=await valIdbGet('appstate','current');
             if(!row?.json)throw new Error('لم يتم العثور على نسخة البيانات المحفوظة محليًا.');
-            const durable=JSON.parse(row.json),record=(durable.decantProductionLog||[]).find(x=>String(x.id)===String(state.decantProductionLog[0]?.id));
+            const durable=JSON.parse(row.json),productionId=String(state.decantProductionLog[0]?.id||''),record=(durable.decantProductionLog||[]).find(x=>String(x.id)===productionId);
             const decant=(durable.products||[]).find(x=>String(x.id)===String(payload.productId));
             const parent=(durable.products||[]).find(x=>String(x.id)===String(record?.parentId));
-            if(!record||!decant||!parent||Number(decant.stock||0)!==Number(state.products.find(x=>String(x.id)===String(payload.productId))?.stock||0)||Number(parent.decantMlAvailable||0)!==Number(state.products.find(x=>String(x.id)===String(record.parentId))?.decantMlAvailable||0))throw new Error('قاعدة البيانات لم تؤكد سجل التجهيز وتحديث أرصدة السائل والمخزون.');
+            const currentDecant=state.products.find(x=>String(x.id)===String(payload.productId));
+            const currentParent=state.products.find(x=>String(x.id)===String(record?.parentId));
+            const packagingKey=packagingSizeKey(currentDecant?.decantSize||10);
+            if(!record||!decant||!parent||!currentDecant||!currentParent||Number(decant.stock||0)!==Number(currentDecant.stock||0)||Number(parent.decantMlAvailable||0)!==Number(currentParent.decantMlAvailable||0)||Number(parent.decantMlOpenedAvailable||0)!==Number(currentParent.decantMlOpenedAvailable||0)||Number((durable.packagingInventory||{})[packagingKey]?.quantity||0)!==Number((state.packagingInventory||{})[packagingKey]?.quantity||0))throw new Error('قاعدة البيانات لم تؤكد سجل التجهيز وتحديث أرصدة السائل والعبوات.');
           }catch(err){throw new Error('تم تنفيذ التجهيز داخل المحرك لكن تعذر تأكيد الحفظ الدائم: '+String(err?.message||err));}
           return {ok:true,snapshot:snapshot()};
         },
