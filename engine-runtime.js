@@ -3177,9 +3177,17 @@ function previewPeriodicReportPrint() {
       }).filter(x=>x.qty>0);
       if(!selections.length){showToast('حدد كمية واحدة على الأقل للمرتجع.','error');return;}
       try{
+        const previousLiability=Math.max(0,Number(order.refundLiability||0));
         markAsReturned(idx,selections);
         pendingReturnOrderIndex=null;
         closeModal('orderReturnModal');
+        const updatedOrder=state.orders[idx];
+        const newlyOwed=Math.max(0,Number(updatedOrder?.refundLiability||0)-previousLiability);
+        if(newlyOwed>0){
+          // Offer settlement immediately after the return is saved. Closing the
+          // payment dialog leaves the liability open for later settlement.
+          settleRefund(idx);
+        }
       }catch(err){showToast(String(err?.message||err),'error');}
     }
 
