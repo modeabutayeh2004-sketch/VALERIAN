@@ -2831,7 +2831,7 @@ function previewPeriodicReportPrint() {
       const linkedRecord=isOrderDocument?(state.orders||[]).find(x=>String(x.id)===String(linkedOrder.id)):null;
       const isCustomerPrint=['customer_profile','loyalty_card'].includes(documentType);
       const linkedCustomer=isCustomerPrint?(state.customers||[]).find(x=>String(x.phone||'')===String(linkedOrder.phone||'')):null;
-      const genericPrint=['periodic_report','loyalty_summary'].includes(documentType);
+      const genericPrint=['periodic_report','loyalty_summary','offers_catalog'].includes(documentType);
       const archiveRows=genericPrint?(state.printableDocumentArchive=(Array.isArray(state.printableDocumentArchive)?state.printableDocumentArchive:[])):null;
       let genericArchive=archiveRows?.find(x=>String(x.id)===String(linkedOrder.id)&&String(x.type)===documentType);
       if(genericPrint&&!genericArchive){genericArchive={id:String(linkedOrder.id),type:documentType,createdAt:new Date().toISOString()};archiveRows.push(genericArchive);if(!saveState())throw new Error('تعذر حفظ سجل المستند القابل للطباعة');}
@@ -3572,7 +3572,7 @@ function previewPeriodicReportPrint() {
     }
 
     async function previewOffersPrint() {
-      pendingPreviewImageBlob=null; pendingInvoiceShareOrder=null;pendingDocumentArchiveOrder=null;document.getElementById('invoiceSavedImageBtn')?.classList.add('hidden'); pendingCustomerImageShare=null;
+      pendingPreviewImageBlob=null; pendingInvoiceShareOrder=null;pendingDocumentArchiveOrder={id:'offers-catalog-'+Date.now(),type:'offers_catalog'};document.getElementById('invoiceSavedImageBtn')?.classList.remove('hidden'); pendingCustomerImageShare=null;
       document.getElementById('invoiceWhatsAppBtn')?.classList.add('hidden');
       document.getElementById('invoiceOpenWhatsAppBtn')?.classList.add('hidden');
       document.getElementById('genericShareImageBtn')?.classList.remove('hidden');
