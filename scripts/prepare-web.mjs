@@ -9,11 +9,11 @@ if(syntaxCheck.status!==0)process.exit(syntaxCheck.status??1);
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const inlineCheckDir=fs.mkdtempSync(path.join(os.tmpdir(),'valerian-inline-check-'));
 let inlineScriptsChecked=0;
-for(const [index,match] of [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)].entries()){
+for(const [index,match] of [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)].entries()){
   const attrs=match[1]||'';
-  if(/\\bsrc\\s*=/.test(attrs))continue;
-  const typeMatch=attrs.match(/\\btype\\s*=\\s*["']([^"']+)["']/i);
-  if(typeMatch&&!/^(text\\/javascript|application\\/javascript|module)$/i.test(typeMatch[1]))continue;
+  if(/\bsrc\s*=/.test(attrs))continue;
+  const typeMatch=attrs.match(/\btype\s*=\s*["']([^"']+)["']/i);
+  if(typeMatch&&!/^(text\/javascript|application\/javascript|module)$/i.test(typeMatch[1]))continue;
   if(!String(match[2]||'').trim())continue;
   const inlinePath=path.join(inlineCheckDir,`inline-${index}.js`);
   fs.writeFileSync(inlinePath,match[2]);
