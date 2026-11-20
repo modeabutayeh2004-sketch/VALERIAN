@@ -135,7 +135,10 @@
           p.stockUnit = 'زجاجة أصلية';
         } else {
           p.volumeMlPerBottle = 0;
-          p.decantMlAvailable = 0;
+          if (!Number.isFinite(Number(p.decantMlAvailable))) p.decantMlAvailable = 0;
+          p.decantAvailableQty = Number.isFinite(Number(p.decantAvailableQty)) ? Number(p.decantAvailableQty) : 0;
+          p.decantAvailableUnit = String(p.decantAvailableUnit || p.stockUnit || 'وحدة');
+          p.openReturnedBottles = Array.isArray(p.openReturnedBottles) ? p.openReturnedBottles : [];
           p.stockUnit = String(p.stockUnit || 'وحدة');
         }
       });
@@ -732,7 +735,7 @@
         const physicalPeak = Math.max(0, Number(product.stock || 0) + (movementQty < 0 ? Math.abs(movementQty) : 0));
         product.stockCapacity = Math.max(1, Number(product.stockCapacity || 0), Number(product.initialStock || 0), Number(product.maxStock || 0), physicalPeak);
       }
-      state.inventoryMovements.unshift({ id: 'MOV-' + Date.now() + '-' + Math.random().toString(36).slice(2,6), date: new Date().toISOString(), productId, productName: product?.name || 'منتج محذوف', type, quantity: movementQty, unit: type === 'DECANT_ML' ? 'مل' : (type === 'PACKAGING_RECEIPT' ? 'عبوة فارغة' : (product?.category === 'تقسيم' ? 'عبوة جاهزة' : 'زجاجة')), balanceAfter: Number(product?.stock || 0), balanceAfterMl: Number(product?.decantMlAvailable || 0), reservedBalance: Number(product?.reservedStock || 0), packagingBalance: product?.category === 'تقسيم' ? getPackagingStock(product) : 0, reference: reference || '', note: note || '' });
+      state.inventoryMovements.unshift({ id: 'MOV-' + Date.now() + '-' + Math.random().toString(36).slice(2,6), date: new Date().toISOString(), productId, productName: product?.name || 'منتج محذوف', type, quantity: movementQty, unit: type === 'DECANT_ML' ? 'مل' : (type === 'DECANT_RETURN' ? String(product?.decantAvailableUnit||product?.stockUnit||'وحدة') : (type === 'PACKAGING_RECEIPT' ? 'عبوة فارغة' : (product?.category === 'تقسيم' ? 'عبوة جاهزة' : 'زجاجة'))), balanceAfter: Number(product?.stock || 0), balanceAfterMl: Number(product?.decantMlAvailable || 0), reservedBalance: Number(product?.reservedStock || 0), packagingBalance: product?.category === 'تقسيم' ? getPackagingStock(product) : 0, reference: reference || '', note: note || '' });
     }
 
     function addPaymentTransaction(order, type, amount, note, method) {
@@ -749,6 +752,18 @@
 
     function getBottleVolumeMl(product) {
       return Math.max(1, Number(product?.volumeMlPerBottle || String(product?.size || '').match(/\d+(?:\.\d+)?/)?.[0] || 100));
+    }
+
+    function getProductMeasureInfo(product) {
+      const raw=String(product?.size||'');
+      const match=raw.match(/([0-9]+(?:[.,][0-9]+)?)\s*(كجم|كيلوجرام|كيلو|kg|g|جرام|جم|غرام|لتر|l|ml|ملل|مل)/i);
+      const amount=match?Number(match[1].replace(',','.')):0;
+      const token=String(match?.[2]||product?.stockUnit||'وحدة').toLowerCase();
+      if(/^(كجم|كيلوجرام|كيلو|kg)$/.test(token))return {unit:'جم',capacity:amount>0?amount*1000:0};
+      if(/^(g|جرام|جم|غرام)$/.test(token))return {unit:'جم',capacity:amount};
+      if(/^(لتر|l)$/.test(token))return {unit:'مل',capacity:amount>0?amount*1000:0};
+      if(/^(ml|ملل|مل)$/.test(token))return {unit:'مل',capacity:amount};
+      return {unit:String(product?.stockUnit||token||'وحدة'),capacity:amount};
     }
 
     function getPhysicalStockLabel(product) {
@@ -3002,12 +3017,23 @@ function previewPeriodicReportPrint() {
             const disposition=stockWasDeducted?String(supplied?.disposition||'restock'):'release';
             if(stockWasDeducted&&!['restock','open','quarantine','writeoff'].includes(disposition))throw new Error('حالة المرتجع غير صحيحة للصنف '+(item.name||item.id)+'.');
             const lineReturnValue=roundMoney(unitPrice*qty*netFactor);
-            const openMl=Number(supplied?.openMl||0);
+            const measure=getProductMeasureInfo(prod);
+            let openQty=0,openUnit=measure.unit,openBottleQty=[];
             if(disposition==='open'){
-              const capacity=Math.max(1,Number(getBottleVolumeMl(prod)||0))*qty;
-              if(!Number.isFinite(openMl)||openMl<=0||openMl>capacity+0.001)throw new Error('أدخل كمية الملليلترات المتبقية بصورة صحيحة للصنف '+(item.name||item.id)+'.');
+              const suppliedArray=Array.isArray(supplied?.openBottleQty)?supplied.openBottleQty:(Array.isArray(supplied?.openBottleMl)?supplied.openBottleMl:null);
+              if(suppliedArray){
+                openBottleQty=suppliedArray.map(v=>Number(String(v??'').trim().replace(',','.')));
+                if(openBottleQty.length!==qty||openBottleQty.some(v=>!Number.isFinite(v)||v<=0||(measure.capacity>0&&v>measure.capacity+0.001)))throw new Error('أدخل الكمية المتبقية لكل قطعة مفتوحة بصورة صحيحة للصنف '+(item.name||item.id)+'.');
+                openQty=Number(openBottleQty.reduce((sum,v)=>sum+v,0).toFixed(3));
+              }else{
+                openQty=Number(String(supplied?.openQty??supplied?.openMl??'').trim().replace(',','.'));
+                const totalCapacity=measure.capacity>0?measure.capacity*qty:0;
+                if(!Number.isFinite(openQty)||openQty<=0||(totalCapacity>0&&openQty>totalCapacity+0.001))throw new Error('أدخل الكمية المتبقية بصورة صحيحة للصنف '+(item.name||item.id)+'.');
+                openBottleQty=Array.from({length:qty},()=>Number((openQty/qty).toFixed(3)));
+              }
             }
-            selections.push({item,prod,qty,disposition,openMl,lineReturnValue});
+            const openMl=openUnit==='مل'?openQty:0;
+            selections.push({item,prod,qty,disposition,openMl,openQty,openUnit,openBottleQty,lineReturnValue});
             returnValue+=lineReturnValue;
             totalQty+=qty;
           }
@@ -3055,7 +3081,17 @@ function previewPeriodicReportPrint() {
         item.returnedQty = Number(item.returnedQty || 0) + qty;
         if (stockWasDeducted) {
           if (disposition === 'restock') { prod.stock=Number(prod.stock||0)+qty; addInventoryMovement(prod.id,'RETURN_RESTOCK',qty,o.id,'مرتجع جزئي سليم ومغلق'); }
-          else if (disposition === 'open') { prod.decantMlAvailable=Number(prod.decantMlAvailable||0)+Number(x.openMl||0); prod.openReturnedQty=Number(prod.openReturnedQty||0)+qty; addInventoryMovement(prod.id,'DECANT_ML',Number(x.openMl||0),o.id,'سائل مسترد من مرتجع مفتوح'); state.decantReturnLog=Array.isArray(state.decantReturnLog)?state.decantReturnLog:[]; state.decantReturnLog.unshift({id:'DRT-'+Date.now()+'-'+Math.random().toString(36).slice(2,5),date:new Date().toISOString(),orderId:o.id,productId:prod.id,productName:prod.name,quantity:qty,availableMl:Number(x.openMl||0),note:'مرتجع مفتوح — أضيف إلى رصيد العطر المتاح للتقسيم'}); }
+          else if (disposition === 'open') {
+            const now=new Date().toISOString(),unit=String(x.openUnit||getProductMeasureInfo(prod).unit||prod.stockUnit||'وحدة'),total=Number(x.openQty??x.openMl??0);
+            prod.openReturnedBottles=Array.isArray(prod.openReturnedBottles)?prod.openReturnedBottles:[];
+            (x.openBottleQty||[]).forEach(amount=>prod.openReturnedBottles.unshift({id:'ORB-'+Date.now()+'-'+Math.random().toString(36).slice(2,8),orderId:o.id,productId:prod.id,productName:prod.name,returnedAt:now,originalQty:Number(amount),remainingQty:Number(amount),usedQty:0,unit,status:'available',...(unit==='مل'?{originalMl:Number(amount),remainingMl:Number(amount),usedMl:0}:{})}));
+            prod.decantAvailableQty=Number((Number(prod.decantAvailableQty||0)+total).toFixed(3));prod.decantAvailableUnit=unit;
+            if(unit==='مل')prod.decantMlAvailable=Number((Number(prod.decantMlAvailable||0)+total).toFixed(3));
+            prod.openReturnedQty=Number(prod.openReturnedQty||0)+qty;
+            addInventoryMovement(prod.id,unit==='مل'?'DECANT_ML':'DECANT_RETURN',total,o.id,'مرتجع مفتوح صالح للتقسيم — '+qty+' قطعة ('+unit+')');
+            state.decantReturnLog=Array.isArray(state.decantReturnLog)?state.decantReturnLog:[];
+            state.decantReturnLog.unshift({id:'DRT-'+Date.now()+'-'+Math.random().toString(36).slice(2,5),date:now,orderId:o.id,productId:prod.id,productName:prod.name,quantity:qty,availableQty:total,unit,availableMl:unit==='مل'?total:0,note:'مرتجع مفتوح — أضيف إلى الرصيد المتاح للتقسيم'});
+          }
           else if (disposition === 'quarantine') { prod.quarantineStock=Number(prod.quarantineStock||0)+qty; addInventoryMovement(prod.id,'RETURN_QUARANTINE',qty,o.id,'مرتجع جزئي معزول'); }
           else { prod.writeoffStock=Number(prod.writeoffStock||0)+qty; addInventoryMovement(prod.id,'RETURN_WRITEOFF',qty,o.id,'مرتجع جزئي تالف — هالك'); }
         } else {
@@ -3066,7 +3102,7 @@ function previewPeriodicReportPrint() {
       o.returnedValue = cumulativeReturnValue;
       o.returnedAt = new Date().toISOString();
       o.returnItems = o.returnItems || [];
-      selections.forEach(x=>o.returnItems.push({productId:x.prod.id,productName:x.prod.name,qty:x.qty,disposition:x.disposition,openMl:Number(x.openMl||0),returnValue:x.lineReturnValue,date:new Date().toISOString()}));
+      selections.forEach(x=>o.returnItems.push({productId:x.prod.id,productName:x.prod.name,qty:x.qty,disposition:x.disposition,openMl:Number(x.openMl||0),openQty:Number(x.openQty||0),openUnit:String(x.openUnit||''),returnValue:x.lineReturnValue,date:new Date().toISOString()}));
       o.refundLiability = priorLiability + newLiability;
       o.refundStatus = o.refundLiability > 0 ? 'مستحق للعميل — لم يُرد نقداً' : 'لا يوجد مبلغ مستحق';
       o.remainingAmount = roundMoney(Math.max(0, Number(o.grandTotal||0) - cumulativeReturnValue - alreadyPaid));
@@ -3101,7 +3137,7 @@ function previewPeriodicReportPrint() {
       }
       const fullyReturned = (o.items||[]).every(i=>Number(i.returnedQty||0)>=Number(i.qty||0));
       o.status = fullyReturned ? 'مرتجع بالكامل / قيد تسوية المبلغ' : 'مرتجع جزئي / الطلب مستمر';
-      state.returnRecords.unshift({id:'RET-'+Date.now(),orderId:o.id,date:new Date().toISOString(),items:selections.map(x=>({productId:x.prod.id,productName:x.prod.name,qty:x.qty,disposition:x.disposition,openMl:Number(x.openMl||0),returnValue:x.lineReturnValue})),returnValue,liability:newLiability,cashRefunded:0,loyaltyPointsDeducted:pointsDeductNow,loyaltyPointsRestored:pointsToRestoreNow});
+      state.returnRecords.unshift({id:'RET-'+Date.now(),orderId:o.id,date:new Date().toISOString(),items:selections.map(x=>({productId:x.prod.id,productName:x.prod.name,qty:x.qty,disposition:x.disposition,openMl:Number(x.openMl||0),openQty:Number(x.openQty||0),openUnit:String(x.openUnit||''),returnValue:x.lineReturnValue})),returnValue,liability:newLiability,cashRefunded:0,loyaltyPointsDeducted:pointsDeductNow,loyaltyPointsRestored:pointsToRestoreNow});
       logAudit('ORDER_PARTIAL_RETURN','مرتجع '+(fullyReturned?'كامل':'جزئي')+' للطلب '+o.id+' — القيمة '+returnValue+' — خصم نقاط '+pointsDeductNow+' — استعادة نقاط '+pointsToRestoreNow+' — المستحق الجديد '+newLiability);
       if (!saveState()) { state=before; refreshAllViews(); return; }
       renderShipments(); renderInventory(); renderCrmTable(); refreshAllViews();
