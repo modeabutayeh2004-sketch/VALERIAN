@@ -5219,12 +5219,20 @@ function previewPeriodicReportPrint() {
           if(el('decantProductionSource'))el('decantProductionSource').value=payload.sourceMode==='priority'?'priority':'returned';
           const before=(state.decantProductionLog||[]).length;
           produceDecants({preventDefault(){}});
-          const ok=(state.decantProductionLog||[]).length>before;
-          if(ok){
-            try{await valDurableWritePromise;if(valDurableWriteError)throw valDurableWriteError;await valIdbFlush();}
-            catch(err){throw new Error('تم تنفيذ التجهيز لكن تعذر تأكيد الحفظ الدائم: '+String(err?.message||err));}
-          }
-          return {ok,snapshot:snapshot()};
+          const ok=(state.decantProductionLog||[]).length===before+1;
+          if(!ok)throw new Error(window.__valerianLastSaveError?.message||'لم يعتمد محرك الأعمال عملية التجهيز؛ لم يتم تأكيد أي تقسيم.');
+          try{
+            await valDurableWritePromise;
+            if(valDurableWriteError)throw valDurableWriteError;
+            await valIdbFlush();
+            const row=await valIdbGet('appstate','current');
+            if(!row?.json)throw new Error('لم يتم العثور على نسخة البيانات المحفوظة محليًا.');
+            const durable=JSON.parse(row.json),record=(durable.decantProductionLog||[]).find(x=>String(x.id)===String(state.decantProductionLog[0]?.id));
+            const decant=(durable.products||[]).find(x=>String(x.id)===String(payload.productId));
+            const parent=(durable.products||[]).find(x=>String(x.id)===String(record?.parentId));
+            if(!record||!decant||!parent||Number(decant.stock||0)!==Number(state.products.find(x=>String(x.id)===String(payload.productId))?.stock||0)||Number(parent.decantMlAvailable||0)!==Number(state.products.find(x=>String(x.id)===String(record.parentId))?.decantMlAvailable||0))throw new Error('قاعدة البيانات لم تؤكد سجل التجهيز وتحديث أرصدة السائل والمخزون.');
+          }catch(err){throw new Error('تم تنفيذ التجهيز داخل المحرك لكن تعذر تأكيد الحفظ الدائم: '+String(err?.message||err));}
+          return {ok:true,snapshot:snapshot()};
         },
         openOriginalBottleForDecant:async payload=>{
           await ready;
@@ -5232,12 +5240,20 @@ function previewPeriodicReportPrint() {
           el('decantProductionProduct').value=String(payload.productId||'');
           const before=(state.decantBottleOpeningLog||[]).length;
           openOriginalBottleForDecant();
-          const ok=(state.decantBottleOpeningLog||[]).length>before;
-          if(ok){
-            try{await valDurableWritePromise;if(valDurableWriteError)throw valDurableWriteError;await valIdbFlush();}
-            catch(err){throw new Error('تم فتح الزجاجة لكن تعذر تأكيد الحفظ الدائم: '+String(err?.message||err));}
-          }
-          return {ok,snapshot:snapshot()};
+          const ok=(state.decantBottleOpeningLog||[]).length===before+1;
+          if(!ok)throw new Error(window.__valerianLastSaveError?.message||'لم يعتمد المحرك فتح الزجاجة الأصلية؛ لم يتغير رصيد المخزون.');
+          try{
+            await valDurableWritePromise;
+            if(valDurableWriteError)throw valDurableWriteError;
+            await valIdbFlush();
+            const row=await valIdbGet('appstate','current');
+            if(!row?.json)throw new Error('لم يتم العثور على نسخة البيانات المحفوظة محليًا.');
+            const durable=JSON.parse(row.json),opening=durable.decantBottleOpeningLog||[];
+            const record=opening.find(x=>String(x.id)===String(state.decantBottleOpeningLog[0]?.id));
+            const parent=(durable.products||[]).find(x=>String(x.id)===String(state.decantBottleOpeningLog[0]?.parentId));
+            if(!record||!parent||Number(parent.decantMlOpenedAvailable||0)!==Number(state.products.find(x=>String(x.id)===String(record.parentId))?.decantMlOpenedAvailable||0))throw new Error('قاعدة البيانات لم تؤكد فتح الزجاجة ورصيد السائل المفتوح.');
+          }catch(err){throw new Error('تم فتح الزجاجة داخل المحرك لكن تعذر تأكيد الحفظ الدائم: '+String(err?.message||err));}
+          return {ok:true,snapshot:snapshot()};
         },
         addShippingCompany:async name=>{
           await ready;const value=String(name||'').trim().replace(/\s+/g,' ');if(!value)throw new Error('اسم شركة الشحن مطلوب.');
@@ -5444,9 +5460,30 @@ function previewPeriodicReportPrint() {
           await ready;
           const orderId=payload&&typeof payload==='object'?payload.orderId:payload;
           const selections=payload&&typeof payload==='object'&&Array.isArray(payload.selections)?payload.selections:null;
+          if(!selections)throw new Error('يجب تحديد تفاصيل المرتجع من نافذة التطبيق.');
           const idx=findOrder(orderId);if(idx<0)throw new Error('الطلب غير موجود.');
-          const before=JSON.stringify(state.orders[idx]);markAsReturned(idx,selections);
-          return {ok:JSON.stringify(state.orders[idx])!==before,snapshot:snapshot()};
+          const before=JSON.stringify(state.orders[idx]);
+          const beforeProducts=new Map((state.products||[]).map(p=>[String(p.id),JSON.stringify({stock:p.stock,reservedStock:p.reservedStock,openReturnedBottles:p.openReturnedBottles,decantMlAvailable:p.decantMlAvailable,decantMlOpenedAvailable:p.decantMlOpenedAvailable,decantAvailableQty:p.decantAvailableQty,quarantineStock:p.quarantineStock,writeoffStock:p.writeoffStock})]));
+          markAsReturned(idx,selections);
+          const changed=JSON.stringify(state.orders[idx])!==before;
+          if(!changed)throw new Error(window.__valerianLastSaveError?.message||'محرك الأعمال لم يعتمد المرتجع.');
+          try{
+            await valDurableWritePromise;
+            if(valDurableWriteError)throw valDurableWriteError;
+            await valIdbFlush();
+            const row=await valIdbGet('appstate','current');
+            if(!row?.json)throw new Error('لم يتم العثور على نسخة البيانات المحفوظة محليًا.');
+            const durable=JSON.parse(row.json),durableOrder=(durable.orders||[]).find(x=>String(x.id)===String(orderId));
+            if(!durableOrder||JSON.stringify((durableOrder.items||[]).map(x=>Number(x.returnedQty||0)))!==JSON.stringify((state.orders[idx].items||[]).map(x=>Number(x.returnedQty||0))))throw new Error('الحفظ الدائم لم يؤكد كميات المرتجع.');
+            for(const selection of selections.filter(x=>Number(x.qty||0)>0)){
+              const productId=String(selection.productId||selection.id||''),current=state.products.find(p=>String(p.id)===productId),stored=(durable.products||[]).find(p=>String(p.id)===productId);
+              if(!current||!stored)throw new Error('تعذر التحقق من حفظ رصيد المنتج المرتجع.');
+              const fields=['stock','reservedStock','decantMlAvailable','decantMlOpenedAvailable','decantAvailableQty','quarantineStock','writeoffStock'];
+              for(const field of fields)if(Number(stored[field]||0)!==Number(current[field]||0))throw new Error('لم يتم تأكيد حفظ رصيد '+(current.name||productId)+' ('+field+').');
+              if(JSON.stringify(stored.openReturnedBottles||[])!==JSON.stringify(current.openReturnedBottles||[]))throw new Error('لم يتم تأكيد حفظ تفاصيل المرتجع المفتوح للمنتج '+(current.name||productId)+'.');
+            }
+          }catch(err){throw new Error('تم تنفيذ المرتجع داخل المحرك لكن تعذر تأكيد حفظه الدائم: '+String(err?.message||err));}
+          return {ok:true,snapshot:snapshot()};
         },
         settleRefund:async payload=>{
           await ready;
