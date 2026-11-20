@@ -4233,7 +4233,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
 <div id="v5DeleteCredentialModal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="v5DeleteCredentialTitle" dir="rtl"><div class="v5-delete-panel"><div class="flex items-center gap-3 mb-4"><div class="w-11 h-11 rounded-2xl flex items-center justify-center bg-rose-500/15 border border-rose-300/25 text-rose-200 text-xl">🔐</div><div><h3 id="v5DeleteCredentialTitle" class="text-lg font-black text-white">تأكيد الحذف</h3><p class="text-[10px] text-slate-400 mt-1">VALERIAN • حماية البيانات</p></div></div><p id="v5DeleteCredentialDescription" class="text-xs leading-7 text-slate-300 mb-4"></p><label id="v5DeleteCredentialLabel" for="v5DeleteCredentialInput" class="block text-xs font-extrabold text-slate-200 mb-2">كلمة المرور</label><input id="v5DeleteCredentialInput" class="v5-delete-input" type="password" autocomplete="current-password" dir="auto"><p id="v5DeleteCredentialError" class="hidden text-xs text-rose-300 mt-2"></p><div class="grid grid-cols-2 gap-2 mt-5"><button id="v5DeleteCredentialCancel" type="button" class="rounded-xl border border-white/15 bg-white/5 py-3 text-xs font-extrabold text-slate-200">إلغاء</button><button id="v5DeleteCredentialConfirm" type="button" class="rounded-xl bg-gradient-to-br from-rose-200 to-rose-400 py-3 text-xs font-black text-slate-950">تأكيد الحذف</button></div></div></div>
 
   <!-- ==================== CLEAN DECOUPLED UI CHASSIS ENGINE V5.0 ==================== -->
-  <script src="./engine-runtime.js?v=v20-20261120-cleanup46"></script>
+  <script src="./engine-runtime.js?v=v20-20261120-cleanup47"></script>
   <script>
     const defaultEmptySchema = () => ({
       settings: {
@@ -6981,7 +6981,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
     };
 
     if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
-      window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=v20-20261120-cleanup46',{scope:'./',updateViaCache:'none'}).catch(err=>console.warn('VALERIAN V20 offline registration failed',err)));
+      window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=v20-20261120-cleanup47',{scope:'./',updateViaCache:'none'}).catch(err=>console.warn('VALERIAN V20 offline registration failed',err)));
     }
     connectEngine().catch(reportError);
     // Fallback for browser restore/cloud events that occur after the first frame load.
@@ -7099,7 +7099,7 @@ html[data-valerian-theme="light"] .glass-dock,html[data-valerian-theme="light"] 
 html[data-valerian-theme="light"] .valerian-home-hero{background:linear-gradient(135deg,#fffdf8,#eee5d7 62%,#e8dece)!important;border-color:rgba(157,128,80,.32)!important;box-shadow:0 18px 42px rgba(83,66,43,.12),inset 0 1px 0 #fff!important}
 html[data-valerian-theme="light"] .valerian-shortcut{background:linear-gradient(145deg,#fffdf8,#eee6d9)!important;border-color:rgba(157,128,80,.27)!important;box-shadow:0 10px 24px rgba(83,66,43,.10),inset 0 1px 0 #fff!important}
 html[data-valerian-theme="light"] .valerian-glass-icon{background:linear-gradient(145deg,#fffaf0,#e8dcc7 58%,#d9c7a8)!important;border:1px solid rgba(157,128,80,.42)!important;box-shadow:inset 0 1px 2px #fff,0 7px 16px rgba(83,66,43,.15)!important;text-shadow:0 1px 3px rgba(75,57,31,.16)!important}
-html[data-valerian-theme="light"] .silver-btn,html[data-valerian-theme="light"] .splash-enter-btn{background:linear-gradient(135deg,#e8d7b5,#c6a66b 58%,#a18454)!important;color:#302619!important;box-shadow:0 8px 22px rgba(157,128,80,.2)!important}
+html[data-valerian-theme="light"] .silver-btn{background:linear-gradient(135deg,#e8d7b5,#c6a66b 58%,#a18454)!important;color:#302619!important;box-shadow:0 8px 22px rgba(157,128,80,.2)!important}
 html[data-valerian-theme="light"] .silver-text{background:linear-gradient(180deg,#8d6c37,#b28d4d 62%,#70552e)!important;-webkit-background-clip:text!important;-webkit-text-fill-color:transparent!important}
 html[data-valerian-theme="light"] .money-action-panel,html[data-valerian-theme="light"] .v5-action-panel,html[data-valerian-theme="light"] .v5-delete-panel{background:linear-gradient(145deg,#fffdf8,#eee5d7)!important;color:#342d25!important;border-color:rgba(157,128,80,.3)!important}
 html[data-valerian-theme="light"] .money-action-field,html[data-valerian-theme="light"] .v5-delete-input{background:rgba(255,255,255,.72)!important;border-color:rgba(157,128,80,.28)!important;color:#342d25!important}
