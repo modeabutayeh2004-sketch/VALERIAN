@@ -5497,7 +5497,9 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       if(order.deliveredAt||String(order.status||'').includes('تم التسليم'))return showToast('تم تأكيد استلام هذا الطلب بالفعل.');
       let root=document.getElementById('mobileDeliveryConfirm');if(!root){root=document.createElement('div');root.id='mobileDeliveryConfirm';document.body.appendChild(root);}
       root.className='fixed inset-0 z-[40] flex items-center justify-center p-4 bg-black/85';
-      root.innerHTML='<section dir="rtl" class="w-full max-w-md rounded-3xl border border-white/15 bg-[#07131d] p-5 space-y-4"><div class="flex items-center justify-between"><h3 class="font-black text-white">تأكيد استلام العميل</h3><button type="button" onclick="document.getElementById(\'mobileDeliveryConfirm\').remove()" class="text-slate-300 text-xl">×</button></div><p class="text-xs text-slate-300">الطلب '+escapeHtmlMobile(order.id)+' — '+escapeHtmlMobile(order.name||'')+'</p><div class="rounded-xl bg-white/5 p-3 text-xs text-slate-200">إجمالي الفاتورة: <b>'+fmtEgp(order.grandTotal)+'</b><br>المتبقي للتحصيل: <b class="text-sky-200">'+fmtEgp(order.remainingAmount)+'</b></div><label class="block text-xs text-slate-300">طريقة تحصيل المتبقي<select id="mobileDeliveryPaymentMethod" class="mt-2 w-full rounded-xl bg-slate-900 border border-white/15 text-white p-3"><option>نقدي</option><option>تحويل بنكي</option><option>محفظة إلكترونية</option><option>بطاقة</option><option>أخرى</option></select></label><div class="flex gap-2"><button type="button" onclick="document.getElementById(\'mobileDeliveryConfirm\').remove()" class="flex-1 rounded-xl border border-white/15 py-3 text-slate-200">إلغاء</button><button type="button" onclick="confirmMobileOrderDelivery(\''+String(order.id).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')" class="flex-1 rounded-xl silver-btn py-3 font-black text-slate-950">تأكيد الاستلام والتحصيل</button></div></section>';
+      const due=Math.max(0,Number(order.remainingAmount||0));
+      const paymentControl=due>0?'<label class="block text-xs text-slate-300">طريقة تحصيل المتبقي<select id="mobileDeliveryPaymentMethod" class="mt-2 w-full rounded-xl bg-slate-900 border border-white/15 text-white p-3"><option>نقدي</option><option>تحويل بنكي</option><option>محفظة إلكترونية</option><option>بطاقة</option><option>أخرى</option></select></label>':'<div class="rounded-xl border border-emerald-300/20 bg-emerald-500/10 p-3 text-[11px] text-emerald-200">تم سداد كامل قيمة البيع مسبقًا. تأكيد الاستلام فقط دون أي تحصيل إضافي.</div>';
+      root.innerHTML='<section dir="rtl" class="w-full max-w-md rounded-3xl border border-white/15 bg-[#07131d] p-5 space-y-4"><div class="flex items-center justify-between"><h3 class="font-black text-white">تأكيد استلام العميل</h3><button type="button" onclick="document.getElementById(\\'mobileDeliveryConfirm\\').remove()" class="text-slate-300 text-xl">×</button></div><p class="text-xs text-slate-300">الطلب '+escapeHtmlMobile(order.id)+' — '+escapeHtmlMobile(order.name||'')+'</p><div class="rounded-xl bg-white/5 p-3 text-xs text-slate-200">إجمالي الفاتورة: <b>'+fmtEgp(order.grandTotal)+'</b><br>المتبقي للتحصيل: <b class="text-sky-200">'+fmtEgp(due)+'</b></div>'+paymentControl+'<div class="flex gap-2"><button type="button" onclick="document.getElementById(\\'mobileDeliveryConfirm\\').remove()" class="flex-1 rounded-xl border border-white/15 py-3 text-slate-200">إلغاء</button><button type="button" onclick="confirmMobileOrderDelivery(\\''+String(order.id).replace(/\\\\/g,'\\\\\\\\').replace(/'/g,"\\\\'")+'\\')" class="flex-1 rounded-xl silver-btn py-3 font-black text-slate-950">تأكيد الاستلام</button></div></section>';
     }
 
     async function confirmMobileOrderDelivery(orderId) {
@@ -5510,6 +5512,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         const result=await window.ValerianShippingAction('deliverOrder',{orderId,method});
         if(result?.ok!==true)throw new Error(result?.error||'لم يؤكد المحرك تسليم الطلب.');
         confirmRoot?.remove();
+        syncFromEngine(result.snapshot);
         setMoreOrdersView('delivered');
         const invoicePreview=document.getElementById('printPreviewModal');
         if(invoicePreview){
@@ -6640,9 +6643,10 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
         });
         if(!r.ok)return;
         mobileCart=[];redeemPointsActive=false;updateFloatingCart();closeSheet('checkoutSheet');
+        syncFromEngine(r.snapshot);
+        setMoreOrdersView('reserved');
         if(openReceipt&&r.order)openThermalReceiptPreview(r.order);
-        showToast(currentPosMode==='reservation'?'تم تسجيل الحجز من محرك الأعمال وتجميد الكميات.':'تم تسجيل البيع وتحديث المخزون والحسابات.');
-        syncFromEngine();
+        showToast(currentPosMode==='reservation'?'تم تسجيل الحجز وحجز الكميات بانتظار الشحن.':'تم تسجيل البيع المباشر وسداد قيمته بالكامل؛ الطلب الآن في المحجوز بانتظار الشحن.');
       }catch(err){window.ValerianReportError(err);}
     };
     window.executeDecantProduction=async function(){
