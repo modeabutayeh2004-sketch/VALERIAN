@@ -5255,7 +5255,11 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       const ledList=document.getElementById('supplierLedgerList');
       const safe=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
       const dateLabel=value=>{const d=new Date(value||'');return Number.isFinite(d.getTime())?d.toLocaleDateString('ar-EG'):'—';};
-      shipList.innerHTML=imports.length?imports.map(inv=>{
+      // The V20 mobile shell has its own invoice list; sort it independently of
+      // cloud arrival/array order using the immutable timestamp embedded in invoice IDs.
+      const importCreatedAt=inv=>{const match=String(inv?.id||'').match(/^IMP-(\\d{10,})-/);const idTime=match?Number(match[1]):0;if(Number.isFinite(idTime)&&idTime>0)return idTime;const dateTime=Date.parse(inv?.date||'');return Number.isFinite(dateTime)?dateTime:0;};
+      const sortedImports=[...imports].sort((a,b)=>importCreatedAt(b)-importCreatedAt(a)||String(b.id||'').localeCompare(String(a.id||'')));
+      shipList.innerHTML=sortedImports.length?sortedImports.map(inv=>{
         const rem=Math.max(0,Number(inv.totalEgp||0)-Number(inv.paidAmount||0));
         return '<div class="glass-card rounded-2xl p-4 space-y-2.5 text-xs"><div class="flex items-center justify-between"><strong class="text-white font-extrabold">'+safe(inv.supplier)+'</strong><span class="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-slate-300 bidi-ltr">'+safe(inv.id)+'</span></div><p class="text-[11px] text-slate-300">'+safe(inv.itemsSummary||'فاتورة استيراد')+'</p><div class="grid grid-cols-3 gap-2 pt-2 border-t border-white/[0.08] text-[10px]"><div><span class="text-slate-400 block">سعر الصرف</span><strong class="bidi-ltr">'+safe(inv.exchangeRate)+' EGP</strong></div><div><span class="text-slate-400 block">الإجمالي</span><strong class="bidi-ltr">'+fmtEgp(inv.totalEgp)+'</strong></div><div><span class="text-slate-400 block">المتبقي</span><strong class="'+(rem>0?'text-rose-300':'text-emerald-300')+' bidi-ltr">'+fmtEgp(rem)+'</strong></div></div></div>';
       }).join(''):renderEmptyPlaceholder('🚢','لا توجد شحنات استيراد مسجلة','سجل فواتير الموردين الدوليين لحساب التكلفة ومتوسط سعر الوحدة تلقائياً.','+ تسجيل شحنة استيراد',"openSheet('newImportSheet')");
