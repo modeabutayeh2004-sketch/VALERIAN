@@ -2841,8 +2841,49 @@ function previewPeriodicReportPrint() {
       }
       return result;
     }
+    async function archiveOfferPages(blobs,linkedOrder){
+      const result={archived:0,cloudArchived:0,total:Array.isArray(blobs)?blobs.length:0};
+      if(!result.total||!linkedOrder?.id)return result;
+      const id=String(linkedOrder.id),safeId=id.replace(/[^a-z0-9_-]/gi,'_');
+      const rows=state.printableDocumentArchive=(Array.isArray(state.printableDocumentArchive)?state.printableDocumentArchive:[]);
+      let archive=rows.find(x=>String(x.id)===id&&x.type==='offers_catalog');
+      if(!archive){archive={id,type:'offers_catalog',createdAt:new Date().toISOString(),pageImages:[]};rows.push(archive);}
+      const prior=Array.isArray(archive.pageImages)?archive.pageImages:[];
+      const pages=[];
+      for(let i=0;i<blobs.length;i++){
+        const blob=blobs[i];if(!blob?.size)throw new Error('صفحة عروض رقم '+(i+1)+' فارغة');
+        const key='offers_catalog:'+id+':page:'+(i+1),fileName='VALERIAN-OFFERS-'+safeId+'-'+(i+1)+'.png';
+        const hash=await valImageSha256(blob),path=(cloudUser?.id?String(cloudUser.id)+'/print-'+safeId+'-page-'+(i+1)+'-'+hash+'.png':'');
+        await valIdbPutMany('invoiceImages',{[key]:{blob,contentType:blob.type||'image/png',savedAt:Date.now(),fileName}});
+        result.archived++;
+        let cloudSaved=false;
+        if(path&&cloudClient&&cloudUser&&cloudReady&&navigator.onLine){
+          const old=prior.find(x=>Number(x.page)===i+1);
+          if(old?.storagePath===path)cloudSaved=true;
+          else{
+            const {error}=await cloudClient.storage.from(VAL_IMAGE_BUCKET).upload(path,blob,{upsert:true,contentType:blob.type||'image/png',cacheControl:'31536000'});
+            if(error)throw new Error('تعذر أرشفة صفحة العروض '+(i+1)+' سحابياً: '+cloudErrorMessage(error));
+            cloudSaved=true;
+          }
+        }
+        if(cloudSaved)result.cloudArchived++;
+        pages.push({page:i+1,key,storagePath:cloudSaved?path:(prior.find(x=>Number(x.page)===i+1)?.storagePath||''),fileName,savedAt:Date.now(),hash});
+      }
+      archive.pageImages=pages;archive.pageCount=pages.length;archive.savedAt=Date.now();
+      if(!saveState())throw new Error('تم تجهيز صور الصفحات لكن تعذر حفظ سجل الأرشيف');
+      await valDurableWritePromise;
+      return result;
+    }
+
     async function savePreviewImageDirect() {
       try {
+        if(Array.isArray(pendingOffersFiles)&&pendingOffersFiles.length){
+          showToast('جارٍ حفظ صفحات العروض الأصلية بجودتها الكاملة...');
+          const archiveResult=await archiveOfferPages(pendingOffersFiles,pendingDocumentArchiveOrder);
+          pendingOffersFiles.forEach((blob,i)=>v1955DownloadBlob(blob,'VALERIAN-OFFERS-'+(i+1)+'.png'));
+          showToast('تم حفظ وتنزيل '+archiveResult.total+' صفحة بجودتها الأصلية.'+(archiveResult.cloudArchived===archiveResult.total?' وتمت أرشفتها سحابياً.':' تم حفظ النسخ المتاحة محلياً.'),archiveResult.archived?'success':'warning');
+          return;
+        }
         showToast('جارٍ تجهيز صورة المستند...');
         const blob=await renderPreviewBlob();
         const linkedOrder=pendingDocumentArchiveOrder||pendingCustomerImageShare||pendingInvoiceShareOrder;
@@ -2873,6 +2914,24 @@ function previewPeriodicReportPrint() {
         const key=String(order.type||'document')+':'+String(order.id);
         const db=await valIdbDb();
         if(!db||!db.objectStoreNames.contains('invoiceImages'))throw new Error('أرشيف صور الفواتير غير متاح على هذا الجهاز');
+        if(order.type==='offers_catalog'){
+          const archive=(state.printableDocumentArchive||[]).find(x=>String(x.id)===String(order.id)&&x.type==='offers_catalog');
+          const pages=Array.isArray(archive?.pageImages)?archive.pageImages:[];
+          if(!pages.length)throw new Error('لا توجد صفحات محفوظة لهذا الكتالوج');
+          for(const page of pages){
+            let pageSaved=await valIdbGet('invoiceImages',page.key);
+            if(!pageSaved?.blob?.size&&page.storagePath&&cloudClient&&cloudUser&&navigator.onLine){
+              const {data,error}=await cloudClient.storage.from(VAL_IMAGE_BUCKET).download(page.storagePath);
+              if(error||!data)throw new Error('تعذر استرجاع صفحة العروض '+page.page);
+              pageSaved={blob:data,contentType:data.type||'image/png',savedAt:page.savedAt||Date.now(),fileName:page.fileName};
+              await valIdbPutMany('invoiceImages',{[page.key]:pageSaved});
+            }
+            if(!pageSaved?.blob?.size)throw new Error('الصفحة '+page.page+' غير متاحة محلياً أو سحابياً');
+            v1955DownloadBlob(pageSaved.blob,page.fileName||('VALERIAN-OFFERS-'+page.page+'.png'));
+          }
+          showToast('تم استرجاع وتنزيل جميع صفحات كتالوج العروض ('+pages.length+').','success');
+          return;
+        }
         let saved=await valIdbGet('invoiceImages',key);
         if(!saved?.blob?.size){
           const documentType=String(order.type||'');
@@ -2932,9 +2991,11 @@ function previewPeriodicReportPrint() {
       try {
         showToast('جارٍ تجهيز الصورة...');
         if(Array.isArray(pendingOffersFiles)&&pendingOffersFiles.length){
-          const files=pendingOffersFiles.map((blob,i)=>new File([blob],`VALERIAN-OFFERS-${i+1}.png`,{type:'image/png'}));
+          const archiveResult=await archiveOfferPages(pendingOffersFiles,pendingDocumentArchiveOrder);
+          const files=pendingOffersFiles.map((blob,i)=>new File([blob],`VALERIAN-OFFERS-${i+1}.png`,{type:blob.type||'image/png'}));
           if(navigator.canShare&&navigator.canShare({files})){await navigator.share({files,title:'VALERIAN Offers'});}
-          else {files.forEach((file,i)=>{const url=URL.createObjectURL(file);const a=document.createElement('a');a.href=url;a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),4000+i*300);});showToast('تم تنزيل صفحات العروض بجودة عالية؛ يمكنك إرسالها عبر واتساب أو ماسنجر.');}
+          else {files.forEach((file,i)=>{const url=URL.createObjectURL(file);const a=document.createElement('a');a.href=url;a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),4000+i*300);});}
+          showToast('تم تجهيز '+files.length+' صفحة للمشاركة وحفظ أرشيفها '+(archiveResult.cloudArchived===archiveResult.total?'في السحابة.':'على الجهاز.'),archiveResult.archived?'success':'warning');
           return;
         }
         const blob=await renderPreviewBlob();if(!blob)throw new Error('تعذر إنشاء الصورة');
