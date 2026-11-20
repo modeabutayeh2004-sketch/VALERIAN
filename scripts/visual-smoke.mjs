@@ -76,7 +76,6 @@ try {
         const paperBefore=document.querySelector('#previewSheetBody > *');
         const paperBeforeRect=paperBefore.getBoundingClientRect();
         const paperBeforeStyle={width:getComputedStyle(paperBefore).width,height:getComputedStyle(paperBefore).height,zoom:getComputedStyle(paperBefore).zoom,overflow:getComputedStyle(paperBefore).overflow};
-        await page.screenshot({path:'www/visual-invoice.png',fullPage:true,animations:'disabled'});
         const blob=await window.__valerianCreatePreviewImageBlob();
         if(!blob||blob.size<10000)throw new Error('Invoice export image is empty or unexpectedly small');
         let bitmap;
