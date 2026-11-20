@@ -11,7 +11,7 @@ if(!source.includes('ValerianNative')){
   const marker='public class MainActivity extends BridgeActivity';
   const start=source.indexOf(marker), open=source.indexOf('{',start), close=source.indexOf('}',open);
   if(start<0||open<0||close<0) throw new Error('Could not safely locate MainActivity class body.');
-  source=source.slice(0,open+1)+'\n  @Override public void onCreate(android.os.Bundle savedInstanceState) {\n    super.onCreate(savedInstanceState);\n    getBridge().getWebView().addJavascriptInterface(new NativeFileBridge(this), "ValerianNative");\n  }\n'+source.slice(close);
+  source=source.slice(0,open+1)+'\n  @Override public void onCreate(android.os.Bundle savedInstanceState) {\n    super.onCreate(savedInstanceState);\n    getBridge().getWebView().addJavascriptInterface(new NativeFileBridge(this, getBridge().getWebView()), "ValerianNative");\n  }\n'+source.slice(close);
   fs.writeFileSync(mainPath,source);
 }
 
