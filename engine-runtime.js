@@ -5240,7 +5240,14 @@ function previewPeriodicReportPrint() {
           if(!payload)throw new Error('بيانات الإنتاج مطلوبة.');
           const selectedProductId=String(payload.productId||'');
           const selectedProduct=state.products.find(x=>String(x.id)===selectedProductId);
-          if(!selectedProduct||selectedProduct.category!=='تقسيم')throw new Error('منتج التقسيم المحدد غير موجود داخل محرك الأعمال.');
+          const normalizeDecantValue=value=>String(value??'').normalize('NFKC').replace(/[\\s\\u0640]+/g,'').toLowerCase();
+          const category=normalizeDecantValue(selectedProduct?.category),unit=normalizeDecantValue(selectedProduct?.stockUnit),name=normalizeDecantValue(selectedProduct?.name);
+          const parentId=String(selectedProduct?.parentId??'').trim(),decantSize=Number(selectedProduct?.decantSize??selectedProduct?.decantSizeMl??0);
+          const isDecant=!!selectedProduct&&(category.includes('تقسيم')||category.includes('decant')||unit.includes('تقسيم')||unit.includes('decant')||(parentId.length>0&&Number.isFinite(decantSize)&&decantSize>0)||name.startsWith('تقسيم'));
+          if(!selectedProduct)throw new Error('معرّف منتج التقسيم المحدد غير موجود داخل محرك الأعمال.');
+          if(!isDecant)throw new Error('المنتج المحدد موجود لكنه غير مصنف كمنتج تقسيم وفق بياناته الحالية.');
+          if(!parentId)throw new Error('منتج التقسيم غير مرتبط بزجاجة أصلية (parentId مفقود).');
+          if(!state.products.some(x=>String(x.id)===parentId))throw new Error('الزجاجة الأصلية المرتبطة بمنتج التقسيم غير موجودة داخل المحرك.');
           el('decantProductionProduct').value=selectedProductId;
           el('decantProductionQty').value=String(payload.quantity||0);
           if(el('decantProductionSource'))el('decantProductionSource').value=payload.sourceMode==='priority'?'priority':'returned';
