@@ -2661,9 +2661,10 @@
     }
 
 function previewPeriodicReportPrint() {
-      pendingOffersBlob=null; pendingOffersImageUrl=""; pendingPreviewImageBlob=null; pendingInvoiceShareOrder=null;pendingDocumentArchiveOrder=null; pendingCustomerImageShare=null;
+      pendingOffersBlob=null; pendingOffersImageUrl=""; pendingPreviewImageBlob=null; pendingInvoiceShareOrder=null;pendingDocumentArchiveOrder={id:'periodic-report-'+Date.now(),type:'periodic_report'}; pendingCustomerImageShare=null;
       document.getElementById('invoiceWhatsAppBtn')?.classList.add('hidden');
       document.getElementById('invoiceOpenWhatsAppBtn')?.classList.add('hidden');
+      document.getElementById('invoiceSavedImageBtn')?.classList.remove('hidden');
       document.getElementById('genericShareImageBtn')?.classList.remove('hidden');
       const periodText = document.getElementById('reportPeriodSelect').selectedOptions[0].text;
       const fullSales = document.getElementById('repFullSales').textContent;
@@ -3988,6 +3989,9 @@ function previewPeriodicReportPrint() {
       pendingPrintHtml=`<div dir="rtl" style="font-family:Cairo,Arial,sans-serif;background:#fff;color:#172b39;padding:24px;width:100%;box-sizing:border-box;border:1px solid #e7dfcf;border-radius:16px"><div style="text-align:center;border-bottom:3px solid #b7965b;padding-bottom:14px;margin-bottom:18px"><div style="font-size:28px;font-weight:900;letter-spacing:2px;color:#17384b">VALERIAN</div><h2 style="font-size:20px;margin:7px 0;color:#17384b">كشف نقاط العملاء</h2><p style="font-size:11px;color:#8a744f">تاريخ التقرير: ${new Date().toLocaleDateString('ar-EG')} — قيمة النقطة: ${formatCurrency(state.settings.pointValue||0)}</p></div><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#f2eee5;color:#6e5835"><th style="padding:11px;text-align:right">العميل</th><th style="padding:11px">الهاتف</th><th style="padding:11px">الطلبات</th><th style="padding:11px">النقاط</th><th style="padding:11px">القيمة</th></tr></thead><tbody>${cards}</tbody></table><p style="font-size:10px;color:#8a744f;text-align:center;margin-top:20px;border-top:1px solid #dfd5c3;padding-top:12px">هذا الكشف يوضح أرصدة النقاط الحالية المحسوبة وفق إعدادات برنامج VALERIAN.</p></div>`;
       pendingDocumentArchiveOrder={id:'loyalty-summary-'+Date.now(),type:'loyalty_summary'};
       pendingCustomerImageShare=null;pendingInvoiceShareOrder=null;
+      document.getElementById('invoiceWhatsAppBtn')?.classList.add('hidden');
+      document.getElementById('invoiceOpenWhatsAppBtn')?.classList.add('hidden');
+      document.getElementById('genericShareImageBtn')?.classList.remove('hidden');
       const saveBtn=document.getElementById('previewSaveImageBtn');if(saveBtn){saveBtn.classList.remove('hidden');saveBtn.style.display='inline-flex';saveBtn.textContent='⬇️ حفظ صورة كشف النقاط';}
       document.getElementById('invoiceSavedImageBtn')?.classList.remove('hidden');
       document.getElementById('printPreviewBody').innerHTML=v1946EnsureBrandHeader(pendingPrintHtml);openModal('printPreviewModal');
