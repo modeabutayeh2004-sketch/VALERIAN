@@ -10,9 +10,10 @@ const mime = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset
 const server = http.createServer((req,res) => {
   let pathname;
   try { pathname = decodeURIComponent(new URL(req.url, 'http://127.0.0.1').pathname); } catch { res.writeHead(400).end(); return; }
-  const target = path.resolve(root, '.' + pathname);
-  if (!target.startsWith(root + path.sep) && target !== path.join(root,'index.html')) { res.writeHead(403).end(); return; }
-  const file = fs.existsSync(target) && fs.statSync(target).isDirectory() ? path.join(target,'index.html') : target;
+  const relative = pathname === '/' ? 'index.html' : pathname.replace(/^\\/+/, '');
+  const target = path.resolve(root, relative);
+  if (!target.startsWith(root + path.sep)) { res.writeHead(403).end(); return; }
+  const file = target;
   if (!fs.existsSync(file) || !fs.statSync(file).isFile()) { res.writeHead(404).end('Not found'); return; }
   res.writeHead(200, {'content-type':mime[path.extname(file)]||'application/octet-stream','cache-control':'no-store'});
   fs.createReadStream(file).pipe(res);
@@ -33,7 +34,7 @@ try {
       return route.continue();
     });
     await page.goto('http://127.0.0.1:4173/', {waitUntil:'domcontentloaded',timeout:30000});
-    await page.waitForFunction(() => !!window.ValerianEngine && !!window.ValerianUI, {timeout:45000});
+    await page.waitForFunction(() => !!window.ValerianEngine && !!window.ValerianUI, null, {timeout:45000});
     await page.waitForTimeout(1200);
     await page.screenshot({path:'www/visual-'+mode+'.png',fullPage:true,animations:'disabled'});
     const status = await page.evaluate(() => ({
