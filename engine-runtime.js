@@ -2856,17 +2856,14 @@ function previewPeriodicReportPrint() {
         const hash=await valImageSha256(blob),path=(cloudUser?.id?String(cloudUser.id)+'/print-'+safeId+'-page-'+(i+1)+'-'+hash+'.png':'');
         await valIdbPutMany('invoiceImages',{[key]:{blob,contentType:blob.type||'image/png',savedAt:Date.now(),fileName}});
         result.archived++;
-        let cloudSaved=false;
-        if(path&&cloudClient&&cloudUser&&cloudReady&&navigator.onLine){
-          const old=prior.find(x=>Number(x.page)===i+1);
-          if(old?.storagePath===path)cloudSaved=true;
-          else{
-            try{
-              const {error}=await cloudClient.storage.from(VAL_IMAGE_BUCKET).upload(path,blob,{upsert:true,contentType:blob.type||'image/png',cacheControl:'31536000'});
-              if(error)throw new Error(cloudErrorMessage(error));
-              cloudSaved=true;
-            }catch(uploadErr){result.cloudError=String(uploadErr?.message||uploadErr);}
-          }
+        const old=prior.find(x=>Number(x.page)===i+1);
+        let cloudSaved=!!(path&&old?.storagePath===path);
+        if(path&&!cloudSaved&&cloudClient&&cloudUser&&cloudReady&&navigator.onLine){
+          try{
+            const {error}=await cloudClient.storage.from(VAL_IMAGE_BUCKET).upload(path,blob,{upsert:true,contentType:blob.type||'image/png',cacheControl:'31536000'});
+            if(error)throw new Error(cloudErrorMessage(error));
+            cloudSaved=true;
+          }catch(uploadErr){result.cloudError=String(uploadErr?.message||uploadErr);}
         }
         if(cloudSaved)result.cloudArchived++;
         pages.push({page:i+1,key,storagePath:cloudSaved?path:'',fileName,savedAt:Date.now(),hash});
