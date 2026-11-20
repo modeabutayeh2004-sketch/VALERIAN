@@ -35,7 +35,9 @@ try {
     });
     await page.goto('http://127.0.0.1:4173/', {waitUntil:'domcontentloaded',timeout:30000});
     await page.waitForFunction(() => !!window.ValerianEngine && !!window.ValerianUI, null, {timeout:45000});
-    await page.waitForTimeout(1200);
+    // The branded splash intentionally runs for 4.3 seconds; do not screenshot it as the app UI.
+    await page.waitForFunction(() => window.__valerianSplashDismissed === true, null, {timeout:25000});
+    await page.waitForTimeout(500);
     await page.screenshot({path:'www/visual-'+mode+'.png',fullPage:true,animations:'disabled'});
     const status = await page.evaluate(() => ({
       title:document.title,
