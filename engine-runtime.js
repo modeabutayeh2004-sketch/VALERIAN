@@ -2593,7 +2593,7 @@
       root.setAttribute('data-v1953-print-document', '1');
       // A4 remains portrait. The printable content width is capped at 190mm (A4 minus 10mm margins on each side).
       root.style.setProperty('width', size==='a4' ? '100%' : width, 'important');
-      root.style.setProperty('max-width', size==='a4' ? '190mm' : width, 'important');
+      root.style.setProperty('max-width', size==='a4' ? '100%' : width, 'important');
       root.style.setProperty('min-width', size==='a4' ? '0' : width, 'important');
       root.style.setProperty('box-sizing', 'border-box', 'important');
       root.style.setProperty('margin-left', 'auto', 'important');
