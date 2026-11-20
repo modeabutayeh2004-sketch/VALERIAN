@@ -10,7 +10,7 @@ const mime = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset
 const server = http.createServer((req,res) => {
   let pathname;
   try { pathname = decodeURIComponent(new URL(req.url, 'http://127.0.0.1').pathname); } catch { res.writeHead(400).end(); return; }
-  const relative = pathname === '/' ? 'index.html' : pathname.replace(/^\\/+/, '');
+  const relative = pathname === '/' ? 'index.html' : (pathname.startsWith('/') ? pathname.slice(1) : pathname);
   const target = path.resolve(root, relative);
   if (!target.startsWith(root + path.sep)) { res.writeHead(403).end(); return; }
   const file = target;
