@@ -4233,7 +4233,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
 <div id="v5DeleteCredentialModal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="v5DeleteCredentialTitle" dir="rtl"><div class="v5-delete-panel"><div class="flex items-center gap-3 mb-4"><div class="w-11 h-11 rounded-2xl flex items-center justify-center bg-rose-500/15 border border-rose-300/25 text-rose-200 text-xl">🔐</div><div><h3 id="v5DeleteCredentialTitle" class="text-lg font-black text-white">تأكيد الحذف</h3><p class="text-[10px] text-slate-400 mt-1">VALERIAN • حماية البيانات</p></div></div><p id="v5DeleteCredentialDescription" class="text-xs leading-7 text-slate-300 mb-4"></p><label id="v5DeleteCredentialLabel" for="v5DeleteCredentialInput" class="block text-xs font-extrabold text-slate-200 mb-2">كلمة المرور</label><input id="v5DeleteCredentialInput" class="v5-delete-input" type="password" autocomplete="current-password" dir="auto"><p id="v5DeleteCredentialError" class="hidden text-xs text-rose-300 mt-2"></p><div class="grid grid-cols-2 gap-2 mt-5"><button id="v5DeleteCredentialCancel" type="button" class="rounded-xl border border-white/15 bg-white/5 py-3 text-xs font-extrabold text-slate-200">إلغاء</button><button id="v5DeleteCredentialConfirm" type="button" class="rounded-xl bg-gradient-to-br from-rose-200 to-rose-400 py-3 text-xs font-black text-slate-950">تأكيد الحذف</button></div></div></div>
 
   <!-- ==================== CLEAN DECOUPLED UI CHASSIS ENGINE V5.0 ==================== -->
-  <script src="./engine-runtime.js?v=v20-20261120-cleanup55"></script>
+  <script src="./engine-runtime.js?v=v20-20261120-cleanup56"></script>
   <script>
     const defaultEmptySchema = () => ({
       settings: {
@@ -6981,7 +6981,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
     };
 
     if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
-      window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=v20-20261120-cleanup55',{scope:'./',updateViaCache:'none'}).catch(err=>console.warn('VALERIAN V20 offline registration failed',err)));
+      window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=v20-20261120-cleanup56',{scope:'./',updateViaCache:'none'}).catch(err=>console.warn('VALERIAN V20 offline registration failed',err)));
     }
     connectEngine().catch(reportError);
     // Fallback for browser restore/cloud events that occur after the first frame load.
