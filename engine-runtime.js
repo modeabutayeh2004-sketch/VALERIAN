@@ -2133,10 +2133,13 @@
     }
 
     function openOriginalBottleForDecant() {
-      const p=state.products.find(x=>x.id===document.getElementById('decantProductionProduct')?.value);
-      const parent=p?state.products.find(x=>x.id===p.parentId):null;
-      if(!p||!parent){showToast('اختر منتج تقسيم مرتبطًا بزجاجة أصلية أولاً.','error');return;}
-      if(Number(parent.stock||0)<1){showToast('لا توجد زجاجة أصلية مغلقة متاحة للفتح.','error');return;}
+      window.__valerianLastDecantOpeningError='';
+      const selectedProductId=String(document.getElementById('decantProductionProduct')?.value||'');
+      const p=state.products.find(x=>String(x.id)===selectedProductId);
+      const parent=p?state.products.find(x=>String(x.id)===String(p.parentId)):null;
+      const rejectOpening=message=>{window.__valerianLastDecantOpeningError=message;showToast(message,'error');return false;};
+      if(!p||!parent)return rejectOpening('اختر منتج تقسيم مرتبطًا بزجاجة أصلية أولاً.');
+      if(Number(parent.stock||0)<1)return rejectOpening('لا توجد زجاجة أصلية مغلقة متاحة للفتح.');
       const before=structuredClone(state),ref='OPEN-DEC-'+Date.now(),volume=getBottleVolumeMl(parent);
       ensureOpenedDecantPool(parent);
       parent.stock=Number(parent.stock||0)-1;
@@ -2146,9 +2149,10 @@
       addInventoryMovement(parent.id,'OPENED_DECANT_ML',volume,ref,'إضافة سائل من زجاجة أصلية مفتوحة إلى رصيد الاستخدام');
       state.decantBottleOpeningLog=Array.isArray(state.decantBottleOpeningLog)?state.decantBottleOpeningLog:[];
       state.decantBottleOpeningLog.unshift({id:ref,date:new Date().toISOString(),parentId:parent.id,productName:parent.name,volumeMl:volume,openedPoolBalanceAfter:parent.decantMlOpenedAvailable,returnedBalanceAfter:getReturnedOpenMlBalance(parent)});
-      if(!saveState()){state=before;refreshAllViews();return;}
+      if(!saveState()){state=before;refreshAllViews();return rejectOpening(window.__valerianLastSaveError?.message||'تعذر حفظ فتح الزجاجة؛ لم يتم اعتماد أي تغيير.');}
       refreshAllViews();updateDecantProductionInfo();
       showToast('تم فتح زجاجة أصلية وإضافة '+volume+' مل إلى رصيد السائل المفتوح. لم يتم تجهيز تقسيمات.','success');
+      return true;
     }
 
     function produceDecants(e) {
@@ -5284,11 +5288,18 @@ function previewPeriodicReportPrint() {
         openOriginalBottleForDecant:async payload=>{
           await ready;
           if(!payload)throw new Error('اختر منتج التقسيم أولاً.');
-          el('decantProductionProduct').value=String(payload.productId||'');
+          const productId=String(payload.productId||''),product=state.products.find(x=>String(x.id)===productId);
+          if(!product)throw new Error('منتج التقسيم المحدد غير موجود في بيانات المحرك.');
+          const productSelect=el('decantProductionProduct');
+          if(!Array.from(productSelect.options||[]).some(option=>String(option.value)===productId)){
+            const option=document.createElement('option');option.value=productId;option.textContent=String(product.name||productId);productSelect.appendChild(option);
+          }
+          productSelect.value=productId;
+          if(String(productSelect.value)!==productId)throw new Error('تعذر تمرير منتج التقسيم المحدد إلى نموذج فتح الزجاجة.');
           const before=(state.decantBottleOpeningLog||[]).length;
           openOriginalBottleForDecant();
           const ok=(state.decantBottleOpeningLog||[]).length===before+1;
-          if(!ok)throw new Error(window.__valerianLastSaveError?.message||'لم يعتمد المحرك فتح الزجاجة الأصلية؛ لم يتغير رصيد المخزون.');
+          if(!ok)throw new Error(window.__valerianLastDecantOpeningError||'لم يعتمد المحرك فتح الزجاجة الأصلية؛ لم يتغير رصيد المخزون.');
           try{
             await valDurableWritePromise;
             if(valDurableWriteError)throw valDurableWriteError;
