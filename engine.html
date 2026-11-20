@@ -5726,12 +5726,11 @@ function previewPeriodicReportPrint() {
         const remainingQty = Math.max(0, Number(item.qty || 0) - Number(item.returnedQty || 0));
         if (!remainingQty) continue;
         const supplied=Array.isArray(suppliedSelections)?suppliedSelections.find(x=>String(x.productId||x.id||'')===String(item.id)):null;
-        let qty,disposition='release';
+        let qty,disposition='release',openMl=0;
         if(Array.isArray(suppliedSelections)){
           qty=Number(supplied?.qty||0);
           if(!Number.isInteger(qty)||qty<0||qty>remainingQty)throw new Error('كمية المرتجع غير صحيحة للصنف '+(item.name||item.id)+'.');
           if(!qty)continue;
-          let openMl=0;
           if(o.stockDeducted){disposition=String(supplied?.disposition||'restock');if(!['restock','open','quarantine','writeoff'].includes(disposition))throw new Error('حالة المرتجع غير صحيحة للصنف '+(item.name||item.id)+'.');if(disposition==='open'){openMl=Number(supplied?.openMl||0);const capacity=getBottleVolumeMl(state.products.find(p=>String(p.id)===String(item.id))||{})*qty;if(!Number.isFinite(openMl)||openMl<=0||openMl>capacity+0.001)throw new Error('أدخل كمية الملليلترات المتبقية بصورة صحيحة للصنف '+(item.name||item.id)+'.');}}
         }else{
           const rawQty=prompt(`مرتجع جزئي — ${item.name||item.id}\nالكمية الأصلية: ${item.qty}\nالمرتجع سابقاً: ${item.returnedQty||0}\nالمتاح إرجاعه الآن: ${remainingQty}\nأدخل الكمية المرتجعة (0 للتخطي):`,String(remainingQty));
