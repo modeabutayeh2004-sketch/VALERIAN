@@ -21,6 +21,7 @@
     let pendingPreviewImageBlob = null;
     let pendingInvoiceShareOrder = null;
     let pendingCustomerImageShare = null;
+    let pendingDocumentArchiveOrder = null;
 
     let rawLogoImg = null, logoOffset = {x:0, y:0}, isDraggingLogo = false, logoDragStart = {x:0, y:0};
     let rawProdImg = null, prodOffset = {x:0, y:0}, isDraggingProd = false, prodDragStart = {x:0, y:0};
@@ -2613,12 +2614,13 @@
     // ==================== PRINT PREVIEW ENGINE ====================
     function previewDocumentPrint(order, type) {
       pendingOffersBlob=null; pendingOffersImageUrl=""; pendingPreviewImageBlob=null;
+      pendingDocumentArchiveOrder=(order&&order.id)?{id:String(order.id),type:String(type||'document')}:null;
       pendingInvoiceShareOrder=(type==='reservation_invoice'||type==='final_invoice')?{id:String(order.id||''),name:String(order.name||''),phone:String(order.phone||''),type,grandTotal:Number(order.grandTotal||0),remainingAmount:Number(order.remainingAmount||0)}:null;
       pendingCustomerImageShare=(order&&order.phone)?{id:String(order.id||''),name:String(order.name||''),phone:String(order.phone||''),type,grandTotal:Number(order.grandTotal||0),remainingAmount:Number(order.remainingAmount||0)}:null;
       document.getElementById('invoiceWhatsAppBtn')?.classList.toggle('hidden',!pendingCustomerImageShare);
       document.getElementById('invoiceOpenWhatsAppBtn')?.classList.toggle('hidden',!pendingCustomerImageShare?.phone);
       document.getElementById('genericShareImageBtn')?.classList.toggle('hidden',!!pendingInvoiceShareOrder);
-      document.getElementById('invoiceSavedImageBtn')?.classList.toggle('hidden',!(pendingCustomerImageShare?.id||pendingInvoiceShareOrder?.id));
+      document.getElementById('invoiceSavedImageBtn')?.classList.toggle('hidden',!(pendingDocumentArchiveOrder?.id||pendingCustomerImageShare?.id||pendingInvoiceShareOrder?.id));
       const items=Array.isArray(order.items)?order.items:[];
       const cats=items.map(i=>i.category||state.products.find(p=>p.id===i.id)?.category||'').filter(Boolean);
       const isMale=cats.some(x=>String(x).includes('رجالي'));
@@ -2659,7 +2661,7 @@
     }
 
 function previewPeriodicReportPrint() {
-      pendingOffersBlob=null; pendingOffersImageUrl=""; pendingPreviewImageBlob=null; pendingInvoiceShareOrder=null; pendingCustomerImageShare=null;
+      pendingOffersBlob=null; pendingOffersImageUrl=""; pendingPreviewImageBlob=null; pendingInvoiceShareOrder=null;pendingDocumentArchiveOrder=null; pendingCustomerImageShare=null;
       document.getElementById('invoiceWhatsAppBtn')?.classList.add('hidden');
       document.getElementById('invoiceOpenWhatsAppBtn')?.classList.add('hidden');
       document.getElementById('genericShareImageBtn')?.classList.remove('hidden');
@@ -2820,7 +2822,7 @@ function previewPeriodicReportPrint() {
       try {
         showToast('جارٍ تجهيز صورة المستند...');
         const blob=await renderPreviewBlob();
-        const linkedOrder=pendingCustomerImageShare||pendingInvoiceShareOrder;
+        const linkedOrder=pendingDocumentArchiveOrder||pendingCustomerImageShare||pendingInvoiceShareOrder;
         let archived=false;
         let cloudArchived=false;
         if(linkedOrder?.id){
@@ -2873,7 +2875,7 @@ function previewPeriodicReportPrint() {
     }
     async function openSavedInvoiceImage(){
       try{
-        const order=pendingCustomerImageShare||pendingInvoiceShareOrder;
+        const order=pendingDocumentArchiveOrder||pendingCustomerImageShare||pendingInvoiceShareOrder;
         if(!order?.id)throw new Error('لا يوجد مستند محدد');
         const key=String(order.type||'document')+':'+String(order.id);
         const db=await valIdbDb();
