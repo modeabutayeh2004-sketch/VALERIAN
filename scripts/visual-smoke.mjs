@@ -24,7 +24,7 @@ try {
   browser = await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
   const errors = [];
   for (const mode of ['dark','light']) {
-    const context = await browser.newContext({viewport:{width:1440,height:1000},deviceScaleFactor:1});
+    const context = await browser.newContext({viewport:{width:390,height:844},screen:{width:390,height:844},deviceScaleFactor:3,isMobile:true,hasTouch:true});
     await context.addInitScript(value => localStorage.setItem('valerian-theme-preference-v2', value), mode);
     const page = await context.newPage();
     page.on('pageerror', error => errors.push(mode + ': ' + error.message));
@@ -38,7 +38,7 @@ try {
     // The branded splash intentionally runs for 4.3 seconds; do not screenshot it as the app UI.
     await page.waitForFunction(() => window.__valerianSplashDismissed === true, null, {timeout:25000});
     await page.waitForTimeout(500);
-    await page.screenshot({path:'www/visual-'+mode+'.png',fullPage:true,animations:'disabled'});
+    await page.screenshot({path:'www/visual-mobile-'+mode+'.png',fullPage:true,animations:'disabled'});
     if (mode === 'light') {
       const settingsButton = page.locator('[aria-label="الإعدادات"]');
       if (await settingsButton.count() !== 1) throw new Error('Primary settings button is missing');
@@ -65,6 +65,14 @@ try {
         while(Date.now()<until&&!document.querySelector('#previewSheetBody .valerian-share-qr img')) await new Promise(r=>setTimeout(r,150));
         const qrImages=document.querySelectorAll('#previewSheetBody .valerian-share-qr img');
         if(!qrImages.length)throw new Error('Invoice preview did not render any QR image');
+        const dialog=document.querySelector('#previewModalSheet .preview-document-dialog');
+        const viewport=document.querySelector('#previewModalSheet .preview-document-viewport');
+        const actions=[...document.querySelectorAll('#previewModalSheet .preview-document-actions button')];
+        const modalMetrics=(()=>{
+          const r=dialog.getBoundingClientRect(),v=viewport.getBoundingClientRect();
+          return {screenWidth:innerWidth,screenHeight:innerHeight,dialogWidth:Math.round(r.width),dialogHeight:Math.round(r.height),dialogRight:Math.round(r.right),dialogBottom:Math.round(r.bottom),viewportWidth:Math.round(v.width),viewportHeight:Math.round(v.height),viewportScrollHeight:viewport.scrollHeight,actionCount:actions.length,actionsVisible:actions.every(b=>{const x=b.getBoundingClientRect();return x.width>0&&x.height>0&&x.top>=0&&x.bottom<=innerHeight;})};
+        })();
+        if(!dialog||!viewport||modalMetrics.dialogWidth>modalMetrics.screenWidth||modalMetrics.dialogRight>modalMetrics.screenWidth+1||modalMetrics.dialogBottom>modalMetrics.screenHeight+1||modalMetrics.actionCount!==3||!modalMetrics.actionsVisible)throw new Error('Mobile document modal layout failed: '+JSON.stringify(modalMetrics));
         const blob=await window.__valerianCreatePreviewImageBlob();
         if(!blob||blob.size<10000)throw new Error('Invoice export image is empty or unexpectedly small');
         const bitmap=await createImageBitmap(blob);
@@ -76,11 +84,11 @@ try {
         const dimensionsValid=bitmap.width===1880&&bitmap.height<=6000&&bitmap.height>=1000;
         const visibleContentValid=visibleSamples>=1500;
         const dataUrl=await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||''));reader.readAsDataURL(blob);});
-        return {qrImages:qrImages.length,exportBytes:blob.size,width:bitmap.width,height:bitmap.height,visibleSamples,dimensionsValid,visibleContentValid,dataUrl};
+        return {qrImages:qrImages.length,mobileModal:modalMetrics,exportBytes:blob.size,width:bitmap.width,height:bitmap.height,visibleSamples,dimensionsValid,visibleContentValid,dataUrl};
       });
       fs.writeFileSync('www/visual-invoice-export.png',Buffer.from(invoiceCheck.dataUrl.split(',')[1],'base64'));
       delete invoiceCheck.dataUrl;
-      await page.screenshot({path:'www/visual-invoice.png',fullPage:true,animations:'disabled'});
+      await page.screenshot({path:'www/visual-mobile-invoice.png',fullPage:true,animations:'disabled'});
       console.log(JSON.stringify({invoiceExport:invoiceCheck.visibleContentValid&&invoiceCheck.dimensionsValid?'ok':'failed',...invoiceCheck}));
       if(!invoiceCheck.dimensionsValid)throw new Error('Invoice export canvas does not preserve the original 940px paper width: '+invoiceCheck.width+'x'+invoiceCheck.height);
       if(!invoiceCheck.visibleContentValid)throw new Error('Invoice export appears blank or missing rendered poster content; visible pixel samples: '+invoiceCheck.visibleSamples);
