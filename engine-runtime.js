@@ -25,6 +25,7 @@
     let rawLogoImg = null, logoOffset = {x:0, y:0}, isDraggingLogo = false, logoDragStart = {x:0, y:0};
     let rawProdImg = null, prodOffset = {x:0, y:0}, isDraggingProd = false, prodDragStart = {x:0, y:0};
     let tempProcessedProdImage = '';
+    let prodImageDirty = false;
 
     const defaultState = {
       settings: {
@@ -1149,6 +1150,7 @@
       img.onload=()=>{
         if(rawProdImg?.__valerianObjectUrl)try{URL.revokeObjectURL(rawProdImg.__valerianObjectUrl);}catch(_){}
         rawProdImg=img;rawProdImg.__valerianObjectUrl=objectUrl;
+        prodImageDirty=true;
         prodOffset={x:0,y:0};drawProdCrop();
       };
       img.onerror=()=>{URL.revokeObjectURL(objectUrl);showToast('تعذر فتح صورة المنتج؛ جرّب صورة بصيغة JPG أو PNG أو WebP.','error');e.target.value='';};
@@ -1171,7 +1173,6 @@
       const x = (canvas.width - w)/2 + prodOffset.x * displayScale, y = (canvas.height - h)/2 + prodOffset.y * displayScale;
       ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(rawProdImg, x, y, w, h);
-      tempProcessedProdImage = canvas.toDataURL('image/jpeg', 0.92);
     }
     const prodCanvasEl = document.getElementById('prodCropCanvas');
     prodCanvasEl.addEventListener('mousedown', e => { isDraggingProd = true; prodDragStart = {x: e.clientX - prodOffset.x, y: e.clientY - prodOffset.y}; });
@@ -1599,6 +1600,7 @@
       document.getElementById('prodOfferPrice').value = '';
       document.getElementById('offerPriceBox').classList.add('hidden');
       tempProcessedProdImage = '';
+      prodImageDirty = false;
       rawProdImg = null;
       drawProdCrop();
       populateParentDecantSelect();
@@ -1643,6 +1645,7 @@
       document.getElementById('offerPriceBox').classList.toggle('hidden', !p.isOffer);
       
       tempProcessedProdImage = p.image || '';
+      prodImageDirty = false;
       if (p.image) {
         const img = new Image();
         img.onload = () => { rawProdImg = img; prodOffset = {x:0, y:0}; drawProdCrop(); };
@@ -1713,6 +1716,13 @@
       if (isDecantProduct && (!parentId || !state.products.some(p => p.id === parentId && p.category !== 'تقسيم'))) { showToast('اختر زجاجة أصلية صحيحة لمنتج التقسيم.', 'error'); return; }
       if (isDecantProduct && Number(document.getElementById('decantSizeMl').value || 0) <= 0) { showToast('حجم التقسيم يجب أن يكون أكبر من صفر.', 'error'); return; }
       const stockInput = 0; // Inventory cannot be initialized or increased from the product editor; use purchase/import invoices.
+      if(prodImageDirty){
+        try{
+          const cropCanvas=document.getElementById('prodCropCanvas');
+          if(!cropCanvas||!rawProdImg)throw new Error('صورة المنتج غير جاهزة للحفظ');
+          tempProcessedProdImage=cropCanvas.toDataURL('image/jpeg',0.92);
+        }catch(imageError){showToast('تعذر تجهيز صورة المنتج: '+(imageError?.message||imageError),'error');return;}
+      }
       const productData = {
         id: editId || ('prod_' + Date.now()), name: document.getElementById('prodName').value.trim(), productType:document.getElementById('prodType')?.value||existing?.productType||'عطور', category,
         size: document.getElementById('prodSize').value.trim(), barcode: document.getElementById('prodBarcode').value.trim(),
@@ -1770,6 +1780,7 @@
         else state.products.unshift(decantData);
       }
       if (!saveState()) { state = before; refreshAllViews(); return; }
+      prodImageDirty=false;
       closeModal('productModal'); refreshAllViews();
       showToast(existing ? 'تم تحديث بيانات المنتج دون تغيير رصيد المخزون.' : 'تمت إضافة المنتج بنجاح.', 'success');
     }
