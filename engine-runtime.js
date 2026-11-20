@@ -3896,7 +3896,7 @@ function previewPeriodicReportPrint() {
       const fields=[['رقم الهاتف',c.phone||'—'],['العنوان',c.address||'—'],['عدد الطلبات',formatNumber(c.ordersCount||orders.length,0)],['إجمالي المشتريات',formatCurrency(c.totalSpent||0)],['رصيد نقاط الولاء',formatNumber(points,0)+' نقطة'],['قيمة النقاط',formatCurrency(points*Number(state.settings.pointValue||0))],['مستحقات العميل من المرتجعات',formatCurrency(c.debtToCustomer||0)],['العطور المفضلة',c.fragrancePreferences||'—'],['النوتات المفضلة',c.favoriteNotes||'—'],['النوتات غير المفضلة',c.avoidNotes||'—'],['المناسبات والاستخدامات',c.usageOccasions||'—'],['ملاحظات',c.profileNotes||'—']];
       const profile=fields.map(([k,v])=>`<tr><th>${escapeHTML(k)}</th><td>${escapeHTML(v)}</td></tr>`).join('');
       const html=`<div class="customer-print-sheet" dir="rtl"><div class="customer-print-head"><h2>ملف العميل</h2><div class="customer-print-name">${escapeHTML(c.name||'عميل')}</div><div class="muted">تاريخ الطباعة: ${new Date().toLocaleString('ar-EG')}</div></div><h3>بيانات وتفضيلات العميل</h3><table class="w-full text-right text-xs v1916-table"><tbody>${profile}</tbody></table><h3>سجل الطلبات (${orders.length})</h3><table class="w-full text-right text-xs v1916-table"><thead><tr><th>رقم الطلب</th><th>التاريخ</th><th>المنتجات</th><th>الحالة</th><th>الإجمالي</th></tr></thead><tbody>${orderRows}</tbody></table><div class="customer-print-foot">تم استخراج هذا الملف من نظام VALERIAN.</div></div>`;
-      pendingOffersBlob=null;pendingOffersFiles=null;pendingPreviewImageBlob=null;pendingInvoiceShareOrder=null;pendingDocumentArchiveOrder=null;document.getElementById('invoiceSavedImageBtn')?.classList.add('hidden');
+      pendingOffersBlob=null;pendingOffersFiles=null;pendingPreviewImageBlob=null;pendingInvoiceShareOrder=null;pendingDocumentArchiveOrder=null;document.getElementById('invoiceSavedImageBtn')?.classList.remove('hidden');
       pendingCustomerImageShare={id:'customer-profile-'+String(c.phone||idx),name:String(c.name||'عميلنا'),phone:String(c.phone||''),type:'customer_profile'};
       const customerDownloadBtn=document.getElementById('previewSaveImageBtn');if(customerDownloadBtn){customerDownloadBtn.classList.remove('hidden');customerDownloadBtn.style.display='inline-flex';customerDownloadBtn.textContent='⬇️ تنزيل صورة ملف العميل';}
       const customerWhatsAppBtn=document.getElementById('invoiceWhatsAppBtn');if(customerWhatsAppBtn){customerWhatsAppBtn.classList.toggle('hidden',!pendingCustomerImageShare.phone);customerWhatsAppBtn.style.display=pendingCustomerImageShare.phone?'inline-flex':'none';customerWhatsAppBtn.textContent='🟢 مشاركة ملف العميل على واتساب';}
@@ -3983,7 +3983,7 @@ function previewPeriodicReportPrint() {
       pendingDocumentArchiveOrder={id:'loyalty-summary-'+Date.now(),type:'loyalty_summary'};
       pendingCustomerImageShare=null;pendingInvoiceShareOrder=null;
       const saveBtn=document.getElementById('previewSaveImageBtn');if(saveBtn){saveBtn.classList.remove('hidden');saveBtn.style.display='inline-flex';saveBtn.textContent='⬇️ حفظ صورة كشف النقاط';}
-      document.getElementById('invoiceSavedImageBtn')?.classList.add('hidden');
+      document.getElementById('invoiceSavedImageBtn')?.classList.remove('hidden');
       document.getElementById('printPreviewBody').innerHTML=v1946EnsureBrandHeader(pendingPrintHtml);openModal('printPreviewModal');
     }
 
@@ -3992,7 +3992,7 @@ function previewPeriodicReportPrint() {
       const c = (state.customers||[])[Number(idx)];
       if(!c){showToast('بيانات العميل غير موجودة.','error');return;}
       const pts = calculateCurrentLoyaltyPoints(c.phone);
-      pendingOffersBlob=null;pendingOffersFiles=null;pendingPreviewImageBlob=null;pendingInvoiceShareOrder=null;pendingDocumentArchiveOrder=null;document.getElementById('invoiceSavedImageBtn')?.classList.add('hidden');
+      pendingOffersBlob=null;pendingOffersFiles=null;pendingPreviewImageBlob=null;pendingInvoiceShareOrder=null;pendingDocumentArchiveOrder=null;document.getElementById('invoiceSavedImageBtn')?.classList.remove('hidden');
       pendingCustomerImageShare={id:'loyalty-card-'+String(c.phone||idx),name:String(c.name||'عميلنا'),phone:String(c.phone||''),type:'loyalty_card'};
       const saveBtn=document.getElementById('previewSaveImageBtn');
       if(saveBtn){saveBtn.classList.remove('hidden');saveBtn.style.display='inline-flex';saveBtn.textContent='⬇️ حفظ صورة كارت النقاط';}
