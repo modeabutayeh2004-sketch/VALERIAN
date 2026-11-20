@@ -5139,7 +5139,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       const links=getMobileInvoiceQrLinks();let section=card.querySelector('.valerian-share-qr');
       if(!links.length){section?.remove();return true;}
       if(typeof window.QRCode!=='function'){
-        if(!window.__valerianQrLibraryPromise){window.__valerianQrLibraryPromise=new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';script.async=true;script.onload=()=>typeof window.QRCode==='function'?resolve(true):reject(new Error('مكتبة QR لم تبدأ.'));script.onerror=()=>reject(new Error('تعذر تحميل مكتبة QR. تحقق من الاتصال بالإنترنت.'));document.head.appendChild(script);}).catch(err=>{window.__valerianQrLibraryPromise=null;throw err;});}
+        if(!window.__valerianQrLibraryPromise){window.__valerianQrLibraryPromise=new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';script.async=true;script.onload=()=>typeof window.QRCode==='function'?resolve(true):reject(new Error('مكتبة QR لم تبدأ.'));script.onerror=()=>reject(new Error('تعذر تحميل مكتبة QR. تحقق من الاتصال بالإنترنت.'));document.head.appendChild(script);}).catch(err=>{window.__valerianQrLibraryPromise=null;throw err;});}
         await window.__valerianQrLibraryPromise;
       }
       if(!section){section=document.createElement('section');section.className='valerian-share-qr';section.innerHTML='<div class="valerian-share-section-title">تابع VALERIAN على منصاتنا</div><div class="valerian-share-qr-list"></div>';card.querySelector('.valerian-share-content')?.appendChild(section);}
