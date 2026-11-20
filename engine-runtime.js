@@ -707,7 +707,15 @@
     function addInventoryMovement(productId, type, quantity, reference, note) {
       const product = state.products.find(p => p.id === productId);
       state.inventoryMovements = state.inventoryMovements || [];
-      state.inventoryMovements.unshift({ id: 'MOV-' + Date.now() + '-' + Math.random().toString(36).slice(2,6), date: new Date().toISOString(), productId, productName: product?.name || 'منتج محذوف', type, quantity: Number(quantity || 0), unit: type === 'DECANT_ML' ? 'مل' : (type === 'PACKAGING_RECEIPT' ? 'عبوة فارغة' : (product?.category === 'تقسيم' ? 'عبوة جاهزة' : 'زجاجة')), balanceAfter: Number(product?.stock || 0), balanceAfterMl: Number(product?.decantMlAvailable || 0), reservedBalance: Number(product?.reservedStock || 0), packagingBalance: product?.category === 'تقسيم' ? getPackagingStock(product) : 0, reference: reference || '', note: note || '' });
+      const movementQty = Number(quantity || 0);
+      // Preserve the highest physical stock level across reservations and later fulfillment.
+      // A delivery/shipment movement is recorded after stock is deducted, so add the outgoing
+      // quantity back when establishing the product's durable capacity baseline.
+      if (product && product.category !== 'تقسيم') {
+        const physicalPeak = Math.max(0, Number(product.stock || 0) + (movementQty < 0 ? Math.abs(movementQty) : 0));
+        product.stockCapacity = Math.max(1, Number(product.stockCapacity || 0), Number(product.initialStock || 0), Number(product.maxStock || 0), physicalPeak);
+      }
+      state.inventoryMovements.unshift({ id: 'MOV-' + Date.now() + '-' + Math.random().toString(36).slice(2,6), date: new Date().toISOString(), productId, productName: product?.name || 'منتج محذوف', type, quantity: movementQty, unit: type === 'DECANT_ML' ? 'مل' : (type === 'PACKAGING_RECEIPT' ? 'عبوة فارغة' : (product?.category === 'تقسيم' ? 'عبوة جاهزة' : 'زجاجة')), balanceAfter: Number(product?.stock || 0), balanceAfterMl: Number(product?.decantMlAvailable || 0), reservedBalance: Number(product?.reservedStock || 0), packagingBalance: product?.category === 'تقسيم' ? getPackagingStock(product) : 0, reference: reference || '', note: note || '' });
     }
 
     function addPaymentTransaction(order, type, amount, note, method) {
