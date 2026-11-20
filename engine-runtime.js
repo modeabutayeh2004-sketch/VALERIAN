@@ -4420,14 +4420,15 @@ function previewPeriodicReportPrint() {
       });
     }
     async function valIncrementalBootstrap(){
-      // Read local progress BEFORE contacting bootstrap. The full baseline is needed
-      // only once on a fresh device; later logins use a metadata-only RPC.
+      // A device with no durable cursor must inspect the full cloud baseline before
+      // deciding what to do with its local data. Never push an old local outbox first.
       const storedCursorRow=await valIdbGet('appstate',VAL_SYNC_CURSOR_KEY);
       const hasStoredCursor=!!storedCursorRow&&Number.isFinite(Number(storedCursorRow.cursor))&&Number(storedCursorRow.cursor)>=0;
       const storedCursor=hasStoredCursor?Number(storedCursorRow.cursor):0;
       const pendingBeforeBootstrap=await valSyncReadOutbox();
       const localHasBusinessData=['products','imports','purchases','supplierInvoices','supplierPayments','customers','orders','expenses','inventoryMovements','packagingPurchases','packagingMovements','operatingSupplies','operatingSupplyInvoices','operatingSupplyMovements','paymentTransactions','returnRecords','refundTransactions'].some(key=>Array.isArray(state[key])&&state[key].length>0);
-      let data=null,error=null,usedMetaOnly=(hasStoredCursor&&localHasBusinessData)||pendingBeforeBootstrap.length>0;
+      let data=null,error=null;
+      let usedMetaOnly=hasStoredCursor&&localHasBusinessData&&!pendingBeforeBootstrap.length;
 
       if(usedMetaOnly){
         const meta=await cloudClient.rpc('valerian_sync_bootstrap_meta');
@@ -4449,22 +4450,57 @@ function previewPeriodicReportPrint() {
       if(!data?.ok)throw new Error('تعذر تثبيت نقطة بداية المزامنة الجزئية.');
 
       const base=data.state?normalizeState(data.state):null;
-      const applyBaseline=!!base&&!pendingBeforeBootstrap.length&&!localHasBusinessData;
-      if(applyBaseline){
+      let effectiveCursor=usedMetaOnly?storedCursor:0;
+      let shouldDownloadCloudAssets=usedMetaOnly;
+      let shouldUploadCloudAssets=usedMetaOnly;
+
+      if(!usedMetaOnly&&base){
+        const localMatchesCloud=valComparableStateJson(normalizeState(state))===valComparableStateJson(normalizeState(base));
+        if(!localMatchesCloud||pendingBeforeBootstrap.length){
+          showToast('تم العثور على نسخة سحابية؛ ألغينا رفع تغييرات هذا الجهاز واعتمدنا النسخة السحابية.');
+        }
         const hydrated=await valHydrateImageState(base,{storeIncoming:true,strict:false});
         const applied=await applyCloudState(hydrated);
-        if(!applied)throw new Error('تعذر تطبيق نقطة البداية السحابية.');
-        valCloudDiagnostic('Bootstrap: تم تطبيق النسخة الأساسية لأول تهيئة لهذا الجهاز.');
-      }else if(base){
-        valCloudDiagnostic('Bootstrap: تم تجاوز إعادة تطبيق النسخة الأساسية للحفاظ على البيانات المحلية؛ cursor='+storedCursor+'، outbox='+pendingBeforeBootstrap.length+'.');
-      }else if(usedMetaOnly){
-        valCloudDiagnostic('Bootstrap metadata-only: لم يتم تنزيل نسخة النشاط الكاملة؛ cursor المحلي='+storedCursor+'.');
+        if(!applied)throw new Error('تعذر تطبيق النسخة السحابية المعتمدة.');
+        if(pendingBeforeBootstrap.length)await valSyncMutateOutbox(()=>[]);
+        effectiveCursor=Number(data.cursor||0);
+        await valSyncWriteCursor(effectiveCursor);
+        shouldDownloadCloudAssets=true;
+        shouldUploadCloudAssets=true;
+        valCloudDiagnostic('Bootstrap: تم اعتماد نسخة السحابة؛ أُلغي أي طابور محلي قديم.');
+      }else if(!usedMetaOnly&&!base){
+        // A null baseline can still have an incremental journal. Probe from sequence
+        // zero before retaining local data, so an existing cloud-only account is rebuilt.
+        const probe=await cloudClient.rpc('valerian_sync_pull',{p_after_seq:0,p_limit:1});
+        if(probe.error)throw probe.error;
+        const hasCloudJournal=!!probe.data?.ok&&Array.isArray(probe.data.changes)&&probe.data.changes.length>0;
+        if(hasCloudJournal){
+          state=normalizeState(defaultState);
+          persistLocal(state);
+          await valQueueDurableState(state);await valDurableWritePromise;await valIdbFlush();
+          await valSyncWriteCursor(0);
+          cloudIncrementalBase=valSyncCloudClone(state);
+          cloudIncrementalReady=true;
+          await valIncrementalPull('bootstrap-cloud-journal');
+          effectiveCursor=await valSyncReadCursor();
+          if(pendingBeforeBootstrap.length)await valSyncMutateOutbox(()=>[]);
+          if(localHasBusinessData||pendingBeforeBootstrap.length)showToast('تم العثور على بيانات سحابية؛ اعتمدناها وألغينا رفع بيانات هذا الجهاز.');
+          valCloudDiagnostic('Bootstrap: أعيد بناء بيانات السحابة من سجل التغييرات ابتداءً من حالة فارغة.');
+        }else{
+          // No snapshot and no journal: preserve local data, but discard stale queued
+          // writes so a new/empty cloud account cannot receive an automatic bulk upload.
+          effectiveCursor=0;
+          await valSyncWriteCursor(0);
+          if(pendingBeforeBootstrap.length)await valSyncMutateOutbox(()=>[]);
+          if(localHasBusinessData||pendingBeforeBootstrap.length)showToast('لا توجد نسخة سحابية سابقة؛ احتفظنا ببيانات هذا الجهاز وألغينا رفعها التلقائي.');
+          valCloudDiagnostic('Bootstrap: لا توجد نسخة أو تغييرات سحابية؛ احتفظنا بالمحلي وأوقفنا الرفع التلقائي.');
+        }
+      }else{
+        effectiveCursor=storedCursor;
+        valCloudDiagnostic('Bootstrap metadata-only: تم الحفاظ على المؤشر المحلي '+storedCursor+' دون تنزيل نسخة النشاط الكاملة.');
       }
 
-      // Never reset a valid local cursor to the immutable server baseline cursor.
-      const effectiveCursor=applyBaseline?Number(data.cursor||0):(hasStoredCursor?storedCursor:Number(data.cursor||0));
-      if(applyBaseline||!hasStoredCursor)await valSyncWriteCursor(effectiveCursor);
-      cloudRevision=Number(data.revision||0); cloudLegacyRevision=cloudRevision;
+      cloudRevision=Number(data.revision||0);cloudLegacyRevision=cloudRevision;
       cloudIncrementalBase=valSyncCloudClone(state);
       cloudIncrementalReady=true;
       cloudSyncDiagnostics.mode='Incremental Journal';
@@ -4472,11 +4508,8 @@ function previewPeriodicReportPrint() {
       cloudSyncDiagnostics.cursor=effectiveCursor;
       cloudSyncDiagnostics.lastError='لا يوجد';
 
-      // An empty cloud baseline is not permission to upload this device's defaults.
-      // Keep a fresh account empty; only real user edits may enter the journal.
-      // Assets are fetched only when absent or when their content hash changes.
-      await valDownloadCloudImageAssets(state);
-      await valUploadCloudImageAssets();
+      if(shouldDownloadCloudAssets)await valDownloadCloudImageAssets(state);
+      if(shouldUploadCloudAssets)await valUploadCloudImageAssets();
       cloudSyncDiagnostics.outboxCount=(await valSyncReadOutbox()).length;
       return true;
     }
