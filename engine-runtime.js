@@ -1968,10 +1968,10 @@
       if (deposit > 0) addPaymentTransaction(orderObj,posOrderMode === 'reservation' ? 'DEPOSIT' : 'SALE_PAYMENT',deposit,posOrderMode === 'reservation' ? 'مقدم حجز' : 'تحصيل بيع مباشر',paymentMethod);
       if (cust) {
         cust.name=name; cust.address=address; cust.ordersCount=currentOrdersCount+1;
-        if (posOrderMode === 'direct') cust.totalSpent=Number(cust.totalSpent||0)+totals.grandTotal;
+        // Customer spend is recognized when the order is delivered, not when a paid order is merely reserved.
         cust.points=Number(cust.points||0)+earnedPoints;
       } else {
-        state.customers.unshift({phone,name,address,totalSpent:posOrderMode==='direct'?totals.grandTotal:0,ordersCount:1,points:earnedPoints,debtToCustomer:0});
+        state.customers.unshift({phone,name,address,totalSpent:0,ordersCount:1,points:earnedPoints,debtToCustomer:0});
       }
       logAudit('ORDER_CREATED','إنشاء الطلب '+orderObj.id+' بقيمة '+orderObj.grandTotal);
       if (!saveState()) { state=before; refreshAllViews(); return; }
@@ -2179,7 +2179,7 @@
       const exchangeRate = Number(p.lastPurchaseExchangeRate || 0) > 0
         ? formatNumber(p.lastPurchaseExchangeRate, 4) + ' ج.م لكل وحدة عملة أجنبية'
         : 'غير مسجل';
-      const rows=[['سعر البيع الحالي',fmt(p.price)],['سعر العرض الحالي',p.isOffer?fmt(p.offerPrice):'لا يوجد عرض'],['تكلفة إعادة الشراء للوحدة',fmt(p.lastPurchaseUnitCost??p.replacementCost??p.averageCost??p.totalCost)],['متوسط تكلفة المخزون',fmt(p.averageCost??p.totalCost)],['تاريخ آخر شراء',date],['المورد',p.lastPurchaseSupplier||'غير مسجل'],['رقم فاتورة آخر شراء',p.lastPurchaseInvoiceId||'غير مسجل'],['سعر الوحدة بالعملة الأجنبية',foreignAmount],['سعر الصرف وقت الشراء',exchangeRate],['آخر تحديث لسعر البيع',p.priceUpdatedAt?new Date(p.priceUpdatedAt).toLocaleString('ar-EG'):'غير مسجل'],['سبب استثناء تسعيري سابق',p.replacementPricingOverrideReason||'لا يوجد']];
+      const rows=[['سعر البيع الحالي',fmt(p.price)],['سعر العرض الحالي',p.isOffer?fmt(p.offerPrice):'لا يوجد عرض'],['تكلفة إعادة الشراء للوحدة',fmt(p.lastPurchaseUnitCost??p.replacementCost??p.averageCost??p.totalCost)],['متوسط تكلفة المخزون',fmt(p.averageCost??p.totalCost)],['قطع مفتوحة مرتجعة',Number(p.openReturnedQty||0)+' قطعة'],['السائل المفتوح المتاح للتقسيم',formatNumber(p.decantMlAvailable||0,1)+' مل'],['تاريخ آخر شراء',date],['المورد',p.lastPurchaseSupplier||'غير مسجل'],['رقم فاتورة آخر شراء',p.lastPurchaseInvoiceId||'غير مسجل'],['سعر الوحدة بالعملة الأجنبية',foreignAmount],['سعر الصرف وقت الشراء',exchangeRate],['آخر تحديث لسعر البيع',p.priceUpdatedAt?new Date(p.priceUpdatedAt).toLocaleString('ar-EG'):'غير مسجل'],['سبب استثناء تسعيري سابق',p.replacementPricingOverrideReason||'لا يوجد']];
       const body=document.getElementById('inventoryProductDetailsBody'); if(body)body.innerHTML=rows.map(([k,v])=>`<div class="flex items-start justify-between gap-4 border-b py-2"><span class="text-slate-500 text-xs">${escapeHTML(k)}</span><b class="text-xs text-slate-900 text-left">${escapeHTML(v)}</b></div>`).join('')+(p.priceReviewRequired?'<div class="mt-3 rounded-lg bg-amber-50 border border-amber-200 p-3 text-amber-800 text-xs font-extrabold">⚠️ هذا المنتج يحتاج مراجعة سعر البيع مقارنة بآخر تكلفة ومتوسط التكلفة.</div>':'<div class="mt-3 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-emerald-800 text-xs font-bold">✓ لا توجد علامة مراجعة سعر حالية.</div>');
       const title=document.getElementById('inventoryProductDetailsTitle');if(title)title.textContent=p.name+' — تفاصيل المخزون والتسعير';
       const printBtn=document.getElementById('inventoryProductDetailsPrint');if(printBtn)printBtn.onclick=()=>v1931PrintElement('inventoryProductDetailsContent','تفاصيل المنتج '+p.name); const applyBtn=document.getElementById('inventoryProductDetailsApplyPrice');if(applyBtn){const hasSuggestion=(state.imports||[]).some(inv=>(inv.items||[]).some(it=>String(it.productId)===String(p.id)&&Number(it.suggestedRetailPrice||0)>0));applyBtn.disabled=!hasSuggestion;applyBtn.style.opacity=hasSuggestion?'1':'.45';applyBtn.onclick=()=>applyLatestImportPrice(p.id);}
