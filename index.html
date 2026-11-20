@@ -5083,7 +5083,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       openSheet('previewModalSheet');
     }
 
-    function switchInventorySection    function switchInventorySection(section='products'){
+    function switchInventorySection(section='products'){
       const supplies=section==='supplies';
       document.getElementById('inventoryProductsPanel')?.classList.toggle('hidden',supplies);
       document.getElementById('inventorySuppliesPanel')?.classList.toggle('hidden',!supplies);
@@ -5929,7 +5929,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       openSheet('previewModalSheet');
     }
 
-    async function loadPreviewCaptureLibrary()    async function loadPreviewCaptureLibrary() {
+    async function loadPreviewCaptureLibrary() {
       if (typeof window.html2canvas === 'function') return window.html2canvas;
       if (!window.__v5Html2CanvasPromise) {
         window.__v5Html2CanvasPromise = new Promise((resolve, reject) => {
@@ -6217,7 +6217,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       try{await Promise.all(posterImages.map(img=>img.decode?img.decode():new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('تعذر تحميل صورة أحد منتجات العرض.'));})));}catch(err){console.error('VALERIAN offer poster image load failed',err);showToast('البوستر جاهز، لكن تعذر تحميل صورة منتج واحد على الأقل.');}
     }
 
-    function renderMoreReports()    function renderMoreReports() {
+    function renderMoreReports() {
       const delivered=appState.orders.filter(isMobileOrderDelivered);
       const sales=delivered.reduce((sum,order)=>sum+Math.max(0,Number(order.grandTotal||0)-Number(order.returnedValue||0)),0);
       const deposits=appState.orders.filter(order=>!order.stockDeducted&&!String(order.status||'').includes('مرتجع')&&!String(order.status||'').includes('ملغي')).reduce((sum,order)=>sum+Number(order.depositAmount||0),0);
@@ -6930,7 +6930,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
       document.getElementById('previewSheetBody').innerHTML='<article class="valerian-share-card" dir="rtl"><header class="valerian-share-head"><img class="valerian-share-logo" src="'+VALERIAN_CARD_EMBLEM+'" alt="VALERIAN"><div class="valerian-share-brand">VALERIAN</div><div class="valerian-share-tag">THE ART OF FRAGRANCE</div><div class="valerian-share-headline">BUSINESS PERFORMANCE</div></header><div class="valerian-share-content"><div class="valerian-share-intro"><div><div class="valerian-share-kicker">تقرير تشغيلي</div><div class="valerian-share-title">ملخص أداء النشاط</div></div><span class="valerian-share-status">'+new Date().toLocaleDateString('ar-EG')+'</span></div><div class="valerian-share-metrics"><div class="valerian-share-stat"><div class="valerian-share-stat-label">المبيعات المسلّمة</div><div class="valerian-share-stat-value">'+fmtEgp(sales)+'</div></div><div class="valerian-share-stat"><div class="valerian-share-stat-label">عربون الحجوزات</div><div class="valerian-share-stat-value">'+fmtEgp(deposits)+'</div></div><div class="valerian-share-stat"><div class="valerian-share-stat-label">المصروفات</div><div class="valerian-share-stat-value">'+fmtEgp(expenses)+'</div></div><div class="valerian-share-stat"><div class="valerian-share-stat-label">تكلفة البضاعة المباعة</div><div class="valerian-share-stat-value">'+fmtEgp(cogs)+'</div></div></div><section class="valerian-share-summary"><div class="valerian-share-summary-row valerian-share-grand"><span>صافي الربح التقديري</span><strong>'+fmtEgp(net)+'</strong></div></section><p style="font-size:10px;line-height:1.8;color:#8c7958;margin-top:13px">هذا تقرير تشغيلي تقديري وفق البيانات المسجلة في محرك VALERIAN، ولا يشمل أي عمليات غير مسجلة.</p></div><footer class="valerian-share-foot">VALERIAN · THE ART OF FRAGRANCE</footer></article>';
       openSheet('previewModalSheet');
     };
-    window.saveLoyaltySettings=async function(){    window.saveLoyaltySettings=async function(){
+    window.saveLoyaltySettings=async function(){
       try{
         const r=await runEngine('updateSettings',{
           loyaltyPercentage:Number(document.getElementById('v5LoyaltyPercentage').value),
