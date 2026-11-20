@@ -5639,6 +5639,48 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       showToast(`تم خصم ${qty} وحدة وتسجيل التسوية ⚖️`);
     }
 
+    function openValerianSupplierInvoicePreview(invoiceId){
+      const id=String(invoiceId||'');
+      const imports=Array.isArray(appState.imports)?appState.imports:[];
+      const purchases=Array.isArray(appState.purchases)?appState.purchases:[];
+      const packaging=Array.isArray(appState.packagingPurchases)?appState.packagingPurchases:[];
+      const supplies=Array.isArray(appState.operatingSupplyInvoices)?appState.operatingSupplyInvoices:[];
+      const invoice=imports.find(x=>String(x.id)===id);
+      const purchase=purchases.find(x=>String(x.id)===id);
+      const bottle=packaging.find(x=>String(x.id)===id);
+      const supply=supplies.find(x=>String(x.id)===id);
+      const doc=invoice||purchase||bottle||supply;
+      if(!doc)return showToast('فاتورة الشراء غير موجودة في بيانات التطبيق.');
+      const kind=invoice?'import':purchase?'purchase':bottle?'packaging':'supply';
+      const supplier=String(doc.supplier||'—');
+      const dateValue=doc.date||Date.now();
+      const dateLabel=new Date(dateValue).toLocaleDateString('ar-EG');
+      const total=Number(invoice?doc.totalEgp:purchase?doc.totalCost:bottle?doc.totalCost:doc.totalCost)||0;
+      const paid=Math.max(0,Number(doc.paidAmount||0));
+      const remaining=Math.max(0,total-paid);
+      const esc=value=>escapeHtmlMobile(value===undefined||value===null||value===''?'—':value);
+      let title='فاتورة شراء محلي',subTitle='LOCAL PURCHASE INVOICE',lines=[];
+      if(invoice){
+        title='فاتورة استيراد';subTitle='INTERNATIONAL IMPORT INVOICE';
+        lines=(doc.items||[]).map((x,i)=>({name:x.productName||'منتج',qty:x.qty,unit:x.unitForeign,unitLabel:'سعر الوحدة الأجنبي',line:Number(x.landedCost||0),lineLabel:'التكلفة المحملة'}));
+      }else if(purchase){
+        title='فاتورة شراء محلي';subTitle='LOCAL PURCHASE INVOICE';
+        lines=[{name:doc.productName||'منتج',qty:doc.qty,unit:doc.unitCost,unitLabel:'تكلفة الوحدة',line:total,lineLabel:'إجمالي الصنف'}];
+      }else if(bottle){
+        title='فاتورة شراء زجاجات تقسيم';subTitle='PACKAGING PURCHASE INVOICE';
+        lines=[{name:'زجاجات تقسيم '+Number(doc.sizeMl||0)+' مل',qty:doc.quantity,unit:doc.unitCost,unitLabel:'تكلفة الزجاجة',line:total,lineLabel:'إجمالي الفاتورة'}];
+      }else{
+        title='فاتورة شراء مستلزمات';subTitle='OPERATING SUPPLIES PURCHASE';
+        lines=[{name:doc.supplyName||'مستلزم',qty:doc.quantity,unit:doc.unitCost,unitLabel:'تكلفة الوحدة',line:total,lineLabel:'إجمالي الفاتورة'}];
+      }
+      const rows=lines.map((x,i)=>'<article class="valerian-invoice-product"><div class="valerian-invoice-product-head"><span class="valerian-invoice-product-name">'+esc(x.name)+'</span><span class="valerian-invoice-product-index">'+(i+1)+'</span></div><div class="valerian-invoice-product-size">'+(invoice?'سعر الوحدة بالعملة الأجنبية':esc(x.unitLabel))+'</div><div class="valerian-invoice-product-stats"><div><span>الكمية</span><strong>'+esc(x.qty)+'</strong></div><div><span>'+(invoice?'سعر الوحدة':esc(x.unitLabel))+'</span><strong>'+fmtEgp(x.unit||0)+'</strong></div><div><span>'+esc(x.lineLabel)+'</span><strong>'+fmtEgp(x.line||0)+'</strong></div></div></article>').join('');
+      const extras=invoice?'<div class="valerian-share-summary-row"><span>سعر الصرف</span><strong>'+Number(doc.exchangeRate||0).toLocaleString('en-US')+'</strong></div><div class="valerian-share-summary-row"><span>الشحن والجمارك</span><strong>'+fmtEgp(Number(doc.shippingCost||0)+Number(doc.customsCost||0))+'</strong></div>':'';
+      activePreviewShareContext={kind:'supplier_invoice',id,name:supplier,total,remaining};
+      document.getElementById('previewSheetTitle').textContent=title+' — VALERIAN';
+      document.getElementById('previewSheetBody').innerHTML='<article class="valerian-share-card valerian-invoice-paper" dir="rtl"><header class="valerian-share-head"><div class="valerian-invoice-brand-center"><img class="valerian-share-logo" src="'+VALERIAN_CARD_EMBLEM+'" alt="VALERIAN"><div class="valerian-invoice-brand-words"><div class="valerian-share-brand">VALERIAN</div><div class="valerian-share-tag">THE ART OF FRAGRANCE</div></div></div><div class="valerian-share-headline">'+subTitle+'</div></header><div class="valerian-share-content"><div class="valerian-invoice-title-status"><div class="valerian-invoice-doc-heading"><span>SUPPLIER DOCUMENT</span><strong>'+title+'</strong></div><span class="valerian-share-status">'+esc(doc.paymentMethod||'سجل مشتريات')+'</span></div><div class="valerian-share-grid"><div class="valerian-share-field"><div class="valerian-share-label">رقم الفاتورة</div><div class="valerian-share-value" dir="ltr">'+esc(doc.id)+'</div></div><div class="valerian-share-field"><div class="valerian-share-label">التاريخ</div><div class="valerian-share-value">'+dateLabel+'</div></div><div class="valerian-share-field valerian-invoice-wide"><div class="valerian-share-label">اسم المورد</div><div class="valerian-share-value">'+esc(supplier)+'</div></div></div><section class="valerian-share-section"><div class="valerian-share-section-title">تفاصيل المشتريات</div><div class="valerian-share-items">'+(rows||'<div class="valerian-invoice-product">لا توجد أصناف مسجلة</div>')+'</div></section><section class="valerian-share-summary">'+extras+'<div class="valerian-share-summary-row"><span>إجمالي الفاتورة</span><strong>'+fmtEgp(total)+'</strong></div><div class="valerian-share-summary-row"><span>المدفوع</span><strong>'+fmtEgp(paid)+'</strong></div><div class="valerian-share-summary-row"><span>المتبقي للمورد</span><strong>'+fmtEgp(remaining)+'</strong></div><div class="valerian-share-summary-row valerian-share-grand"><span>إجمالي المستند</span><strong>'+fmtEgp(total)+'</strong></div></section></div><footer class="valerian-share-foot">تم إصدار هذا المستند من نظام إدارة VALERIAN<br><span dir="ltr" style="letter-spacing:2px">VALERIAN · THE ART OF FRAGRANCE</span></footer></article>';
+      openSheet('previewModalSheet');
+    }
+
     function renderImportsScreen() {
       const imports=Array.isArray(appState.imports)?appState.imports:[];
       const invoices=Array.isArray(appState.supplierInvoices)?appState.supplierInvoices:[];
@@ -5657,7 +5699,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       const sortedImports=[...imports].sort((a,b)=>importCreatedAt(b)-importCreatedAt(a)||String(b.id||'').localeCompare(String(a.id||'')));
       shipList.innerHTML=sortedImports.length?sortedImports.map(inv=>{
         const rem=Math.max(0,Number(inv.totalEgp||0)-Number(inv.paidAmount||0));
-        return '<div class="glass-card rounded-2xl p-4 space-y-2.5 text-xs"><div class="flex items-center justify-between"><strong class="text-white font-extrabold">'+safe(inv.supplier)+'</strong><span class="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-slate-300 bidi-ltr">'+safe(inv.id)+'</span></div><p class="text-[11px] text-slate-300">'+safe(inv.itemsSummary||'فاتورة استيراد')+'</p><div class="grid grid-cols-3 gap-2 pt-2 border-t border-white/[0.08] text-[10px]"><div><span class="text-slate-400 block">سعر الصرف</span><strong class="bidi-ltr">'+safe(inv.exchangeRate)+' EGP</strong></div><div><span class="text-slate-400 block">الإجمالي</span><strong class="bidi-ltr">'+fmtEgp(inv.totalEgp)+'</strong></div><div><span class="text-slate-400 block">المتبقي</span><strong class="'+(rem>0?'text-rose-300':'text-emerald-300')+' bidi-ltr">'+fmtEgp(rem)+'</strong></div></div></div>';
+        return '<div class="glass-card rounded-2xl p-4 space-y-2.5 text-xs"><div class="flex items-center justify-between"><strong class="text-white font-extrabold">'+safe(inv.supplier)+'</strong><span class="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-slate-300 bidi-ltr">'+safe(inv.id)+'</span></div><p class="text-[11px] text-slate-300">'+safe(inv.itemsSummary||'فاتورة استيراد')+'</p><div class="grid grid-cols-3 gap-2 pt-2 border-t border-white/[0.08] text-[10px]"><div><span class="text-slate-400 block">سعر الصرف</span><strong class="bidi-ltr">'+safe(inv.exchangeRate)+' EGP</strong></div><div><span class="text-slate-400 block">الإجمالي</span><strong class="bidi-ltr">'+fmtEgp(inv.totalEgp)+'</strong></div><div><span class="text-slate-400 block">المتبقي</span><strong class="'+(rem>0?'text-rose-300':'text-emerald-300')+' bidi-ltr">'+fmtEgp(rem)+'</strong></div></div><button type="button" data-invoice-id="'+safe(inv.id)+'" onclick="openValerianSupplierInvoicePreview(this.dataset.invoiceId)" class="w-full rounded-full silver-btn py-2 text-[10px] font-black">عرض فاتورة الاستيراد ⤢</button></div>';
       }).join(''):renderEmptyPlaceholder('🚢','لا توجد شحنات استيراد مسجلة','سجل فواتير الموردين الدوليين لحساب التكلفة ومتوسط سعر الوحدة تلقائياً.','+ تسجيل شحنة استيراد',"openSheet('newImportSheet')");
       const paymentByInvoice=new Map();
       payments.forEach(payment=>{const id=String(payment.invoiceId||'');if(!id)return;paymentByInvoice.set(id,(paymentByInvoice.get(id)||0)+Number(payment.amount||0));});
