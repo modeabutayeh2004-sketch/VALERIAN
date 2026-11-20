@@ -5209,7 +5209,8 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
     }
 
     function openThermalReceiptPreview(order) {
-      const reservation=order.mode==='reservation';
+      const delivered=isMobileOrderDelivered(order);
+      const reservation=order.mode==='reservation'&&!delivered;
       activePreviewShareContext={kind:'order',id:String(order.id||''),phone:String(order.phone||''),name:String(order.name||''),total:Number(order.grandTotal||0),remaining:Number(order.remainingAmount||0)};
       document.getElementById('previewSheetTitle').textContent=reservation?'إيصال حجز VALERIAN':'فاتورة مبيعات VALERIAN';
       const esc=value=>escapeHtmlMobile(value===undefined||value===null||value===''?'—':value);
