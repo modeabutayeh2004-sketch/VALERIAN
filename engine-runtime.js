@@ -256,8 +256,8 @@
       valIdb.opening=new Promise(res=>{
         try{
           if(!window.indexedDB){res(null);return;}
-          const r=indexedDB.open('valerian_assets_v1',2);
-          r.onupgradeneeded=()=>{const d=r.result;if(!d.objectStoreNames.contains('images'))d.createObjectStore('images');if(!d.objectStoreNames.contains('libs'))d.createObjectStore('libs');if(!d.objectStoreNames.contains('appstate'))d.createObjectStore('appstate');};
+          const r=indexedDB.open('valerian_assets_v1',3);
+          r.onupgradeneeded=()=>{const d=r.result;if(!d.objectStoreNames.contains('images'))d.createObjectStore('images');if(!d.objectStoreNames.contains('libs'))d.createObjectStore('libs');if(!d.objectStoreNames.contains('appstate'))d.createObjectStore('appstate');if(!d.objectStoreNames.contains('invoiceImages'))d.createObjectStore('invoiceImages');};
           r.onsuccess=()=>{valIdb.db=r.result;valIdb.failed=false;r.result.onversionchange=()=>{try{r.result.close();}catch(_){}valIdb.db=null;valIdb.opening=null;valIdb.ready=false;};res(r.result);};
           r.onerror=()=>{console.error('VALERIAN IndexedDB open error',r.error);valIdb.opening=null;valIdb.failed=true;res(null);};
           r.onblocked=()=>{console.warn('VALERIAN IndexedDB open blocked');valIdb.opening=null;valIdb.failed=true;res(null);};
@@ -2607,6 +2607,7 @@
       document.getElementById('invoiceWhatsAppBtn')?.classList.toggle('hidden',!pendingCustomerImageShare);
       document.getElementById('invoiceOpenWhatsAppBtn')?.classList.toggle('hidden',!pendingCustomerImageShare?.phone);
       document.getElementById('genericShareImageBtn')?.classList.toggle('hidden',!!pendingInvoiceShareOrder);
+      document.getElementById('invoiceSavedImageBtn')?.classList.toggle('hidden',!(pendingCustomerImageShare?.id||pendingInvoiceShareOrder?.id));
       const items=Array.isArray(order.items)?order.items:[];
       const cats=items.map(i=>i.category||state.products.find(p=>p.id===i.id)?.category||'').filter(Boolean);
       const isMale=cats.some(x=>String(x).includes('رجالي'));
@@ -2808,7 +2809,17 @@ function previewPeriodicReportPrint() {
       try {
         showToast('جارٍ تجهيز صورة المستند...');
         const blob=await renderPreviewBlob();
-        const id=(pendingCustomerImageShare?.id||pendingInvoiceShareOrder?.id||'document').replace(/[^a-z0-9_-]/gi,'_');
+        const linkedOrder=pendingCustomerImageShare||pendingInvoiceShareOrder;
+        let archived=false;
+        if(linkedOrder?.id){
+          const archiveKey=String(linkedOrder.type||'document')+':'+String(linkedOrder.id);
+          const db=await valIdbDb();
+          if(db&&db.objectStoreNames.contains('invoiceImages')){
+            await valIdbPutMany('invoiceImages',{[archiveKey]:{blob,contentType:blob.type||'image/png',savedAt:Date.now(),fileName:'VALERIAN-'+String(linkedOrder.id).replace(/[^a-z0-9_-]/gi,'_')+'.'+(blob.type==='image/jpeg'?'jpg':'png')}});
+            archived=true;
+          }
+        }
+        const id=(linkedOrder?.id||'document').replace(/[^a-z0-9_-]/gi,'_');
         const ext=blob.type==='image/jpeg'?'jpg':'png';
         const fileName=`VALERIAN-${id}.${ext}`;
         if(!blob||!blob.size)throw new Error('ملف الصورة فارغ');
@@ -2822,12 +2833,29 @@ function previewPeriodicReportPrint() {
           document.body.appendChild(a);a.click();a.remove();
           setTimeout(()=>URL.revokeObjectURL(url),120000);
         }
-        showToast('تم إرسال الصورة إلى تنزيلات الجهاز. إذا لم يبدأ التنزيل، افتح مشاركة الصورة واختر حفظ.','success');
+        showToast(archived?'تم حفظ صورة المستند في سجلّه على هذا الجهاز وتنزيل نسخة HD.':'تم تنزيل نسخة HD؛ تعذّر أرشفة الصورة داخل سجل المستند على هذا الجهاز.','success');
       } catch(err) {
         console.error('VALERIAN image download failed',err);
         showToast('تعذر تنزيل الصورة: '+(err?.message||err?.name||'خطأ غير معروف'),'error');
       }
-    }    async function shareInvoiceToCustomerWhatsApp() {
+    }
+    async function openSavedInvoiceImage(){
+      try{
+        const order=pendingCustomerImageShare||pendingInvoiceShareOrder;
+        if(!order?.id)throw new Error('لا يوجد مستند محدد');
+        const key=String(order.type||'document')+':'+String(order.id);
+        const db=await valIdbDb();
+        if(!db||!db.objectStoreNames.contains('invoiceImages'))throw new Error('أرشيف صور الفواتير غير متاح على هذا الجهاز');
+        const saved=await valIdbGet('invoiceImages',key);
+        if(!saved?.blob?.size)throw new Error('لا توجد صورة محفوظة لهذا المستند على هذا الجهاز بعد');
+        const url=URL.createObjectURL(saved.blob);
+        const opened=window.open(url,'_blank');
+        if(!opened){const a=document.createElement('a');a.href=url;a.download=saved.fileName||('VALERIAN-'+String(order.id)+'.png');a.click();}
+        setTimeout(()=>URL.revokeObjectURL(url),120000);
+        showToast('تم فتح صورة المستند المحفوظة من سجل VALERIAN.','success');
+      }catch(err){showToast('تعذر استرجاع صورة المستند: '+(err?.message||err),'warning');}
+    }
+    async function shareInvoiceToCustomerWhatsApp() {
       try {
         const order=pendingCustomerImageShare||pendingInvoiceShareOrder;
         if(!order) throw new Error('هذا المستند غير مرتبط بعميل');
