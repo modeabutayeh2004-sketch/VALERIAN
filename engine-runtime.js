@@ -2812,56 +2812,56 @@ function previewPeriodicReportPrint() {
         function v1955DownloadBlob(blob,fileName) {
       const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=fileName;a.style.display='none';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
     }
+    async function archivePrintableBlob(blob,linkedOrder){
+      const result={archived:false,cloudArchived:false};
+      if(!blob||!blob.size||!linkedOrder?.id)return result;
+      const archiveKey=String(linkedOrder.type||'document')+':'+String(linkedOrder.id);
+      const safeArchiveId=String(linkedOrder.id).replace(/[^a-z0-9_-]/gi,'_');
+      const fileName='VALERIAN-'+safeArchiveId+'.'+(blob.type==='image/jpeg'?'jpg':'png');
+      try{
+        const db=await valIdbDb();
+        if(db&&db.objectStoreNames.contains('invoiceImages')){
+          await valIdbPutMany('invoiceImages',{[archiveKey]:{blob,contentType:blob.type||'image/png',savedAt:Date.now(),fileName}});
+          result.archived=true;
+        }
+      }catch(localErr){console.warn('VALERIAN local printable archive failed',localErr);}
+      const documentType=String(linkedOrder.type||'');
+      const isOrderDocument=['final_invoice','reservation_invoice','shipping_waybill'].includes(documentType);
+      const linkedRecord=isOrderDocument?(state.orders||[]).find(x=>String(x.id)===String(linkedOrder.id)):null;
+      const isCustomerPrint=['customer_profile','loyalty_card'].includes(documentType);
+      const linkedCustomer=isCustomerPrint?(state.customers||[]).find(x=>String(x.phone||'')===String(linkedOrder.phone||'')):null;
+      const storageOwner=linkedRecord||linkedCustomer;
+      const storagePathKey=linkedRecord?'invoiceImageStoragePath':(documentType==='loyalty_card'?'loyaltyCardImageStoragePath':'profileImageStoragePath');
+      if(storageOwner&&cloudClient&&cloudUser&&cloudReady&&navigator.onLine){
+        try{
+          const hash=await valImageSha256(blob);
+          const ext=valImageExtension(blob.type);
+          const path=cloudUser.id+'/print-'+safeArchiveId+'-'+hash+'.'+ext;
+          if(String(storageOwner[storagePathKey]||'')===path){
+            result.cloudArchived=true;
+          }else{
+            const {error}=await cloudClient.storage.from(VAL_IMAGE_BUCKET).upload(path,blob,{upsert:true,contentType:blob.type||'image/png',cacheControl:'31536000'});
+            if(error)throw new Error(cloudErrorMessage(error));
+            storageOwner[storagePathKey]=path;
+            storageOwner[storagePathKey+'SavedAt']=Date.now();
+            if(!saveState())throw new Error('تعذر حفظ رابط الصورة داخل سجل المستند');
+            await valDurableWritePromise;
+            result.cloudArchived=true;
+          }
+        }catch(cloudErr){console.warn('VALERIAN printable document cloud archive failed',cloudErr);}
+      }
+      return result;
+    }
     async function savePreviewImageDirect() {
       try {
         showToast('جارٍ تجهيز صورة المستند...');
         const blob=await renderPreviewBlob();
         const linkedOrder=pendingDocumentArchiveOrder||pendingCustomerImageShare||pendingInvoiceShareOrder;
-        let archived=false;
-        let cloudArchived=false;
-        if(linkedOrder?.id){
-          const archiveKey=String(linkedOrder.type||'document')+':'+String(linkedOrder.id);
-          const db=await valIdbDb();
-          const safeArchiveId=String(linkedOrder.id).replace(/[^a-z0-9_-]/gi,'_');
-          const fileName='VALERIAN-'+safeArchiveId+'.'+(blob.type==='image/jpeg'?'jpg':'png');
-          if(db&&db.objectStoreNames.contains('invoiceImages')){
-            await valIdbPutMany('invoiceImages',{[archiveKey]:{blob,contentType:blob.type||'image/png',savedAt:Date.now(),fileName}});
-            archived=true;
-          }
-          const documentType=String(linkedOrder.type||'');
-          const isOrderDocument=['final_invoice','reservation_invoice','shipping_waybill'].includes(documentType);
-          const linkedRecord=isOrderDocument?(state.orders||[]).find(x=>String(x.id)===String(linkedOrder.id)):null;
-          const isCustomerPrint=['customer_profile','loyalty_card'].includes(documentType);
-          const linkedCustomer=isCustomerPrint?(state.customers||[]).find(x=>String(x.phone||'')===String(linkedOrder.phone||'')):null;
-          const storageOwner=linkedRecord||linkedCustomer;
-          const storagePathKey=linkedRecord?'invoiceImageStoragePath':(documentType==='loyalty_card'?'loyaltyCardImageStoragePath':'profileImageStoragePath');
-          if(storageOwner&&cloudClient&&cloudUser&&cloudReady&&navigator.onLine){
-            try{
-              const hash=await valImageSha256(blob);
-              const ext=valImageExtension(blob.type);
-              const path=cloudUser.id+'/print-'+safeArchiveId+'-'+hash+'.'+ext;
-              if(String(storageOwner[storagePathKey]||'')===path){
-                // The exact content hash is already linked to this record; never upload it again.
-                cloudArchived=true;
-              }else{
-                const {error}=await cloudClient.storage.from(VAL_IMAGE_BUCKET).upload(path,blob,{upsert:true,contentType:blob.type||'image/png',cacheControl:'31536000'});
-                if(error)throw new Error(cloudErrorMessage(error));
-                storageOwner[storagePathKey]=path;
-                storageOwner[storagePathKey+'SavedAt']=Date.now();
-                if(!saveState())throw new Error('تعذر حفظ رابط الصورة داخل سجل المستند');
-                await valDurableWritePromise;
-                cloudArchived=true;
-              }
-            }catch(cloudErr){
-              console.warn('VALERIAN printable document cloud archive failed',cloudErr);
-            }
-          }
-        }
+        const {archived,cloudArchived}=await archivePrintableBlob(blob,linkedOrder);
         const id=(linkedOrder?.id||'document').replace(/[^a-z0-9_-]/gi,'_');
         const ext=blob.type==='image/jpeg'?'jpg':'png';
         const fileName=`VALERIAN-${id}.${ext}`;
         if(!blob||!blob.size)throw new Error('ملف الصورة فارغ');
-        // This button performs a real browser download. Sharing is a separate action.
         if(window.navigator&&typeof navigator.msSaveOrOpenBlob==='function'){
           navigator.msSaveOrOpenBlob(blob,fileName);
         }else{
@@ -2871,13 +2871,13 @@ function previewPeriodicReportPrint() {
           document.body.appendChild(a);a.click();a.remove();
           setTimeout(()=>URL.revokeObjectURL(url),120000);
         }
-        showToast(cloudArchived?'تم رفع صورة الفاتورة للسحابة وربطها بسجلّها؛ جاري مزامنة رابطها مع الأجهزة الأخرى.':(archived?'تم حفظ الصورة في سجلّ المستند على هذا الجهاز وتنزيل نسخة HD. المزامنة السحابية للصورة لم تكتمل بعد.':'تم تنزيل نسخة HD؛ تعذّرت أرشفة الصورة داخل سجل المستند.'),'success');
+        showToast(cloudArchived?'تم حفظ صورة المستند وربطها بسجله في السحابة، مع تنزيل نسخة HD.':(archived?'تم حفظ الصورة في سجلّ المستند على هذا الجهاز وتنزيل نسخة HD. المزامنة السحابية للصورة لم تكتمل بعد.':'تم تنزيل نسخة HD؛ تعذّرت أرشفة الصورة داخل سجل المستند.'),archived||cloudArchived?'success':'warning');
       } catch(err) {
         console.error('VALERIAN image download failed',err);
         showToast('تعذر تنزيل الصورة: '+(err?.message||err?.name||'خطأ غير معروف'),'error');
       }
     }
-    async function openSavedInvoiceImage(){
+        async function openSavedInvoiceImage(){
       try{
         const order=pendingDocumentArchiveOrder||pendingCustomerImageShare||pendingInvoiceShareOrder;
         if(!order?.id)throw new Error('لا يوجد مستند محدد');
@@ -2913,6 +2913,8 @@ function previewPeriodicReportPrint() {
         if(!digits || digits.length<10) throw new Error('رقم هاتف العميل غير متاح أو غير صحيح');
         showToast('جارٍ تجهيز الصورة وإظهار خيارات المشاركة...');
         const blob=await renderPreviewBlob();
+        const archiveTarget=pendingDocumentArchiveOrder||pendingCustomerImageShare||pendingInvoiceShareOrder;
+        const archiveResult=await archivePrintableBlob(blob,archiveTarget);
         const safeId=(order.id||'loyalty-card').replace(/[^a-z0-9_-]/gi,'_');
         const imageExt=blob.type==='image/jpeg'?'jpg':'png';
         const file=new File([blob],`VALERIAN-${safeId}.${imageExt}`,{type:blob.type||'image/png'});
@@ -2926,7 +2928,7 @@ function previewPeriodicReportPrint() {
         // receives the attachment when the user chooses WhatsApp and the customer chat.
         if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
           await navigator.share({files:[file],title:'VALERIAN',text:message});
-          showToast('تم تمرير صورة الفاتورة للمشاركة. اختر واتساب ثم محادثة العميل لإرسال المرفق.','success');
+          showToast('تم تجهيز المرفق للمشاركة. '+(archiveResult.cloudArchived?'تم حفظ نسخة مرتبطة بسجل العميل/الفاتورة في السحابة.':(archiveResult.archived?'تم حفظ نسخة محلية مرتبطة بالمستند.':'تعذر أرشفة النسخة تلقائياً.'))+' اختر واتساب ثم محادثة العميل لإرسال المرفق.',archiveResult.archived||archiveResult.cloudArchived?'success':'warning');
         } else {
           v1955DownloadBlob(blob,file.name);
           const waUrl=`https://wa.me/${digits}?text=${encodeURIComponent(message+'\nتم تنزيل صورة المستند على جهازك؛ أرفقها من التنزيلات قبل الإرسال.')}`;
