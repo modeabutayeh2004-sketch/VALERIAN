@@ -3079,12 +3079,18 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
   <!-- Decant Production Modal -->
   <div id="decantProductionModal" class="modal fixed inset-0 z-50 hidden bg-slate-900/70 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-xl">
-      <div class="flex items-center justify-between border-b pb-3"><h3 class="font-extrabold">🧪 تجهيز عبوات التقسيم من الزجاجة الأصلية</h3><button onclick="closeModal('decantProductionModal')">✕</button></div>
+      <div class="flex items-center justify-between border-b pb-3"><h3 class="font-extrabold">🧪 تجهيز عبوات التقسيم من أرصدة السائل</h3><button onclick="closeModal('decantProductionModal')">✕</button></div>
       <form onsubmit="produceDecants(event)" class="space-y-3 text-xs">
         <div><label class="block font-bold mb-1">منتج التقسيم الجاهز *</label><select id="decantProductionProduct" required onchange="updateDecantProductionInfo()" class="w-full px-3 py-2 border rounded-xl"></select></div>
+        <div><label class="block font-bold mb-1">مصدر السائل</label><select id="decantProductionSource" onchange="updateDecantProductionInfo()" class="w-full px-3 py-2 border rounded-xl"><option value="returned">المرتجعات المفتوحة فقط</option><option value="priority">استهلاك بالأولوية: المرتجع ثم السائل المفتوح</option></select></div>
         <div class="grid grid-cols-2 gap-2"><div><label class="block font-bold mb-1">عدد العبوات المراد تجهيزها *</label><input id="decantProductionQty" type="number" min="1" step="1" value="5" required oninput="updateDecantProductionInfo()" class="w-full px-3 py-2 border rounded-xl font-bold" /></div><div class="bg-slate-50 rounded-xl p-2"><div class="text-slate-500">استهلاك السائل</div><div id="decantProductionMl" class="font-extrabold text-brand-700">0 مل</div></div></div>
         <div id="decantProductionInfo" class="rounded-xl bg-amber-50 border border-amber-200 p-3 text-[11px] leading-6"></div>
-        <div class="flex justify-end gap-2 pt-2 border-t"><button type="submit" class="px-5 py-2 bg-emerald-600 text-white rounded-xl font-bold">تأكيد التجهيز وخصم الخامات</button></div>
+        <div class="rounded-xl border border-sky-200 bg-sky-50 p-3 space-y-2">
+          <div class="font-extrabold text-sky-900">فتح زجاجة أصلية — عملية مستقلة</div>
+          <p class="text-[11px] leading-5 text-slate-600">يفتح زجاجة واحدة ويضيف حجمها إلى رصيد السائل المفتوح فقط. لا يجهز تقسيمات ولا يستهلك عبوات فارغة.</p>
+          <button type="button" onclick="openOriginalBottleForDecant()" class="w-full px-4 py-2 rounded-lg bg-sky-700 text-white font-bold">فتح زجاجة أصلية وإضافة السائل للرصيد</button>
+        </div>
+        <div class="flex justify-end gap-2 pt-2 border-t"><button type="submit" class="px-5 py-2 bg-emerald-600 text-white rounded-xl font-bold">تأكيد التجهيز من المصدر المحدد</button></div>
       </form>
     </div>
   </div>
