@@ -2796,15 +2796,9 @@ function previewPeriodicReportPrint() {
           cloned.style.position='relative';
           cloned.style.inset='auto';
           if(isCard){
-            // html2canvas 1.4.1 can fail on modern color-mix() CSS values.
-            cloned.style.setProperty('background','linear-gradient(135deg,#123f43 0%,#075653 55%,#063c3b 100%)','important');
-            cloned.style.setProperty('background-image','linear-gradient(135deg,#123f43 0%,#075653 55%,#063c3b 100%)','important');
-            cloned.style.setProperty('border-color','#aeb9c8','important');
-            cloned.style.setProperty('box-shadow','none','important');
+            // Preserve the designed VALERIAN card palette and inline layout in the exported image.
+            cloned.style.setProperty('border-color','#b99a63','important');
             cloned.querySelectorAll('img').forEach(img=>img.style.setProperty('filter','none','important'));
-            const safeStyle=clonedDoc.createElement('style');
-            safeStyle.textContent='.v1960-loyalty-card:before{display:none!important}.v1960-loyalty-card .v1960-points-panel{background:#e8edf3!important;color:#142033!important}';
-            clonedDoc.head.appendChild(safeStyle);
           }
         }
       });
