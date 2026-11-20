@@ -5164,6 +5164,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
                   <span class="text-slate-400 block">${isDecantCategory(p) ? 'حجم العبوة' : 'مرتجع مفتوح'}</span>
                   <strong class="font-black text-sky-300 bidi-ltr">${isDecantCategory(p) ? (p.size || (Number(p.decantSize||0)+' مل')) : (Number(p.openReturnedQty||0)) + ' قطعة'}</strong>
                   ${!isDecantCategory(p) ? `<span class="block text-[8px] text-slate-400 bidi-ltr">${Number(p.decantMlAvailable||0)} ml متاح للتقسيم</span>` : ''}
+                  ${!isDecantCategory(p) && Array.isArray(p.openReturnedBottles) && p.openReturnedBottles.some(b=>Number(b.remainingMl||0)>0) ? `<div class="mt-2 text-right space-y-1">${p.openReturnedBottles.filter(b=>Number(b.remainingMl||0)>0).map((b,n)=>`<div class="flex items-center justify-between gap-2 text-[8px] text-slate-300"><span>عبوة مفتوحة ${n+1}</span><b class="bidi-ltr text-sky-200">${Number(b.remainingMl||0).toFixed(1)} مل متبقي</b></div>`).join('')}</div>` : ''}
                 </div>
               </div>
               <div class="grid grid-cols-3 gap-1.5">
