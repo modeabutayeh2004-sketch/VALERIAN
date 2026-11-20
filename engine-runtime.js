@@ -2834,22 +2834,27 @@ function previewPeriodicReportPrint() {
             await valIdbPutMany('invoiceImages',{[archiveKey]:{blob,contentType:blob.type||'image/png',savedAt:Date.now(),fileName}});
             archived=true;
           }
-          const isOrderDocument=['final_invoice','reservation_invoice','shipping_waybill'].includes(String(linkedOrder.type||''));
+          const documentType=String(linkedOrder.type||'');
+          const isOrderDocument=['final_invoice','reservation_invoice','shipping_waybill'].includes(documentType);
           const linkedRecord=isOrderDocument?(state.orders||[]).find(x=>String(x.id)===String(linkedOrder.id)):null;
-          if(linkedRecord&&cloudClient&&cloudUser&&cloudReady&&navigator.onLine){
+          const isCustomerPrint=['customer_profile','loyalty_card'].includes(documentType);
+          const linkedCustomer=isCustomerPrint?(state.customers||[]).find(x=>String(x.phone||'')===String(linkedOrder.phone||'')):null;
+          const storageOwner=linkedRecord||linkedCustomer;
+          const storagePathKey=linkedRecord?'invoiceImageStoragePath':(documentType==='loyalty_card'?'loyaltyCardImageStoragePath':'profileImageStoragePath');
+          if(storageOwner&&cloudClient&&cloudUser&&cloudReady&&navigator.onLine){
             try{
               const hash=await valImageSha256(blob);
               const ext=valImageExtension(blob.type);
-              const path=cloudUser.id+'/invoice-'+safeArchiveId+'-'+hash+'.'+ext;
+              const path=cloudUser.id+'/print-'+safeArchiveId+'-'+hash+'.'+ext;
               const {error}=await cloudClient.storage.from(VAL_IMAGE_BUCKET).upload(path,blob,{upsert:true,contentType:blob.type||'image/png',cacheControl:'31536000'});
               if(error)throw new Error(cloudErrorMessage(error));
-              linkedRecord.invoiceImageStoragePath=path;
-              linkedRecord.invoiceImageSavedAt=Date.now();
-              if(!saveState())throw new Error('تعذر حفظ رابط الصورة داخل سجل الفاتورة');
+              storageOwner[storagePathKey]=path;
+              storageOwner[storagePathKey+'SavedAt']=Date.now();
+              if(!saveState())throw new Error('تعذر حفظ رابط الصورة داخل سجل المستند');
               await valDurableWritePromise;
               cloudArchived=true;
             }catch(cloudErr){
-              console.warn('VALERIAN invoice cloud archive failed',cloudErr);
+              console.warn('VALERIAN printable document cloud archive failed',cloudErr);
             }
           }
         }
@@ -2882,9 +2887,12 @@ function previewPeriodicReportPrint() {
         if(!db||!db.objectStoreNames.contains('invoiceImages'))throw new Error('أرشيف صور الفواتير غير متاح على هذا الجهاز');
         let saved=await valIdbGet('invoiceImages',key);
         if(!saved?.blob?.size){
-          const isOrderDocument=['final_invoice','reservation_invoice','shipping_waybill'].includes(String(order.type||''));
+          const documentType=String(order.type||'');
+          const isOrderDocument=['final_invoice','reservation_invoice','shipping_waybill'].includes(documentType);
           const linkedRecord=isOrderDocument?(state.orders||[]).find(x=>String(x.id)===String(order.id)):null;
-          const path=String(linkedRecord?.invoiceImageStoragePath||'');
+          const linkedCustomer=['customer_profile','loyalty_card'].includes(documentType)?(state.customers||[]).find(x=>String(x.phone||'')===String(order.phone||'')):null;
+          const storagePathKey=linkedRecord?'invoiceImageStoragePath':(documentType==='loyalty_card'?'loyaltyCardImageStoragePath':'profileImageStoragePath');
+          const path=String((linkedRecord||linkedCustomer)?.[storagePathKey]||'');
           if(!path||!cloudClient||!cloudUser||!navigator.onLine)throw new Error('لا توجد صورة محفوظة محلياً، ولا توجد نسخة سحابية متاحة لهذا المستند حالياً');
           const {data,error}=await cloudClient.storage.from(VAL_IMAGE_BUCKET).download(path);
           if(error||!data)throw new Error('تعذر تنزيل الصورة المحفوظة من السحابة: '+(error?cloudErrorMessage(error):'لم يتم العثور على الملف'));
