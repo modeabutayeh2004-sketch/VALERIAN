@@ -2894,7 +2894,8 @@ function previewPeriodicReportPrint() {
         showToast('جارٍ تجهيز الصورة وإظهار خيارات المشاركة...');
         const blob=await renderPreviewBlob();
         const safeId=(order.id||'loyalty-card').replace(/[^a-z0-9_-]/gi,'_');
-        const file=new File([blob],`VALERIAN-${safeId}.png`,{type:'image/png'});
+        const imageExt=blob.type==='image/jpeg'?'jpg':'png';
+        const file=new File([blob],`VALERIAN-${safeId}.${imageExt}`,{type:blob.type||'image/png'});
         const template=String(state.settings.invoiceWhatsAppMsg||'مرحباً {customer}، مرفق فاتورتكم رقم {order} من ڤاليريان. شكراً لثقتكم بنا.');
         const message=(order.type==='loyalty_card'
           ? `مرحباً ${String(order.name||'عميلنا')}، مرفق كارت نقاط الولاء الخاص بكم من ڤاليريان. شكراً لثقتكم بنا.`
