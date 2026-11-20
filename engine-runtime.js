@@ -3942,7 +3942,7 @@ function previewPeriodicReportPrint() {
         .print-table-shell th:first-child,.print-table-shell td:first-child,.customer-print-sheet th:first-child,.customer-print-sheet td:first-child{border-right:1px solid #edf0f5}
         .print-table-shell thead th:first-child,.customer-print-sheet thead th:first-child{border-top-right-radius:8px}
         .print-table-shell thead th:last-child,.customer-print-sheet thead th:last-child{border-top-left-radius:8px}
-        .print-table-shell tbody tr:nth-child(even),.customer-print-sheet tbody tr:nth-child(even){background:#fafbfe}
+        .print-table-shell tbody tr:nth-child(even),.customer-print-sheet tbody tr:nth-child(even){background:#faf8f3}
         .print-table-shell tbody tr:hover{background:inherit}
         .print-table-shell button,.print-table-shell input,.print-table-shell select,.print-table-shell .v1931-print-toolbar{display:none!important}
         .print-table-shell .overflow-x-auto,.print-table-shell [class*="overflow-x"]{overflow:visible!important}
@@ -3964,10 +3964,10 @@ function previewPeriodicReportPrint() {
         .customer-print-head .muted{color:#d8c7a4}
         .customer-print-sheet th{background:#f2eee5;color:#6e5835;font-weight:900}
         .customer-print-sheet tbody tr:nth-child(even){background:#faf8f3}
-        .customer-print-head .brand-title{font-family:'Playfair Display','Cairo',serif;font-size:25px;font-weight:900;letter-spacing:3px;color:#17384b}
+        .customer-print-head .brand-title{font-family:'Playfair Display','Cairo',serif;font-size:25px;font-weight:900;letter-spacing:3px;color:#e7d2a7}
         .customer-print-head h2{font-size:19px;font-weight:900;margin:5px 0}.customer-print-name{font-size:17px;font-weight:900;margin:8px 0}
-        .muted{font-size:10px;color:#64748b}.customer-print-sheet h3{font-size:14px;font-weight:900;color:#4c1d95;margin:18px 0 8px}
-        .customer-print-sheet tbody th{width:27%;background:#f8fafc;font-weight:800}
+        .muted{font-size:10px;color:#64748b}.customer-print-sheet h3{font-size:14px;font-weight:900;color:#17384b;border-right:3px solid #b7965b;padding:3px 8px;margin:18px 0 8px}
+        .customer-print-sheet tbody th{width:27%;background:#f2eee5;color:#6e5835;font-weight:900}
         .customer-print-foot{text-align:center;color:#64748b;border-top:1px solid #e2e8f0;padding-top:10px;font-size:10px;margin-top:18px}
         .print-footer{margin-top:18px;padding-top:10px;border-top:1px solid #e2e8f0;text-align:center;color:#94a3b8;font-size:9px}
         @page{size:A4 portrait;margin:10mm}
