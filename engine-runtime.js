@@ -2503,20 +2503,38 @@
       for(const target of targets){
         const url=target.getAttribute('data-valerian-qr')||'';
         if(typeof window.QRCode!=='function'){
-          target.innerHTML=`<span style="font-size:7px;line-height:1.2;overflow-wrap:anywhere">${escapeHTML(url)}</span>`;
-          loadOptionalLibrary('QRCode').then(ok=>{if(ok && target.isConnected) renderInvoiceQrCodes(root);});
+          target.textContent='جارٍ تجهيز رمز QR…';
           continue;
         }
         try{
           const temp=document.createElement('div');
-          new window.QRCode(temp,{text:url,width:120,height:120,colorDark:'#111827',colorLight:'#ffffff',correctLevel:window.QRCode.CorrectLevel.M});
+          new window.QRCode(temp,{text:url,width:240,height:240,colorDark:'#111827',colorLight:'#ffffff',correctLevel:window.QRCode.CorrectLevel.H});
           const canvas=temp.querySelector('canvas');
           const img=temp.querySelector('img');
           let data='';if(canvas)data=canvas.toDataURL('image/png');else if(img?.src)data=img.src;
-          if(data){target.innerHTML=`<img data-valerian-qr-image="1" alt="QR ${escapeHTML(url)}" src="${data}" style="display:block!important;width:58px!important;height:58px!important;max-width:58px!important;max-height:58px!important;object-fit:contain!important">`;}
-          else target.textContent='QR';
-        }catch(e){target.textContent='QR';}
+          if(data){target.innerHTML=`<img data-valerian-qr-image="1" alt="QR ${escapeHTML(url)}" src="${data}" style="display:block!important;width:64px!important;height:64px!important;max-width:64px!important;max-height:64px!important;object-fit:contain!important">`;}
+          else target.textContent='تعذر إنشاء QR';
+        }catch(e){target.textContent='تعذر إنشاء QR';}
       }
+    }
+    async function ensureInvoiceQrCodes(root){
+      if(!root)return true;
+      const targets=[...root.querySelectorAll('[data-valerian-qr]')];
+      if(!targets.length)return true;
+      if(typeof window.QRCode!=='function'&&!(await loadOptionalLibrary('QRCode')))throw new Error('مكتبة إنشاء QR غير متاحة؛ اتصل بالإنترنت ثم أعد المحاولة قبل الطباعة أو حفظ الصورة.');
+      if(typeof window.QRCode!=='function')throw new Error('تعذر تحميل مولّد QR.');
+      renderInvoiceQrCodes(root);
+      const images=targets.map(target=>target.querySelector('img[data-valerian-qr-image]'));
+      if(images.some(img=>!img))throw new Error('تعذر توليد أحد رموز QR؛ لم نكمل تصدير الفاتورة حتى لا يظهر رابط غير قابل للمسح.');
+      await Promise.all(images.map(async img=>{
+        if(img.complete&&img.naturalWidth>0){if(img.decode)try{await img.decode();}catch(_){}return;}
+        await new Promise((resolve,reject)=>{
+          const timer=setTimeout(()=>reject(new Error('انتهت مهلة تحميل صورة QR.')),10000);
+          img.addEventListener('load',()=>{clearTimeout(timer);resolve();},{once:true});
+          img.addEventListener('error',()=>{clearTimeout(timer);reject(new Error('تعذر تحميل صورة QR.'));},{once:true});
+        });
+      }));
+      return true;
     }
 
     // V19.46: embedded transparent VALERIAN emblem for offline-safe invoice branding.
@@ -2621,7 +2639,7 @@
       const sizeControl=document.getElementById('printPaperSize');
       if(sizeControl)sizeControl.value='a4';
       document.getElementById('printPreviewBody').innerHTML=v1946EnsureBrandHeader(pendingPrintHtml);
-      renderInvoiceQrCodes(document.getElementById('printPreviewBody'));
+      ensureInvoiceQrCodes(document.getElementById('printPreviewBody')).catch(err=>showToast(err.message||'تعذر تجهيز رموز QR في المعاينة.','error'));
       v1953SyncPrintPreviewSize();
       openModal('printPreviewModal');
     }
@@ -2675,7 +2693,7 @@ function previewPeriodicReportPrint() {
         const previewRoot=document.getElementById('printPreviewBody')?.firstElementChild;
         if(!previewRoot) throw new Error('لا توجد معاينة جاهزة للطباعة');
         area.replaceChildren(previewRoot.cloneNode(true));
-        renderInvoiceQrCodes(area);
+        await ensureInvoiceQrCodes(area);
         const isOffers=!!area.querySelector('.v1940-offers-print');
         const width=v1953PaperWidth(size);
         area.toggleAttribute('data-v1960-a4',size==='a4');
@@ -2719,6 +2737,7 @@ function previewPeriodicReportPrint() {
       if(pendingPreviewImageBlob) return pendingPreviewImageBlob;
       const source=document.getElementById('printPreviewBody')?.firstElementChild;
       if(!source) throw new Error('لا يوجد مستند للتصدير');
+      await ensureInvoiceQrCodes(source);
       if(typeof window.html2canvas!=='function' && !(await loadOptionalLibrary('html2canvas'))) throw new Error('مكتبة تحويل المعاينة إلى صورة غير متاحة. اتصل بالإنترنت مرة واحدة ثم أعد المحاولة.');
       if(document.fonts?.ready){try{await document.fonts.ready;}catch(e){}}
       const imgs=[...source.querySelectorAll('img')];
@@ -2810,9 +2829,7 @@ function previewPeriodicReportPrint() {
       try {
         const order=pendingCustomerImageShare||pendingInvoiceShareOrder;
         if(!order) throw new Error('هذا المستند غير مرتبط بعميل');
-        let digits=String(order.phone||'').replace(/\D/g,'');
-        if(digits.startsWith('00')) digits=digits.slice(2);
-        if(digits.length===11 && digits.startsWith('0')) digits='20'+digits.slice(1);
+        const digits=v1958NormalizeWhatsAppPhone(order.phone);
         if(!digits || digits.length<10) throw new Error('رقم هاتف العميل غير متاح أو غير صحيح');
         showToast('جارٍ تجهيز الصورة وإظهار خيارات المشاركة...');
         const blob=await renderPreviewBlob();
