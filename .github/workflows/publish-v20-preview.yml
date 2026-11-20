@@ -1,4 +1,5 @@
 name: Publish VALERIAN V20 and V21 mobile previews
+# Preview deployment only: this workflow publishes browser previews, never the Android APK.
 on:
   push:
     branches:
