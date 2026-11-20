@@ -6198,7 +6198,10 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       const rect = source.getBoundingClientRect();
       // Match the live preview's rendered width exactly. Using scrollWidth here
       // widened the export clone and changed line wrapping/vertical positions.
-      const width = format==='social' ? 900 : Math.ceil(rect.width || source.offsetWidth || source.scrollWidth);
+      const isInvoiceCapture = source.matches('.valerian-invoice-paper');
+      // Customer invoices use the supplied 940px document layout, not the narrow
+      // mobile preview viewport. Other share cards keep their native rendered width.
+      const width = format==='social' ? 900 : (isInvoiceCapture ? 940 : Math.ceil(rect.width || source.offsetWidth || source.scrollWidth));
       const captureNode = source.cloneNode(true);
       // html2canvas can paint background-clip:text as a rectangular gradient.
       // Keep the live preview untouched; normalize gradient text only in the export clone.
@@ -6228,6 +6231,9 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       captureNode.style.margin = '0'; captureNode.style.transform = 'none';
       captureNode.style.boxSizing = 'border-box'; captureNode.style.overflow = 'visible';
       const captureHost = document.createElement('div');
+      // Recreate the invoice's stylesheet scope so #previewSheetBody rules apply
+      // to the saved image exactly as they do to the visible invoice preview.
+      if (isInvoiceCapture) captureHost.id = 'previewSheetBody';
       // Keep the clone at the preview's real viewport coordinates. foreignObject
       // rendering clips content placed far outside the viewport; opacity must stay
       // fully opaque because SVG foreignObject inherits ancestor opacity.
