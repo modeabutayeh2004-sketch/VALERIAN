@@ -5166,20 +5166,11 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
                 </div>
               </div>
               <div class="grid grid-cols-3 gap-2 pt-2 border-t border-white/[0.08] text-center text-[10px]">
-                <div class="bg-[#02080c]/45 rounded-xl py-1.5">
-                  <span class="text-slate-400 block">المتاح للبيع</span>
-                  <strong class="font-black ${isLow ? 'text-amber-300' : 'text-emerald-300'} bidi-ltr">${avail}</strong>
-                </div>
-                <div class="bg-[#02080c]/45 rounded-xl py-1.5">
-                  <span class="text-slate-400 block">محجوز</span>
-                  <strong class="font-black text-amber-200 bidi-ltr">${p.reservedStock || 0}</strong>
-                </div>
-                <div class="bg-[#02080c]/45 rounded-xl py-1.5">
-                  <span class="text-slate-400 block">${isDecantCategory(p) ? 'حجم العبوة' : 'مرتجع مفتوح'}</span>
-                  <strong class="font-black text-sky-300 bidi-ltr">${isDecantCategory(p) ? (p.size || (Number(p.decantSize||0)+' مل')) : (Number(p.openReturnedQty||0)) + ' قطعة'}</strong>
-                  ${!isDecantCategory(p) && Number(p.decantAvailableQty||p.decantMlAvailable||0)>0 ? `<span class="block text-[8px] text-slate-400 bidi-ltr">${Number(p.decantAvailableQty||p.decantMlAvailable||0)} ${p.decantAvailableUnit||'مل'} متاح للتقسيم</span>` : ''}
-                  ${!isDecantCategory(p) && Array.isArray(p.openReturnedBottles) && p.openReturnedBottles.some(b=>Number(b.remainingQty??b.remainingMl??0)>0) ? `<div class="mt-2 text-right space-y-1">${p.openReturnedBottles.filter(b=>Number(b.remainingQty??b.remainingMl??0)>0).map((b,n)=>`<div class="flex items-center justify-between gap-2 text-[8px] text-slate-300"><span>قطعة مفتوحة ${n+1}</span><b class="bidi-ltr text-sky-200">${Number(b.remainingQty??b.remainingMl??0).toFixed(1)} ${b.unit||'مل'} متبقي</b></div>`).join('')}</div>` : ''}
-                </div>
+                <div class="bg-[#02080c]/45 rounded-xl py-2"><span class="text-slate-400 block">المتاح للبيع</span><strong class="font-black ${isLow ? 'text-amber-300' : 'text-emerald-300'} bidi-ltr">${avail}</strong></div>
+                <div class="bg-[#02080c]/45 rounded-xl py-2"><span class="text-slate-400 block">المحجوز</span><strong class="font-black text-amber-200 bidi-ltr">${p.reservedStock || 0}</strong></div>
+                <div class="bg-[#02080c]/45 rounded-xl py-2"><span class="text-slate-400 block">حجم العبوة</span><strong class="font-black text-sky-300 bidi-ltr">${Number(p.volumeMl || (parseFloat(p.size) || p.decantSize) || 0)} مل</strong></div>
+                <div class="bg-[#02080c]/45 rounded-xl py-2"><span class="text-slate-400 block">رصيد الزجاجات الأصلية المفتوحة</span><strong class="font-black text-cyan-200 bidi-ltr">${!isDecantCategory(p) ? Number(p.decantMlOpenedAvailable || 0).toFixed(1) : '—'} مل</strong></div>
+                <div class="bg-[#02080c]/45 rounded-xl py-2"><span class="text-slate-400 block">رصيد المرتجع المفتوح</span><strong class="font-black text-emerald-200 bidi-ltr">${!isDecantCategory(p) ? (p.openReturnedBottles || []).filter(b => /^(مل|ملل|ml)$/i.test(String(b.unit || 'مل')) && String(b.status || 'available') !== 'consumed').reduce((sum,b) => sum + Math.max(0, Number(b.remainingQty ?? b.remainingMl ?? 0)), 0).toFixed(1) : '—'} مل</strong></div>
               </div>
               <div class="grid grid-cols-3 gap-1.5">
                 <button onclick="editMobileProduct('${p.id}')" class="py-2 rounded-xl border border-white/15 bg-white/5 text-slate-100 text-[10px] font-extrabold">تعديل البيانات ✎</button>
