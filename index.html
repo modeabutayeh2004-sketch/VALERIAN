@@ -2473,6 +2473,30 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
 #previewSheetBody .valerian-invoice-paper .valerian-share-grand{font-size:12px!important}
 }
 </style>
+<style id="valerian-document-preview-workspace">
+/* Document workspace: the paper is a distinct canvas; controls stay outside it. */
+#previewModalSheet{align-items:center!important;justify-content:center!important;padding:12px!important}
+#previewModalSheet .preview-document-dialog{width:min(96vw,1040px)!important;max-width:1040px!important;max-height:92dvh!important;display:flex!important;flex-direction:column!important;gap:12px!important;overflow:hidden!important;background:var(--vl-pearl,#f5f0e7)!important;border:1px solid rgba(157,128,80,.42)!important;box-shadow:0 24px 70px rgba(0,0,0,.34)!important;color:#342d25!important}
+#previewModalSheet .preview-document-header{flex:0 0 auto!important;min-height:42px!important}
+#previewModalSheet .preview-document-header h3{color:#342d25!important}
+#previewModalSheet .preview-document-subtitle{font-size:10px!important;color:#817568!important;margin-top:3px!important}
+#previewModalSheet .preview-document-close{width:34px!important;height:34px!important;flex:0 0 34px!important;border-radius:50%!important;background:#e9dfcd!important;color:#5c4827!important;font-weight:900!important}
+#previewModalSheet .preview-document-viewport{flex:1 1 auto!important;min-height:0!important;max-height:calc(92dvh - 142px)!important;overflow:auto!important;overscroll-behavior:contain!important;border:1px solid rgba(157,128,80,.28)!important;border-radius:12px!important;background:linear-gradient(145deg,#e8e0d2,#dcd2c1)!important;padding:12px!important;display:flex!important;align-items:flex-start!important;justify-content:center!important}
+#previewModalSheet #previewSheetBody{width:100%!important;min-width:0!important;display:flex!important;justify-content:center!important;align-items:flex-start!important;overflow:visible!important}
+#previewModalSheet #previewSheetBody>.valerian-invoice-paper{flex:0 0 auto!important;transform-origin:top center!important}
+#previewModalSheet .preview-document-actions{flex:0 0 auto!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;padding-top:2px!important}
+#previewModalSheet .preview-document-actions button{min-height:42px!important;border-radius:999px!important;font-size:11px!important;font-weight:900!important}
+#previewModalSheet .preview-action-whatsapp{background:#159b62!important;color:#fff!important}
+#previewModalSheet .preview-action-download{background:linear-gradient(135deg,#e8d7b5,#c6a66b 58%,#a18454)!important;color:#302619!important}
+#previewModalSheet .preview-action-print{background:#e9dfcd!important;color:#5c4827!important;border:1px solid rgba(157,128,80,.3)!important}
+@media(max-width:520px){
+ #previewModalSheet{padding:8px!important}
+ #previewModalSheet .preview-document-dialog{width:96vw!important;max-height:91dvh!important;padding:10px!important;gap:9px!important}
+ #previewModalSheet .preview-document-viewport{max-height:calc(91dvh - 132px)!important;padding:8px 4px!important}
+ #previewModalSheet .preview-document-actions{gap:6px!important}
+ #previewModalSheet .preview-document-actions button{min-height:40px!important;padding:8px 3px!important;font-size:10px!important}
+}
+</style>
 </head>
 <body class="pb-28 selection:bg-sky-300/30 selection:text-white">
 <div id="valerian-legacy-engine-host" aria-hidden="true">
@@ -4425,21 +4449,21 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       </div>
     </div>
 
-    <div id="previewModalSheet" class="fixed inset-0 z-[9999] hidden sheet-backdrop flex items-end justify-center" onclick="if(event.target===this)closeSheet('previewModalSheet')">
-      <div class="sheet-panel w-full max-w-md rounded-t-3xl p-5 max-h-[92dvh] overflow-y-auto no-scrollbar space-y-4">
-        <div class="w-10 h-1 rounded-full bg-slate-300/30 mx-auto"></div>
-        <div class="flex items-center justify-between">
-          <h3 id="previewSheetTitle" class="text-sm font-black text-white">معاينة المستند</h3>
-          <button onclick="closeSheet('previewModalSheet')" class="w-8 h-8 rounded-full glass-pill text-xs">✕</button>
+    <div id="previewModalSheet" class="fixed inset-0 z-[9999] hidden sheet-backdrop flex items-center justify-center p-3 sm:p-5" onclick="if(event.target===this)closeSheet('previewModalSheet')">
+      <section class="preview-document-dialog w-full max-w-5xl rounded-2xl sm:rounded-3xl p-3 sm:p-5 space-y-3" role="dialog" aria-modal="true" aria-labelledby="previewSheetTitle">
+        <header class="preview-document-header flex items-center justify-between gap-3">
+          <div class="min-w-0"><h3 id="previewSheetTitle" class="text-sm font-black">معاينة المستند</h3><p class="preview-document-subtitle">معاينة مستقلة — المستند كاملًا دون التأثير على مقاس التصدير</p></div>
+          <button type="button" onclick="closeSheet('previewModalSheet')" aria-label="إغلاق المعاينة" class="preview-document-close">✕</button>
+        </header>
+        <div class="preview-document-viewport" aria-label="مساحة معاينة المستند">
+          <div id="previewSheetBody"></div>
         </div>
-        <div id="previewSheetBody"></div>
-        <p class="text-[10px] text-slate-400 text-center">صورة الفاتورة تُحفظ بنفس أبعاد التصميم الأصلي وبدون قص أو إعادة تحجيم، بينما تظل المعاينة مصغّرة لتناسب الشاشة.</p>
-        <div class="grid grid-cols-3 gap-2 pt-2">
-          <button onclick="shareViaWhatsApp()" class="py-3 rounded-full bg-emerald-500 text-[#02080c] text-[10px] font-black">واتساب 🟢</button>
-          <button onclick="downloadPreviewImage()" class="py-3 rounded-full silver-btn text-[10px] font-black">تنزيل الصورة ⬇️</button>
-          <button onclick="printPreviewImage()" class="py-3 rounded-full glass-pill text-[10px] font-black">طباعة 🖨️</button>
-        </div>
-      </div>
+        <footer class="preview-document-actions">
+          <button type="button" onclick="shareViaWhatsApp()" class="preview-action-whatsapp">واتساب 🟢</button>
+          <button type="button" onclick="downloadPreviewImage()" class="preview-action-download">تنزيل الصورة ⬇️</button>
+          <button type="button" onclick="printPreviewImage()" class="preview-action-print">طباعة 🖨️</button>
+        </footer>
+      </section>
     </div>
 
     <!-- SHEET 6: SETTINGS & DATA BRIDGE -->
