@@ -2831,8 +2831,12 @@ function previewPeriodicReportPrint() {
       const linkedRecord=isOrderDocument?(state.orders||[]).find(x=>String(x.id)===String(linkedOrder.id)):null;
       const isCustomerPrint=['customer_profile','loyalty_card'].includes(documentType);
       const linkedCustomer=isCustomerPrint?(state.customers||[]).find(x=>String(x.phone||'')===String(linkedOrder.phone||'')):null;
-      const storageOwner=linkedRecord||linkedCustomer;
-      const storagePathKey=linkedRecord?'invoiceImageStoragePath':(documentType==='loyalty_card'?'loyaltyCardImageStoragePath':'profileImageStoragePath');
+      const genericPrint=['periodic_report','loyalty_summary'].includes(documentType);
+      const archiveRows=genericPrint?(state.printableDocumentArchive=(Array.isArray(state.printableDocumentArchive)?state.printableDocumentArchive:[])):null;
+      let genericArchive=archiveRows?.find(x=>String(x.id)===String(linkedOrder.id)&&String(x.type)===documentType);
+      if(genericPrint&&!genericArchive){genericArchive={id:String(linkedOrder.id),type:documentType,createdAt:new Date().toISOString()};archiveRows.push(genericArchive);}
+      const storageOwner=linkedRecord||linkedCustomer||genericArchive;
+      const storagePathKey=linkedRecord?'invoiceImageStoragePath':(linkedCustomer?(documentType==='loyalty_card'?'loyaltyCardImageStoragePath':'profileImageStoragePath'):'storagePath');
       if(storageOwner&&cloudClient&&cloudUser&&cloudReady&&navigator.onLine){
         try{
           const hash=await valImageSha256(blob);
@@ -2891,12 +2895,13 @@ function previewPeriodicReportPrint() {
           const isOrderDocument=['final_invoice','reservation_invoice','shipping_waybill'].includes(documentType);
           const linkedRecord=isOrderDocument?(state.orders||[]).find(x=>String(x.id)===String(order.id)):null;
           const linkedCustomer=['customer_profile','loyalty_card'].includes(documentType)?(state.customers||[]).find(x=>String(x.phone||'')===String(order.phone||'')):null;
-          const storagePathKey=linkedRecord?'invoiceImageStoragePath':(documentType==='loyalty_card'?'loyaltyCardImageStoragePath':'profileImageStoragePath');
-          const path=String((linkedRecord||linkedCustomer)?.[storagePathKey]||'');
+          const genericArchive=(state.printableDocumentArchive||[]).find(x=>String(x.id)===String(order.id)&&String(x.type)===documentType);
+          const storagePathKey=linkedRecord?'invoiceImageStoragePath':(linkedCustomer?(documentType==='loyalty_card'?'loyaltyCardImageStoragePath':'profileImageStoragePath'):'storagePath');
+          const path=String((linkedRecord||linkedCustomer||genericArchive)?.[storagePathKey]||'');
           if(!path||!cloudClient||!cloudUser||!navigator.onLine)throw new Error('لا توجد صورة محفوظة محلياً، ولا توجد نسخة سحابية متاحة لهذا المستند حالياً');
           const {data,error}=await cloudClient.storage.from(VAL_IMAGE_BUCKET).download(path);
           if(error||!data)throw new Error('تعذر تنزيل الصورة المحفوظة من السحابة: '+(error?cloudErrorMessage(error):'لم يتم العثور على الملف'));
-          saved={blob:data,contentType:data.type||'image/png',savedAt:(linkedRecord?.invoiceImageSavedAt||linkedCustomer?.[storagePathKey+'SavedAt']||Date.now()),fileName:'VALERIAN-'+String(order.id)+'.'+(data.type==='image/jpeg'?'jpg':'png')};
+          saved={blob:data,contentType:data.type||'image/png',savedAt:(linkedRecord?.invoiceImageSavedAt||linkedCustomer?.[storagePathKey+'SavedAt']||genericArchive?.savedAt||Date.now()),fileName:'VALERIAN-'+String(order.id)+'.'+(data.type==='image/jpeg'?'jpg':'png')};
           await valIdbPutMany('invoiceImages',{[key]:saved});
         }
         const url=URL.createObjectURL(saved.blob);
