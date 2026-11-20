@@ -1341,9 +1341,16 @@
       if(paid>0) state.supplierPayments.unshift({id:'SUP-PAY-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),invoiceId:invoice.id,supplier:invoice.supplier,amount:paid,method:normalizePaymentMethod(record.paymentMethod),date:invoice.date,note:'دفعة أولى مع تسجيل الفاتورة'});
       return invoice;
     }
+    function importInvoiceCreatedAt(invoice){
+      const match=String(invoice?.id||'').match(/^IMP-(\\d{10,})-/);
+      const idTime=match?Number(match[1]):0;
+      if(Number.isFinite(idTime)&&idTime>0)return idTime;
+      const dateTime=Date.parse(invoice?.date||'');
+      return Number.isFinite(dateTime)?dateTime:0;
+    }
     function renderImportsTable(){
       const importsBody=document.getElementById('importsTableBody');
-      if(importsBody){const rows=state.imports||[];importsBody.innerHTML=rows.length?rows.map(inv=>`<tr><td class="p-3 font-bold">${escapeHTML(inv.id)}</td><td class="p-3">${escapeHTML(inv.supplier||'—')}</td><td class="p-3">${(inv.items||[]).map(x=>escapeHTML(x.productName||'')).join('، ')||'—'}</td><td class="p-3 font-bold">${formatCurrency(inv.totalEgp||0)}</td><td class="p-3 text-emerald-700">${formatCurrency(inv.paidAmount||0)}</td><td class="p-3 text-rose-700">${formatCurrency(Math.max(0,Number(inv.totalEgp||0)-Number(inv.paidAmount||0)))}</td><td class="p-3">${inv.date?new Date(inv.date).toLocaleDateString('ar-EG'):'—'}</td></tr>`).join(''):'<tr><td colspan="7" class="p-6 text-center text-slate-400">لا توجد فواتير استيراد بعد.</td></tr>';}
+      if(importsBody){const rows=[...(state.imports||[])].sort((a,b)=>importInvoiceCreatedAt(b)-importInvoiceCreatedAt(a)||String(b.id||'').localeCompare(String(a.id||'')));importsBody.innerHTML=rows.length?rows.map(inv=>`<tr><td class="p-3 font-bold">${escapeHTML(inv.id)}</td><td class="p-3">${escapeHTML(inv.supplier||'—')}</td><td class="p-3">${(inv.items||[]).map(x=>escapeHTML(x.productName||'')).join('، ')||'—'}</td><td class="p-3 font-bold">${formatCurrency(inv.totalEgp||0)}</td><td class="p-3 text-emerald-700">${formatCurrency(inv.paidAmount||0)}</td><td class="p-3 text-rose-700">${formatCurrency(Math.max(0,Number(inv.totalEgp||0)-Number(inv.paidAmount||0)))}</td><td class="p-3">${inv.date?new Date(inv.date).toLocaleDateString('ar-EG'):'—'}</td></tr>`).join(''):'<tr><td colspan="7" class="p-6 text-center text-slate-400">لا توجد فواتير استيراد بعد.</td></tr>';}
       renderSupplierAccounts();
     }
     function renderSupplierAccounts(){
