@@ -139,8 +139,19 @@
           p.stockUnit = String(p.stockUnit || 'وحدة');
         }
       });
+      // Backfill the count of open units previously returned. Older builds stored this in the return log.
+      const openReturnTotals = new Map();
+      const openReturnEntries = Array.isArray(merged.decantReturnLog) && merged.decantReturnLog.length
+        ? merged.decantReturnLog
+        : (merged.returnRecords || []).flatMap(record => (record.items || []).filter(item => item.disposition === 'open').map(item => ({productId:item.productId,quantity:item.qty})));
+      openReturnEntries.forEach(entry => {
+        const id=String(entry.productId||'');if(!id)return;
+        openReturnTotals.set(id,(openReturnTotals.get(id)||0)+Math.max(0,Number(entry.quantity||entry.qty||0)));
+      });
       // Backfill product-specific fields for every product, regardless of whether shared packaging inventory already exists.
       merged.products.forEach(p => {
+        if(p.openReturnedQty==null) p.openReturnedQty=openReturnTotals.get(String(p.id))||0;
+        else p.openReturnedQty=Math.max(0,Number(p.openReturnedQty)||0);
         if(!p.productType) p.productType='عطور';
         if(!p.importCalculator && (p.lastPurchaseForeignUnitPrice||p.lastPurchaseExchangeRate)) p.importCalculator={foreignUnitPrice:Number(p.lastPurchaseForeignUnitPrice||0),exchangeRate:Number(p.lastPurchaseExchangeRate||0),allocatedShippingPerUnit:0,allocatedCustomsPerUnit:0,landedUnitCost:Number(p.lastPurchaseUnitCost||p.averageCost||p.totalCost||0),invoiceId:p.lastPurchaseInvoiceId||'',invoiceDate:p.lastPurchaseDate||'',supplier:p.lastPurchaseSupplier||''};
       });
