@@ -5131,7 +5131,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
     }
 
     function getMobileInvoiceQrLinks(){
-      try{const settings=window.ValerianEngine?.getSnapshot?.()?.settings||{};if(settings.enableQr===false)return [];return (Array.isArray(settings.invoiceQrLinks)?settings.invoiceQrLinks:[]).filter(x=>x&&String(x.label||'').trim()&&/^https?:\\/\\//i.test(String(x.url||''))).slice(0,4);}catch(_){return [];}
+      try{const settings=window.ValerianEngine?.getSnapshot?.()?.settings||{};if(settings.enableQr===false)return [];return (Array.isArray(settings.invoiceQrLinks)?settings.invoiceQrLinks:[]).filter(x=>x&&String(x.label||'').trim()&&(String(x.url||'').startsWith('https://')||String(x.url||'').startsWith('http://'))).slice(0,4);}catch(_){return [];}
     }
     async function ensureMobileInvoiceQr(root){
       const card=root?.matches?.('.valerian-share-card')?root:root?.querySelector?.('.valerian-share-card');
