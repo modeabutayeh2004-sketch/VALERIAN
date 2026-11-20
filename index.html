@@ -2196,6 +2196,14 @@ html[data-valerian-theme="light"] #screen-inventory .v5-supply-warning{backgroun
 html[data-valerian-theme="light"] #screen-inventory .v5-supply-danger{background:rgba(170,65,48,.08);border-color:rgba(170,65,48,.2);color:#9d382b}
 html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#786b59!important}
 </style>
+
+  <style id="valerian-inventory-metrics-layout">
+    .inventory-metrics-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08);text-align:center;direction:rtl;min-width:0}
+    .inventory-metric{min-width:0;overflow:hidden;border-radius:9px;padding:7px 2px;background:rgba(2,8,12,.45)}
+    .inventory-metric span{display:block;color:#94a3b8;font-size:clamp(7px,1.9vw,9px);font-weight:700;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .inventory-metric strong{display:block;margin-top:3px;font-size:clamp(9px,2.5vw,11px);font-weight:900;line-height:1.25;direction:ltr;unicode-bidi:isolate;white-space:nowrap}
+    @media(min-width:520px){.inventory-metrics-row{gap:6px}.inventory-metric{padding:8px 4px}.inventory-metric span{font-size:10px}.inventory-metric strong{font-size:12px}}
+  </style>
 </head>
 <body class="pb-28 selection:bg-sky-300/30 selection:text-white">
 <div id="valerian-legacy-engine-host" aria-hidden="true">
@@ -5165,13 +5173,15 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
                   <span class="text-[9px] text-slate-400 bidi-ltr">تكلفة: ${fmtEgp(p.averageCost)}</span>
                 </div>
               </div>
-              <div class="grid grid-cols-3 gap-2 pt-2 border-t border-white/[0.08] text-center text-[10px]">
-                <div class="bg-[#02080c]/45 rounded-xl py-2"><span class="text-slate-400 block">المتاح للبيع</span><strong class="font-black ${isLow ? 'text-amber-300' : 'text-emerald-300'} bidi-ltr">${avail}</strong></div>
-                <div class="bg-[#02080c]/45 rounded-xl py-2"><span class="text-slate-400 block">المحجوز</span><strong class="font-black text-amber-200 bidi-ltr">${p.reservedStock || 0}</strong></div>
-                <div class="bg-[#02080c]/45 rounded-xl py-2"><span class="text-slate-400 block">حجم العبوة</span><strong class="font-black text-sky-300 bidi-ltr">${Number(p.volumeMl || (parseFloat(p.size) || p.decantSize) || 0)} مل</strong></div>
-                <div class="bg-[#02080c]/45 rounded-xl py-2"><span class="text-slate-400 block">رصيد الزجاجات الأصلية المفتوحة</span><strong class="font-black text-cyan-200 bidi-ltr">${!isDecantCategory(p) ? Number(p.decantMlOpenedAvailable || 0).toFixed(1) : '—'} مل</strong></div>
-                <div class="bg-[#02080c]/45 rounded-xl py-2"><span class="text-slate-400 block">رصيد المرتجع المفتوح</span><strong class="font-black text-emerald-200 bidi-ltr">${!isDecantCategory(p) ? (p.openReturnedBottles || []).filter(b => /^(مل|ملل|ml)$/i.test(String(b.unit || 'مل')) && String(b.status || 'available') !== 'consumed').reduce((sum,b) => sum + Math.max(0, Number(b.remainingQty ?? b.remainingMl ?? 0)), 0).toFixed(1) : '—'} مل</strong></div>
+              \${!isDecantCategory(p) ? \`
+              <div class="inventory-metrics-row" aria-label="ملخص أرصدة المنتج">
+                <div class="inventory-metric"><span>متاح للبيع</span><strong class="\${isLow ? 'text-amber-300' : 'text-emerald-300'}">\${avail}</strong></div>
+                <div class="inventory-metric"><span>محجوز</span><strong class="text-amber-200">\${p.reservedStock || 0}</strong></div>
+                <div class="inventory-metric"><span>حجم العبوة</span><strong class="text-sky-300">\${Number(p.volumeMl || (parseFloat(p.size) || p.decantSize) || 0)} مل</strong></div>
+                <div class="inventory-metric"><span>سائل مفتوح</span><strong class="text-cyan-200">\${Number(p.decantMlOpenedAvailable || 0).toFixed(1)} مل</strong></div>
+                <div class="inventory-metric"><span>مرتجع مفتوح</span><strong class="text-emerald-200">\${(p.openReturnedBottles || []).filter(b => /^(مل|ملل|ml)$/i.test(String(b.unit || 'مل')) && String(b.status || 'available') !== 'consumed').reduce((sum,b) => sum + Math.max(0, Number(b.remainingQty ?? b.remainingMl ?? 0)), 0).toFixed(1)} مل</strong></div>
               </div>
+              \` : ''}
               <div class="grid grid-cols-3 gap-1.5">
                 <button onclick="editMobileProduct('${p.id}')" class="py-2 rounded-xl border border-white/15 bg-white/5 text-slate-100 text-[10px] font-extrabold">تعديل البيانات ✎</button>
                 <button onclick="permanentlyDeleteInventoryProduct('${encodeURIComponent(String(p.id))}')" class="py-2 px-1 rounded-xl bg-rose-500/20 border-2 border-rose-300/50 text-rose-100 text-[10px] font-black">🗑 حذف</button>
