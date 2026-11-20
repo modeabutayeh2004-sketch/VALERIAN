@@ -4010,6 +4010,13 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
             <label class="block font-bold text-slate-300 mb-1">اختر عطر التقسيم</label>
             <select id="labDecantSelect" onchange="updateDecantLabPreview()" class="w-full glass-pill rounded-xl px-3 py-2.5 text-white bg-[#04121a] font-bold"></select>
           </div>
+          <div>
+            <label class="block font-bold text-slate-300 mb-1">مصدر السائل</label>
+            <select id="labDecantSource" onchange="updateDecantLabPreview()" class="w-full glass-pill rounded-xl px-3 py-2.5 text-white bg-[#04121a] font-bold">
+              <option value="returned">المرتجعات المفتوحة فقط</option>
+              <option value="priority">الأولوية للمرتجعات ثم السائل المفتوح</option>
+            </select>
+          </div>
           <div class="grid grid-cols-2 gap-2.5">
             <div>
               <label class="block font-bold text-slate-300 mb-1">عدد العبوات المراد تجهيزها</label>
@@ -4022,6 +4029,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           </div>
 
           <div id="labCalculationSummary" class="glass-card rounded-2xl p-3.5 text-[11px] leading-6 text-slate-200"></div>
+          <button type="button" onclick="openOriginalBottleFromLab()" class="w-full py-2.5 rounded-xl border border-sky-300/30 bg-sky-400/10 text-[11px] font-extrabold text-sky-200">فتح زجاجة أصلية — إضافة السائل للرصيد فقط</button>
 
           <button onclick="executeDecantProduction()" class="w-full py-3 rounded-full silver-btn text-xs font-black">تأكيد التجهيز وخصم السائل والزجاجات</button>
         </div>
@@ -5197,24 +5205,31 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     }
 
     function updateDecantLabPreview() {
-      const dec = appState.products.find(p => p.id === document.getElementById('labDecantSelect').value);
-      const qty = Math.max(1, Number(document.getElementById('labDecantQty').value || 1));
+      const dec = appState.products.find(p => String(p.id) === String(document.getElementById('labDecantSelect')?.value));
+      const qty = Math.max(1, Number(document.getElementById('labDecantQty')?.value || 1));
       if (!dec) return;
-      const parent = appState.products.find(p => p.id === dec.parentId);
-      const dSize = dec.decantSize || 10;
+      const parent = appState.products.find(p => String(p.id) === String(dec.parentId));
+      const dSize = Number(dec.decantSize || 10);
       const mlNeeded = qty * dSize;
       const pool = appState.packagingInventory[String(dSize)] || { quantity: 0, averageUnitCost: 0 };
-
-      document.getElementById('labMlRequired').textContent = `${mlNeeded} ml`;
+      const sourceMode = document.getElementById('labDecantSource')?.value || 'returned';
+      const returnedMl = parent ? (parent.openReturnedBottles || []).filter(b => /^(مل|ملل|ml)$/i.test(String(b.unit || 'مل')) && String(b.status || 'available') !== 'consumed').reduce((sum,b) => sum + Math.max(0, Number(b.remainingQty ?? b.remainingMl ?? 0)), 0) : 0;
+      const openedMl = Math.max(0, Number(parent?.decantMlOpenedAvailable || 0));
+      const availableMl = sourceMode === 'returned' ? returnedMl : returnedMl + openedMl;
+      document.getElementById('labMlRequired').textContent = mlNeeded.toFixed(2) + ' ml';
       if (!parent) {
-        document.getElementById('labCalculationSummary').innerHTML = `• مخزون العبوات الفارغة (<span class="bidi-ltr">${dSize} ml</span>): <strong class="text-sky-200 bidi-ltr">${pool.quantity} عبوة</strong>`;
+        document.getElementById('labCalculationSummary').innerHTML = 'لا توجد زجاجة أصلية مرتبطة بهذا الصنف.';
         return;
       }
-      const unitCost = Math.round((parent.averageCost / (parent.volumeMl || 100)) * dSize + pool.averageUnitCost);
+      const unitCost = Math.round((Number(parent.averageCost || 0) / (parent.volumeMl || 100)) * dSize + Number(pool.averageUnitCost || 0));
       document.getElementById('labCalculationSummary').innerHTML = `
-        • الزجاجة الأصلية: <strong>${parent.name}</strong> (سائل مفتوح: <span class="bidi-ltr">${parent.decantMlAvailable || 0} ml</span>)<br>
-        • مخزون العبوات الفارغة (<span class="bidi-ltr">${dSize} ml</span>): <strong class="text-sky-200 bidi-ltr">${pool.quantity} عبوة</strong><br>
-        • تكلفة العبوة الجاهزة: <strong class="text-emerald-300 bidi-ltr">${fmtEgp(unitCost)}</strong>
+        • الزجاجة الأصلية: <strong>${parent.name}</strong><br>
+        • رصيد المرتجعات المفتوحة: <strong class="text-emerald-300 bidi-ltr">${returnedMl.toFixed(2)} مل</strong><br>
+        • سائل العبوات الأصلية المفتوحة سابقًا: <strong class="text-sky-200 bidi-ltr">${openedMl.toFixed(2)} مل</strong><br>
+        • المطلوب: <strong class="bidi-ltr">${mlNeeded.toFixed(2)} مل</strong> — المتاح من المصدر المختار: <strong class="bidi-ltr">${availableMl.toFixed(2)} مل</strong><br>
+        • العبوات الفارغة مقاس ${dSize} مل: <strong class="text-sky-200 bidi-ltr">${pool.quantity || 0} عبوة</strong><br>
+        • تكلفة العبوة الجاهزة التقديرية: <strong class="text-emerald-300 bidi-ltr">${fmtEgp(unitCost)}</strong><br>
+        ${mlNeeded > availableMl ? '<span class="text-rose-300 font-bold">الرصيد غير كافٍ. لن تُفتح زجاجة أصلية تلقائيًا.</span>' : (sourceMode === 'returned' ? 'سيُستهلك المرتجع فقط.' : 'سيُستهلك المرتجع أولًا ثم السائل المفتوح عند الحاجة.')}
       `;
     }
 
@@ -6661,13 +6676,20 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
         showToast(currentPosMode==='reservation'?'تم تسجيل الحجز وحجز الكميات بانتظار الشحن.':'تم تسجيل البيع المباشر وسداد قيمته بالكامل؛ الطلب الآن في المحجوز بانتظار الشحن.');
       }catch(err){window.ValerianReportError(err);}
     };
+    window.openOriginalBottleFromLab=async function(){
+      try{
+        const r=await runEngine('openOriginalBottleForDecant',{productId:document.getElementById('labDecantSelect').value});
+        if(r?.ok){syncFromEngine(r.snapshot);updateDecantLabPreview();}
+      }catch(err){window.ValerianReportError(err);}
+    };
     window.executeDecantProduction=async function(){
       try{
         const r=await runEngine('produceDecants',{
           productId:document.getElementById('labDecantSelect').value,
-          quantity:Number(document.getElementById('labDecantQty').value||0)
+          quantity:Number(document.getElementById('labDecantQty').value||0),
+          sourceMode:document.getElementById('labDecantSource')?.value||'returned'
         });
-        if(r.ok){closeSheet('decantLabSheet');showToast('تم تجهيز التقسيم وتسجيل حركات السائل والعبوات والمخزون.');}
+        if(r.ok){syncFromEngine(r.snapshot);closeSheet('decantLabSheet');showToast('تم اعتماد التجهيز وتحديث أرصدة السائل والعبوات والمخزون.');}
       }catch(err){window.ValerianReportError(err);}
     };
     window.applyMobileStockAdjustment=async function(){
