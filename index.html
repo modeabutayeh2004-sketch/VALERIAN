@@ -5589,8 +5589,28 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       let root=document.getElementById('mobileShippingEditor');if(!root){root=document.createElement('div');root.id='mobileShippingEditor';document.body.appendChild(root);}
       root.className='fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/80';
       root.dataset.dispatch=dispatch?'1':'0';
-      root.innerHTML=`<section class="w-full max-w-md rounded-3xl border border-white/15 bg-[#07131d] p-5 space-y-4" dir="rtl"><div class="flex justify-between items-center"><h3 class="font-black text-white">${dispatch?'اعتماد شحن الطلب':'بيانات شحنة الطلب'}</h3><button type="button" onclick="document.getElementById('mobileShippingEditor').remove()" class="text-slate-300">✕</button></div><p class="text-xs text-slate-300">الطلب ${escapeHtmlMobile(order.id)} — ${escapeHtmlMobile(order.name)}</p><label class="block text-xs text-slate-300">شركة الشحن<select id="mobileShippingCompanyValue" class="mt-2 w-full rounded-xl bg-slate-900 border border-white/15 text-white p-3"><option value="">اختر شركة الشحن</option>${names.map(n=>'<option value="'+escapeHtmlMobile(n)+'">'+escapeHtmlMobile(n)+'</option>').join('')}</select></label><label class="block text-xs text-slate-300">رقم البوليصة / التتبع<input id="mobileShippingTrackingValue" value="${escapeHtmlMobile(order.trackingNumber||'')}" class="mt-2 w-full rounded-xl bg-slate-900 border border-white/15 text-white p-3" placeholder="رقم التتبع"></label><div class="flex gap-2"><button type="button" onclick="document.getElementById('mobileShippingEditor').remove()" class="flex-1 rounded-xl border border-white/15 py-3 text-slate-200">إلغاء</button><button type="button" onclick="saveMobileShippingDetails('${String(order.id).replace(/'/g,"\\'")}')" class="flex-1 rounded-xl bg-slate-100 text-slate-950 py-3 font-black">${dispatch?'اعتماد الشحن وخصم المخزون':'حفظ البيانات'}</button></div></section>`;
+      root.innerHTML='<section class="w-full max-w-md max-h-[88dvh] overflow-y-auto rounded-3xl border border-white/15 bg-[#07131d] p-5 space-y-4" dir="rtl"><div class="flex justify-between items-center"><h3 class="font-black text-white">اختيار شركة الشحن واعتماد الطلب</h3><button type="button" onclick="document.getElementById(\'mobileShippingEditor\').remove()" class="text-slate-300">✕</button></div><p class="text-xs text-slate-300">الطلب '+escapeHtmlMobile(order.id)+' — '+escapeHtmlMobile(order.name)+'</p><label class="block text-xs text-slate-300">شركة الشحن<select id="mobileShippingCompanyValue" class="mt-2 w-full rounded-xl bg-slate-900 border border-white/15 text-white p-3"><option value="">اختر شركة الشحن</option>'+names.map(n=>'<option value="'+escapeHtmlMobile(n)+'">'+escapeHtmlMobile(n)+'</option>').join('')+'</select></label><div class="rounded-xl border border-white/10 bg-white/5 p-3 space-y-2"><div class="text-[10px] font-bold text-slate-300">إضافة شركة شحن جديدة</div><div class="flex gap-2"><input id="mobileNewShippingCompanyInline" maxlength="80" class="min-w-0 flex-1 rounded-lg bg-slate-900 border border-white/15 text-white p-2 text-xs" placeholder="اسم الشركة الجديدة"><button type="button" onclick="addShippingCompanyFromOrderEditor()" class="rounded-lg silver-btn px-3 text-[10px] font-black text-slate-950">＋ إضافة</button></div><p id="mobileInlineShippingStatus" class="text-[9px] text-slate-400" aria-live="polite">يمكنك تسجيل الشركة من هنا دون مغادرة الطلبات.</p></div><label class="block text-xs text-slate-300">رقم البوليصة / التتبع<input id="mobileShippingTrackingValue" value="'+escapeHtmlMobile(order.trackingNumber||'')+'" class="mt-2 w-full rounded-xl bg-slate-900 border border-white/15 text-white p-3" placeholder="رقم التتبع"></label><div class="flex gap-2"><button type="button" onclick="document.getElementById(\'mobileShippingEditor\').remove()" class="flex-1 rounded-xl border border-white/15 py-3 text-slate-200">إلغاء</button><button type="button" onclick="saveMobileShippingDetails(\''+String(order.id).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')" class="flex-1 rounded-xl silver-btn text-slate-950 py-3 font-black">اعتماد الشحن وخصم المخزون</button></div></section>';
       root.querySelector('#mobileShippingCompanyValue').value=order.shippingCompany||'';
+    };
+    window.addShippingCompanyFromOrderEditor=async function(){
+      const input=document.getElementById('mobileNewShippingCompanyInline'),status=document.getElementById('mobileInlineShippingStatus'),button=input?.parentElement?.querySelector('button');
+      const name=String(input?.value||'').trim().replace(/\\s+/g,' ');
+      if(!name){if(status)status.textContent='اكتب اسم شركة الشحن أولاً.';return false;}
+      if(button){button.disabled=true;button.textContent='جارٍ الحفظ…';}
+      try{
+        if(typeof window.ValerianUIAddShippingCompany!=='function')throw new Error('موصل إضافة شركات الشحن غير متاح.');
+        const result=await window.ValerianUIAddShippingCompany(name);
+        if(result?.ok!==true)throw new Error(result?.error||'تعذر تسجيل شركة الشحن.');
+        syncFromEngine(result.snapshot);
+        const select=document.getElementById('mobileShippingCompanyValue');
+        if(select&&!Array.from(select.options).some(option=>option.value===name))select.add(new Option(name,name));
+        if(select)select.value=name;
+        if(input)input.value='';
+        if(status)status.textContent='✓ تم تسجيل الشركة وحفظها. أصبحت محددة لهذا الطلب.';
+        showToast('تمت إضافة شركة الشحن بنجاح.');
+        return true;
+      }catch(err){const message=String(err?.message||err||'تعذر إضافة الشركة.');if(status)status.textContent=message;showToast(message);return false;}
+      finally{if(button){button.disabled=false;button.textContent='＋ إضافة';}}
     };
     window.saveMobileShippingDetails=async function(orderId){
       const company=document.getElementById('mobileShippingCompanyValue')?.value||'',tracking=document.getElementById('mobileShippingTrackingValue')?.value.trim()||'';
@@ -5603,12 +5623,12 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
         const result=await window.ValerianShippingAction(dispatch?'dispatchOrder':'updateOrderShippingDetails',{orderId,company,tracking});
         if(result?.ok!==true)throw new Error(result?.error||'لم يؤكد محرك الأعمال حفظ بيانات الشحنة.');
         document.getElementById('mobileShippingEditor')?.remove();
-        renderMoreTracking();
-        renderMoreOrders();
+        syncFromEngine(result.snapshot);
+        if(dispatch)setMoreOrdersView('shipped');else renderMoreOrders();
         showToast(dispatch?'✓ تم اعتماد الشحن وخصم المخزون ومستلزمات التغليف.':'✓ تم حفظ شركة الشحن ورقم التتبع بنجاح.');
         return true;
       }catch(err){window.ValerianReportError(err);return false;}
-      finally{if(button){button.disabled=false;button.textContent='حفظ البيانات';}}
+      finally{if(button){button.disabled=false;button.textContent='اعتماد الشحن وخصم المخزون';}}
     };
     
     window.printMobileWaybill=function(orderId){
