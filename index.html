@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>VALERIAN V20 • Ivory & Gold Identity</title><meta name="app-version" content="V20.117">
+  <title>VALERIAN V20 • Ivory & Gold Identity</title><meta name="app-version" content="V20.118">
   <meta name="theme-color" content="#f7f0e3">
   <link rel="manifest" href="./manifest.webmanifest">
   <!-- Tailwind is embedded in the offline stylesheet below; avoid a parser-blocking CDN request. -->
@@ -4245,6 +4245,14 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
           </div>
         </div>
 
+        
+        <div class="rounded-2xl p-3.5 space-y-3" style="background:#fbf6eb;border:1px solid #d8c69e;color:#493719">
+          <div class="flex items-center justify-between gap-2"><div><h4 class="text-sm font-black">روابط منصات VALERIAN ورموز QR</h4><p class="text-[10px] mt-1" style="color:#806a48">أضف اسم كل منصة ورابطها، وسيظهر رمزها تلقائيًا على الفواتير والصور.</p></div><span style="color:#9a783b;font-size:20px">▦</span></div>
+          <label class="flex items-center gap-2 text-xs font-bold"><input id="settingsSheetEnableQr" type="checkbox" checked class="w-4 h-4"> تفعيل رموز QR في الفواتير والصور</label>
+          <div id="settingsSheetQrEditor" class="space-y-2"></div>
+          <div class="grid grid-cols-2 gap-2"><button type="button" onclick="addSettingsSheetQrLink()" class="rounded-xl py-2.5 text-xs font-black" style="background:#ead9b8;color:#493719;border:1px solid #c6a66b">＋ إضافة منصة</button><button type="button" onclick="saveSettingsSheetQrLinks()" class="rounded-xl py-2.5 text-xs font-black" style="background:#9b783d;color:white">حفظ روابط QR</button></div>
+          <p class="text-[10px]" style="color:#806a48">حتى 4 منصات. اكتب الرابط كاملًا ويبدأ بـ https://</p>
+        </div>
         <div class="glass-card rounded-2xl p-3.5 space-y-3">
           <div><h4 class="text-sm font-extrabold text-white">إعدادات برنامج الولاء والنقاط</h4><p class="text-[10px] text-slate-400 mt-1">تتحكم في اكتساب النقاط وقيمتها النقدية.</p></div>
           <div class="grid grid-cols-3 gap-2">
@@ -4280,7 +4288,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
 <div id="v5DeleteCredentialModal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="v5DeleteCredentialTitle" dir="rtl"><div class="v5-delete-panel"><div class="flex items-center gap-3 mb-4"><div class="w-11 h-11 rounded-2xl flex items-center justify-center bg-rose-500/15 border border-rose-300/25 text-rose-200 text-xl">🔐</div><div><h3 id="v5DeleteCredentialTitle" class="text-lg font-black text-white">تأكيد الحذف</h3><p class="text-[10px] text-slate-400 mt-1">VALERIAN • حماية البيانات</p></div></div><p id="v5DeleteCredentialDescription" class="text-xs leading-7 text-slate-300 mb-4"></p><label id="v5DeleteCredentialLabel" for="v5DeleteCredentialInput" class="block text-xs font-extrabold text-slate-200 mb-2">كلمة المرور</label><input id="v5DeleteCredentialInput" class="v5-delete-input" type="password" autocomplete="current-password" dir="auto"><p id="v5DeleteCredentialError" class="hidden text-xs text-rose-300 mt-2"></p><div class="grid grid-cols-2 gap-2 mt-5"><button id="v5DeleteCredentialCancel" type="button" class="rounded-xl border border-white/15 bg-white/5 py-3 text-xs font-extrabold text-slate-200">إلغاء</button><button id="v5DeleteCredentialConfirm" type="button" class="rounded-xl bg-gradient-to-br from-rose-200 to-rose-400 py-3 text-xs font-black text-slate-950">تأكيد الحذف</button></div></div></div>
 
   <!-- ==================== CLEAN DECOUPLED UI CHASSIS ENGINE V5.0 ==================== -->
-  <script src="./engine-runtime.js?v=v20-20261120-social-share-gold80"></script>
+  <script src="./engine-runtime.js?v=v20-20261120-invoice-qr-gold81"></script>
   <script>
     const defaultEmptySchema = () => ({
       settings: {
@@ -4475,6 +4483,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         if(percentage)percentage.value=Number(settings.loyaltyPercentage??5);
         if(start)start.value=Number(settings.loyaltyStartOrder??2);
         if(value)value.value=Number(settings.pointValue??1);
+        if(typeof renderSettingsSheetQrEditor==='function')renderSettingsSheetQrEditor();
       }
     }
 
