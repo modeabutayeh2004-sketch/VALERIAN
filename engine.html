@@ -3081,8 +3081,11 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
           p.openReturnedBottles = Array.isArray(p.openReturnedBottles) ? p.openReturnedBottles : [];
           p.stockUnit = 'زجاجة أصلية';
         } else {
+          // Non-perfume liquid products may also receive usable open-liquid returns.
+          // Keep their returned-liquid ledger across reloads; only perfume SKUs use the decant engine.
           p.volumeMlPerBottle = 0;
-          p.decantMlAvailable = 0;
+          if (!Number.isFinite(Number(p.decantMlAvailable))) p.decantMlAvailable = 0;
+          p.openReturnedBottles = Array.isArray(p.openReturnedBottles) ? p.openReturnedBottles : [];
           p.stockUnit = String(p.stockUnit || 'وحدة');
         }
       });
@@ -3672,6 +3675,14 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
 
     function getBottleVolumeMl(product) {
       return Math.max(1, Number(product?.volumeMlPerBottle || String(product?.size || '').match(/\d+(?:\.\d+)?/)?.[0] || 100));
+    }
+
+    function getProductLiquidCapacityMl(product) {
+      const configured = Number(product?.volumeMlPerBottle || 0);
+      if (Number.isFinite(configured) && configured > 0) return configured;
+      const size = String(product?.size || '');
+      const match = size.match(/(\d+(?:\.\d+)?)\s*(?:مل|ملل|ml|mL|ML)\b?/i);
+      return match ? Math.max(0, Number(match[1])) : 0;
     }
 
     function getPhysicalStockLabel(product) {
@@ -5731,7 +5742,7 @@ function previewPeriodicReportPrint() {
           qty=Number(supplied?.qty||0);
           if(!Number.isInteger(qty)||qty<0||qty>remainingQty)throw new Error('كمية المرتجع غير صحيحة للصنف '+(item.name||item.id)+'.');
           if(!qty)continue;
-          if(o.stockDeducted){disposition=String(supplied?.disposition||'restock');if(!['restock','open','quarantine','writeoff'].includes(disposition))throw new Error('حالة المرتجع غير صحيحة للصنف '+(item.name||item.id)+'.');if(disposition==='open'){const capacity=getBottleVolumeMl(state.products.find(p=>String(p.id)===String(item.id))||{});if(Array.isArray(supplied?.openBottleMl)){openBottleMl=supplied.openBottleMl.map(Number);if(openBottleMl.length!==qty||openBottleMl.some(ml=>!Number.isFinite(ml)||ml<=0||ml>capacity+0.001))throw new Error('أدخل كمية السائل المتبقية لكل عبوة مفتوحة بصورة صحيحة للصنف '+(item.name||item.id)+'.');openMl=Number(openBottleMl.reduce((sum,ml)=>sum+ml,0).toFixed(3));}else{openMl=Number(supplied?.openMl||0);const capacityTotal=capacity*qty;if(!Number.isFinite(openMl)||openMl<=0||openMl>capacityTotal+0.001)throw new Error('أدخل كمية الملليلترات المتبقية بصورة صحيحة للصنف '+(item.name||item.id)+'.');openBottleMl=Array.from({length:qty},()=>Number((openMl/qty).toFixed(3)));}}}
+          if(o.stockDeducted){disposition=String(supplied?.disposition||'restock');if(!['restock','open','quarantine','writeoff'].includes(disposition))throw new Error('حالة المرتجع غير صحيحة للصنف '+(item.name||item.id)+'.');if(disposition==='open'){const returnProduct=state.products.find(p=>String(p.id)===String(item.id))||{};const capacity=getProductLiquidCapacityMl(returnProduct)||getBottleVolumeMl(returnProduct);if(Array.isArray(supplied?.openBottleMl)&&supplied.openBottleMl.length){openBottleMl=supplied.openBottleMl.map(v=>Number(String(v).trim().replace(',','.')));if(openBottleMl.length!==qty||openBottleMl.some(ml=>!Number.isFinite(ml)||ml<=0||ml>capacity+0.001))throw new Error('أدخل كمية السائل المتبقية لكل عبوة مفتوحة بصورة صحيحة للصنف '+(item.name||item.id)+'.');openMl=Number(openBottleMl.reduce((sum,ml)=>sum+ml,0).toFixed(3));}else{openMl=Number(String(supplied?.openMl??'').trim().replace(',','.'));const capacityTotal=capacity*qty;if(!Number.isFinite(openMl)||openMl<=0||openMl>capacityTotal+0.001)throw new Error('أدخل كمية الملليلترات المتبقية بصورة صحيحة للصنف '+(item.name||item.id)+'.');openBottleMl=Array.from({length:qty},()=>Number((openMl/qty).toFixed(3)));}}}
         }else{
           const rawQty=prompt(`مرتجع جزئي — ${item.name||item.id}\nالكمية الأصلية: ${item.qty}\nالمرتجع سابقاً: ${item.returnedQty||0}\nالمتاح إرجاعه الآن: ${remainingQty}\nأدخل الكمية المرتجعة (0 للتخطي):`,String(remainingQty));
           if(rawQty===null)return;qty=Number(rawQty);
