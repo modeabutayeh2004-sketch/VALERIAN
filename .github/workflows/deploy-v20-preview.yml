@@ -47,12 +47,15 @@ jobs:
       - name: Run real browser visual smoke test
         run: node scripts/visual-smoke.mjs
       - name: Upload visual smoke screenshots
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: VALERIAN-V20-Visual-Smoke
           path: |
             ./www/visual-dark.png
             ./www/visual-light.png
+            ./www/visual-invoice.png
+            ./www/visual-invoice-export.png
           if-no-files-found: error
           retention-days: 14
       - name: Upload browser preview package
