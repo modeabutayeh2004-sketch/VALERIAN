@@ -68,8 +68,12 @@ try {
         const blob=await window.__valerianCreatePreviewImageBlob();
         if(!blob||blob.size<10000)throw new Error('Invoice export image is empty or unexpectedly small');
         const bitmap=await createImageBitmap(blob);
-        return {qrImages:qrImages.length,exportBytes:blob.size,width:bitmap.width,height:bitmap.height};
+        const dataUrl=await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||''));reader.readAsDataURL(blob);});
+        if(bitmap.width!==1080||bitmap.height>1750||bitmap.height<900)throw new Error('Invoice export canvas is not content-fitted: '+bitmap.width+'x'+bitmap.height);
+        return {qrImages:qrImages.length,exportBytes:blob.size,width:bitmap.width,height:bitmap.height,dataUrl};
       });
+      fs.writeFileSync('www/visual-invoice-export.png',Buffer.from(invoiceCheck.dataUrl.split(',')[1],'base64'));
+      delete invoiceCheck.dataUrl;
       await page.screenshot({path:'www/visual-invoice.png',fullPage:true,animations:'disabled'});
       console.log(JSON.stringify({invoiceExport:'ok',...invoiceCheck}));
     }
