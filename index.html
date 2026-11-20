@@ -2405,7 +2405,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
 }
 
 /* Full structural layout matching the supplied VALERIAN receipt, not a recolor-only override. */
-#previewSheetBody .valerian-invoice-paper{width:100%!important;max-width:940px!important;min-height:0!important;height:auto!important;flex:0 0 auto!important;align-self:center!important;border-radius:0!important;display:flex!important;flex-direction:column!important;background:#fcfaf5!important}
+#previewSheetBody .valerian-invoice-paper{width:940px!important;max-width:940px!important;min-width:940px!important;min-height:0!important;height:auto!important;flex:0 0 auto!important;align-self:center!important;border-radius:0!important;display:flex!important;flex-direction:column!important;background:#fcfaf5!important;zoom:clamp(.25,calc((min(100vw,448px) - 40px)/940),1)}
 #previewSheetBody .valerian-invoice-paper .valerian-share-head{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:8px!important;text-align:center!important;padding:20px 20px 12px!important}
 #previewSheetBody .valerian-invoice-brand-center{display:flex;align-items:center;justify-content:center;gap:14px;direction:ltr}
 #previewSheetBody .valerian-invoice-brand-words{text-align:left}
@@ -4431,7 +4431,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
           <button onclick="closeSheet('previewModalSheet')" class="w-8 h-8 rounded-full glass-pill text-xs">✕</button>
         </div>
         <div id="previewSheetBody"></div>
-        <p class="text-[10px] text-slate-400 text-center">صورة المشاركة تُجهّز تلقائيًا بمقاس 4:5 أو 9:16 المناسب للمنصات الاجتماعية، بينما الطباعة تحتفظ بمقاس الإيصال الأصلي.</p>
+        <p class="text-[10px] text-slate-400 text-center">صورة الفاتورة تُحفظ بنفس أبعاد التصميم الأصلي وبدون قص أو إعادة تحجيم، بينما تظل المعاينة مصغّرة لتناسب الشاشة.</p>
         <div class="grid grid-cols-3 gap-2 pt-2">
           <button onclick="shareViaWhatsApp()" class="py-3 rounded-full bg-emerald-500 text-[#02080c] text-[10px] font-black">واتساب 🟢</button>
           <button onclick="downloadPreviewImage()" class="py-3 rounded-full silver-btn text-[10px] font-black">تنزيل الصورة ⬇️</button>
@@ -6200,11 +6200,14 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       // Invoice export must use the same narrow layout width as the visible sheet.
       // The capture viewport is also set to that width below so desktop CI/browser
       // dimensions cannot silently activate wide-screen media queries.
-      const width = format==='social' ? 900 : Math.ceil(rect.width || source.offsetWidth || source.scrollWidth);
+      const width = isInvoiceCapture ? Math.ceil(source.offsetWidth || source.scrollWidth || 940) : (format==='social' ? 900 : Math.ceil(rect.width || source.offsetWidth || source.scrollWidth));
       const captureNode = source.cloneNode(true);
+      // The invoice is captured from its original 940px paper layout. Its preview
+      // uses CSS zoom only; remove that presentation zoom in the capture clone.
+      if (isInvoiceCapture) captureNode.style.setProperty('zoom','1','important');
       // html2canvas can paint background-clip:text as a rectangular gradient.
-      // Keep the live preview untouched; normalize gradient text only in the export clone.
-      captureNode.querySelectorAll('.silver-text').forEach(node => {
+      // Keep the live preview untouched; normalize gradient text only in non-invoice exports.
+      if (!isInvoiceCapture) captureNode.querySelectorAll('.silver-text').forEach(node => {
         // Remove the gradient-text class entirely: html2canvas may still paint
         // its background layer as a full-width rectangle on some Android browsers.
         node.classList.remove('silver-text');
@@ -6221,13 +6224,13 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       // Do not rely on CSS text-decoration in html2canvas: Android capture
       // can move the strike to the baseline/underline position. Draw it onto
       // the final bitmap using the measured old-price element bounds instead.
-      captureNode.querySelectorAll('.line-through').forEach(node => {
+      if (!isInvoiceCapture) captureNode.querySelectorAll('.line-through').forEach(node => {
         node.style.setProperty('text-decoration', 'none', 'important');
         node.style.setProperty('text-decoration-line', 'none', 'important');
       });
       captureNode.style.width = width + 'px'; captureNode.style.maxWidth = 'none';
       captureNode.style.height = 'auto'; captureNode.style.minHeight = '0';
-      captureNode.style.margin = '0'; captureNode.style.transform = 'none';
+      captureNode.style.margin = isInvoiceCapture ? '0 auto' : '0'; captureNode.style.transform = 'none';
       captureNode.style.boxSizing = 'border-box'; captureNode.style.overflow = 'visible';
       const captureHost = document.createElement('div');
       // Recreate the invoice's stylesheet scope so #previewSheetBody rules apply
@@ -6289,7 +6292,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       } finally { captureHost.remove(); }
       // Paint a true horizontal strike through the center of each old price
       // after html2canvas has finished, so it cannot drift onto the new price.
-      if (canvas && oldPriceStrikeRects.length) {
+      if (!isInvoiceCapture && canvas && oldPriceStrikeRects.length) {
         const ctx = canvas.getContext('2d');
         ctx.save();
         ctx.strokeStyle = '#cbd5e1';
@@ -6309,16 +6312,21 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         if(!receiptBlob||!receiptBlob.size)throw new Error('تعذر إنشاء ملف الطباعة.');
         return receiptBlob;
       }
-      // Invoice export: use a content-fitted portrait canvas. Never force a 9:16
-      // story frame around a shorter invoice; that creates large empty margins and
-      // shrinks every line of text on the phone.
+      // Invoice export is the original paper canvas itself: no added frame,
+      // no crop, no resizing pass, and no second canvas. PNG is lossless.
+      if (isInvoiceCapture) {
+        const invoiceBlob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+        if(!invoiceBlob||!invoiceBlob.size)throw new Error('تعذر إنشاء صورة الفاتورة.');
+        return invoiceBlob;
+      }
+      // Non-invoice social assets retain their existing platform framing.
       const outputWidth=1080;
       const outerMargin=24;
       const drawW=outputWidth-(outerMargin*2);
       const factor=drawW/canvas.width;
       const drawH=Math.ceil(canvas.height*factor);
       const outputHeight=drawH+(outerMargin*2);
-      if(outputHeight>6000)throw new Error('الفاتورة طويلة جدًا لتصديرها كصورة واحدة.');
+      if(outputHeight>6000)throw new Error('المستند طويل جدًا لتصديره كصورة واحدة.');
       const output=document.createElement('canvas');output.width=outputWidth;output.height=outputHeight;
       const out=output.getContext('2d');if(!out)throw new Error('تعذر تجهيز مقاس المشاركة.');
       const bg=out.createLinearGradient(0,0,outputWidth,outputHeight);
