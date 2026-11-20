@@ -1881,6 +1881,11 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
       box-shadow: 0 -24px 60px rgba(0, 0, 0, 0.85);
       animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
+    #settingsSheet .sheet-panel{max-height:min(92dvh,900px);overflow-y:auto;overscroll-behavior:contain;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px));scrollbar-width:thin}
+    #settingsSheet .settings-sheet-heading{position:sticky;top:-20px;z-index:5;margin:-20px -20px 0;padding:14px 20px 12px;background:linear-gradient(180deg,#0b1620 0%,#0b1620 88%,rgba(11,22,32,.96) 100%);border-bottom:1px solid rgba(201,166,104,.28)}
+    #settingsSheet .settings-sheet-heading button{flex:0 0 36px;min-width:36px;min-height:36px;display:inline-flex;align-items:center;justify-content:center;position:relative;z-index:6;color:#f3dfb8;border:1px solid rgba(201,166,104,.5);background:rgba(201,166,104,.14)}
+    #settingsSheet .sheet-panel::-webkit-scrollbar{width:5px}
+    #settingsSheet .sheet-panel::-webkit-scrollbar-thumb{background:rgba(201,166,104,.55);border-radius:9px}
 
     /* Mobile GPU budget: retain the dark glass palette without repeatedly
        blurring the entire page behind every card and fixed navigation layer. */
@@ -2206,7 +2211,30 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
     html[data-valerian-theme="light"] .inventory-metric span{color:#514638}
     html[data-valerian-theme="light"] .inventory-metric strong{color:#243342!important}
     @media(min-width:520px){.inventory-metrics-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));overflow:visible;gap:6px}.inventory-metric{min-width:0;flex:auto;padding:8px 4px}.inventory-metric span{font-size:10px}.inventory-metric strong{font-size:12px}}
-  </style>
+  /* V20 invoice layout refresh */
+.valerian-share-card{max-width:1080px;border-radius:20px;border:1px solid #c7a96d;box-shadow:0 22px 54px rgba(83,61,27,.16)}
+.valerian-share-head{position:relative;display:grid;grid-template-columns:76px minmax(0,1fr);grid-template-areas:"logo brand" "logo tag" "logo headline";column-gap:18px;align-items:center;text-align:right;padding:22px 30px;background:linear-gradient(112deg,#fffdf8 0%,#f5ead4 58%,#ead8b4 100%);border-bottom:3px solid #b58a43}
+.valerian-share-logo{grid-area:logo;width:70px;height:70px;margin:0;filter:sepia(1) saturate(1.8) hue-rotate(355deg) brightness(.82)}
+.valerian-share-brand{grid-area:brand;font-size:30px;letter-spacing:5px;color:#8b672f}
+.valerian-share-tag{grid-area:tag;font-size:9px;letter-spacing:3px}
+.valerian-share-headline{grid-area:headline;justify-self:start;margin-top:5px;padding:5px 12px;border:1px solid #d6bd8e;border-radius:30px;background:rgba(255,255,255,.55);font-size:10px}
+.valerian-share-content{padding:24px 30px 20px}
+.valerian-share-intro{align-items:center;padding:0 0 14px;border-bottom:1px solid #dfcfad}
+.valerian-share-title{font-size:26px}
+.valerian-share-grid{gap:10px;margin-top:16px}
+.valerian-share-field{border-radius:10px;background:#fffdf8;border-color:#dfcfad}
+.valerian-share-section{margin-top:22px}
+.valerian-share-section-title{font-size:14px;color:#765528;border-bottom:2px solid #d8c092}
+.valerian-share-items{gap:10px}
+.valerian-share-item{display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,1.25fr);align-items:center;gap:16px;padding:14px 16px;border-radius:12px;background:#fffdf8;border-color:#ddc99f}
+.valerian-share-item-top{min-width:0}
+.valerian-share-item-metrics{margin-top:0;gap:8px}
+.valerian-share-mini{background:#f4ecdc;border:1px solid #eee2cb}
+.valerian-share-summary{margin-top:20px;padding:18px 20px;border-radius:14px;background:linear-gradient(135deg,#fffaf0,#f4ead6);border-color:#c9aa70}
+.valerian-share-grand{background:linear-gradient(105deg,#f4e7ca,#e7d2a7);border-color:#b99555}
+.valerian-share-foot{margin:0 30px 20px;padding-top:16px}
+@media(max-width:640px){.valerian-share-head{grid-template-columns:52px minmax(0,1fr);column-gap:12px;padding:17px 15px;text-align:right}.valerian-share-logo{width:48px;height:52px}.valerian-share-brand{font-size:24px;letter-spacing:3px}.valerian-share-content{padding:16px 13px}.valerian-share-title{font-size:20px}.valerian-share-item{grid-template-columns:minmax(0,1fr);gap:8px;padding:11px}.valerian-share-item-metrics{margin-top:8px}.valerian-share-foot{margin:0 13px 15px}}
+</style>
 <style id="valerian-share-artifacts-v1">
 .valerian-share-card{width:100%;max-width:760px;margin:0 auto;box-sizing:border-box;background:#fffdf8;color:#30271d;border:1px solid #d9c49a;border-radius:26px;overflow:hidden;box-shadow:0 16px 44px rgba(87,64,30,.12);font-family:'Cairo',Arial,Tahoma,sans-serif;line-height:1.55}
 .valerian-share-head{padding:22px 22px 17px;background:linear-gradient(135deg,#fffaf0 0%,#f4ead6 58%,#eee0c2 100%);border-bottom:2px solid #b99555;text-align:center}
@@ -4229,7 +4257,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
     <div id="settingsSheet" class="fixed inset-0 z-50 hidden sheet-backdrop flex items-end justify-center" onclick="if(event.target===this)closeSheet('settingsSheet')">
       <div class="sheet-panel w-full max-w-md rounded-t-3xl p-5 space-y-4">
         <div class="w-10 h-1 rounded-full bg-slate-300/30 mx-auto"></div>
-        <div class="flex items-center justify-between">
+        <div class="settings-sheet-heading flex items-center justify-between">
           <h3 class="text-base font-black text-white">⚙️ إدارة النظام والبيانات</h3>
           <button onclick="closeSheet('settingsSheet')" class="w-8 h-8 rounded-full glass-pill text-xs">✕</button>
         </div>
