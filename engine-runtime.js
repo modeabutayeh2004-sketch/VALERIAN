@@ -2661,45 +2661,29 @@
     }
 
 function previewPeriodicReportPrint() {
-      pendingOffersBlob=null; pendingOffersImageUrl=""; pendingPreviewImageBlob=null; pendingInvoiceShareOrder=null;pendingDocumentArchiveOrder={id:'periodic-report-'+Date.now(),type:'periodic_report'}; pendingCustomerImageShare=null;
+      pendingOffersBlob=null;pendingOffersImageUrl="";pendingPreviewImageBlob=null;pendingInvoiceShareOrder=null;
+      pendingDocumentArchiveOrder={id:'periodic-report-'+Date.now(),type:'periodic_report'};pendingCustomerImageShare=null;
       document.getElementById('invoiceWhatsAppBtn')?.classList.add('hidden');
       document.getElementById('invoiceOpenWhatsAppBtn')?.classList.add('hidden');
       document.getElementById('invoiceSavedImageBtn')?.classList.remove('hidden');
       document.getElementById('genericShareImageBtn')?.classList.remove('hidden');
-      const periodText = document.getElementById('reportPeriodSelect').selectedOptions[0].text;
-      const fullSales = document.getElementById('repFullSales').textContent;
-      const reservations = document.getElementById('repReservations').textContent;
-      const returns = document.getElementById('repReturns').textContent;
-      const expenses = document.getElementById('repExpenses').textContent;
-      const profit = document.getElementById('repNetProfit').textContent;
-
-      pendingPrintHtml = `
-        <div style="font-family:'Cairo',sans-serif; font-size:12px; color:#000; direction:rtl; max-width:650px; margin:0 auto; padding:20px; border:1px solid #000; background:#fff;">
-          <div style="text-align:center; border-bottom:2px solid #000; padding-bottom:10px; margin-bottom:15px;">
-            <div style="font-size:13px; font-weight:700;">تقرير المبيعات، الحجوزات، المرتجعات والأرباح الحقيقية (${periodText})</div>
-            <div style="font-size:10px; color:#555;">تاريخ الإصدار: ${new Date().toLocaleString('ar-EG')}</div>
-          </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px; font-size:12px;">
-            <div style="background:#f1f5f9; padding:10px; border-radius:8px;"><strong>المبيعات الكاملة (المسلمة):</strong> ${fullSales}</div>
-            <div style="background:#f1f5f9; padding:10px; border-radius:8px;"><strong>إيرادات الحجوزات المعلقة:</strong> ${reservations}</div>
-            <div style="background:#f1f5f9; padding:10px; border-radius:8px; color:#b91c1c;"><strong>إجمالي المرتجعات (ديون):</strong> ${returns}</div>
-            <div style="background:#f1f5f9; padding:10px; border-radius:8px;"><strong>المصروفات والإعلانات:</strong> ${expenses}</div>
-          </div>
-          <div style="background:#e0e7ff; padding:12px; border-radius:8px; font-weight:800; text-align:center; font-size:15px;">
-            <strong>صافي الأرباح الحقيقية:</strong> ${profit}
-          </div>
-          <div style="text-align:center; margin-top:20px; font-size:10px; border-top:1px dashed #000; padding-top:10px;">نظام إدارة ڤاليريان — تقارير مالية معتمدة</div>
-        </div>
-      `;
-
-      document.getElementById('printPaperSize').value = 'a4';
-      document.getElementById('printPreviewBody').innerHTML = v1946EnsureBrandHeader(pendingPrintHtml);
+      const periodText=document.getElementById('reportPeriodSelect')?.selectedOptions?.[0]?.text||'الفترة المحددة';
+      const metrics=[
+        ['المبيعات الكاملة (المسلّمة)',document.getElementById('repFullSales')?.textContent||'—'],
+        ['إيرادات الحجوزات المعلقة',document.getElementById('repReservations')?.textContent||'—'],
+        ['إجمالي المرتجعات والمستحقات',document.getElementById('repReturns')?.textContent||'—'],
+        ['المصروفات والإعلانات',document.getElementById('repExpenses')?.textContent||'—']
+      ];
+      const profit=document.getElementById('repNetProfit')?.textContent||'—';
+      const style='<style>.v20-report{width:100%;max-width:190mm;margin:0 auto;background:#fff;color:#2b3942;border:1px solid #d9e1e6;border-radius:16px;overflow:hidden;box-sizing:border-box;font-family:Cairo,Tahoma,Arial,sans-serif;padding-bottom:14px}.v20-report *{box-sizing:border-box}.v20-report-head{background:linear-gradient(135deg,#343f47,#59656e);color:#fff;padding:22px 18px;text-align:center}.v20-report-brand{font:700 24px Georgia,serif;letter-spacing:4px;color:#f5f7f8}.v20-report-head h2{font-size:17px;font-weight:900;margin:8px 0 2px;color:#fff}.v20-report-head small{font-size:10px;color:#e2e8eb}.v20-report-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:18px}.v20-report-metric{padding:13px;border:1px solid #dbe3e8;border-radius:11px;background:linear-gradient(145deg,#fff,#f2f6f8);min-height:72px}.v20-report-metric span{display:block;color:#687984;font-size:10px;margin-bottom:6px}.v20-report-metric strong{font-size:14px;color:#34434d;font-weight:900}.v20-report-profit{margin:0 18px;padding:16px;border-radius:12px;background:#414d55;color:#fff;text-align:center}.v20-report-profit small{display:block;color:#e3e9ec;font-size:10px}.v20-report-profit strong{display:block;color:#fff;font-size:22px;margin-top:4px}.v20-report-foot{margin:16px 18px 0;padding-top:10px;border-top:1px solid #dbe3e8;text-align:center;color:#7a8992;font-size:9px}@media print{.v20-report{max-width:none;border:0;border-radius:0}.v20-report-grid,.v20-report-profit{break-inside:avoid;page-break-inside:avoid}}</style>';
+      const cards=metrics.map(([label,value])=>'<div class="v20-report-metric"><span>'+escapeHTML(label)+'</span><strong>'+escapeHTML(value)+'</strong></div>').join('');
+      pendingPrintHtml=style+'<div class="v20-report" dir="rtl"><header class="v20-report-head"><div class="v20-report-brand">VALERIAN</div><h2>التقرير المالي والتشغيلي</h2><small>'+escapeHTML(periodText)+' · '+escapeHTML(new Date().toLocaleString('ar-EG'))+'</small></header><section class="v20-report-grid">'+cards+'</section><section class="v20-report-profit"><small>صافي الأرباح الحقيقية</small><strong>'+escapeHTML(profit)+'</strong></section>'+buildInvoiceQrHtml()+'<footer class="v20-report-foot">تقرير مستخرج من نظام VALERIAN لإدارة النشاط</footer></div>';
+      document.getElementById('printPaperSize').value='a4';
+      document.getElementById('printPreviewBody').innerHTML=pendingPrintHtml;
       v1953SyncPrintPreviewSize();
       openModal('printPreviewModal');
     }
 
-    // V19.47: wait for high-resolution offer canvases/images to decode before opening
-    // the native print dialog, and keep the print surface visible until afterprint.
     async function executeActualPrint() {
       if(window.__v1947PrintInProgress) return;
       window.__v1947PrintInProgress=true;
@@ -3910,7 +3894,7 @@ function previewPeriodicReportPrint() {
       const orderRows=orders.length?orders.map(o=>`<tr><td>${escapeHTML(o.id||'—')}</td><td>${escapeHTML(o.date?new Date(o.date).toLocaleDateString('ar-EG'):'—')}</td><td>${(o.items||[]).map(i=>`${escapeHTML(i.name||'منتج')} × ${formatNumber(i.qty||1,0)}`).join('<br>')||'—'}</td><td>${escapeHTML(o.status||'—')}</td><td>${formatCurrency(Math.max(0,Number(o.grandTotal||0)-Number(o.returnedValue||0)))}</td></tr>`).join(''):`<tr><td colspan="5" style="text-align:center">لا توجد طلبات مسجلة لهذا العميل.</td></tr>`;
       const fields=[['رقم الهاتف',c.phone||'—'],['العنوان',c.address||'—'],['عدد الطلبات',formatNumber(c.ordersCount||orders.length,0)],['إجمالي المشتريات',formatCurrency(c.totalSpent||0)],['رصيد نقاط الولاء',formatNumber(points,0)+' نقطة'],['قيمة النقاط',formatCurrency(points*Number(state.settings.pointValue||0))],['مستحقات العميل من المرتجعات',formatCurrency(c.debtToCustomer||0)],['العطور المفضلة',c.fragrancePreferences||'—'],['النوتات المفضلة',c.favoriteNotes||'—'],['النوتات غير المفضلة',c.avoidNotes||'—'],['المناسبات والاستخدامات',c.usageOccasions||'—'],['ملاحظات',c.profileNotes||'—']];
       const profile=fields.map(([k,v])=>`<tr><th>${escapeHTML(k)}</th><td>${escapeHTML(v)}</td></tr>`).join('');
-      const html=`<div class="customer-print-sheet" dir="rtl"><div class="customer-print-head"><h2>ملف العميل</h2><div class="customer-print-name">${escapeHTML(c.name||'عميل')}</div><div class="muted">تاريخ الطباعة: ${new Date().toLocaleString('ar-EG')}</div></div><h3>بيانات وتفضيلات العميل</h3><table class="w-full text-right text-xs v1916-table"><tbody>${profile}</tbody></table><h3>سجل الطلبات (${orders.length})</h3><table class="w-full text-right text-xs v1916-table"><thead><tr><th>رقم الطلب</th><th>التاريخ</th><th>المنتجات</th><th>الحالة</th><th>الإجمالي</th></tr></thead><tbody>${orderRows}</tbody></table><div class="customer-print-foot">تم استخراج هذا الملف من نظام VALERIAN.</div></div>`;
+      const html=`<div class="customer-print-sheet" dir="rtl"><div class="customer-print-head"><h2>ملف العميل</h2><div class="customer-print-name">${escapeHTML(c.name||'عميل')}</div><div class="muted">تاريخ الطباعة: ${new Date().toLocaleString('ar-EG')}</div></div><h3>بيانات وتفضيلات العميل</h3><table class="w-full text-right text-xs v1916-table"><tbody>${profile}</tbody></table><h3>سجل الطلبات (${orders.length})</h3><table class="w-full text-right text-xs v1916-table"><thead><tr><th>رقم الطلب</th><th>التاريخ</th><th>المنتجات</th><th>الحالة</th><th>الإجمالي</th></tr></thead><tbody>${orderRows}</tbody></table>${buildInvoiceQrHtml()}<div class="customer-print-foot">تم استخراج هذا الملف من نظام VALERIAN.</div></div>`;
       pendingOffersBlob=null;pendingOffersFiles=null;pendingPreviewImageBlob=null;pendingInvoiceShareOrder=null;pendingDocumentArchiveOrder=null;document.getElementById('invoiceSavedImageBtn')?.classList.remove('hidden');
       pendingCustomerImageShare={id:'customer-profile-'+String(c.phone||idx),name:String(c.name||'عميلنا'),phone:String(c.phone||''),type:'customer_profile'};
       const customerDownloadBtn=document.getElementById('previewSaveImageBtn');if(customerDownloadBtn){customerDownloadBtn.classList.remove('hidden');customerDownloadBtn.style.display='inline-flex';customerDownloadBtn.textContent='⬇️ تنزيل صورة ملف العميل';}
@@ -3993,16 +3977,20 @@ function previewPeriodicReportPrint() {
     function printAllCustomerLoyaltySummary() {
       const customers=(state.customers||[]).map(c=>({name:c.name||'عميل',phone:c.phone||'',orders:Number(c.ordersCount||0),spent:Number(c.totalSpent||0),points:calculateCurrentLoyaltyPoints(c.phone)})).sort((a,b)=>b.points-a.points);
       if(!customers.length){showToast('لا يوجد عملاء لطباعة كشف النقاط.','error');return;}
-      const cards=customers.map(c=>`<tr><td style="padding:10px;border-bottom:1px solid #e5e7eb;font-weight:700">${escapeHTML(c.name)}</td><td dir="ltr" style="padding:10px;border-bottom:1px solid #e5e7eb">${escapeHTML(c.phone)}</td><td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:center">${formatNumber(c.orders,0)}</td><td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:center;font-weight:800;color:#8b7045">${formatNumber(c.points,0)} نقطة</td><td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:center">${formatCurrency(c.points*Number(state.settings.pointValue||0))}</td></tr>`).join('');
-      pendingPrintHtml=`<div dir="rtl" style="font-family:Cairo,Arial,sans-serif;background:#fff;color:#172b39;padding:24px;width:100%;box-sizing:border-box;border:1px solid #e7dfcf;border-radius:16px"><div style="text-align:center;border-bottom:3px solid #b7965b;padding-bottom:14px;margin-bottom:18px"><div style="font-size:28px;font-weight:900;letter-spacing:2px;color:#17384b">VALERIAN</div><h2 style="font-size:20px;margin:7px 0;color:#17384b">كشف نقاط العملاء</h2><p style="font-size:11px;color:#8a744f">تاريخ التقرير: ${new Date().toLocaleDateString('ar-EG')} — قيمة النقطة: ${formatCurrency(state.settings.pointValue||0)}</p></div><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#f2eee5;color:#6e5835"><th style="padding:11px;text-align:right">العميل</th><th style="padding:11px">الهاتف</th><th style="padding:11px">الطلبات</th><th style="padding:11px">النقاط</th><th style="padding:11px">القيمة</th></tr></thead><tbody>${cards}</tbody></table><p style="font-size:10px;color:#8a744f;text-align:center;margin-top:20px;border-top:1px solid #dfd5c3;padding-top:12px">هذا الكشف يوضح أرصدة النقاط الحالية المحسوبة وفق إعدادات برنامج VALERIAN.</p></div>`;
-      pendingDocumentArchiveOrder={id:'loyalty-summary-'+Date.now(),type:'loyalty_summary'};
+      const cards=customers.map(c=>'<tr><td>'+escapeHTML(c.name)+'</td><td dir="ltr">'+escapeHTML(c.phone)+'</td><td class="v20-num">'+formatNumber(c.orders,0)+'</td><td class="v20-num">'+formatNumber(c.points,0)+' نقطة</td><td class="v20-num">'+formatCurrency(c.points*Number(state.settings.pointValue||0))+'</td></tr>').join('');
+      const id='loyalty-summary-'+Date.now();
+      pendingPrintHtml='<style>.v20-loyalty-report{width:100%;max-width:190mm;margin:0 auto;background:#fff;color:#2b3942;border:1px solid #d9e1e6;border-radius:16px;overflow:hidden;font-family:Cairo,Tahoma,Arial,sans-serif}.v20-loyalty-report *{box-sizing:border-box}.v20-loyalty-report-head{padding:20px;background:linear-gradient(135deg,#343f47,#59656e);color:#fff;text-align:center}.v20-loyalty-report-head strong{font:700 24px Georgia,serif;letter-spacing:4px;color:#f5f7f8}.v20-loyalty-report-head h2{margin:7px 0 2px;color:#fff;font-size:17px;font-weight:900}.v20-loyalty-report-head small{color:#e2e8eb;font-size:10px}.v20-loyalty-table-wrap{padding:16px}.v20-loyalty-report table{width:100%;border-collapse:collapse;table-layout:auto;font-size:11px}.v20-loyalty-report th{padding:10px 7px;background:#424d55;color:#f5f7f8;text-align:right;font-weight:900}.v20-loyalty-report td{padding:9px 7px;border-bottom:1px solid #e1e7eb;color:#35434c;overflow-wrap:anywhere}.v20-loyalty-report tbody tr:nth-child(even){background:#f4f7f8}.v20-loyalty-foot{padding:10px 16px;text-align:center;border-top:1px solid #d9e1e6;color:#788790;font-size:9px}@media print{.v20-loyalty-report{max-width:none;border:0;border-radius:0}.v20-loyalty-report tr{break-inside:avoid;page-break-inside:avoid}}</style><div class="v20-loyalty-report" dir="rtl"><header class="v20-loyalty-report-head"><strong>VALERIAN</strong><h2>كشف نقاط العملاء</h2><small>تاريخ التقرير: '+escapeHTML(new Date().toLocaleDateString('ar-EG'))+' · قيمة النقطة: '+escapeHTML(formatCurrency(state.settings.pointValue||0))+'</small></header><div class="v20-loyalty-table-wrap"><table><thead><tr><th>العميل</th><th>الهاتف</th><th>الطلبات</th><th>النقاط</th><th>القيمة</th></tr></thead><tbody>'+cards+'</tbody></table></div>'+buildInvoiceQrHtml()+'<footer class="v20-loyalty-foot">الأرصدة محسوبة وفق إعدادات برنامج VALERIAN الحالية</footer></div>';
+      pendingDocumentArchiveOrder={id,type:'loyalty_summary'};
       pendingCustomerImageShare=null;pendingInvoiceShareOrder=null;
       document.getElementById('invoiceWhatsAppBtn')?.classList.add('hidden');
       document.getElementById('invoiceOpenWhatsAppBtn')?.classList.add('hidden');
       document.getElementById('genericShareImageBtn')?.classList.remove('hidden');
       const saveBtn=document.getElementById('previewSaveImageBtn');if(saveBtn){saveBtn.classList.remove('hidden');saveBtn.style.display='inline-flex';saveBtn.textContent='⬇️ حفظ صورة كشف النقاط';}
       document.getElementById('invoiceSavedImageBtn')?.classList.remove('hidden');
-      document.getElementById('printPreviewBody').innerHTML=v1946EnsureBrandHeader(pendingPrintHtml);openModal('printPreviewModal');
+      document.getElementById('printPreviewBody').innerHTML=pendingPrintHtml;
+      document.getElementById('printPaperSize').value='a4';
+      v1953SyncPrintPreviewSize();
+      openModal('printPreviewModal');
     }
 
     async function printCustomerLoyaltyCard(idx) {
