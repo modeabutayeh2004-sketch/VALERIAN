@@ -7313,9 +7313,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
         frame.onload=()=>{try{frame.contentWindow.focus();frame.contentWindow.print();}catch(err){showToast('تعذر فتح نافذة الطباعة: '+err.message);}setTimeout(()=>{frame.remove();URL.revokeObjectURL(url);},60000);};
         const thermal=activePreviewShareContext?.kind==='order';
         const printCss=thermal?'@page{size:80mm auto;margin:2mm}img{width:100%;max-width:76mm}':'@page{margin:6mm}img{width:100%;max-width:100%}';
-        frame.srcdoc='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;padding:0;background:#fff}img{display:block;height:auto;object-fit:contain;page-break-inside:avoid;image-rendering:auto}'+printCss+'</style></head><body><img src="'+url+'" onload="setTimeout(function(){print()},350)">
-
-</body></html>';;
+        frame.srcdoc='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;padding:0;background:#fff}img{display:block;height:auto;object-fit:contain;page-break-inside:avoid;image-rendering:auto}'+printCss+'</style></head><body><img src="'+url+'" onload="setTimeout(function(){print()},350)"></body></html>';;
       }catch(err){console.error(err);showToast('تعذرت طباعة صورة المعاينة: '+String(err.message||err));}
     };
     window.saveEditedProduct=async function(){
