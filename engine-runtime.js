@@ -2821,7 +2821,8 @@ function previewPeriodicReportPrint() {
             await valIdbPutMany('invoiceImages',{[archiveKey]:{blob,contentType:blob.type||'image/png',savedAt:Date.now(),fileName}});
             archived=true;
           }
-          const linkedRecord=(state.orders||[]).find(x=>String(x.id)===String(linkedOrder.id));
+          const isOrderDocument=['final_invoice','reservation_invoice','shipping_waybill'].includes(String(linkedOrder.type||''));
+          const linkedRecord=isOrderDocument?(state.orders||[]).find(x=>String(x.id)===String(linkedOrder.id)):null;
           if(linkedRecord&&cloudClient&&cloudUser&&cloudReady&&navigator.onLine){
             try{
               const hash=await valImageSha256(blob);
@@ -2853,7 +2854,7 @@ function previewPeriodicReportPrint() {
           document.body.appendChild(a);a.click();a.remove();
           setTimeout(()=>URL.revokeObjectURL(url),120000);
         }
-        showToast(cloudArchived?'تم حفظ صورة الفاتورة في سجلّها ومزامنة نسختها السحابية، مع تنزيل نسخة HD.':(archived?'تم حفظ الصورة في سجلّ المستند على هذا الجهاز وتنزيل نسخة HD. المزامنة السحابية للصورة لم تكتمل بعد.':'تم تنزيل نسخة HD؛ تعذّرت أرشفة الصورة داخل سجل المستند.'),'success');
+        showToast(cloudArchived?'تم رفع صورة الفاتورة للسحابة وربطها بسجلّها؛ جاري مزامنة رابطها مع الأجهزة الأخرى.':(archived?'تم حفظ الصورة في سجلّ المستند على هذا الجهاز وتنزيل نسخة HD. المزامنة السحابية للصورة لم تكتمل بعد.':'تم تنزيل نسخة HD؛ تعذّرت أرشفة الصورة داخل سجل المستند.'),'success');
       } catch(err) {
         console.error('VALERIAN image download failed',err);
         showToast('تعذر تنزيل الصورة: '+(err?.message||err?.name||'خطأ غير معروف'),'error');
@@ -2868,7 +2869,8 @@ function previewPeriodicReportPrint() {
         if(!db||!db.objectStoreNames.contains('invoiceImages'))throw new Error('أرشيف صور الفواتير غير متاح على هذا الجهاز');
         let saved=await valIdbGet('invoiceImages',key);
         if(!saved?.blob?.size){
-          const linkedRecord=(state.orders||[]).find(x=>String(x.id)===String(order.id));
+          const isOrderDocument=['final_invoice','reservation_invoice','shipping_waybill'].includes(String(order.type||''));
+          const linkedRecord=isOrderDocument?(state.orders||[]).find(x=>String(x.id)===String(order.id)):null;
           const path=String(linkedRecord?.invoiceImageStoragePath||'');
           if(!path||!cloudClient||!cloudUser||!navigator.onLine)throw new Error('لا توجد صورة محفوظة محلياً، ولا توجد نسخة سحابية متاحة لهذا المستند حالياً');
           const {data,error}=await cloudClient.storage.from(VAL_IMAGE_BUCKET).download(path);
