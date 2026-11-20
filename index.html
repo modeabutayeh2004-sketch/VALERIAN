@@ -6529,11 +6529,15 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       const body = String(document.getElementById('previewSheetBody') && document.getElementById('previewSheetBody').innerText || '').replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n').trim();
       const heading = context.kind === 'order'
         ? 'مرحباً ' + (context.name || 'عميلنا') + '، مرفق مستند VALERIAN رقم ' + (context.id || '') + '.'
-        : context.kind === 'loyalty'
-          ? 'مرحباً ' + (context.name || 'عميلنا') + '، هذه بطاقة الولاء الخاصة بك من VALERIAN.'
-          : context.kind === 'customer_profile'
-            ? 'مرحباً ' + (context.name || 'عميلنا') + '، مرفق ملفكم الشخصي وتفضيلاتكم وسجل تعاملاتكم من VALERIAN.'
-            : 'يسعدنا مشاركتكم عروض VALERIAN الحصرية.';
+        : context.kind === 'waybill'
+          ? 'مرفق بوليصة شحن VALERIAN للطلب رقم ' + (context.id || '') + '، برجاء مراجعة بيانات التسليم.'
+          : context.kind === 'supplier_invoice'
+            ? 'مرفق فاتورة مشتريات VALERIAN رقم ' + (context.id || '') + ' الخاصة بالمورد ' + (context.name || '') + '.'
+            : context.kind === 'loyalty'
+              ? 'مرحباً ' + (context.name || 'عميلنا') + '، هذه بطاقة الولاء الخاصة بك من VALERIAN.'
+              : context.kind === 'customer_profile'
+                ? 'مرحباً ' + (context.name || 'عميلنا') + '، مرفق ملفكم الشخصي وتفضيلاتكم وسجل تعاملاتكم من VALERIAN.'
+                : 'يسعدنا مشاركتكم عروض VALERIAN الحصرية.';
       return [heading, body.slice(0, 1800)].filter(Boolean).join('\n\n');
     }
 
