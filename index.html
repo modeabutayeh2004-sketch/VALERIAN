@@ -6231,7 +6231,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       const captureHost = document.createElement('div');
       // Recreate the invoice's stylesheet scope so #previewSheetBody rules apply
       // to the saved image exactly as they do to the visible invoice preview.
-      if (isInvoiceCapture) captureHost.id = 'previewSheetBody';
+      if (source.matches('.valerian-invoice-paper')) captureHost.id = 'previewSheetBody';
       // Keep the clone at the preview's real viewport coordinates. foreignObject
       // rendering clips content placed far outside the viewport; opacity must stay
       // fully opaque because SVG foreignObject inherits ancestor opacity.
