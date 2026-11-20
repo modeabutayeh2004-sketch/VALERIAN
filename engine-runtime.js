@@ -2576,7 +2576,7 @@
     function v1946EnsureBrandHeader(html){
       const value=String(html||'');
       // Loyalty cards already contain their own complete brand header.
-      if(/v1960-loyalty-card|data-v1946-brand=["']1["']|VALERIAN_INVOICE_EMBLEM|data-v1945-invoice-brand/i.test(value)) return value;
+      if(/v1960-loyalty-card|data-v20-document=["'][^"']+["']|data-v1946-brand=["']1["']|VALERIAN_INVOICE_EMBLEM|data-v1945-invoice-brand/i.test(value)) return value;
       return `<div data-v1946-document="1" style="width:100%;box-sizing:border-box;background:#fff;">${v1946BrandHeaderHtml()}${value}</div>`;
     }
 
