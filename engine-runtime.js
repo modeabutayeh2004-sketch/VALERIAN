@@ -735,7 +735,7 @@
         const physicalPeak = Math.max(0, Number(product.stock || 0) + (movementQty < 0 ? Math.abs(movementQty) : 0));
         product.stockCapacity = Math.max(1, Number(product.stockCapacity || 0), Number(product.initialStock || 0), Number(product.maxStock || 0), physicalPeak);
       }
-      state.inventoryMovements.unshift({ id: 'MOV-' + Date.now() + '-' + Math.random().toString(36).slice(2,6), date: new Date().toISOString(), productId, productName: product?.name || 'منتج محذوف', type, quantity: movementQty, unit: type === 'DECANT_ML' ? 'مل' : (type === 'DECANT_RETURN' ? String(product?.decantAvailableUnit||product?.stockUnit||'وحدة') : (type === 'PACKAGING_RECEIPT' ? 'عبوة فارغة' : (product?.category === 'تقسيم' ? 'عبوة جاهزة' : 'زجاجة'))), balanceAfter: Number(product?.stock || 0), balanceAfterMl: Number(product?.decantMlAvailable || 0), reservedBalance: Number(product?.reservedStock || 0), packagingBalance: product?.category === 'تقسيم' ? getPackagingStock(product) : 0, reference: reference || '', note: note || '' });
+      state.inventoryMovements.unshift({ id: 'MOV-' + Date.now() + '-' + Math.random().toString(36).slice(2,6), date: new Date().toISOString(), productId, productName: product?.name || 'منتج محذوف', type, quantity: movementQty, unit: (type === 'DECANT_ML' || type === 'DECANT_RETURN_USED' || type === 'OPENED_DECANT_ML') ? 'مل' : (type === 'DECANT_RETURN' ? String(product?.decantAvailableUnit||product?.stockUnit||'وحدة') : (type === 'PACKAGING_RECEIPT' ? 'عبوة فارغة' : (product?.category === 'تقسيم' ? 'عبوة جاهزة' : 'زجاجة'))), balanceAfter: Number(product?.stock || 0), balanceAfterMl: Number(product?.decantMlAvailable || 0), reservedBalance: Number(product?.reservedStock || 0), packagingBalance: product?.category === 'تقسيم' ? getPackagingStock(product) : 0, reference: reference || '', note: note || '' });
     }
 
     function addPaymentTransaction(order, type, amount, note, method) {
@@ -743,6 +743,30 @@
       if (value <= 0) return;
       state.paymentTransactions = state.paymentTransactions || [];
       state.paymentTransactions.unshift({ id: 'PAY-' + Date.now() + '-' + Math.random().toString(36).slice(2,6), date: new Date().toISOString(), orderId: order.id, customerPhone: order.phone, customerName: order.name, type, amount: value, note: note || '', method: method || 'غير محدد' });
+    }
+
+    function getReturnedOpenMlBalance(product) {
+      return (Array.isArray(product?.openReturnedBottles)?product.openReturnedBottles:[])
+        .filter(b=>/^(مل|ملل|ml)$/i.test(String(b.unit||'مل')) && String(b.status||'available')!=='consumed')
+        .reduce((sum,b)=>sum+Math.max(0,Number(b.remainingQty??b.remainingMl??0)),0);
+    }
+
+    function ensureOpenedDecantPool(product) {
+      if(!product)return 0;
+      if(product.decantMlPoolVersion!==1 || !Number.isFinite(Number(product.decantMlOpenedAvailable))){
+        const legacyTotal=Math.max(0,Number(product.decantMlAvailable||0));
+        product.decantMlOpenedAvailable=Number(Math.max(0,legacyTotal-getReturnedOpenMlBalance(product)).toFixed(3));
+        product.decantMlPoolVersion=1;
+      }
+      return Math.max(0,Number(product.decantMlOpenedAvailable||0));
+    }
+
+    function syncDecantLiquidBalances(product) {
+      if(!product)return {returnedMl:0,openedMl:0,totalMl:0};
+      const returnedMl=Number(getReturnedOpenMlBalance(product).toFixed(3));
+      const openedMl=Number(ensureOpenedDecantPool(product).toFixed(3));
+      product.decantMlAvailable=Number((returnedMl+openedMl).toFixed(3));
+      return {returnedMl,openedMl,totalMl:product.decantMlAvailable};
     }
 
     function getAvailableStock(product) {
@@ -2073,11 +2097,39 @@
       const qty=Math.max(0,Number(document.getElementById('decantProductionQty')?.value||0));
       const ml=qty*Number(p?.decantSize||0);
       const parent=p?state.products.find(x=>x.id===p.parentId):null;
-      const available=Number(parent?.decantMlAvailable||0)+Number(parent?.stock||0)*getBottleVolumeMl(parent||{});
+      const balances=parent?syncDecantLiquidBalances(parent):{returnedMl:0,openedMl:0,totalMl:0};
       const containers=p?getPackagingStock(p):0;
+      const mode=document.getElementById('decantProductionSource')?.value||'returned';
+      const available=mode==='returned'?balances.returnedMl:balances.totalMl;
       const out=document.getElementById('decantProductionMl'); if(out) out.textContent=ml.toFixed(2)+' مل';
       const info=document.getElementById('decantProductionInfo');
-      if(info) info.innerHTML=p?`الزجاجة الأصلية: <b>${parent?.name||'غير موجودة'}</b><br>حجم العبوة: ${p.decantSize||0} مل — المتاح من السائل شامل الزجاجات المغلقة: ${available.toFixed(2)} مل<br>العبوات الفارغة المتاحة: ${containers} — المطلوب: ${qty}<br>${qty>containers?'⚠️ عدد العبوات الفارغة غير كافٍ.':''}`:'اختر منتج تقسيم صالحًا.';
+      if(info) info.innerHTML=p?(`الزجاجة الأصلية: <b>${escapeHTML(parent?.name||'غير موجودة')}</b><br>
+        <b class="text-emerald-700">المرتجعات المفتوحة:</b> ${balances.returnedMl.toFixed(2)} مل<br>
+        <b class="text-sky-700">سائل من عبوات أصلية سبق فتحها:</b> ${balances.openedMl.toFixed(2)} مل<br>
+        <b>المطلوب للتجهيز:</b> ${ml.toFixed(2)} مل — <b>العبوات الفارغة:</b> ${containers}<br>
+        ${mode==='returned'?'سيتم السحب من المرتجعات المفتوحة فقط، دون لمس أي رصيد آخر.':'الأولوية للمرتجعات المفتوحة، ثم السائل من العبوات التي سبق فتحها. لن تُفتح زجاجة جديدة تلقائيًا.'}<br>
+        ${ml>available?'⚠️ الرصيد المتاح في المصدر المحدد غير كافٍ. افتح زجاجة أصلية من الزر المستقل إذا احتجت لذلك.':''}<br>
+        ${(parent?.openReturnedBottles||[]).filter(b=>/^(مل|ملل|ml)$/i.test(String(b.unit||'مل'))&&Number(b.remainingQty??b.remainingMl??0)>0).map((b,i)=>`<span class="text-slate-600">مرتجع ${i+1}: <b>${Number(b.remainingQty??b.remainingMl??0).toFixed(2)} مل متبقي</b></span>`).join('<br>')}`
+      ):'اختر منتج تقسيم صالحًا.';
+    }
+
+    function openOriginalBottleForDecant() {
+      const p=state.products.find(x=>x.id===document.getElementById('decantProductionProduct')?.value);
+      const parent=p?state.products.find(x=>x.id===p.parentId):null;
+      if(!p||!parent){showToast('اختر منتج تقسيم مرتبطًا بزجاجة أصلية أولاً.','error');return;}
+      if(Number(parent.stock||0)<1){showToast('لا توجد زجاجة أصلية مغلقة متاحة للفتح.','error');return;}
+      const before=structuredClone(state),ref='OPEN-DEC-'+Date.now(),volume=getBottleVolumeMl(parent);
+      ensureOpenedDecantPool(parent);
+      parent.stock=Number(parent.stock||0)-1;
+      parent.decantMlOpenedAvailable=Number((Number(parent.decantMlOpenedAvailable||0)+volume).toFixed(3));
+      syncDecantLiquidBalances(parent);
+      addInventoryMovement(parent.id,'OPEN_BOTTLE',-1,ref,'فتح يدوي مستقل لزجاجة أصلية وإضافة '+volume+' مل إلى رصيد السائل المفتوح');
+      addInventoryMovement(parent.id,'OPENED_DECANT_ML',volume,ref,'إضافة سائل من زجاجة أصلية مفتوحة إلى رصيد الاستخدام');
+      state.decantBottleOpeningLog=Array.isArray(state.decantBottleOpeningLog)?state.decantBottleOpeningLog:[];
+      state.decantBottleOpeningLog.unshift({id:ref,date:new Date().toISOString(),parentId:parent.id,productName:parent.name,volumeMl:volume,openedPoolBalanceAfter:parent.decantMlOpenedAvailable,returnedBalanceAfter:getReturnedOpenMlBalance(parent)});
+      if(!saveState()){state=before;refreshAllViews();return;}
+      refreshAllViews();updateDecantProductionInfo();
+      showToast('تم فتح زجاجة أصلية وإضافة '+volume+' مل إلى رصيد السائل المفتوح. لم يتم تجهيز تقسيمات.','success');
     }
 
     function produceDecants(e) {
@@ -2085,45 +2137,44 @@
       const p=state.products.find(x=>x.id===document.getElementById('decantProductionProduct').value);
       const qty=Math.floor(Number(document.getElementById('decantProductionQty').value||0));
       const parent=p?state.products.find(x=>x.id===p.parentId):null;
+      const sourceMode=document.getElementById('decantProductionSource')?.value||'returned';
       if(!p||!parent||p.category!=='تقسيم'||qty<=0){showToast('بيانات تجهيز التقسيم غير صحيحة.','error');return;}
       if(p.legacyStockNeedsReview){showToast('راجع رصيد العبوات القديمة من بطاقة المنتج أولاً.','error');return;}
       const packagingEntry=getPackagingEntry(p.decantSize||10,true);
       if(Number(packagingEntry.quantity||0)<qty){showToast(`مخزون العبوات المشتركة مقاس ${p.decantSize||10} مل غير كافٍ. المتاح ${packagingEntry.quantity||0} عبوة.`,'error');return;}
       const requiredMl=qty*Number(p.decantSize||0);
-      const before=structuredClone(state);
-      const productionRef='DEC-'+Date.now();
-      // Returned open bottles are a real source of decant liquid. Reconcile their
-      // per-bottle balances with the aggregate before deciding to open sealed stock.
-      parent.openReturnedBottles=Array.isArray(parent.openReturnedBottles)?parent.openReturnedBottles:[];
-      const returnedBottleBalance=parent.openReturnedBottles
-        .filter(b=>String(b.unit||'')==='مل' && String(b.status||'available')==='available')
-        .reduce((sum,b)=>sum+Math.max(0,Number(b.remainingQty??b.remainingMl??0)),0);
-      let availableMl=Math.max(0,Number(parent.decantMlAvailable||0),returnedBottleBalance);
-      if(availableMl<requiredMl){
-        const missing=requiredMl-availableMl;
-        const bottlesToOpen=Math.ceil(missing/getBottleVolumeMl(parent));
-        if(Number(parent.stock||0)<bottlesToOpen){showToast(`السائل غير كافٍ. تحتاج فتح ${bottlesToOpen} زجاجة إضافية ولا يوجد رصيد كافٍ.`,'error');return;}
-        parent.stock-=bottlesToOpen;
-        availableMl+=bottlesToOpen*getBottleVolumeMl(parent);
-        addInventoryMovement(parent.id,'OPEN_BOTTLE',-bottlesToOpen,productionRef,'فتح زجاجات أصلية للتقسيم بعد استنفاد المرتجع المفتوح');
+      const balances=syncDecantLiquidBalances(parent);
+      const returnedAvailable=balances.returnedMl,openedAvailable=balances.openedMl;
+      const returnedUsed=sourceMode==='returned'?requiredMl:Math.min(requiredMl,returnedAvailable);
+      const openedUsed=sourceMode==='returned'?0:Number((requiredMl-returnedUsed).toFixed(3));
+      if(sourceMode==='returned'&&returnedAvailable+0.0001<requiredMl){
+        showToast(`رصيد المرتجعات المفتوحة غير كافٍ. المطلوب ${requiredMl} مل والمتاح ${returnedAvailable.toFixed(2)} مل. لم يتم استخدام أي مصدر آخر.`,'error');return;
       }
-      // Consume returned bottles FIFO so their individual remaining quantities
-      // never continue to appear available after production has used them.
-      let returnedToConsume=requiredMl;
-      for(const bottle of parent.openReturnedBottles){
+      if(openedUsed>openedAvailable+0.0001){
+        showToast(`بعد استهلاك المرتجع بالأولوية، يتبقى عجز ${(openedUsed-openedAvailable).toFixed(2)} مل. افتح زجاجة أصلية من الإجراء المستقل ثم أعد التجهيز.`,'error');return;
+      }
+      const before=structuredClone(state),productionRef='DEC-'+Date.now();
+      let returnedToConsume=returnedUsed;
+      const bottleUsage=[];
+      for(const bottle of (parent.openReturnedBottles||[])){
         if(returnedToConsume<=0.0001)break;
-        if(String(bottle.unit||'')!=='مل' || String(bottle.status||'available')!=='available')continue;
+        if(!/^(مل|ملل|ml)$/i.test(String(bottle.unit||'مل'))||String(bottle.status||'available')==='consumed')continue;
         const remaining=Math.max(0,Number(bottle.remainingQty??bottle.remainingMl??0));
         if(remaining<=0)continue;
-        const used=Math.min(remaining,returnedToConsume);
+        const used=Number(Math.min(remaining,returnedToConsume).toFixed(3));
         bottle.remainingQty=Number((remaining-used).toFixed(3));
         bottle.usedQty=Number((Math.max(0,Number(bottle.usedQty||bottle.usedMl||0))+used).toFixed(3));
         if('remainingMl' in bottle)bottle.remainingMl=bottle.remainingQty;
         if('usedMl' in bottle)bottle.usedMl=bottle.usedQty;
-        if(bottle.remainingQty<=0.0001)bottle.status='consumed';
+        if(bottle.remainingQty<=0.0001){bottle.remainingQty=0;bottle.status='consumed';}
+        bottle.usageHistory=Array.isArray(bottle.usageHistory)?bottle.usageHistory:[];
+        bottle.usageHistory.unshift({date:new Date().toISOString(),productionRef,usedMl:used,remainingMl:bottle.remainingQty,decantProductId:p.id,decantProductName:p.name});
+        bottleUsage.push({bottleId:bottle.id,orderId:bottle.orderId,usedMl:used,remainingMl:bottle.remainingQty});
         returnedToConsume=Number((returnedToConsume-used).toFixed(3));
       }
-      parent.decantMlAvailable=Number((availableMl-requiredMl).toFixed(3));
+      if(returnedToConsume>0.001){state=before;showToast('تعذر مطابقة رصيد المرتجع مع تفاصيل الزجاجات؛ لم يتم حفظ التجهيز.','error');return;}
+      parent.decantMlOpenedAvailable=Number((openedAvailable-openedUsed).toFixed(3));
+      syncDecantLiquidBalances(parent);
       packagingEntry.quantity-=qty;
       addPackagingMovement(Number(p.decantSize||10),-qty,productionRef,`استهلاك ${qty} زجاجة لتجهيز ${p.name}`,'DECANT_PRODUCTION');
       const oldReady=Number(p.stock||0);
@@ -2131,13 +2182,15 @@
       p.averageCost=oldReady+qty>0?((oldReady*Number(p.averageCost??p.totalCost??unitCost))+(qty*unitCost))/(oldReady+qty):unitCost;
       p.totalCost=Number(p.averageCost.toFixed(2));
       p.stock=oldReady+qty;
-      addInventoryMovement(parent.id,'DECANT_ML',-requiredMl,productionRef,`سحب ${requiredMl} مل لتجهيز ${qty} عبوة ${p.name}`);
+      if(returnedUsed>0)addInventoryMovement(parent.id,'DECANT_RETURN_USED',-returnedUsed,productionRef,`استهلاك ${returnedUsed} مل من المرتجعات المفتوحة لتجهيز ${qty} عبوة ${p.name}`);
+      if(openedUsed>0)addInventoryMovement(parent.id,'DECANT_ML',-openedUsed,productionRef,`استهلاك ${openedUsed} مل من رصيد العبوات الأصلية المفتوحة لتجهيز ${qty} عبوة ${p.name}`);
       addInventoryMovement(p.id,'DECANT_PRODUCTION',qty,productionRef,`تجهيز ${qty} عبوة من ${parent.name}`);
       state.decantProductionLog=state.decantProductionLog||[];
-      state.decantProductionLog.unshift({id:productionRef,date:new Date().toISOString(),parentId:parent.id,productId:p.id,quantity:qty,mlUsed:requiredMl,unitCost});
-      logAudit('DECANT_PRODUCTION',`تجهيز ${qty} من ${p.name} باستخدام ${requiredMl} مل من ${parent.name}`);
+      state.decantProductionLog.unshift({id:productionRef,date:new Date().toISOString(),parentId:parent.id,productId:p.id,quantity:qty,mlUsed:requiredMl,returnedMlUsed:returnedUsed,openedPoolMlUsed:openedUsed,sourceMode,sourceBreakdown:{returnedMl:returnedUsed,openedPoolMl:openedUsed},returnedBottleUsage:bottleUsage,returnedBalanceAfter:getReturnedOpenMlBalance(parent),openedPoolBalanceAfter:parent.decantMlOpenedAvailable,totalLiquidBalanceAfter:parent.decantMlAvailable,unitCost});
+      logAudit('DECANT_PRODUCTION',`تجهيز ${qty} من ${p.name} باستخدام ${requiredMl} مل — مرتجع ${returnedUsed} مل، سائل مفتوح ${openedUsed} مل`);
       if(!saveState()){state=before;refreshAllViews();return;}
-      closeModal('decantProductionModal');refreshAllViews();showToast(`تم تجهيز ${qty} عبوة وخصم ${requiredMl} مل و${qty} عبوة فارغة.`,'success');
+      closeModal('decantProductionModal');refreshAllViews();
+      showToast(`تم تجهيز ${qty} عبوة: ${returnedUsed} مل من المرتجع و${openedUsed} مل من السائل المفتوح، دون فتح زجاجة جديدة تلقائيًا.`,'success');
     }
 
     // V19.30 — operating supplies ledger. Existing shared empty-bottle inventory remains untouched.
@@ -3106,9 +3159,10 @@ function previewPeriodicReportPrint() {
           else if (disposition === 'open') {
             const now=new Date().toISOString(),unit=String(x.openUnit||getProductMeasureInfo(prod).unit||prod.stockUnit||'وحدة'),total=Number(x.openQty??x.openMl??0);
             prod.openReturnedBottles=Array.isArray(prod.openReturnedBottles)?prod.openReturnedBottles:[];
-            (x.openBottleQty||[]).forEach(amount=>prod.openReturnedBottles.unshift({id:'ORB-'+Date.now()+'-'+Math.random().toString(36).slice(2,8),orderId:o.id,productId:prod.id,productName:prod.name,returnedAt:now,originalQty:Number(amount),remainingQty:Number(amount),usedQty:0,unit,status:'available',...(unit==='مل'?{originalMl:Number(amount),remainingMl:Number(amount),usedMl:0}:{})}));
+            if(unit==='مل')ensureOpenedDecantPool(prod);
+            (x.openBottleQty||[]).forEach(amount=>prod.openReturnedBottles.unshift({id:'ORB-'+Date.now()+'-'+Math.random().toString(36).slice(2,8),orderId:o.id,productId:prod.id,productName:prod.name,returnedAt:now,originalQty:Number(amount),remainingQty:Number(amount),usedQty:0,unit,status:'available',usageHistory:[],...(unit==='مل'?{originalMl:Number(amount),remainingMl:Number(amount),usedMl:0}:{})}));
             prod.decantAvailableQty=Number((Number(prod.decantAvailableQty||0)+total).toFixed(3));prod.decantAvailableUnit=unit;
-            if(unit==='مل')prod.decantMlAvailable=Number((Number(prod.decantMlAvailable||0)+total).toFixed(3));
+            if(unit==='مل')syncDecantLiquidBalances(prod);
             prod.openReturnedQty=Number(prod.openReturnedQty||0)+qty;
             addInventoryMovement(prod.id,unit==='مل'?'DECANT_ML':'DECANT_RETURN',total,o.id,'مرتجع مفتوح صالح للتقسيم — '+qty+' قطعة ('+unit+')');
             state.decantReturnLog=Array.isArray(state.decantReturnLog)?state.decantReturnLog:[];
