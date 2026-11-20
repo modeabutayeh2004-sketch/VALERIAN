@@ -1,7 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
+import { spawnSync } from 'node:child_process';
 const root=process.cwd(), out=path.join(root,'www');
+const syntaxCheck=spawnSync(process.execPath,['--check',path.join(root,'engine-runtime.js')],{stdio:'inherit'});
+if(syntaxCheck.status!==0)process.exit(syntaxCheck.status??1);
 fs.rmSync(out,{recursive:true,force:true});fs.mkdirSync(out,{recursive:true});
 for(const file of ['index.html','engine-runtime.js','service-worker.js']) fs.copyFileSync(path.join(root,file),path.join(out,file));
 // The service worker pre-caches this exact path. Include the source emblem in
