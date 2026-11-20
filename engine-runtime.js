@@ -2896,7 +2896,7 @@ function previewPeriodicReportPrint() {
           if(!path||!cloudClient||!cloudUser||!navigator.onLine)throw new Error('لا توجد صورة محفوظة محلياً، ولا توجد نسخة سحابية متاحة لهذا المستند حالياً');
           const {data,error}=await cloudClient.storage.from(VAL_IMAGE_BUCKET).download(path);
           if(error||!data)throw new Error('تعذر تنزيل الصورة المحفوظة من السحابة: '+(error?cloudErrorMessage(error):'لم يتم العثور على الملف'));
-          saved={blob:data,contentType:data.type||'image/png',savedAt:linkedRecord.invoiceImageSavedAt||Date.now(),fileName:'VALERIAN-'+String(order.id)+'.'+(data.type==='image/jpeg'?'jpg':'png')};
+          saved={blob:data,contentType:data.type||'image/png',savedAt:(linkedRecord?.invoiceImageSavedAt||linkedCustomer?.[storagePathKey+'SavedAt']||Date.now()),fileName:'VALERIAN-'+String(order.id)+'.'+(data.type==='image/jpeg'?'jpg':'png')};
           await valIdbPutMany('invoiceImages',{[key]:saved});
         }
         const url=URL.createObjectURL(saved.blob);
