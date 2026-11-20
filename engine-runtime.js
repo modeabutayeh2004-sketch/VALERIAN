@@ -139,14 +139,20 @@
           p.stockUnit = String(p.stockUnit || 'وحدة');
         }
       });
-      // Backfill the count of open units previously returned. Older builds stored this in the return log.
-      const openReturnTotals = new Map();
-      const openReturnEntries = Array.isArray(merged.decantReturnLog) && merged.decantReturnLog.length
-        ? merged.decantReturnLog
-        : (merged.returnRecords || []).flatMap(record => (record.items || []).filter(item => item.disposition === 'open').map(item => ({productId:item.productId,quantity:item.qty})));
-      openReturnEntries.forEach(entry => {
+      // Backfill the count of open units previously returned. Older builds stored this in either return history.
+      const openReturnLogTotals = new Map(), openReturnRecordTotals = new Map();
+      (merged.decantReturnLog || []).forEach(entry => {
         const id=String(entry.productId||'');if(!id)return;
-        openReturnTotals.set(id,(openReturnTotals.get(id)||0)+Math.max(0,Number(entry.quantity||entry.qty||0)));
+        openReturnLogTotals.set(id,(openReturnLogTotals.get(id)||0)+Math.max(0,Number(entry.quantity||entry.qty||0)));
+      });
+      (merged.returnRecords || []).forEach(record => (record.items || []).filter(item => item.disposition === 'open').forEach(item => {
+        const id=String(item.productId||'');if(!id)return;
+        openReturnRecordTotals.set(id,(openReturnRecordTotals.get(id)||0)+Math.max(0,Number(item.qty||0)));
+      }));
+      const openReturnTotals = new Map();
+      merged.products.forEach(product => {
+        const id=String(product.id);
+        openReturnTotals.set(id,Math.max(openReturnLogTotals.get(id)||0,openReturnRecordTotals.get(id)||0));
       });
       // Backfill product-specific fields for every product, regardless of whether shared packaging inventory already exists.
       merged.products.forEach(p => {
