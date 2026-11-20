@@ -2967,6 +2967,7 @@ function previewPeriodicReportPrint() {
       if (!o || (o.items || []).every(i => Number(i.returnedQty || 0) >= Number(i.qty || 0))) { showToast('تم إرجاع كامل قيمة الطلب بالفعل.', 'error'); return; }
       if(!Array.isArray(suppliedSelections)){openOrderReturnModal(idx);return;}
       const before = structuredClone(state);
+      const stockWasDeducted=!!stockWasDeducted||!!o.deliveredAt||String(o.status||'').includes('تم التسليم')||o.mode==='direct';
       const selections = [];
       let returnValue = 0;
       const subtotal = Math.max(0, Number(o.subtotal || (o.items || []).reduce((a,i)=>a+Number(i.price||0)*Number(i.qty||0),0)));
@@ -2986,8 +2987,8 @@ function previewPeriodicReportPrint() {
             const qty=Number(supplied?.qty||0);
             if(!Number.isInteger(qty)||qty<0||totalQty+qty>remainingQty)throw new Error('إجمالي كمية المرتجع غير صحيح للصنف '+(item.name||item.id)+'.');
             if(!qty)continue;
-            const disposition=o.stockDeducted?String(supplied?.disposition||'restock'):'release';
-            if(o.stockDeducted&&!['restock','open','quarantine','writeoff'].includes(disposition))throw new Error('حالة المرتجع غير صحيحة للصنف '+(item.name||item.id)+'.');
+            const disposition=stockWasDeducted?String(supplied?.disposition||'restock'):'release';
+            if(stockWasDeducted&&!['restock','open','quarantine','writeoff'].includes(disposition))throw new Error('حالة المرتجع غير صحيحة للصنف '+(item.name||item.id)+'.');
             const lineReturnValue=roundMoney(unitPrice*qty*netFactor);
             const openMl=Number(supplied?.openMl||0);
             if(disposition==='open'){
@@ -3005,7 +3006,7 @@ function previewPeriodicReportPrint() {
           if(!Number.isInteger(qty)||qty<0||qty>remainingQty){showToast('كمية المرتجع غير صحيحة. لم يتم حفظ أي تغيير.','error');return;}
           if(!qty)continue;
           let disposition='release';
-          if(o.stockDeducted){const answer=prompt('حالة '+qty+' قطعة من '+(item.name||item.id)+':\n1 = سليم ومغلق (إرجاع للمخزون)\n2 = مفتوح/مستخدم (عزل)\n3 = تالف (هالك)','1');if(answer===null)return;if(!['1','2','3'].includes(answer.trim())){showToast('اختيار الحالة غير صحيح.','error');return;}disposition=({'1':'restock','2':'quarantine','3':'writeoff'})[answer.trim()];}
+          if(stockWasDeducted){const answer=prompt('حالة '+qty+' قطعة من '+(item.name||item.id)+':\n1 = سليم ومغلق (إرجاع للمخزون)\n2 = مفتوح/مستخدم (عزل)\n3 = تالف (هالك)','1');if(answer===null)return;if(!['1','2','3'].includes(answer.trim())){showToast('اختيار الحالة غير صحيح.','error');return;}disposition=({'1':'restock','2':'quarantine','3':'writeoff'})[answer.trim()];}
           const lineReturnValue=roundMoney(unitPrice*qty*netFactor);
           returnValue+=lineReturnValue;
           selections.push({item,prod,qty,disposition,openMl:0,lineReturnValue});
@@ -3040,7 +3041,7 @@ function previewPeriodicReportPrint() {
       for (const x of selections) {
         const {item,prod,qty,disposition}=x;
         item.returnedQty = Number(item.returnedQty || 0) + qty;
-        if (o.stockDeducted) {
+        if (stockWasDeducted) {
           if (disposition === 'restock') { prod.stock=Number(prod.stock||0)+qty; addInventoryMovement(prod.id,'RETURN_RESTOCK',qty,o.id,'مرتجع جزئي سليم ومغلق'); }
           else if (disposition === 'open') { prod.decantMlAvailable=Number(prod.decantMlAvailable||0)+Number(x.openMl||0); state.decantReturnLog=Array.isArray(state.decantReturnLog)?state.decantReturnLog:[]; state.decantReturnLog.unshift({id:'DRT-'+Date.now()+'-'+Math.random().toString(36).slice(2,5),date:new Date().toISOString(),orderId:o.id,productId:prod.id,productName:prod.name,quantity:qty,availableMl:Number(x.openMl||0),note:'مرتجع مفتوح — أضيف إلى رصيد العطر المتاح للتقسيم'}); }
           else if (disposition === 'quarantine') { prod.quarantineStock=Number(prod.quarantineStock||0)+qty; addInventoryMovement(prod.id,'RETURN_QUARANTINE',qty,o.id,'مرتجع جزئي معزول'); }
