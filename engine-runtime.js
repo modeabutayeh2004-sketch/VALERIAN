@@ -2811,12 +2811,32 @@ function previewPeriodicReportPrint() {
         const blob=await renderPreviewBlob();
         const linkedOrder=pendingCustomerImageShare||pendingInvoiceShareOrder;
         let archived=false;
+        let cloudArchived=false;
         if(linkedOrder?.id){
           const archiveKey=String(linkedOrder.type||'document')+':'+String(linkedOrder.id);
           const db=await valIdbDb();
+          const safeArchiveId=String(linkedOrder.id).replace(/[^a-z0-9_-]/gi,'_');
+          const fileName='VALERIAN-'+safeArchiveId+'.'+(blob.type==='image/jpeg'?'jpg':'png');
           if(db&&db.objectStoreNames.contains('invoiceImages')){
-            await valIdbPutMany('invoiceImages',{[archiveKey]:{blob,contentType:blob.type||'image/png',savedAt:Date.now(),fileName:'VALERIAN-'+String(linkedOrder.id).replace(/[^a-z0-9_-]/gi,'_')+'.'+(blob.type==='image/jpeg'?'jpg':'png')}});
+            await valIdbPutMany('invoiceImages',{[archiveKey]:{blob,contentType:blob.type||'image/png',savedAt:Date.now(),fileName}});
             archived=true;
+          }
+          const linkedRecord=(state.orders||[]).find(x=>String(x.id)===String(linkedOrder.id));
+          if(linkedRecord&&cloudClient&&cloudUser&&cloudReady&&navigator.onLine){
+            try{
+              const hash=await valImageSha256(blob);
+              const ext=valImageExtension(blob.type);
+              const path=cloudUser.id+'/invoice-'+safeArchiveId+'-'+hash+'.'+ext;
+              const {error}=await cloudClient.storage.from(VAL_IMAGE_BUCKET).upload(path,blob,{upsert:true,contentType:blob.type||'image/png',cacheControl:'31536000'});
+              if(error)throw new Error(cloudErrorMessage(error));
+              linkedRecord.invoiceImageStoragePath=path;
+              linkedRecord.invoiceImageSavedAt=Date.now();
+              if(!saveState())throw new Error('تعذر حفظ رابط الصورة داخل سجل الفاتورة');
+              await valDurableWritePromise;
+              cloudArchived=true;
+            }catch(cloudErr){
+              console.warn('VALERIAN invoice cloud archive failed',cloudErr);
+            }
           }
         }
         const id=(linkedOrder?.id||'document').replace(/[^a-z0-9_-]/gi,'_');
@@ -2833,7 +2853,7 @@ function previewPeriodicReportPrint() {
           document.body.appendChild(a);a.click();a.remove();
           setTimeout(()=>URL.revokeObjectURL(url),120000);
         }
-        showToast(archived?'تم حفظ صورة المستند في سجلّه على هذا الجهاز وتنزيل نسخة HD.':'تم تنزيل نسخة HD؛ تعذّر أرشفة الصورة داخل سجل المستند على هذا الجهاز.','success');
+        showToast(cloudArchived?'تم حفظ صورة الفاتورة في سجلّها ومزامنة نسختها السحابية، مع تنزيل نسخة HD.':(archived?'تم حفظ الصورة في سجلّ المستند على هذا الجهاز وتنزيل نسخة HD. المزامنة السحابية للصورة لم تكتمل بعد.':'تم تنزيل نسخة HD؛ تعذّرت أرشفة الصورة داخل سجل المستند.','success'));
       } catch(err) {
         console.error('VALERIAN image download failed',err);
         showToast('تعذر تنزيل الصورة: '+(err?.message||err?.name||'خطأ غير معروف'),'error');
@@ -2846,8 +2866,16 @@ function previewPeriodicReportPrint() {
         const key=String(order.type||'document')+':'+String(order.id);
         const db=await valIdbDb();
         if(!db||!db.objectStoreNames.contains('invoiceImages'))throw new Error('أرشيف صور الفواتير غير متاح على هذا الجهاز');
-        const saved=await valIdbGet('invoiceImages',key);
-        if(!saved?.blob?.size)throw new Error('لا توجد صورة محفوظة لهذا المستند على هذا الجهاز بعد');
+        let saved=await valIdbGet('invoiceImages',key);
+        if(!saved?.blob?.size){
+          const linkedRecord=(state.orders||[]).find(x=>String(x.id)===String(order.id));
+          const path=String(linkedRecord?.invoiceImageStoragePath||'');
+          if(!path||!cloudClient||!cloudUser||!navigator.onLine)throw new Error('لا توجد صورة محفوظة محلياً، ولا توجد نسخة سحابية متاحة لهذا المستند حالياً');
+          const {data,error}=await cloudClient.storage.from(VAL_IMAGE_BUCKET).download(path);
+          if(error||!data)throw new Error('تعذر تنزيل الصورة المحفوظة من السحابة: '+(error?cloudErrorMessage(error):'لم يتم العثور على الملف'));
+          saved={blob:data,contentType:data.type||'image/png',savedAt:linkedRecord.invoiceImageSavedAt||Date.now(),fileName:'VALERIAN-'+String(order.id)+'.'+(data.type==='image/jpeg'?'jpg':'png')};
+          await valIdbPutMany('invoiceImages',{[key]:saved});
+        }
         const url=URL.createObjectURL(saved.blob);
         const opened=window.open(url,'_blank');
         if(!opened){const a=document.createElement('a');a.href=url;a.download=saved.fileName||('VALERIAN-'+String(order.id)+'.png');a.click();}
