@@ -73,9 +73,19 @@ try {
           return {screenWidth:innerWidth,screenHeight:innerHeight,dialogWidth:Math.round(r.width),dialogHeight:Math.round(r.height),dialogRight:Math.round(r.right),dialogBottom:Math.round(r.bottom),viewportWidth:Math.round(v.width),viewportHeight:Math.round(v.height),viewportScrollHeight:viewport.scrollHeight,actionCount:actions.length,actionsVisible:actions.every(b=>{const x=b.getBoundingClientRect();return x.width>0&&x.height>0&&x.top>=0&&x.bottom<=innerHeight;})};
         })();
         if(!dialog||!viewport||modalMetrics.dialogWidth>modalMetrics.screenWidth||modalMetrics.dialogRight>modalMetrics.screenWidth+1||modalMetrics.dialogBottom>modalMetrics.screenHeight+1||modalMetrics.actionCount!==3||!modalMetrics.actionsVisible)throw new Error('Mobile document modal layout failed: '+JSON.stringify(modalMetrics));
+        const paperBefore=document.querySelector('#previewSheetBody > *');
+        const paperBeforeRect=paperBefore.getBoundingClientRect();
+        const paperBeforeStyle={width:getComputedStyle(paperBefore).width,height:getComputedStyle(paperBefore).height,zoom:getComputedStyle(paperBefore).zoom,overflow:getComputedStyle(paperBefore).overflow};
+        await page.screenshot({path:'www/visual-invoice.png',fullPage:true,animations:'disabled'});
         const blob=await window.__valerianCreatePreviewImageBlob();
         if(!blob||blob.size<10000)throw new Error('Invoice export image is empty or unexpectedly small');
-        const bitmap=await createImageBitmap(blob);
+        let bitmap;
+        try{bitmap=await createImageBitmap(blob);}catch(error){
+          const bytes=new Uint8Array(await blob.slice(0,24).arrayBuffer());
+          const pngWidth=bytes.length>=24?((bytes[16]<<24)|(bytes[17]<<16)|(bytes[18]<<8)|bytes[19]):0;
+          const pngHeight=bytes.length>=24?((bytes[20]<<24)|(bytes[21]<<16)|(bytes[22]<<8)|bytes[23]):0;
+          throw new Error('Export PNG decode failed: '+JSON.stringify({type:blob.type,bytes:blob.size,pngWidth,pngHeight,paperWidth:paperBeforeRect.width,paperHeight:paperBeforeRect.height,paperBeforeStyle,error:String(error)}));
+        }
         const pixelCanvas=document.createElement('canvas');pixelCanvas.width=bitmap.width;pixelCanvas.height=bitmap.height;
         const pixelContext=pixelCanvas.getContext('2d',{willReadFrequently:true});pixelContext.drawImage(bitmap,0,0);
         const pixels=pixelContext.getImageData(0,0,bitmap.width,bitmap.height).data;
