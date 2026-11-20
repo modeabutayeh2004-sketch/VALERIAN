@@ -3686,7 +3686,6 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       <section id="screen-more" class="app-screen hidden space-y-4">
         <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
           <button onclick="setMoreTab('orders')" data-more="orders" class="more-pill px-4 py-2 rounded-full text-xs font-extrabold silver-btn shrink-0">🧾 الطلبات</button>
-          <button onclick="setMoreTab('tracking')" data-more="tracking" class="more-pill px-4 py-2 rounded-full text-xs font-bold glass-pill text-slate-200 shrink-0">🚚 الشحن والتتبع</button>
           <button onclick="setMoreTab('crm')" data-more="crm" class="more-pill px-4 py-2 rounded-full text-xs font-bold glass-pill text-slate-200 shrink-0">👑 العملاء والولاء</button>
           <button onclick="setMoreTab('offers')" data-more="offers" class="more-pill px-4 py-2 rounded-full text-xs font-bold glass-pill text-slate-200 shrink-0">🎁 كتالوج العروض</button>
           <button onclick="setMoreTab('reports')" data-more="reports" class="more-pill px-4 py-2 rounded-full text-xs font-bold glass-pill text-slate-200 shrink-0">📊 التقارير والذكاء</button>
@@ -3698,14 +3697,6 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
             <span class="text-[10px] text-slate-400">تأكيد التسليم الفوري أو معاينة الإيصال</span>
           </div>
           <div id="moreOrdersContainer" data-slot="orders-container" class="space-y-3"></div>
-        </div>
-
-        <div id="more-tracking" class="more-view hidden space-y-3">
-          <div class="glass-card rounded-2xl p-3.5 border-rose-400/30">
-            <div class="text-xs font-extrabold text-rose-200">🚚 تتبع الشحنات</div>
-            <p class="text-[10px] text-slate-300 mt-1">تظهر هنا بيانات شركات الشحن وأرقام التتبع وحالة كل شحنة.</p>
-          </div>
-          <div id="moreTrackingContainer" data-slot="tracking-container" class="space-y-3"></div>
         </div>
 
         <div id="more-crm" class="more-view hidden space-y-3">
@@ -4392,7 +4383,16 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       }
     }
 
-    function closeSheet(id) { document.getElementById(id).classList.add('hidden'); }
+    function closeSheet(id) {
+      const sheet=document.getElementById(id);if(sheet)sheet.classList.add('hidden');
+      if(id==='checkoutSheet'){
+        ['chkPhone','chkName','chkAddress'].forEach(key=>{const input=document.getElementById(key);if(input)input.value='';});
+        const points=document.getElementById('chkLoyaltyBox');if(points)points.classList.add('hidden');
+        const notice=document.getElementById('customerPointsNotice');if(notice)notice.classList.add('hidden');
+        const company=document.getElementById('chkShippingCompany');if(company)company.value='';
+        redeemPointsActive=false;
+      }
+    }
 
     function switchScreen(screen, subOption = null) {
       document.querySelectorAll('.app-screen').forEach(s => s.classList.add('hidden'));
@@ -5160,8 +5160,9 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
                   <strong class="font-black text-amber-200 bidi-ltr">${p.reservedStock || 0}</strong>
                 </div>
                 <div class="bg-[#02080c]/45 rounded-xl py-1.5">
-                  <span class="text-slate-400 block">${isDecantCategory(p) ? 'حجم العبوة' : 'سائل مفتوح'}</span>
-                  <strong class="font-black text-sky-300 bidi-ltr">${isDecantCategory(p) ? (p.size || (Number(p.decantSize||0)+' مل')) : (p.decantMlAvailable || 0) + ' ml'}</strong>
+                  <span class="text-slate-400 block">${isDecantCategory(p) ? 'حجم العبوة' : 'مرتجع مفتوح'}</span>
+                  <strong class="font-black text-sky-300 bidi-ltr">${isDecantCategory(p) ? (p.size || (Number(p.decantSize||0)+' مل')) : (Number(p.openReturnedQty||0)) + ' قطعة'}</strong>
+                  ${!isDecantCategory(p) ? `<span class="block text-[8px] text-slate-400 bidi-ltr">${Number(p.decantMlAvailable||0)} ml متاح للتقسيم</span>` : ''}
                 </div>
               </div>
               <div class="grid grid-cols-3 gap-1.5">
@@ -5447,7 +5448,6 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       });
 
       if (tab === 'orders') renderMoreOrders();
-      if (tab === 'tracking') renderMoreTracking();
       if (tab === 'crm') renderCrmMobile();
       if (tab === 'offers') renderMoreOffers();
       if (tab === 'reports') renderMoreReports();
@@ -5455,7 +5455,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
 
     function isMobileOrderDelivered(order) {
       const status=String(order?.status||'');
-      return !!order?.deliveredAt || status.includes('تم التسليم') || order?.mode==='direct' || (!!order?.stockDeducted && !order?.shippedAt && order?.mode!=='reservation');
+      return !!order?.deliveredAt || status.includes('تم التسليم') || (!!order?.stockDeducted && !order?.shippedAt && order?.mode!=='reservation');
     }
 
     let currentMoreOrdersView = 'reserved';
@@ -5465,42 +5465,32 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
     }
 
     function renderMoreOrders() {
-      const box = document.getElementById('moreOrdersContainer');
-      if (!box) return;
-      const all = Array.isArray(appState.orders) ? appState.orders : [];
-      const delivered = isMobileOrderDelivered;
-      const shipped = o => !delivered(o) && !!o.stockDeducted && (!!o.shippedAt || String(o.status||'').includes('تم شحنه'));
-      const returned = o => String(o.status||'').includes('مرتجع بالكامل') || (Array.isArray(o.items) && o.items.length && o.items.every(i=>Number(i.returnedQty||0)>=Number(i.qty||0)));
-      const active = all.filter(o => !returned(o) && !String(o.status||'').includes('ملغي'));
-      const groups = {
-        reserved: active.filter(o => !o.stockDeducted && !delivered(o)),
-        shipped: active.filter(shipped),
-        delivered: active.filter(delivered)
-      };
-      const newestFirst = list => [...list].sort((a,b) => {
-        const timeOf = order => { const parsed=Date.parse(order?.createdAt||order?.date||order?.deliveredAt||order?.shippedAt||''); if(Number.isFinite(parsed))return parsed; const digits=String(order?.id||'').match(/(\d+)$/); return digits?Number(digits[1]):0; };
-        return timeOf(b)-timeOf(a);
-      });
-      const labels = {reserved:'محجوز',shipped:'مشحون',delivered:'تم تسليمه'};
-      const counts = {reserved:groups.reserved.length,shipped:groups.shipped.length,delivered:groups.delivered.length};
-      const tabs = ['reserved','shipped','delivered'].map(key => {
-        const activeTab=currentMoreOrdersView===key;
-        return '<button type="button" onclick="setMoreOrdersView(\''+key+'\')" class="flex-1 min-w-0 rounded-xl px-2 py-3 text-[11px] font-extrabold border '+(activeTab?'silver-btn border-white/30 text-slate-950':'glass-pill border-white/10 text-slate-200')+'"><span class="block">'+labels[key]+'</span><span class="block text-[10px] mt-1 '+(activeTab?'text-slate-700':'text-slate-400')+'">'+counts[key]+' طلب</span></button>';
-      }).join('');
-      const list = newestFirst(groups[currentMoreOrdersView]);
-      const cards = list.length ? list.map(o => {
+      const box=document.getElementById('moreOrdersContainer');if(!box)return;
+      const all=Array.isArray(appState.orders)?appState.orders:[];
+      const delivered=isMobileOrderDelivered;
+      const shipped=o=>!delivered(o)&&!!o.stockDeducted&&!!o.shippedAt;
+      const returned=o=>String(o.status||'').includes('مرتجع بالكامل')||(Array.isArray(o.items)&&o.items.length&&o.items.every(i=>Number(i.returnedQty||0)>=Number(i.qty||0)));
+      const active=all.filter(o=>!returned(o)&&!String(o.status||'').includes('ملغي'));
+      const groups={reserved:active.filter(o=>!o.stockDeducted&&!delivered(o)),shipped:active.filter(shipped),delivered:active.filter(delivered)};
+      const stageTime=(o,stage)=>{const value=stage==='shipped'?(o.shippedAt||o.shippingDispatchedAt):(stage==='delivered'?o.deliveredAt:(o.reservedAt||o.createdAt||o.date));const parsed=Date.parse(value||'');if(Number.isFinite(parsed))return parsed;const id=String(o.id||'').match(/(\d+)$/);return id?Number(id[1]):0;};
+      const labels={reserved:'محجوز',shipped:'مشحون',delivered:'تم تسليمه'};
+      const counts={reserved:groups.reserved.length,shipped:groups.shipped.length,delivered:groups.delivered.length};
+      const tabs=['reserved','shipped','delivered'].map(key=>{const activeTab=currentMoreOrdersView===key;return '<button type="button" onclick="setMoreOrdersView(\''+key+'\')" class="flex-1 min-w-0 rounded-xl px-2 py-3 text-[11px] font-extrabold border '+(activeTab?'silver-btn border-white/30 text-slate-950':'glass-pill border-white/10 text-slate-200')+'"><span class="block">'+labels[key]+'</span><span class="block text-[10px] mt-1 '+(activeTab?'text-slate-700':'text-slate-400')+'">'+counts[key]+' طلب</span></button>';}).join('');
+      const list=[...groups[currentMoreOrdersView]].sort((a,b)=>stageTime(b,currentMoreOrdersView)-stageTime(a,currentMoreOrdersView));
+      const cards=list.length?list.map(o=>{
         const id=String(o.id||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-        const status=currentMoreOrdersView==='reserved'?'بانتظار الشحن':currentMoreOrdersView==='shipped'?'بانتظار تأكيد استلام العميل':'تم تأكيد الاستلام';
+        const isDirectPaid=o.mode==='direct'&&currentMoreOrdersView==='reserved';
+        const status=currentMoreOrdersView==='reserved'?(isDirectPaid?'مدفوع بالكامل — بانتظار الشحن':'بانتظار الشحن'):currentMoreOrdersView==='shipped'?'بانتظار تأكيد استلام العميل':'تم تأكيد الاستلام';
         const action=currentMoreOrdersView==='reserved'
-          ? '<button type="button" onclick="openMobileShippingEditor(\''+id+'\',true)" class="flex-1 py-2 rounded-full silver-btn text-[11px] font-black">تسليم لشركة الشحن 🚚</button>'
+          ? '<button type="button" onclick="openMobileShippingEditor(\''+id+'\',true)" class="flex-1 py-2 rounded-full silver-btn text-[11px] font-black">اختيار شركة الشحن واعتماد الشحنة 🚚</button>'
           : currentMoreOrdersView==='shipped'
-            ? '<button type="button" onclick="openMobileDeliveryConfirm(\''+id+'\')" class="flex-1 py-2 rounded-full silver-btn text-[11px] font-black">تأكيد استلام العميل والتحصيل ✓</button>'
-            : '<span class="flex-1 text-center py-2 rounded-full bg-emerald-500/10 border border-emerald-300/20 text-emerald-200 text-[10px] font-bold">تم تسجيل البيع والتحصيل</span>' + ((o.items||[]).some(i=>Number(i.returnedQty||0)<Number(i.qty||0)) ? '<button type="button" onclick="processMobileReturn(\''+id+'\')" class="flex-1 py-2 rounded-full bg-rose-500/15 border border-rose-300/25 text-[11px] font-bold text-rose-100">تسجيل مرتجع ↩️</button>' : '<span class="flex-1 text-center py-2 rounded-full bg-rose-500/10 text-rose-200 text-[10px] font-bold">اكتمل المرتجع</span>');
-        return '<div class="glass-card rounded-2xl p-3.5 space-y-2.5 text-xs"><div class="flex items-center justify-between gap-2"><div><strong class="text-white font-extrabold">'+escapeHtmlMobile(o.name||'عميل')+'</strong><span class="text-[10px] text-slate-400 bidi-ltr block">'+escapeHtmlMobile(o.id)+' • '+escapeHtmlMobile(o.date||'')+'</span></div><span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold '+(currentMoreOrdersView==='delivered'?'bg-emerald-500/20 text-emerald-200':currentMoreOrdersView==='shipped'?'bg-sky-500/20 text-sky-200':'bg-amber-500/20 text-amber-100')+'">'+status+'</span></div><div class="flex justify-between text-[11px] pt-2 border-t border-white/[0.08]"><span>الإجمالي: <strong class="bidi-ltr">'+fmtEgp(o.grandTotal)+'</strong></span><span>المتبقي: <strong class="text-sky-200 bidi-ltr">'+fmtEgp(o.remainingAmount)+'</strong></span></div><div class="flex gap-2"><button type="button" onclick="openThermalReceiptPreview(appState.orders.find(x=>x.id===\''+id+'\'))" class="flex-1 py-2 rounded-full glass-pill text-[11px] font-bold">معاينة الفاتورة 🖨️</button>'+action+'</div></div>';
-      }).join('') : renderEmptyPlaceholder('🧾', 'لا توجد طلبات في تصنيف '+labels[currentMoreOrdersView], currentMoreOrdersView==='reserved'?'ستظهر الحجوزات الجديدة هنا حتى اعتماد تسليمها لشركة الشحن.':currentMoreOrdersView==='shipped'?'ستظهر الشحنات هنا حتى تأكيد استلام العميل وتسجيل التحصيل.':'ستظهر هنا الطلبات التي تم تأكيد استلامها.');
+            ? '<button type="button" onclick="printMobileWaybill(\''+id+'\')" class="flex-1 py-2 rounded-full silver-btn text-[11px] font-black">طباعة بوليصة 🖨️</button><button type="button" onclick="openMobileDeliveryConfirm(\''+id+'\')" class="flex-1 py-2 rounded-full glass-pill text-[11px] font-black text-slate-100">تأكيد الاستلام والتحصيل ✓</button>'
+            : '<span class="flex-1 text-center py-2 rounded-full bg-emerald-500/10 border border-emerald-300/20 text-emerald-200 text-[10px] font-bold">تم تسجيل البيع والتحصيل</span>' + ((o.items||[]).some(i=>Number(i.returnedQty||0)<Number(i.qty||0)) ? '<button type="button" onclick="processMobileReturn(\''+id+'\')" class="flex-1 py-2 rounded-full silver-btn text-[11px] font-black text-slate-950">تسجيل <span style="color:#000">↩</span> مرتجع</button>' : '<span class="flex-1 text-center py-2 rounded-full glass-pill text-slate-300 text-[10px] font-bold">اكتمل المرتجع</span>');
+        const shipmentInfo=currentMoreOrdersView==='shipped'?'<div class="rounded-xl bg-white/5 px-3 py-2 text-[10px] text-slate-300">شركة الشحن: <b class="text-white">'+escapeHtmlMobile(o.shippingCompany||'غير محددة')+'</b><span class="mx-1">•</span> رقم التتبع: <b class="text-white bidi-ltr">'+escapeHtmlMobile(o.trackingNumber||'—')+'</b></div>':'';
+        return '<div class="glass-card rounded-2xl p-3.5 space-y-2.5 text-xs"><div class="flex items-center justify-between gap-2"><div><strong class="text-white font-extrabold">'+escapeHtmlMobile(o.name||'عميل')+'</strong><span class="text-[10px] text-slate-400 bidi-ltr block">'+escapeHtmlMobile(o.id)+' • '+escapeHtmlMobile(o.date||'')+'</span></div><span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold '+(currentMoreOrdersView==='delivered'?'bg-emerald-500/20 text-emerald-200':currentMoreOrdersView==='shipped'?'bg-sky-500/20 text-sky-200':'bg-amber-500/20 text-amber-100')+'">'+status+'</span></div>'+shipmentInfo+'<div class="flex justify-between text-[11px] pt-2 border-t border-white/[0.08]"><span>الإجمالي: <strong class="bidi-ltr">'+fmtEgp(o.grandTotal)+'</strong></span><span>المتبقي: <strong class="text-sky-200 bidi-ltr">'+fmtEgp(o.remainingAmount)+'</strong></span></div><div class="flex gap-2 flex-wrap"><button type="button" onclick="openThermalReceiptPreview(appState.orders.find(x=>x.id===\''+id+'\'))" class="flex-1 py-2 rounded-full glass-pill text-[11px] font-bold">معاينة الفاتورة 🖨️</button>'+action+'</div></div>';
+      }).join(''):renderEmptyPlaceholder('🧾','لا توجد طلبات في تصنيف '+labels[currentMoreOrdersView],currentMoreOrdersView==='reserved'?'ستظهر الحجوزات والمبيعات المباشرة المدفوعة هنا حتى اعتماد الشحن.':currentMoreOrdersView==='shipped'?'ستظهر الشحنات هنا حتى تأكيد استلام العميل وتسجيل التحصيل.':'ستظهر هنا الطلبات التي تم تأكيد استلامها.');
       box.innerHTML='<div class="grid grid-cols-3 gap-2">'+tabs+'</div><div class="space-y-3">'+cards+'</div>';
     }
-
     function openMobileDeliveryConfirm(orderId) {
       const order=(appState.orders||[]).find(o=>String(o.id)===String(orderId));
       if(!order)return showToast('الطلب غير موجود.');
@@ -5643,7 +5633,7 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       if(!order)return showToast('الطلب غير موجود.');
       const pending=(order.items||[]).filter(item=>Number(item.qty||0)>Number(item.returnedQty||0));
       if(!pending.length)return showToast('تم إرجاع كامل كميات هذا الطلب بالفعل.');
-      const alreadyShipped=!!order.stockDeducted||!!order.deliveredAt||String(order.status||'').includes('تم التسليم')||order.mode==='direct';
+      const alreadyShipped=!!order.stockDeducted||!!order.deliveredAt||String(order.status||'').includes('تم التسليم');
       let root=document.getElementById('mobileReturnEditor');if(!root){root=document.createElement('div');root.id='mobileReturnEditor';document.body.appendChild(root);}
       const rows=pending.map(item=>{
         const remaining=Math.max(0,Number(item.qty||0)-Number(item.returnedQty||0));
@@ -5684,8 +5674,11 @@ WhatsApp | https://wa.me/201xxxxxxxxx" class="w-full px-3 py-2 border rounded-lg
       try{
         const result=await window.ValerianShippingAction('returnOrder',{orderId,selections});
         if(result?.ok!==true)throw new Error(result?.error||'لم يؤكد محرك الأعمال اعتماد المرتجع.');
-        root.remove();renderMoreTracking();renderMoreOrders();
-        showToast('تم تسجيل المرتجع وتوجيه كل كمية إلى مخزونها الصحيح.');
+        root.remove();
+        syncFromEngine(result.snapshot);
+        renderInventoryScreen();
+        renderMoreOrders();
+        showToast('تم تسجيل المرتجع وتحديث رصيد المفتوح والمخزون.');
       }catch(err){
         const message=String(err?.message||err||'تعذر اعتماد المرتجع.');
         console.error('Mobile return approval failed:',message,err);
