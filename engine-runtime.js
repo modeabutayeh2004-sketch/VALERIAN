@@ -1135,7 +1135,10 @@
       const img = document.getElementById('brandLogoImg');
       const fallback = document.getElementById('brandLogoFallback');
       if (state.brand.logo) {
-        img.src = state.brand.logo; img.classList.remove('hidden'); fallback.classList.add('hidden');
+        img.src = state.brand.logo;
+        img.style.objectFit='contain';
+        img.style.filter='brightness(0) saturate(100%) invert(66%) sepia(25%) saturate(690%) hue-rotate(8deg) brightness(94%) contrast(91%)';
+        img.classList.remove('hidden'); fallback.classList.add('hidden');
       } else {
         img.classList.add('hidden'); fallback.classList.remove('hidden');
       }
