@@ -5248,7 +5248,17 @@ function previewPeriodicReportPrint() {
           if(!isDecant)throw new Error('المنتج المحدد موجود لكنه غير مصنف كمنتج تقسيم وفق بياناته الحالية.');
           if(!parentId)throw new Error('منتج التقسيم غير مرتبط بزجاجة أصلية (parentId مفقود).');
           if(!state.products.some(x=>String(x.id)===parentId))throw new Error('الزجاجة الأصلية المرتبطة بمنتج التقسيم غير موجودة داخل المحرك.');
-          el('decantProductionProduct').value=selectedProductId;
+          // The laboratory bridge may run without opening the legacy production modal.
+          // In that path the select has no options, so assigning .value silently becomes "".
+          const productSelect=el('decantProductionProduct');
+          if(!Array.from(productSelect.options||[]).some(option=>String(option.value)===selectedProductId)){
+            const option=document.createElement('option');
+            option.value=selectedProductId;
+            option.textContent=String(selectedProduct.name||selectedProductId);
+            productSelect.appendChild(option);
+          }
+          productSelect.value=selectedProductId;
+          if(String(productSelect.value)!==selectedProductId)throw new Error('تعذر تمرير منتج التقسيم المحدد إلى نموذج التجهيز.');
           el('decantProductionQty').value=String(payload.quantity||0);
           if(el('decantProductionSource'))el('decantProductionSource').value=payload.sourceMode==='priority'?'priority':'returned';
           const before=(state.decantProductionLog||[]).length;
