@@ -2853,7 +2853,7 @@ function previewPeriodicReportPrint() {
           document.body.appendChild(a);a.click();a.remove();
           setTimeout(()=>URL.revokeObjectURL(url),120000);
         }
-        showToast(cloudArchived?'تم حفظ صورة الفاتورة في سجلّها ومزامنة نسختها السحابية، مع تنزيل نسخة HD.':(archived?'تم حفظ الصورة في سجلّ المستند على هذا الجهاز وتنزيل نسخة HD. المزامنة السحابية للصورة لم تكتمل بعد.':'تم تنزيل نسخة HD؛ تعذّرت أرشفة الصورة داخل سجل المستند.','success'));
+        showToast(cloudArchived?'تم حفظ صورة الفاتورة في سجلّها ومزامنة نسختها السحابية، مع تنزيل نسخة HD.':(archived?'تم حفظ الصورة في سجلّ المستند على هذا الجهاز وتنزيل نسخة HD. المزامنة السحابية للصورة لم تكتمل بعد.':'تم تنزيل نسخة HD؛ تعذّرت أرشفة الصورة داخل سجل المستند.'),'success');
       } catch(err) {
         console.error('VALERIAN image download failed',err);
         showToast('تعذر تنزيل الصورة: '+(err?.message||err?.name||'خطأ غير معروف'),'error');
