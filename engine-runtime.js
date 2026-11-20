@@ -4195,12 +4195,26 @@ async function previewPeriodicReportPrint() {
       document.getElementById('setPointValue').value = state.settings.pointValue;
       document.getElementById('setEnableQr').checked = state.settings.enableQr;
       document.getElementById('setInvoiceQrLinks').value = (Array.isArray(state.settings.invoiceQrLinks)?state.settings.invoiceQrLinks:[]).map(x => `${x.label||'رابط'} | ${x.url||''}`).join('\n');
+      renderInvoiceQrSettingsEditor();
       document.getElementById('setInvoiceReservationMsg').value = state.settings.invoiceReservationMsg;
       document.getElementById('setInvoiceFinalMsg').value = state.settings.invoiceFinalMsg;
       document.getElementById('setInvoiceWhatsAppMsg').value = state.settings.invoiceWhatsAppMsg || 'مرحباً {customer}، مرفق فاتورتكم رقم {order} من ڤاليريان. شكراً لثقتكم بنا.';
     }
 
 
+    function renderInvoiceQrSettingsEditor(){
+      const host=document.getElementById('invoiceQrLinksEditor');if(!host)return;
+      const links=Array.isArray(state.settings?.invoiceQrLinks)?state.settings.invoiceQrLinks:[];
+      host.innerHTML=links.map((item,index)=>'<div class="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto] gap-2 items-center rounded-xl border border-amber-200 bg-amber-50/50 p-2" data-qr-row="'+index+'"><input type="text" maxlength="32" data-qr-label value="'+escapeHTML(item.label||'')+'" placeholder="اسم المنصة" aria-label="اسم المنصة" class="w-full min-w-0 px-3 py-2 rounded-lg border bg-white text-sm"><input type="url" data-qr-url value="'+escapeHTML(item.url||'')+'" placeholder="https://..." dir="ltr" aria-label="رابط المنصة" class="w-full min-w-0 px-3 py-2 rounded-lg border bg-white text-sm text-left"><button type="button" data-qr-remove class="px-3 py-2 rounded-lg bg-white border border-rose-200 text-rose-700 font-bold text-xs">حذف</button></div>').join('');
+      host.querySelectorAll('[data-qr-remove]').forEach(btn=>btn.addEventListener('click',()=>{const row=btn.closest('[data-qr-row]');const index=Number(row?.dataset.qrRow);state.settings.invoiceQrLinks.splice(index,1);renderInvoiceQrSettingsEditor();}));
+      const add=document.getElementById('addInvoiceQrLinkBtn');
+      if(add&&!add.dataset.bound){add.dataset.bound='1';add.addEventListener('click',()=>{const rows=[...host.querySelectorAll('[data-qr-row]')];if(rows.length>=4){showToast('يمكن إضافة 4 منصات كحد أقصى.','error');return;}const linksNow=rows.map(row=>({label:row.querySelector('[data-qr-label]')?.value||'',url:row.querySelector('[data-qr-url]')?.value||''}));linksNow.push({label:'',url:''});state.settings.invoiceQrLinks=linksNow;renderInvoiceQrSettingsEditor();host.querySelector('[data-qr-row]:last-child [data-qr-label]')?.focus();});}
+    }
+    function readInvoiceQrSettingsEditor(){
+      const host=document.getElementById('invoiceQrLinksEditor');if(!host)return Array.isArray(state.settings.invoiceQrLinks)?state.settings.invoiceQrLinks:[];
+      const rows=[...host.querySelectorAll('[data-qr-row]')];if(rows.length>4)throw new Error('يمكن إضافة 4 منصات كحد أقصى.');
+      return rows.map(row=>{const label=String(row.querySelector('[data-qr-label]')?.value||'').trim().slice(0,32);const raw=String(row.querySelector('[data-qr-url]')?.value||'').trim();if(!label||!raw)throw new Error('أكمل اسم المنصة والرابط في كل صف، أو احذف الصف الفارغ.');const parsed=new URL(raw);if(!['http:','https:'].includes(parsed.protocol))throw new Error('يجب أن يبدأ الرابط بـ https:// أو http://');return {label,url:parsed.href};});
+    }
     async function saveComprehensiveSettings() {
       state.settings.primaryColor = document.getElementById('setPrimaryColorInput').value;
       state.settings.maleReservationColor = document.getElementById('setMaleReservationColor').value;
@@ -4216,17 +4230,8 @@ async function previewPeriodicReportPrint() {
       state.settings.loyaltyPercentage = loyaltyPercentageInput;
       state.settings.pointValue = pointValueInput;
       state.settings.enableQr = document.getElementById('setEnableQr').checked;
-      const qrRawLines = String(document.getElementById('setInvoiceQrLinks')?.value||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-      if(qrRawLines.length>4){showToast('يمكن إضافة 4 روابط كحد أقصى حتى لا تتكدس الفاتورة.','error');return;}
-      const qrLinks=[];
-      for(const line of qrRawLines){
-        const parts=line.split('|');
-        const label=(parts.length>1?parts.shift():'').trim().slice(0,32);
-        const rawUrl=parts.join('|').trim();
-        try{if(!label)throw new Error('label');const parsed=new URL(rawUrl);if(!['http:','https:'].includes(parsed.protocol))throw new Error('protocol');qrLinks.push({label,url:parsed.href});}
-        catch(_){showToast('بيانات QR غير صحيحة: '+line+' — اكتب اسم المنصة ثم | ثم رابطًا كاملًا يبدأ بـ https:// أو http://','error');return;}
-      }
-      state.settings.invoiceQrLinks=qrLinks;
+      try{state.settings.invoiceQrLinks=readInvoiceQrSettingsEditor();}catch(err){showToast(err.message||'راجع أسماء المنصات وروابط QR.','error');return;}
+      document.getElementById('setInvoiceQrLinks').value=state.settings.invoiceQrLinks.map(x=>x.label+' | '+x.url).join('\\n');
       state.settings.invoiceReservationMsg = document.getElementById('setInvoiceReservationMsg').value.trim();
       state.settings.invoiceFinalMsg = document.getElementById('setInvoiceFinalMsg').value.trim();
       state.settings.invoiceWhatsAppMsg = document.getElementById('setInvoiceWhatsAppMsg').value.trim() || 'مرحباً {customer}، مرفق فاتورتكم رقم {order} من ڤاليريان. شكراً لثقتكم بنا.';
