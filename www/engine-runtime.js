@@ -5626,6 +5626,48 @@ async function previewPeriodicReportPrint() {
           }catch(err){throw new Error('تم فتح الزجاجة داخل المحرك لكن تعذر تأكيد الحفظ الدائم: '+String(err?.message||err));}
           return {ok:true,snapshot:snapshot()};
         },
+        getTreasury:async ()=>{
+          await ready;
+          const methods=['نقدي','تحويل بنكي','محفظة إلكترونية','بطاقة','أخرى','غير محدد'];
+          const rows=getCashBookRows();
+          rows.forEach(r=>{if(!methods.includes(r.method))methods.push(r.method);});
+          (state.cashbookOpenings||[]).forEach(o=>{const m=normalizePaymentMethod(o.method);if(!methods.includes(m))methods.push(m);});
+          // Internal transfers move money between accounts: they are not income or spending.
+          const isTransfer=r=>String(r.reference||'').startsWith('CASH-TR-');
+          const accounts=methods.map(method=>{
+            const mine=rows.filter(r=>r.method===method&&r.reference!=='OPENING');
+            const opening=roundMoney((state.cashbookOpenings||[]).filter(o=>normalizePaymentMethod(o.method)===method).reduce((a,o)=>a+Number(o.amount||0),0));
+            const received=roundMoney(mine.filter(r=>!isTransfer(r)).reduce((a,r)=>a+Number(r.incoming||0),0));
+            const spent=roundMoney(mine.filter(r=>!isTransfer(r)).reduce((a,r)=>a+Number(r.outgoing||0),0));
+            const transferIn=roundMoney(mine.filter(isTransfer).reduce((a,r)=>a+Number(r.incoming||0),0));
+            const transferOut=roundMoney(mine.filter(isTransfer).reduce((a,r)=>a+Number(r.outgoing||0),0));
+            return {method,opening,received,spent,transferIn,transferOut,balance:getPaymentMethodBalance(method)};
+          }).filter(a=>a.opening||a.received||a.spent||a.transferIn||a.transferOut||Math.abs(a.balance)>0.0001);
+          const sum=k=>roundMoney(accounts.reduce((a,x)=>a+Number(x[k]||0),0));
+          return {ok:true,accounts,totals:{opening:sum('opening'),received:sum('received'),spent:sum('spent'),transferIn:sum('transferIn'),transferOut:sum('transferOut'),balance:sum('balance')},transfers:(state.cashbookTransfers||[]).slice(0,30)};
+        },
+        transferBetweenAccounts:async payload=>{
+          await ready;
+          const fromMethod=normalizePaymentMethod(payload?.from),toMethod=normalizePaymentMethod(payload?.to);
+          const amount=roundMoney(Number(payload?.amount)),date=String(payload?.date||new Date().toISOString().slice(0,10)).slice(0,10),note=String(payload?.note||'').trim();
+          if(!payload?.from||!payload?.to||fromMethod===toMethod)throw new Error('اختر حسابين مختلفين للتحويل.');
+          if(!Number.isFinite(amount)||amount<=0)throw new Error('أدخل مبلغ تحويل صحيحًا أكبر من صفر.');
+          if(!note)throw new Error('سبب التحويل إجباري.');
+          const available=getPaymentMethodBalance(fromMethod,date);
+          if(amount>available+0.0001)throw new Error('الرصيد المتاح في حساب '+fromMethod+' هو '+formatCurrency(available)+' فقط.');
+          const before=structuredClone(state);
+          state.cashbookTransfers=state.cashbookTransfers||[];
+          // One record = one atomic movement: the OUT and IN rows are derived from it, so the
+          // pair can never be saved half-way or counted twice.
+          const id='CASH-TR-'+Date.now()+'-'+Math.random().toString(36).slice(2,6);
+          state.cashbookTransfers.unshift({id,fromMethod,toMethod,amount,date:new Date(date+'T12:00:00').toISOString(),note,createdAt:new Date().toISOString()});
+          const issue=getPaymentMethodTimelineIssue(fromMethod,date);
+          if(issue){state=before;throw new Error('التحويل سيؤدي إلى رصيد سالب في '+fromMethod+' بتاريخ '+issue.date+'.');}
+          logAudit('CASH_TRANSFER_CREATED','تحويل '+amount+' من '+fromMethod+' إلى '+toMethod+' — '+note);
+          if(!saveState()){state=before;refreshAllViews();throw new Error('تعذر حفظ التحويل.');}
+          try{await valDurableWritePromise;if(valDurableWriteError)throw valDurableWriteError;}catch(err){state=before;saveState();throw new Error('لم يكتمل الحفظ الدائم للتحويل: '+String(err?.message||err));}
+          refreshAllViews();return {ok:true,id,snapshot:snapshot()};
+        },
         addShippingCompany:async name=>{
           await ready;const value=String(name||'').trim().replace(/\s+/g,' ');if(!value)throw new Error('اسم شركة الشحن مطلوب.');
           state.shippingCompanies=Array.isArray(state.shippingCompanies)?state.shippingCompanies:[];
