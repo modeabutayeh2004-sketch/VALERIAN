@@ -2037,6 +2037,8 @@ html[data-valerian-theme="light"] #settingsSheet .settings-sheet-heading button{
 html[data-valerian-theme="light"] #settingsSheet #valDiagToggle{background:linear-gradient(145deg,#fff,#eaf1f5)!important;color:#1d3043!important;border:1px solid rgba(48,78,101,.22)!important}
 html[data-valerian-theme="light"] #settingsSheet #valDiagPanel{background:#f7fafc!important;color:#1d3043!important;border:1px solid rgba(48,78,101,.22)!important;box-shadow:0 10px 28px rgba(43,65,84,.14)!important}
 html[data-valerian-theme="light"] #settingsSheet #valDiagLog{background:#eef3f6!important;color:#33475a!important}
+#settingsSheet #valDiagState{overflow-wrap:anywhere;word-break:break-word}
+#settingsSheet #valDiagPanel{overflow-x:hidden}
 html[data-valerian-theme="light"] .text-violet-200,html[data-valerian-theme="light"] .text-violet-300{color:#704e9b!important}
 html[data-valerian-theme="light"] .bg-white\/5{background:#f3f6f8!important}
 html[data-valerian-theme="light"] .bg-white\/10{background:#eaf0f3!important}
@@ -3742,7 +3744,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
 
 
   <!-- VALERIAN premium delivery / return confirmation -->
-  <div id="v5ActionModal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="v5ActionTitle" dir="rtl" onclick="if(event.target===this)closeV5ActionModal()"><section class="v5-action-panel space-y-4"><div class="flex justify-between"><div><div class="brand-serif text-[9px] tracking-[.24em] text-slate-400">VALERIAN • OPERATIONS</div><h2 id="v5ActionTitle" class="text-lg font-black text-white mt-1">مراجعة المرتجع</h2><p id="v5ActionSubtitle" class="text-[10px] text-slate-400 mt-1"></p></div><button onclick="closeV5ActionModal()" class="w-9 h-9 rounded-full glass-pill">✕</button></div><div class="rounded-2xl border border-white/10 bg-white/[.045] p-4"><p id="v5ActionMessage" class="text-sm leading-7 text-slate-200"></p></div><div id="v5ActionDetails" class="rounded-2xl border border-white/10 bg-white/[.035] p-4 space-y-2 max-h-[48dvh] overflow-y-auto"></div><div id="v5ActionMethodWrap" class="hidden space-y-2"><div class="text-xs">وسيلة التحصيل</div><input type="hidden" id="v5ActionMethod" value="نقدي"><div class="grid grid-cols-2 gap-2"><button data-v5-action-method="نقدي" class="v5-action-choice selected">💵 نقدي</button><button data-v5-action-method="تحويل بنكي" class="v5-action-choice">🏦 تحويل بنكي</button><button data-v5-action-method="محفظة إلكترونية" class="v5-action-choice">📱 محفظة</button><button data-v5-action-method="بطاقة" class="v5-action-choice">💳 بطاقة</button><button data-v5-action-method="أخرى" class="v5-action-choice col-span-2">أخرى</button></div></div><div id="v5ActionError" class="hidden rounded-xl border border-rose-300/20 bg-rose-500/10 px-3 py-2 text-xs text-rose-200"></div><div class="grid grid-cols-2 gap-3"><button onclick="closeV5ActionModal()" class="py-3 rounded-full glass-pill text-xs">إلغاء</button><button id="v5ActionConfirm" onclick="confirmV5Action()" class="v5-action-primary py-3 rounded-full text-xs font-black">تأكيد المرتجع</button></div></section></div>
+  <div id="v5ActionModal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="v5ActionTitle" dir="rtl" onclick="if(event.target===this)closeV5ActionModal()"><section class="v5-action-panel space-y-4"><div class="flex justify-between"><div><div class="brand-serif text-[9px] tracking-[.24em] text-slate-400">VALERIAN • OPERATIONS</div><h2 id="v5ActionTitle" class="text-lg font-black text-white mt-1">مراجعة المرتجع</h2><p id="v5ActionSubtitle" class="text-[10px] text-slate-400 mt-1"></p></div><button onclick="closeV5ActionModal()" class="w-9 h-9 rounded-full glass-pill">✕</button></div><div class="rounded-2xl border border-white/10 bg-white/[.045] p-4"><p id="v5ActionMessage" class="text-sm leading-7 text-slate-200"></p></div><div id="v5ActionDetails" class="rounded-2xl border border-white/10 bg-white/[.035] p-4 space-y-2 max-h-[48dvh] overflow-y-auto"></div><div id="v5ActionMethodWrap" class="hidden space-y-2"><div class="text-xs">وسيلة التحصيل</div><input type="hidden" id="v5ActionMethod" value="نقدي"><div class="grid grid-cols-2 gap-2"><button data-v5-action-method="نقدي" class="v5-action-choice selected">نقدي</button><button data-v5-action-method="تحويل بنكي" class="v5-action-choice">تحويل بنكي</button><button data-v5-action-method="محفظة إلكترونية" class="v5-action-choice">محفظة إلكترونية</button><button data-v5-action-method="بطاقة" class="v5-action-choice">بطاقة</button><button data-v5-action-method="أخرى" class="v5-action-choice col-span-2">أخرى</button></div></div><div id="v5ActionError" class="hidden rounded-xl border border-rose-300/20 bg-rose-500/10 px-3 py-2 text-xs text-rose-200"></div><div class="grid grid-cols-2 gap-3"><button onclick="closeV5ActionModal()" class="py-3 rounded-full glass-pill text-xs">إلغاء</button><button id="v5ActionConfirm" onclick="confirmV5Action()" class="v5-action-primary py-3 rounded-full text-xs font-black">تأكيد المرتجع</button></div></section></div>
 
     <!-- TOAST NOTIFICATION -->
     <div id="mobileToast" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-sm hidden">
@@ -3898,13 +3900,6 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         </div>
 
         <div id="inventoryProductsPanel" class="space-y-4">
-          <div class="glass-card rounded-3xl p-4 space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-extrabold text-slate-200">📦 مخزون العبوات الفارغة المشتركة</span>
-              <button onclick="openSheet('stockAdjustSheet')" class="text-[10px] font-bold text-sky-300 underline">تسوية / هالك ⚖️</button>
-            </div>
-            <div id="emptyBottlesPoolGrid" data-slot="packaging-pool-grid" class="grid grid-cols-3 gap-2.5"></div>
-          </div>
           <div class="flex gap-2">
             <button onclick="renderInventoryList('all')" id="invFilterAll" class="flex-1 py-2 rounded-full text-xs font-extrabold silver-btn">الكل</button>
             <button onclick="renderInventoryList('original')" id="invFilterOrig" class="flex-1 py-2 rounded-full text-xs font-bold glass-pill text-slate-200">زجاجات أصلية</button>
@@ -3934,7 +3929,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
             <div id="operatingSuppliesCards" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
           </div>
           <div class="v5-supply-card rounded-2xl p-3 space-y-2">
-            <h3 class="text-xs font-black">🧴 زجاجات التقسيم حسب المقاس</h3>
+            <div class="flex items-center justify-between gap-2"><h3 class="text-xs font-black">🧴 زجاجات التقسيم حسب المقاس</h3><button type="button" onclick="openSheet('stockAdjustSheet')" class="text-[10px] font-bold text-sky-300 underline shrink-0">تسوية / هالك ⚖️</button></div>
             <p class="v5-supply-muted text-[10px]">هذا رصيد العبوات الفارغة المشترك المستخدم في تجهيز التقسيمات، ويظل منفصلًا عن أصناف التغليف الأخرى.</p>
             <div id="v5SupplyBottleSizes" class="grid grid-cols-3 gap-2"></div>
           </div>
@@ -4193,10 +4188,11 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div id="v5SupplyUnitWrap"><label class="block text-slate-300 font-bold mb-1">وحدة القياس *</label><select id="v5SupplyUnit" required class="v5-supply-input w-full rounded-xl p-3"><option value="كجم">كيلوجرام (كجم)</option><option value="جرام">جرام</option><option value="قطعة" selected>قطعة</option><option value="عبوة">عبوة</option><option value="لفة">لفة</option><option value="متر">متر</option><option value="لتر">لتر</option><option value="مل">ملليلتر</option></select></div><div id="v5SupplyBottleSizeWrap" class="hidden"><label class="block text-slate-300 font-bold mb-1">مقاس زجاجة التقسيم *</label><select id="v5SupplyBottleSize" class="v5-supply-input w-full rounded-xl p-3"></select></div>
-            <div><label id="v5SupplyQtyLabel" class="block text-slate-300 font-bold mb-1">الكمية *</label><input id="v5SupplyQty" required type="number" min="0.001" step="0.001" class="v5-supply-input w-full rounded-xl p-3" placeholder="0"></div>
+            <div><label id="v5SupplyQtyLabel" class="block text-slate-300 font-bold mb-1">الكمية *</label><input id="v5SupplyQty" required type="number" min="0.001" step="0.001" class="v5-supply-input w-full rounded-xl p-3" placeholder="0" oninput="updateV5SupplyTotal()"></div>
           </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div><label class="block text-slate-300 font-bold mb-1">إجمالي الفاتورة *</label><input id="v5SupplyTotal" required type="number" min="0.01" step="0.01" class="v5-supply-input w-full rounded-xl p-3" placeholder="0.00"></div>
+          <div class="grid grid-cols-3 gap-3">
+            <div><label id="v5SupplyUnitPriceLabel" class="block text-slate-300 font-bold mb-1">سعر القطعة *</label><input id="v5SupplyUnitPrice" required type="number" min="0.01" step="0.01" class="v5-supply-input w-full rounded-xl p-3" placeholder="0.00" oninput="updateV5SupplyTotal()"></div>
+            <div><label class="block text-slate-300 font-bold mb-1">الإجمالي (محسوب)</label><input id="v5SupplyTotal" required type="number" min="0.01" step="0.01" readonly class="v5-supply-input w-full rounded-xl p-3" placeholder="0.00"></div>
             <div><label class="block text-slate-300 font-bold mb-1">المدفوع</label><input id="v5SupplyPaid" type="number" min="0" step="0.01" value="0" class="v5-supply-input w-full rounded-xl p-3"></div>
           </div>
           <div><label class="block text-slate-300 font-bold mb-1">وسيلة الدفع</label><select id="v5SupplyMethod" class="v5-supply-input w-full rounded-xl p-3"><option>نقدي</option><option>تحويل بنكي</option><option>محفظة إلكترونية</option><option>بطاقة</option><option>أخرى</option></select></div>
@@ -4488,8 +4484,8 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
             <span id="dbStatusBadge" class="px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-200 border border-sky-400/30 font-bold">نموذج خالٍ</span>
           </div>
           <div class="flex justify-between items-center">
-            <span class="text-slate-300">دالة الحقن البرمجي</span>
-            <span class="text-slate-200 font-bold bidi-ltr">ValerianUI.hydrate(data)</span>
+            <span class="text-slate-300">إصدار محرك الأعمال</span>
+            <span id="engineVersionBadge" class="text-slate-200 font-bold bidi-ltr">—</span>
           </div>
         </div>
 
@@ -5459,8 +5455,12 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       const sizeWrap=document.getElementById('v5SupplyBottleSizeWrap'),unitWrap=document.getElementById('v5SupplyUnitWrap'),nameWrap=document.getElementById('v5SupplyNameWrap'),name=document.getElementById('v5SupplyName'),unit=document.getElementById('v5SupplyUnit'),qty=document.getElementById('v5SupplyQty'),qtyLabel=document.getElementById('v5SupplyQtyLabel'),size=document.getElementById('v5SupplyBottleSize');
       if(sizeWrap)sizeWrap.classList.toggle('hidden',!isBottle);if(unitWrap)unitWrap.classList.toggle('hidden',isBottle);if(nameWrap)nameWrap.classList.toggle('hidden',isBottle);
       if(name){name.required=!isBottle;name.value=isBottle?'زجاجات تقسيم':'';}if(unit)unit.required=!isBottle;
-      if(qty){qty.min=isBottle?'1':'0.001';qty.step=isBottle?'1':'0.001';}if(qtyLabel)qtyLabel.textContent=isBottle?'عدد الزجاجات *':'الكمية *';
+      if(qty){qty.min=isBottle?'1':'0.001';qty.step=isBottle?'1':'0.001';}if(qtyLabel)qtyLabel.textContent=isBottle?'عدد الزجاجات *':'الكمية *';const upLabel=document.getElementById('v5SupplyUnitPriceLabel');if(upLabel)upLabel.textContent=isBottle?'سعر الزجاجة *':'سعر القطعة *';
       if(isBottle&&size){const api=window.ValerianEngine;if(api){await api.ready;const sizes=await api.getPackagingBottleSizes();const current=size.value;size.innerHTML=sizes.map(n=>'<option value="'+n+'">'+n+' مل</option>').join('');if(current&&sizes.includes(Number(current)))size.value=current;}}
+    };
+    window.updateV5SupplyTotal=function(){
+      const q=Number(document.getElementById('v5SupplyQty')?.value||0),u=Number(document.getElementById('v5SupplyUnitPrice')?.value||0),t=document.getElementById('v5SupplyTotal');
+      if(t)t.value=(q>0&&u>0)?(Math.round(q*u*100)/100).toFixed(2):'';
     };
     window.saveOperatingSupplyFromScreen=async function(event){
       event.preventDefault();const category=document.getElementById('v5SupplyCategory').value,isBottle=category==='زجاجات تقسيم';
@@ -5468,7 +5468,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       if(!payload.supplier||(!isBottle&&!payload.name)||!payload.unit||!Number.isFinite(payload.quantity)||payload.quantity<=0||(isBottle&&!Number.isSafeInteger(payload.quantity))||!Number.isFinite(payload.totalCost)||payload.totalCost<=0||!Number.isFinite(payload.paidAmount)||payload.paidAmount<0||payload.paidAmount>payload.totalCost)return showToast('راجع المورد والمقاس والكمية والتكلفة والمدفوع.');
       if(isBottle)payload.sizeMl=Number(document.getElementById('v5SupplyBottleSize').value);
       const button=document.getElementById('v5SupplySaveBtn');if(button){button.disabled=true;button.textContent='جارٍ الحفظ والمزامنة...';}
-      try{const api=window.ValerianEngine;if(!api)throw new Error('محرك VALERIAN غير جاهز؛ لم يتم حفظ أي بيانات.');await api.ready;const result=isBottle?await api.createPackagingBottleInvoice(payload):await api.createOperatingSupplyInvoice(payload);window.ValerianUI?.hydrate?.();if(!result?.ok)throw new Error(result?.error||'لم يتم اعتماد الفاتورة.');document.getElementById('v5SupplyPurchaseForm')?.reset();document.getElementById('v5SupplyPaid').value='0';await window.toggleV5SupplyBottleFields();closeSheet('v5SupplyPurchaseSheet');switchInventorySection('supplies');showToast(isBottle?'تمت إضافة الزجاجات إلى رصيد المقاس المحدد وتحديث حساب المورد.':'تمت إضافة المستلزم وتحديث المخزون وحساب المورد.');}
+      try{const api=window.ValerianEngine;if(!api)throw new Error('محرك VALERIAN غير جاهز؛ لم يتم حفظ أي بيانات.');await api.ready;const result=isBottle?await api.createPackagingBottleInvoice(payload):await api.createOperatingSupplyInvoice(payload);window.ValerianUI?.hydrate?.();if(!result?.ok)throw new Error(result?.error||'لم يتم اعتماد الفاتورة.');document.getElementById('v5SupplyPurchaseForm')?.reset();document.getElementById('v5SupplyPaid').value='0';document.getElementById('v5SupplyTotal').value='';await window.toggleV5SupplyBottleFields();closeSheet('v5SupplyPurchaseSheet');switchInventorySection('supplies');showToast(isBottle?'تمت إضافة الزجاجات إلى رصيد المقاس المحدد وتحديث حساب المورد.':'تمت إضافة المستلزم وتحديث المخزون وحساب المورد.');}
       catch(err){showToast(String(err?.message||'تعذر حفظ الفاتورة.'));}finally{if(button){button.disabled=false;button.textContent='حفظ الفاتورة';}}
     };
     window.saveOperatingSupplyRecipeFromScreen=async function(encodedId){
@@ -5519,18 +5519,6 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
     };
 
     function renderInventoryScreen() {
-      document.getElementById('emptyBottlesPoolGrid').innerHTML = Object.values(appState.packagingInventory).map(pool => {
-        return `
-          <div class="glass-card rounded-xl p-2.5 text-center bottle-card overflow-hidden">
-            <div class="bottle-content relative z-10">
-              <span class="text-[10px] font-bold text-slate-400 block bidi-ltr">${pool.sizeMl} ml</span>
-              <strong class="text-sm font-black text-white block mt-0.5 bidi-ltr">${pool.quantity}</strong>
-              <span class="text-[9px] text-slate-400 bidi-ltr">${pool.averageUnitCost} EGP/u</span>
-            </div>
-          </div>
-        `;
-      }).join('');
-
       renderInventoryList('all');
       renderOperatingSuppliesScreen();
     }
@@ -7094,7 +7082,8 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         const raw=rawSnapshot||engine.getSnapshot();
         appState=project(raw);
         const badge=document.getElementById('dbStatusBadge');
-        if(badge)badge.textContent='متصل بمحرك الأعمال V19';
+        if(badge)badge.textContent='متصل بمحرك الأعمال V'+String(engine.version||'؟');
+        const evb1=document.getElementById('engineVersionBadge');if(evb1)evb1.textContent='V'+String(engine.version||'؟');
         renderVisibleScreen();
         if(typeof populateMobileShippingCompanySelect==='function')populateMobileShippingCompanySelect();
         lastSync=Date.now();
@@ -7178,7 +7167,8 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         reset:()=>showToast('تصفير البيانات متوقف من واجهة V5 لحماية قاعدة بيانات النشاط. استخدم أدوات النسخ الاحتياطي والإدارة داخل المحرك.')
       };
       const badge=document.getElementById('dbStatusBadge');
-      if(badge)badge.textContent='متصل بمحرك الأعمال V19';
+      if(badge)badge.textContent='متصل بمحرك الأعمال V'+String(window.ValerianEngine?.version||'؟');
+      const evb2=document.getElementById('engineVersionBadge');if(evb2)evb2.textContent='V'+String(window.ValerianEngine?.version||'؟');
       return true;
     }
     // Public entry point is exposed immediately; it must not depend on window.ValerianUI,
@@ -7775,7 +7765,7 @@ document.addEventListener('click', function(event) {
    'وضع المحرك: '+(eng?'مضمّن داخل المستند':'لم يبدأ بعد'),
    'محرك الأعمال: '+(eng?'موجود':'غير موجود'),
    'جاهزية المحرك: '+(eng?.ready?'promise موجودة':'غير متاحة'),
-   'إصدار التشخيص: V20-100',
+   'إصدار التشخيص: V20-100 • إصدار المحرك: V'+(eng?.version||'غير متاح'),
    'حالة السحابة: '+cloud,
    'تفاصيل المزامنة الجزئية: '+(syncDiag?JSON.stringify(syncDiag):'cloudDiagnostics API غير متاحة'),
    'وضع المزامنة: '+(syncDiag?.mode||'غير متاح'),
