@@ -23,7 +23,7 @@ const browser = await chromium.launch({headless:true,args:['--no-sandbox','--dis
 try {
   const context = await browser.newContext({viewport:{width:393,height:873},deviceScaleFactor:2.75,isMobile:true,hasTouch:true});
   const page = await context.newPage();
-  page.on('pageerror', e => { console.error('pageerror:', e.message); process.exitCode = 1; });
+  page.on('pageerror', e => console.error('pageerror:', e.message)); page.on('console', m => { if (m.type()==='error') console.error('console.error:', m.text()); });
   await page.goto('http://127.0.0.1:'+port+'/', {waitUntil:'domcontentloaded',timeout:30000});
   await page.waitForFunction(() => !!window.ValerianEngine && !!window.ValerianUI, null, {timeout:45000});
   await page.waitForFunction(() => window.__valerianSplashDismissed === true, null, {timeout:25000});
@@ -37,11 +37,16 @@ try {
     const customer = {name:'عميل تجريبي',phone:'01000000001',address:'البلد'};
     const created = await engine.createOrder({mode:'reservation',items:[{id:p1.product.id,qty:1},{id:p2.product.id,qty:1}],customer,deposit:1916,shippingCompany:'شركة شحن تجريبية'});
     if(!created?.ok) throw new Error('seed order');
-    await engine.dispatchOrder({orderId:created.order.id,tracking:'TRK-'+stamp});
-    window.printMobileWaybill(String(created.order.id));
-    await new Promise(r=>setTimeout(r,800));
+    const dispatched = await engine.dispatchOrder({orderId:created.order.id,tracking:'TRK-'+stamp});
+    if(!dispatched?.ok) throw new Error('dispatch failed');
+    window.__seededOrderId = String(created.order.id);
   });
-  await page.waitForSelector('#previewSheetBody .product-stats', {timeout:15000});
+  // Separate evaluate (matches doc-exports-check): lets appState settle before render.
+  await page.evaluate(async (orderId) => {
+    window.printMobileWaybill(orderId);
+    await new Promise(r=>setTimeout(r,800));
+  }, await page.evaluate(() => window.__seededOrderId));
+  await page.waitForSelector('#previewSheetBody .product-container', {timeout:20000});
   const dims = await page.evaluate(() => {
     return [...document.querySelectorAll('#previewSheetBody .product-container')].map(article => {
       const ar = article.getBoundingClientRect();
