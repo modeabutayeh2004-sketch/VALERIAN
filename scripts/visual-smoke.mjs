@@ -162,8 +162,10 @@ try {
             const cr=card.getBoundingClientRect(),head=card.querySelector('.product-header'),title=head?.querySelector('.product-title'),badge=head?.querySelector('.product-num-badge'),size=card.querySelector('.product-size-line'),stats=card.querySelector('.product-stats');
             const hr=head?.getBoundingClientRect(),tr=title?.getBoundingClientRect(),br=badge?.getBoundingClientRect(),sr=size?.getBoundingClientRect(),str=stats?.getBoundingClientRect();
             const statRows=[...(stats?.querySelectorAll('.stat-box')||[])].map(box=>{
-              const boxRect=box.getBoundingClientRect(),label=box.querySelector('span')?.getBoundingClientRect(),value=box.querySelector('strong')?.getBoundingClientRect();
-              return {inside:boxRect.left>=cr.left-1&&boxRect.right<=cr.right+1&&boxRect.top>=cr.top-1&&boxRect.bottom<=cr.bottom+1,ordered:!!label&&!!value&&label.bottom<=value.top+1};
+              const boxRect=box.getBoundingClientRect(),labelNode=box.querySelector('span'),valueNode=box.querySelector('strong'),label=labelNode?.getBoundingClientRect(),value=valueNode?.getBoundingClientRect();
+              return {inside:boxRect.left>=cr.left-1&&boxRect.right<=cr.right+1&&boxRect.top>=cr.top-1&&boxRect.bottom<=cr.bottom+1,
+                ordered:!!label&&!!value&&label.bottom<=value.top+1,labelFont:parseFloat(getComputedStyle(labelNode).fontSize)||0,valueFont:parseFloat(getComputedStyle(valueNode).fontSize)||0,
+                labelText:!!labelNode?.textContent?.trim(),valueText:!!valueNode?.textContent?.trim()};
             });
             return {inside:cr.left>=listRect.left-1&&cr.right<=listRect.right+1&&cr.top>=listRect.top-1&&cr.bottom<=listRect.bottom+1,
               titleBadgeSeparate:!!tr&&!!br&&(tr.right<=br.left+1||br.right<=tr.left+1),
@@ -172,7 +174,7 @@ try {
           });
           const cols=getComputedStyle(list).gridTemplateColumns.split(' ').length;
           results.push({count,columns:cols,areaHeight:listRect.height,cardCount:cards.length,rows});
-          if(cards.length!==count||rows.some(x=>!x.inside||!x.titleBadgeSeparate||!x.verticalOrder||x.statRows.length!==3||x.statRows.some(s=>!s.inside||!s.ordered)))throw new Error('Responsive product fields overlap or escape their fixed cells: '+JSON.stringify(results.at(-1)));
+          if(cards.length!==count||rows.some(x=>!x.inside||!x.titleBadgeSeparate||!x.verticalOrder||x.statRows.length!==3||x.statRows.some(s=>!s.inside||!s.ordered||s.labelFont<7||s.valueFont<7||!s.labelText||!s.valueText)))throw new Error('Responsive product fields overlap or escape their fixed cells: '+JSON.stringify(results.at(-1)));
         }
         const heights=results.map(x=>x.areaHeight);
         if(Math.max(...heights)-Math.min(...heights)>2)throw new Error('Reserved/sold product area changed height as item count changed: '+JSON.stringify(results));
