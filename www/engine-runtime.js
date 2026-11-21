@@ -2277,7 +2277,9 @@
     function getOrderSupplyRequirements(order){
       const items=Array.isArray(order?.items)?order.items:[];
       return (state.operatingSupplies||[]).filter(x=>!x.archivedAt&&x.active!==false).map(supply=>{
-        let qty=Math.max(0,Number(supply.recipePerOrder||0));
+        const perOrderQty=Math.max(0,Number(supply.recipePerOrder||0));
+        let qty=perOrderQty;
+        const itemParts=[];
         const productRecipes=supply.productRecipes&&typeof supply.productRecipes==='object'&&!Array.isArray(supply.productRecipes)?supply.productRecipes:null;
         items.forEach(item=>{
           const itemQty=Math.max(0,Number(item.qty||0)-Number(item.returnedQty||0));
@@ -2285,9 +2287,9 @@
           const productId=String(item.id||item.productId||'');
           const hasProductRate=!!productRecipes&&Object.prototype.hasOwnProperty.call(productRecipes,productId);
           const perUnit=hasProductRate?Number(productRecipes[productId]||0):Number(supply.recipePerUnit||0);
-          if(Number.isFinite(perUnit)&&perUnit>0)qty+=perUnit*itemQty;
+          if(Number.isFinite(perUnit)&&perUnit>0){qty+=perUnit*itemQty;itemParts.push({productId,qty:itemQty,rate:perUnit});}
         });
-        return {supply,qty:Math.max(0,qty)};
+        return {supply,qty:Math.max(0,qty),perOrderQty,itemParts};
       }).filter(x=>x.qty>0);
     }
     function validateOrderSupplyAvailability(order){
@@ -2297,8 +2299,28 @@
       if(!order||order.operatingSuppliesConsumed)return true;const req=getOrderSupplyRequirements(order);
       for(const r of req){if(Number(r.supply.quantity||0)+1e-9<r.qty)throw new Error(`رصيد ${r.supply.name} غير كافٍ عند اعتماد الطلب.`);}
       const ref=String(order.id||'ORDER');order.operatingSupplyConsumption=[];
-      req.forEach(r=>{r.supply.quantity=Number(r.supply.quantity||0)-r.qty;addOperatingSupplyMovement(r.supply,'ORDER_CONSUMPTION',-r.qty,ref,'استهلاك مستلزمات تجهيز الطلب '+ref);order.operatingSupplyConsumption.push({supplyId:r.supply.id,name:r.supply.name,quantity:r.qty,unit:r.supply.unit,unitCost:Number(r.supply.averageUnitCost||0),totalCost:r.qty*Number(r.supply.averageUnitCost||0)});});
+      req.forEach(r=>{r.supply.quantity=Number(r.supply.quantity||0)-r.qty;addOperatingSupplyMovement(r.supply,'ORDER_CONSUMPTION',-r.qty,ref,'استهلاك مستلزمات تجهيز الطلب '+ref);order.operatingSupplyConsumption.push({supplyId:r.supply.id,name:r.supply.name,quantity:r.qty,unit:r.supply.unit,unitCost:Number(r.supply.averageUnitCost||0),totalCost:r.qty*Number(r.supply.averageUnitCost||0),perOrderQty:Number(r.perOrderQty||0),items:(r.itemParts||[]).map(p=>({productId:p.productId,qty:p.qty,rate:p.rate}))});});
       order.operatingSuppliesConsumed=true;order.operatingSuppliesConsumedAt=new Date().toISOString();order.operatingSuppliesCost=(order.operatingSupplyConsumption||[]).reduce((a,x)=>a+Number(x.totalCost||0),0);return true;
+    }
+    // Per-unit packaging cost attributable to an order's RETURNED units, from the
+    // consumption-time attribution (rates + unit cost frozen at dispatch). The shared
+    // per-order part (carton) is deliberately excluded: by the owner's 2026-11-21 ruling
+    // it stays with the retained sale. Legacy orders whose consumption rows predate
+    // attribution carry no per-item split; their per-unit share cannot be derived
+    // honestly, so it is left in COGS (complete=false) rather than estimated.
+    function getReturnedUnitSupplyCost(order){
+      const consumption=Array.isArray(order?.operatingSupplyConsumption)?order.operatingSupplyConsumption:[];
+      let cost=0,complete=true;
+      consumption.forEach(row=>{
+        const parts=Array.isArray(row?.items)?row.items:null;
+        if(!parts){if(Number(row?.quantity||0)>0)complete=false;return;}
+        parts.forEach(entry=>{
+          const line=(order.items||[]).find(it=>String(it.id)===String(entry.productId));
+          const returnedQty=Math.min(Math.max(0,Number(line?.returnedQty||0)),Math.max(0,Number(entry.qty||0)));
+          if(returnedQty>0)cost+=Number(entry.rate||0)*returnedQty*Math.max(0,Number(row.unitCost||0));
+        });
+      });
+      return {cost:roundMoney(cost),complete};
     }
 
     // ==================== INVENTORY ====================
@@ -3840,13 +3862,13 @@ async function previewPeriodicReportPrint() {
       let totalReturns = 0;
       let totalCogs = 0;
       let totalWriteoffLoss = 0;
-      // Packaging/supplies of a fully returned order are a loss (wastage), not cost of goods
-      // sold: nothing was sold. This is a reclassification of the SAME already-recognized
-      // supply cost — COGS loses exactly what the loss line gains, never a second deduction.
-      // Partial returns (owner decision 2026-11-21): the order's shared packaging (carton)
-      // stays entirely in COGS, attributed to the items the customer kept — the carton never
-      // comes back, so its cost is not split and not reclassified. The returned item comes
-      // back on its own, without the carton. No packaging-condition question is asked.
+      // Returned goods' packaging is a loss (wastage), not cost of goods sold — the
+      // owner's standing rule (2026-11-21 09:12). Scope, settled by his same-day
+      // clarification: a FULL return reclassifies the order's whole supply cost; on a
+      // PARTIAL return the shared carton stays in COGS with the retained items (it never
+      // comes back), while each returned unit's own per-unit packaging reclassifies to
+      // the loss line. Reclassification of the SAME already-recognized cost — COGS loses
+      // exactly what the loss line gains, never a second deduction.
       let totalReturnedPackagingLoss = 0;
       const isFullyReturnedOrder=o=>(o.items||[]).length>0&&(o.items||[]).some(it=>Number(it.returnedQty||0)>0)&&(o.items||[]).every(it=>Number(it.returnedQty||0)>=Number(it.qty||0));
 
@@ -3881,7 +3903,8 @@ async function previewPeriodicReportPrint() {
             totalCogs += cost * soldQty;
           });
           const supplyCost=Math.max(0, Number(o.operatingSuppliesCost || 0));
-          if(isFullyReturnedOrder(o))totalReturnedPackagingLoss+=supplyCost;else totalCogs+=supplyCost;
+          if(isFullyReturnedOrder(o))totalReturnedPackagingLoss+=supplyCost;
+          else{const ret=getReturnedUnitSupplyCost(o);totalCogs+=roundMoney(supplyCost-ret.cost);totalReturnedPackagingLoss+=ret.cost;}
         } else {
           // Failed shipment / full return before delivery: the order never entered sales or
           // COGS, but its packaging was consumed at dispatch. Recognize it as the same loss.

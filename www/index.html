@@ -2919,7 +2919,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         <div class="bg-white p-4 rounded-2xl border shadow-2xs"><span class="text-xs font-bold text-slate-500">إجمالي المرتجعات (ديون علينا)</span><div id="repReturns" class="finance-negative text-xl font-extrabold text-rose-600 mt-1">0 ج.م</div></div>
         <div class="bg-white p-4 rounded-2xl border shadow-2xs"><span class="text-xs font-bold text-slate-500">المصروفات التشغيلية وإعلانات</span><div id="repExpenses" class="finance-negative text-xl font-extrabold text-slate-700 mt-1">0 ج.م</div></div>
         <div class="bg-white p-4 rounded-2xl border shadow-2xs"><span class="text-xs font-bold text-slate-500">خسائر المرتجعات التالفة</span><div id="repWriteoffLoss" class="finance-negative text-xl font-extrabold text-rose-700 mt-1">0 ج.م</div></div>
-        <div class="bg-white p-4 rounded-2xl border shadow-2xs"><span class="text-xs font-bold text-slate-500">هالك تغليف المرتجعات الكاملة</span><div id="repReturnedPackagingLoss" class="finance-negative text-xl font-extrabold text-rose-700 mt-1">0 ج.م</div><p class="text-[10px] text-slate-400 mt-1">تكلفة مستلزمات تغليف الطلبات المرتجعة بالكامل — أُخرجت من تكلفة البضاعة المباعة وسُجلت كخسارة، بلا خصم مزدوج.</p></div>
+        <div class="bg-white p-4 rounded-2xl border shadow-2xs"><span class="text-xs font-bold text-slate-500">هالك تغليف المرتجعات</span><div id="repReturnedPackagingLoss" class="finance-negative text-xl font-extrabold text-rose-700 mt-1">0 ج.م</div><p class="text-[10px] text-slate-400 mt-1">تكلفة مستلزمات تغليف الطلبات المرتجعة بالكامل، وتغليف القطع المرتجعة من الطلبات الجزئية — أُخرجت من تكلفة البضاعة المباعة وسُجلت كخسارة بلا خصم مزدوج. الكرتونة المشتركة في المرتجع الجزئي تفضل على تكلفة القطع اللي اتباعت.</p></div>
         <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs"><span class="text-xs font-bold text-slate-500">صافي الأرباح الحقيقية</span><div id="repNetProfit" class="finance-positive text-xl font-extrabold mt-1">0 ج.م</div></div>
       </div>
 
@@ -6848,11 +6848,14 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         return lineSum+Math.max(0,unitCost)*Math.max(0,Number(item.qty||0));
       },0),0);
       // Same rule as the desktop reports: supplies of a fully returned order are a loss
-      // (wastage), not COGS; partial returns keep the full supply cost in COGS for now.
+      // (wastage), not COGS. On partial returns the shared carton stays in COGS with the
+      // retained items; each returned unit's own per-unit packaging reclassifies to loss.
       const isFullyRet=o=>(o.items||[]).length>0&&(o.items||[]).some(it=>Number(it.returnedQty||0)>0)&&(o.items||[]).every(it=>Number(it.returnedQty||0)>=Number(it.qty||0));
       const supplyCostOf=list=>list.reduce((sum,o)=>sum+Math.max(0,Number(o.operatingSuppliesCost||0)),0);
-      const returnedPackagingLoss=supplyCostOf(appState.orders.filter(o=>isFullyRet(o)&&!o.cancelledAt&&!String(o.status||'').includes('ملغي')));
-      const cogsTotal=cogs+supplyCostOf(delivered.filter(o=>!isFullyRet(o)));
+      let partialUnitLoss=0, partialCogsSupply=0;
+      delivered.filter(o=>!isFullyRet(o)).forEach(o=>{const sc=Math.max(0,Number(o.operatingSuppliesCost||0));const ret=getReturnedUnitSupplyCost(o).cost;partialUnitLoss+=ret;partialCogsSupply+=sc-ret;});
+      const returnedPackagingLoss=supplyCostOf(appState.orders.filter(o=>isFullyRet(o)&&!o.cancelledAt&&!String(o.status||'').includes('ملغي')))+partialUnitLoss;
+      const cogsTotal=cogs+partialCogsSupply;
       const net=sales-cogsTotal-expenses-writeoffLoss-returnedPackagingLoss;
       document.getElementById('repMobileSales').textContent=fmtEgp(sales);
       document.getElementById('repMobileDeposits').textContent=fmtEgp(deposits);
@@ -7642,8 +7645,10 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
       },0)),0);
       const isFullyRet=o=>(o.items||[]).length>0&&(o.items||[]).some(it=>Number(it.returnedQty||0)>0)&&(o.items||[]).every(it=>Number(it.returnedQty||0)>=Number(it.qty||0));
       const supplyCostOf=list=>list.reduce((sum,o)=>sum+Math.max(0,Number(o.operatingSuppliesCost||0)),0);
-      const returnedPackagingLoss=supplyCostOf(appState.orders.filter(o=>isFullyRet(o)&&!o.cancelledAt&&!String(o.status||'').includes('ملغي')));
-      const cogsTotal=cogs+supplyCostOf(delivered.filter(o=>!isFullyRet(o)));
+      let partialUnitLoss=0, partialCogsSupply=0;
+      delivered.filter(o=>!isFullyRet(o)).forEach(o=>{const sc=Math.max(0,Number(o.operatingSuppliesCost||0));const ret=getReturnedUnitSupplyCost(o).cost;partialUnitLoss+=ret;partialCogsSupply+=sc-ret;});
+      const returnedPackagingLoss=supplyCostOf(appState.orders.filter(o=>isFullyRet(o)&&!o.cancelledAt&&!String(o.status||'').includes('ملغي')))+partialUnitLoss;
+      const cogsTotal=cogs+partialCogsSupply;
       const net=sales-cogsTotal-expenses-writeoffLoss-returnedPackagingLoss;
       document.getElementById('repMobileSales').textContent=fmtEgp(sales);
       document.getElementById('repMobileDeposits').textContent=fmtEgp(deposits);

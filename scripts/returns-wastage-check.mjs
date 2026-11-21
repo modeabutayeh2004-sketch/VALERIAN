@@ -65,7 +65,12 @@ try{
     const stockAfter=JSON.stringify(e.getSnapshot().products.map(p=>({id:p.id,stock:p.stock,writeoffStock:p.writeoffStock,quarantineStock:p.quarantineStock})));
     const afterBad=readDesktop();
     const mobile=readMobile();
-    return {consumed,supplyAfterDispatch,before,afterPartial,afterFull,repeatErr,afterRepeat,afterFailedShip,badErr,stockSame:stockBefore===stockAfter,afterBad,mobile};
+    // Direct helper assertions on the FINAL state (order B still has 1 returned P1):
+    // attributed consumption -> exact per-unit cost; legacy aggregate -> honest refusal.
+    const ordB=e.getSnapshot().orders.find(o=>String(o.id)===String(orderB));
+    const helperB=window.getReturnedUnitSupplyCost(ordB);
+    const helperLegacy=window.getReturnedUnitSupplyCost({items:[{id:'x',qty:2,returnedQty:1}],operatingSupplyConsumption:[{supplyId:'s',name:'legacy',quantity:4,unit:'قطعة',unitCost:10,totalCost:40}]});
+    return {consumed,supplyAfterDispatch,before,afterPartial,afterFull,repeatErr,afterRepeat,afterFailedShip,badErr,stockSame:stockBefore===stockAfter,afterBad,mobile,helperB,helperLegacy};
   });
   console.log(JSON.stringify(r,null,1));
   const eq=(a,b)=>Math.abs(a-b)<0.001;
@@ -74,12 +79,15 @@ try{
   if(!eq(r.supplyAfterDispatch,84)) failures.push('supply stock after 4 dispatches expected 84, got '+r.supplyAfterDispatch);
   // Before returns: all 160 in COGS-era; packaging loss line must be 0.
   if(!eq(r.before.packLoss,0)) failures.push('packaging loss before any full return should be 0, got '+r.before.packLoss);
-  // Partial return (owner decision 2026-11-21): shared packaging cost stays fully in COGS
-  // with the retained sale; the carton never comes back, so nothing is split or reclassified.
-  if(!eq(r.afterPartial.packLoss,0)) failures.push('partial return must NOT reclassify shared packaging (decided rule: carton cost stays with retained sale), got '+r.afterPartial.packLoss);
+  // Partial return (owner ruling, settled 2026-11-21): the shared carton stays in COGS with
+  // the retained sale, but the returned unit's OWN per-unit packaging reclassifies to loss —
+  // his standing rule that a returned product's supplies go to wastage applies to the unit's
+  // own packaging regardless of disposition (this scenario restocks the unit).
+  // B returned 1 P1: per-unit rate 0.5 x 1 unit x 10 EGP = 5.
+  if(!eq(r.afterPartial.packLoss,5)) failures.push('partial return must reclassify the returned unit own packaging only (expected 5), got '+r.afterPartial.packLoss);
   if(!eq(r.afterPartial.net,r.before.net-0)) { /* partial return changes sales/cogs of products; net moves, no fixed delta asserted */ }
-  // Full return on C: 40 reclassified from COGS to loss; writeoff adds 200 (damaged P2).
-  if(!eq(r.afterFull.packLoss,40)) failures.push('full return packaging loss expected 40, got '+r.afterFull.packLoss);
+  // Full return on C: its whole 40 reclassified; running total 5 (B) + 40 (C) = 45; writeoff adds 200 (damaged P2).
+  if(!eq(r.afterFull.packLoss,45)) failures.push('packaging loss after full return expected 45, got '+r.afterFull.packLoss);
   if(!eq(r.afterFull.writeoff,r.afterPartial.writeoff+200)) failures.push('writeoff loss for damaged P2 expected +200');
   // Net-profit neutrality of the reclassification: moving 40 from COGS to loss leaves net unchanged vs doing neither.
   // (net after full return reflects the sale reversal too, so assert reconciliation instead below.)
@@ -87,23 +95,26 @@ try{
   if(!r.repeatErr) failures.push('repeat full return was accepted');
   if(JSON.stringify(r.afterRepeat)!==JSON.stringify(r.afterFull)) failures.push('repeat return changed the reports');
   // Failed shipment (never delivered): packaging loss +40 more, sales unchanged.
-  if(!eq(r.afterFailedShip.packLoss,80)) failures.push('failed-shipment packaging loss expected 80 total, got '+r.afterFailedShip.packLoss);
+  if(!eq(r.afterFailedShip.packLoss,85)) failures.push('failed-shipment packaging loss expected 85 total, got '+r.afterFailedShip.packLoss);
   if(!eq(r.afterFailedShip.sales,r.afterFull.sales)) failures.push('failed-shipment return changed recognized sales');
-  // Reconciliation: supply cost consumed (160) = still in COGS (A 40 + B 40) + reclassified to loss (C 40 + D 40).
+  // Reconciliation: supply cost consumed (160) = still in COGS (A 40 + B 35) + reclassified to loss (B 5 + C 40 + D 40).
   const supplyInCogs=160-r.afterFailedShip.packLoss;
-  if(!eq(supplyInCogs,80)) failures.push('reconciliation broken: COGS supply '+supplyInCogs+' + loss '+r.afterFailedShip.packLoss+' != 160');
+  if(!eq(supplyInCogs,75)) failures.push('reconciliation broken: COGS supply '+supplyInCogs+' + loss '+r.afterFailedShip.packLoss+' != 160');
   // Net profit self-consistency on the desktop tiles.
   const expectNet=r.afterFailedShip.sales-r.afterFailedShip.expenses-r.afterFailedShip.writeoff-r.afterFailedShip.packLoss;
   // totalCogs is not a tile; net = sales - cogs - expenses - writeoff - packLoss, so derive cogs from net and compare against expected cogs (1600 products + 80 supplies).
   const derivedCogs=r.afterFailedShip.sales-r.afterFailedShip.expenses-r.afterFailedShip.writeoff-r.afterFailedShip.packLoss-r.afterFailedShip.net;
-  if(!eq(derivedCogs,1680)) failures.push('derived COGS expected 1680 (products 1600 + supplies 80), got '+derivedCogs);
+  if(!eq(derivedCogs,1675)) failures.push('derived COGS expected 1675 (products 1600 + supplies 75), got '+derivedCogs);
   // Atomicity of a rejected return.
   if(!r.badErr) failures.push('over-quantity return was accepted');
   if(!r.stockSame) failures.push('rejected return mutated product stocks');
   if(JSON.stringify(r.afterBad)!==JSON.stringify(r.afterFailedShip)) failures.push('rejected return changed the reports');
-  // Mobile consistency: losses = writeoff 200 + packaging 80 = 280; net uses the same rule.
-  if(!eq(r.mobile.losses,280)) failures.push('mobile losses expected 280, got '+r.mobile.losses);
-  const mobileExpectedNet=r.mobile.sales-1680-r.mobile.expenses-280;
+  // Mobile consistency: losses = writeoff 200 + packaging 85 = 285; net uses the same rule.
+  if(!eq(r.mobile.losses,285)) failures.push('mobile losses expected 285, got '+r.mobile.losses);
+  const mobileExpectedNet=r.mobile.sales-1675-r.mobile.expenses-285;
   if(!eq(r.mobile.net,mobileExpectedNet)) failures.push('mobile net expected '+mobileExpectedNet+', got '+r.mobile.net);
+  // Attribution helper: exact for attributed orders, honest refusal for legacy aggregates.
+  if(!r.helperB||!eq(r.helperB.cost,5)||r.helperB.complete!==true) failures.push('helper on attributed order B expected {cost:5,complete:true}, got '+JSON.stringify(r.helperB));
+  if(!r.helperLegacy||!eq(r.helperLegacy.cost,0)||r.helperLegacy.complete!==false) failures.push('helper on legacy aggregate expected {cost:0,complete:false} (no invented split), got '+JSON.stringify(r.helperLegacy));
   if(failures.length){console.error('RETURNS_WASTAGE_FAILED: '+failures.join(' | '));process.exitCode=1;}else console.log('RETURNS_WASTAGE_OK');
 } finally { await browser.close(); await new Promise(r=>server.close(r)); }
