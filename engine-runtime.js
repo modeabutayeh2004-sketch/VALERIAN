@@ -1974,8 +1974,8 @@
     // A delivered order keeps its position in the customer's order sequence even if it is later returned.
     // Pending reservations do not earn points, but points redeemed on them remain reserved until returned.
     function isOrderDeliveredForLoyalty(o) {
-      const status=String(o?.status||'');
-      const explicitlyDelivered=status.includes('تم التسليم')&&!status.includes('شركة الشحن');
+      const status=String(o?.status||'').trim();
+      const explicitlyDelivered=status==='مؤكد / تم التسليم'||status==='تم التسليم';
       return !!o?.deliveredAt || explicitlyDelivered || (!o?.shippedAt && !!o?.stockDeducted && !!o?.returnedAt && status.includes('مرتجع'));
     }
 
