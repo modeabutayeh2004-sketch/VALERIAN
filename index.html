@@ -6321,7 +6321,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         // at its native layout width. The final bitmap is then scaled by the
         // exact visible-to-layout ratio, rather than reflowing the document.
         captureHost.id = 'previewSheetBody';
-        captureHost.style.cssText = 'position:fixed;left:0;top:0;z-index:-1;opacity:1;pointer-events:none;width:'+Math.ceil(previewBodyRect.width)+'px;max-width:'+Math.ceil(previewBodyRect.width)+'px;display:flex;justify-content:center;align-items:flex-start;background:transparent;direction:rtl;overflow:visible;';
+        captureHost.style.cssText = 'position:fixed;left:0;top:0;z-index:-1;opacity:1;pointer-events:none;width:'+Math.ceil(previewBodyRect.width)+'px!important;max-width:'+Math.ceil(previewBodyRect.width)+'px!important;display:flex;justify-content:center;align-items:flex-start;background:transparent;direction:rtl;overflow:visible;';
         captureNode.style.setProperty('zoom','1','important');
         captureNode.style.setProperty('width',width+'px','important');
         captureNode.style.setProperty('min-width',width+'px','important');
@@ -6341,7 +6341,8 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         captureNode.style.overflow = 'visible';
       }
       captureHost.appendChild(captureNode);
-      document.body.appendChild(captureHost);
+      const invoiceDialog = isInvoiceCapture ? document.querySelector('#previewModalSheet .preview-document-dialog') : null;
+      (invoiceDialog || document.body).appendChild(captureHost);
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
 
       const imageNodes=[...captureNode.querySelectorAll('img')];
