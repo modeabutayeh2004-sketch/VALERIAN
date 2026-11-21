@@ -57,7 +57,7 @@ try {
     if (!(result.summary.bottom <= result.qr.top + 0.5)) failures.push(tag+': summary card overlaps QR card');
     if (!(result.heading.top >= result.qr.top && result.heading.bottom <= result.qr.bottom)) failures.push(tag+': QR heading outside QR card');
     if (!(result.qr.bottom <= result.footer.top + 0.5)) failures.push(tag+': QR card overlaps footer');
-    const scale = Math.max(2, Math.min(4, 2.75, 9000 / Math.max(result.paper.width, result.paper.height)));
+    const scale = Math.max(2, Math.min(4, Math.max(2.75, 3), 9000 / Math.max(result.paper.width, result.paper.height)));
     const tolW = Math.max(2, Math.round(result.paper.width*scale*0.0015));
     const tolH = Math.max(2, Math.round(result.paper.height*scale*0.0015));
     if (Math.abs(result.imgW - Math.round(result.paper.width*scale)) > tolW) failures.push(tag+': export width mismatch '+result.imgW+' vs '+result.paper.width+'*'+scale);

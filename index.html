@@ -6518,7 +6518,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       captureNode.style.setProperty('text-rendering','geometricPrecision','important');
       captureNode.style.setProperty('-webkit-font-smoothing','antialiased','important');
       captureNode.style.setProperty('font-synthesis','none','important');
-      const scale = Math.max(2, Math.min(4, window.devicePixelRatio || 2, 9000 / Math.max(width, height)));
+      const scale = Math.max(2, Math.min(4, Math.max(window.devicePixelRatio || 2, 3), 9000 / Math.max(width, height)));
       let canvas;
       const captureOptions = {scale,backgroundColor:null,useCORS:true,allowTaint:false,logging:false,scrollX:0,scrollY:0,width,height,windowWidth:window.innerWidth,windowHeight:Math.max(window.innerHeight,height),imageTimeout:15000};
       try {
