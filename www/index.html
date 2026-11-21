@@ -1973,10 +1973,10 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
     #v5ActionModal{position:fixed!important;inset:0!important;z-index:999!important;width:100vw;height:100vh;height:100dvh;min-height:0;display:flex;align-items:center;justify-content:center;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;padding:calc(env(safe-area-inset-top,0px) + 12px) 12px calc(env(safe-area-inset-bottom,0px) + 12px);box-sizing:border-box;background:rgba(32,38,39,.58);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
     #v5ActionModal.hidden{display:none!important}
     .v5-action-panel{position:relative;box-sizing:border-box;width:100%;max-width:440px;max-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 28px);min-height:0;flex:0 0 auto;margin:auto;display:flex;flex-direction:column;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;border:1px solid rgba(190,174,139,.62);border-radius:28px;background:linear-gradient(155deg,#fffdf7 0%,#f4efe4 58%,#eee5d6 100%);color:#243746;box-shadow:0 24px 72px rgba(28,30,29,.28),inset 0 1px 0 rgba(255,255,255,.95);padding:clamp(14px,4vw,22px);animation:v5ActionIn .24s ease-out}
-    .v5-action-panel .text-white,.v5-action-panel .text-slate-100,.v5-action-panel .text-slate-200,.v5-action-panel .text-slate-300{color:#263947!important}
-    .v5-action-panel .text-slate-400,.v5-action-panel .text-slate-500{color:#78817f!important}
-    .v5-action-panel .border-white\/10{border-color:rgba(125,132,127,.2)!important}
-    .v5-action-panel .bg-white\/[.045],.v5-action-panel .bg-white\/[.035]{background:rgba(255,255,255,.48)!important;border-color:rgba(190,174,139,.28)!important}
+    html[data-valerian-theme="light"] .v5-action-panel .text-white,html[data-valerian-theme="light"] .v5-action-panel .text-slate-100,html[data-valerian-theme="light"] .v5-action-panel .text-slate-200,html[data-valerian-theme="light"] .v5-action-panel .text-slate-300{color:#263947!important}
+    html[data-valerian-theme="light"] .v5-action-panel .text-slate-400,html[data-valerian-theme="light"] .v5-action-panel .text-slate-500{color:#78817f!important}
+    html[data-valerian-theme="light"] .v5-action-panel .border-white\/10{border-color:rgba(125,132,127,.2)!important}
+    html[data-valerian-theme="light"] .v5-action-panel .bg-white\/[.045],html[data-valerian-theme="light"] .v5-action-panel .bg-white\/[.035]{background:rgba(255,255,255,.48)!important;border-color:rgba(190,174,139,.28)!important}
     .v5-action-panel #v5ActionDetails{max-height:min(30dvh,260px)!important;min-height:64px;overflow-y:auto;flex:0 1 auto}
     .v5-action-panel .v5-action-choice{background:linear-gradient(145deg,#fff,#f1eee7)!important;color:#304657!important;border:1px solid #d9d3c6!important}
     .v5-action-panel .v5-action-choice.selected{background:linear-gradient(145deg,#dceff0,#c9e3e2)!important;color:#155b61!important;border-color:#7bb9b5!important}
@@ -1995,7 +1995,7 @@ html[data-valerian-theme="dark"] body{background:#031321!important;color:#f5f8fc
 <script>
 (function(){
   const logs=[];
-  const push=(type,detail)=>{const item={time:new Date().toLocaleTimeString('ar-EG'),type,detail:String(detail??'').slice(0,900)};logs.push(item);if(logs.length>100)logs.shift();window.__VALERIAN_DIAG_LOGS=logs;try{const box=document.getElementById('valDiagLog');if(box)box.textContent=logs.slice(-35).map(x=>'['+x.time+'] '+x.type+' — '+x.detail).join('\\n');}catch(_){}};
+  const push=(type,detail)=>{const item={time:new Date().toLocaleTimeString('ar-EG'),type,detail:String(detail??'').slice(0,900)};logs.push(item);if(logs.length>100)logs.shift();window.__VALERIAN_DIAG_LOGS=logs;try{const box=document.getElementById('valDiagLog');if(box)box.textContent=logs.slice(-35).map(x=>'['+x.time+'] '+x.type+' — '+x.detail).join('\n');}catch(_){}};
   window.__VALERIAN_DIAG={push,logs,startedAt:Date.now()};
   window.addEventListener('error',e=>push('JAVASCRIPT ERROR',(e.message||'خطأ')+' | '+(e.filename||'')+':'+(e.lineno||0)+':'+(e.colno||0)));
   window.addEventListener('unhandledrejection',e=>push('PROMISE REJECTION',e.reason?.stack||e.reason?.message||e.reason));
@@ -2029,7 +2029,14 @@ html[data-valerian-theme="light"] .text-sky-200,html[data-valerian-theme="light"
 html[data-valerian-theme="light"] .text-cyan-200,html[data-valerian-theme="light"] .text-cyan-300{color:#087f85!important}
 html[data-valerian-theme="light"] .text-amber-200,html[data-valerian-theme="light"] .text-amber-300{color:#98630d!important}
 html[data-valerian-theme="light"] .text-emerald-200,html[data-valerian-theme="light"] .text-emerald-300{color:#08734e!important}
-html[data-valerian-theme="light"] .text-rose-300,html[data-valerian-theme="light"] .text-rose-400{color:#b32c4b!important}
+html[data-valerian-theme="light"] .text-rose-100,html[data-valerian-theme="light"] .text-rose-200,html[data-valerian-theme="light"] .text-rose-300,html[data-valerian-theme="light"] .text-rose-400{color:#b32c4b!important}
+html[data-valerian-theme="light"] .bg-rose-500\/10{background:#fbeef2!important}
+html[data-valerian-theme="light"] .border-rose-300\/20{border-color:#e5aebe!important}
+html[data-valerian-theme="light"] #settingsSheet .settings-sheet-heading{background:linear-gradient(180deg,#f7fafc 0%,#eef3f6 88%,rgba(238,243,246,.96) 100%)!important;border-bottom:1px solid rgba(160,130,70,.35)!important}
+html[data-valerian-theme="light"] #settingsSheet .settings-sheet-heading button{color:#7a5c22!important;border-color:rgba(160,130,70,.45)!important;background:rgba(160,130,70,.1)!important}
+html[data-valerian-theme="light"] #settingsSheet #valDiagToggle{background:linear-gradient(145deg,#fff,#eaf1f5)!important;color:#1d3043!important;border:1px solid rgba(48,78,101,.22)!important}
+html[data-valerian-theme="light"] #settingsSheet #valDiagPanel{background:#f7fafc!important;color:#1d3043!important;border:1px solid rgba(48,78,101,.22)!important;box-shadow:0 10px 28px rgba(43,65,84,.14)!important}
+html[data-valerian-theme="light"] #settingsSheet #valDiagLog{background:#eef3f6!important;color:#33475a!important}
 html[data-valerian-theme="light"] .text-violet-200,html[data-valerian-theme="light"] .text-violet-300{color:#704e9b!important}
 html[data-valerian-theme="light"] .bg-white\/5{background:#f3f6f8!important}
 html[data-valerian-theme="light"] .bg-white\/10{background:#eaf0f3!important}
@@ -2469,15 +2476,15 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
 #previewSheetBody .valerian-invoice-paper .valerian-share-summary-row strong{font:600 11px Arial,sans-serif!important;color:#221c12!important}
 #previewSheetBody .valerian-invoice-paper .valerian-share-grand{margin-top:3px!important;padding:7px 12px!important;background:linear-gradient(90deg,#c2a258 0%,#9b7b36 50%,#7d6023 100%)!important;border:0!important;border-radius:8px!important;color:#fff!important;font-size:13px!important}
 #previewSheetBody .valerian-invoice-paper .valerian-share-grand strong{font-size:12px!important;color:#fff!important}
-#previewSheetBody .valerian-invoice-paper .valerian-share-qr{margin:0!important;padding:8px 12px!important;border:1px solid #d5c8ae!important;border-radius:11px!important;background:#fff!important;text-align:center!important}
+#previewSheetBody .valerian-invoice-paper .valerian-share-qr{margin:0!important;padding:6px 12px!important;border:1px solid #d5c8ae!important;border-radius:11px!important;background:#fff!important;text-align:center!important}
 #previewSheetBody .valerian-invoice-paper .valerian-share-qr .valerian-share-section-title{justify-content:center!important;margin-bottom:6px!important}
 #previewSheetBody .valerian-invoice-paper .valerian-share-qr .valerian-share-section-title:before,#previewSheetBody .valerian-invoice-paper .valerian-share-qr .valerian-share-section-title:after{content:"";height:1px;width:28px;background:#a8873e}
 #previewSheetBody .valerian-invoice-paper .valerian-share-qr-list{display:flex!important;flex-wrap:wrap!important;justify-content:center!important;gap:10px!important}
 #previewSheetBody .valerian-invoice-paper .valerian-share-qr-item{width:110px!important;font-size:10px!important;gap:4px!important}
 #previewSheetBody .valerian-invoice-paper .valerian-share-qr-code{width:78px!important;height:78px!important;padding:3px!important}
-#previewSheetBody .valerian-invoice-paper .valerian-share-qr-unified{width:100%!important;max-width:230px!important}
-#previewSheetBody .valerian-invoice-paper .valerian-share-qr-unified .valerian-share-qr-code{width:210px!important;height:210px!important;padding:5px!important}
-#previewSheetBody .valerian-invoice-paper .valerian-share-qr-unified .valerian-share-qr-code img{width:200px!important;height:200px!important}
+#previewSheetBody .valerian-invoice-paper .valerian-share-qr-unified{width:100%!important;max-width:170px!important}
+#previewSheetBody .valerian-invoice-paper .valerian-share-qr-unified .valerian-share-qr-code{width:128px!important;height:128px!important;padding:5px!important}
+#previewSheetBody .valerian-invoice-paper .valerian-share-qr-unified .valerian-share-qr-code img{width:120px!important;height:120px!important}
 #previewSheetBody .valerian-invoice-paper .valerian-share-qr-unified strong{font-size:12px!important}
 #previewSheetBody .valerian-share-qr-unified .valerian-share-qr-platforms{color:#75571e!important;font-weight:700}
 #previewSheetBody .valerian-invoice-paper .valerian-share-qr-code img{width:70px!important;height:70px!important}
@@ -7757,7 +7764,10 @@ document.addEventListener('click', function(event) {
   const eng=window.ValerianEngine;
   let cloud='غير متاح',syncDiag=null;
   try{cloud=eng?.cloudStatus?JSON.stringify(eng.cloudStatus()):'cloudStatus غير متاح';syncDiag=eng?.cloudDiagnostics?eng.cloudDiagnostics():null;}catch(e){cloud='cloudStatus error: '+e.message;}
+  const online=navigator.onLine,lastErr=syncDiag?.lastError,lastOk=syncDiag?.lastSuccess;
+  const summary='— ملخص سريع —\n'+(lastErr?'⚠️ آخر محاولة مزامنة واجهت خطأ — راجع "آخر خطأ مزامنة" في التفاصيل بالأسفل.':lastOk?'✅ المزامنة تعمل بشكل طبيعي.':'ℹ️ لم تكتمل أي مزامنة بعد على هذا الجهاز.')+'\n'+'الاتصال بالإنترنت: '+(online?'متصل':'غير متصل')+'\n'+'آخر مزامنة ناجحة: '+(lastOk||'لا توجد')+'\n'+'— التفاصيل الفنية —';
   return [
+   summary,
    'الصفحة: '+location.href,
    'المتصفح: '+navigator.userAgent,
    'الواجهة: '+(typeof window.importMobileJson)+' / '+(typeof window.exportMobileJson),
@@ -7781,11 +7791,11 @@ document.addEventListener('click', function(event) {
    'حالة Realtime: '+(syncDiag?.realtimeStatus||'غير متاح')+' | آخر إشعار: '+(syncDiag?.lastRealtimeEvent||'لا يوجد'),
    'الصور: رفع '+(syncDiag?.imageUploadSucceeded||0)+' / تخطي '+(syncDiag?.imageUploadSkipped||0)+' / أخطاء رفع '+(syncDiag?.imageUploadErrors||0)+' | تنزيل '+(syncDiag?.imageDownloadSucceeded||0)+' / أخطاء تنزيل '+(syncDiag?.imageDownloadErrors||0),
    'آخر تحديث للصفحة: '+new Date().toLocaleString('ar-EG')
-  ].join('\\n');
+  ].join('\n');
  };
- function refresh(){ const eng=window.ValerianEngine;let engineLog='';try{const d=eng?.cloudDiagnostics?.();if(d?.log)engineLog='سجل محرك المزامنة:\\n'+d.log;}catch(e){engineLog='تعذر قراءة سجل المحرك: '+e.message;}const pageLog=(diag?.logs||[]).slice(-35).map(x=>'['+x.time+'] '+x.type+' — '+x.detail).join('\\n');$('valDiagState').textContent=state();$('valDiagLog').textContent=[pageLog,engineLog].filter(Boolean).join('\\n\\n')||'لا توجد أحداث تشخيص مسجلة حتى الآن.';}
+ function refresh(){ const eng=window.ValerianEngine;let engineLog='';try{const d=eng?.cloudDiagnostics?.();if(d?.log)engineLog='سجل محرك المزامنة:\n'+d.log;}catch(e){engineLog='تعذر قراءة سجل المحرك: '+e.message;}const pageLog=(diag?.logs||[]).slice(-35).map(x=>'['+x.time+'] '+x.type+' — '+x.detail).join('\n');$('valDiagState').textContent=state();$('valDiagLog').textContent=[pageLog,engineLog].filter(Boolean).join('\n\n')||'لا توجد أحداث تشخيص مسجلة حتى الآن.';}
  $('valDiagToggle').addEventListener('click',()=>{const p=$('valDiagPanel');p.style.display=p.style.display==='none'?'block':'none';refresh();});
- $('valDiagCopy').addEventListener('click',async()=>{refresh();const report=$('valDiagState').textContent+'\\n\\n'+$('valDiagLog').textContent;try{await navigator.clipboard.writeText(report);$('valDiagCopy').textContent='تم النسخ';}catch(e){const t=document.createElement('textarea');t.value=report;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();$('valDiagCopy').textContent='تم النسخ';}});
+ $('valDiagCopy').addEventListener('click',async()=>{refresh();const report=$('valDiagState').textContent+'\n\n'+$('valDiagLog').textContent;try{await navigator.clipboard.writeText(report);$('valDiagCopy').textContent='تم النسخ';}catch(e){const t=document.createElement('textarea');t.value=report;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();$('valDiagCopy').textContent='تم النسخ';}});
  window.addEventListener('load',()=>{diag?.push('PAGE LOAD','load event fired');refresh();});
  window.addEventListener('valerian:engine-ready',()=>{diag?.push('ENGINE READY','single-document engine ready');setTimeout(refresh,300);});
  window.addEventListener('valerian:cloud-status',()=>setTimeout(refresh,100));

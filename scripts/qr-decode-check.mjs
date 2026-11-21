@@ -45,7 +45,7 @@ try {
     await window.ValerianEngine.saveSettingsSheetQrLinks();
     const check = window.ValerianEngine.getSnapshot().settings.invoiceQrLinks;
     if (!Array.isArray(check) || check.length !== 4) return {error:'settings not applied, got '+(check&&check.length)};
-    const order = {id:'VAL-QA-1001',date:'2026-11-21',mode:'reservation',status:'حجز مسبق',name:'عميل تجريبي',phone:'01000000000',address:'عنوان تجريبي',grandTotal:6976,depositAmount:2093,remainingAmount:4883,items:[{id:'p1',name:'Old Spice (Epic Legend)',size:'100 مل',qty:2,price:3438,total:6876}]};
+    const order = {id:'VAL-QA-1001',date:'2026-11-21',mode:'reservation',status:'حجز مسبق',name:'عميل تجريبي',phone:'01000000000',address:'عنوان تجريبي',grandTotal:6976,depositAmount:2093,remainingAmount:4883,items:[{id:'p1',name:'منتج تجريبي (اختبار)',size:'100 مل',qty:2,price:3438,total:6876}]};
     window.__valerianOpenThermalReceiptPreview(order);
     const until=Date.now()+20000;
     while(Date.now()<until && !document.querySelector('#previewSheetBody .valerian-share-qr img')) await new Promise(r=>setTimeout(r,150));

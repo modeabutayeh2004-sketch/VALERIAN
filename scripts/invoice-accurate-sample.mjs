@@ -25,7 +25,7 @@ try {
 
   const result = await page.evaluate(async () => {
     const E = window.ValerianEngine;
-    const prod = await E.addProduct({name:'Old Spice (Epic Legend)', category:'عطور رجالية', size:'100 مل', productType:'عطور', price:3438, cost:1800, stock:0});
+    const prod = await E.addProduct({name:'منتج تجريبي (اختبار)', category:'عطور رجالية', size:'100 مل', productType:'عطور', price:3438, cost:1800, stock:0});
     if (!prod.ok) return {stage:'product', prod};
     const imp = await E.createImportInvoice({supplier:'مورد العطور', date:'2026-11-20', exchangeRate:50, paidAmount:9000, paymentMethod:'نقدي', lines:[{productId:prod.product.id, qty:5, unitForeign:36}]});
     if (!imp.ok) return {stage:'import', imp};

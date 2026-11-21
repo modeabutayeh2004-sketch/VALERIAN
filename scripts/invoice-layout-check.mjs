@@ -70,9 +70,9 @@ try {
   const cdp = await context.newCDPSession(page);
   await cdp.send('Emulation.setCPUThrottlingRate', {rate:4});
 
-  await captureCase('single', {id:'VAL-QA-1001',date:'2026-11-21',mode:'reservation',status:'حجز مسبق',name:'عميل تجريبي',phone:'01000000000',address:'عنوان تجريبي',grandTotal:6976,depositAmount:2093,remainingAmount:4883,items:[{id:'p1',name:'Old Spice (Epic Legend)',size:'100 مل',qty:2,price:3438,total:6876}]});
-  await captureCase('multi-long', {id:'VAL-20261121-000987',date:'2026-11-21',mode:'sale',status:'تم البيع',name:'اسم تجريبي طويل جداً لاختبار التفاف النص',phone:'01000000000',address:'عنوان تجريبي طويل لاختبار التفاف النص داخل الفاتورة',grandTotal:19850,depositAmount:19850,remainingAmount:0,items:[
-    {id:'p1',name:'Old Spice (Epic Legend) Limited Edition',size:'100 مل',qty:2,price:3438,total:6876},
+  await captureCase('single', {id:'VAL-QA-1001',date:'2026-11-21',mode:'reservation',status:'حجز مسبق',name:'عميل تجريبي',phone:'01000000000',address:'عنوان تجريبي',grandTotal:6976,depositAmount:2093,remainingAmount:4883,items:[{id:'p1',name:'منتج تجريبي (اختبار)',size:'100 مل',qty:2,price:3438,total:6876}]});
+  await captureCase('multi-long', {id:'VAL-20261121-000987',date:'2026-11-21',mode:'sale',status:'تم البيع',name:'اسم تجريبي طويل جدا لاختبار التفاف النص',phone:'01000000000',address:'عنوان تجريبي طويل لاختبار التفاف النص داخل الفاتورة - الدور الرابع - شقة 12',grandTotal:19850,depositAmount:19850,remainingAmount:0,items:[
+    {id:'p1',name:'منتج تجريبي (اختبار) Limited Edition',size:'100 مل',qty:2,price:3438,total:6876},
     {id:'p2',name:'Dior Sauvage Elixir',size:'60 مل',qty:1,price:6200,total:6200},
     {id:'p3',name:'تقسيم عطر عود ملكي فاخر',size:'10 مل',qty:3,price:450,total:1350},
     {id:'p4',name:'Creed Aventus',size:'100 مل',qty:1,price:5424,total:5424}

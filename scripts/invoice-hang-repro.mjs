@@ -35,7 +35,7 @@ try {
       id:'VAL-QA-1001',date:'2026-11-21',mode:'reservation',status:'حجز مسبق',
       name:'عميل تجريبي',phone:'01000000000',address:'عنوان تجريبي',
       grandTotal:6976,depositAmount:300,remainingAmount:6676,
-      items:[{id:'p1',name:'Old Spice (Epic Legend)',size:'100 مل',qty:2,price:3438,total:6876}]
+      items:[{id:'p1',name:'منتج تجريبي (اختبار)',size:'100 مل',qty:2,price:3438,total:6876}]
     });
   });
   await page.waitForFunction(() => !!document.querySelector('#previewSheetBody .valerian-share-qr img'), null, {timeout:20000});

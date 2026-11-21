@@ -31,7 +31,7 @@ try {
   await cdp.send('Emulation.setCPUThrottlingRate', {rate:6});
   const result = await page.evaluate(async () => {
     window.__valerianOpenThermalReceiptPreview({id:'VAL-4X-QUALITY',date:'2026-11-21',mode:'sale',status:'تم البيع',name:'عميل جودة التصدير',phone:'01000000000',address:'القاهرة مدينة نصر',grandTotal:19850,depositAmount:19850,remainingAmount:0,items:[
-      {id:'p1',name:'Old Spice (Epic Legend) Limited Edition',size:'100 مل',qty:2,price:3438,total:6876},
+      {id:'p1',name:'منتج تجريبي (اختبار) Limited Edition',size:'100 مل',qty:2,price:3438,total:6876},
       {id:'p2',name:'Dior Sauvage Elixir',size:'60 مل',qty:1,price:6200,total:6200},
       {id:'p3',name:'تقسيم عطر عود ملكي فاخر',size:'10 مل',qty:3,price:450,total:1350},
       {id:'p4',name:'Creed Aventus',size:'100 مل',qty:1,price:5424,total:5424}]});
