@@ -4505,6 +4505,12 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
             <label class="text-[10px] text-slate-300">بدء من الطلب رقم<input id="v5LoyaltyStartOrder" type="number" min="1" step="1" class="mt-1 w-full rounded-lg bg-black/30 border border-white/15 p-2 text-white text-xs bidi-ltr"></label>
             <label class="text-[10px] text-slate-300">قيمة النقطة ج.م<input id="v5PointValue" type="number" min="0" step="0.01" class="mt-1 w-full rounded-lg bg-black/30 border border-white/15 p-2 text-white text-xs bidi-ltr"></label>
           </div>
+          <div>
+            <div class="text-[10px] text-slate-300 font-bold">مستويات الولاء (اختياري)</div>
+            <p class="text-[10px] text-slate-400 mt-0.5">اسم كل مستوى وعدد النقاط الإجمالي المطلوب للوصول إليه. بدون مستويات لا يظهر اسم مستوى على بطاقة الولاء.</p>
+            <div id="v5LoyaltyTiersList" class="mt-1.5 flex flex-col gap-1.5"></div>
+            <button type="button" onclick="v5AddLoyaltyTierRow()" class="mt-1.5 w-full py-2 rounded-lg border border-white/15 bg-black/20 text-[11px] font-bold text-slate-200">＋ إضافة مستوى</button>
+          </div>
           <button onclick="saveLoyaltySettings()" class="w-full py-2.5 rounded-xl silver-btn text-xs font-black">حفظ إعدادات النقاط</button>
         </div>
         <div class="grid grid-cols-2 gap-2.5">
@@ -4745,6 +4751,8 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         if(percentage)percentage.value=Number(settings.loyaltyPercentage??5);
         if(start)start.value=Number(settings.loyaltyStartOrder??2);
         if(value)value.value=Number(settings.pointValue??1);
+        const tiersList=document.getElementById('v5LoyaltyTiersList');
+        if(tiersList){tiersList.innerHTML='';(Array.isArray(settings.loyaltyTiers)?settings.loyaltyTiers:[]).forEach(t=>window.v5AddLoyaltyTierRow(t&&t.name,t&&t.minPoints));}
         if(window.ValerianEngine?.renderSettingsSheetQrEditor)window.ValerianEngine.renderSettingsSheetQrEditor();
       }
     }
@@ -7596,12 +7604,36 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
       document.getElementById('previewSheetBody').innerHTML='<article class="valerian-share-card" dir="rtl"><header class="valerian-share-head"><img class="valerian-share-logo" src="'+VALERIAN_CARD_EMBLEM+'" alt="VALERIAN"><div class="valerian-share-brand">VALERIAN</div><div class="valerian-share-tag">THE ART OF FRAGRANCE</div><div class="valerian-share-headline">BUSINESS PERFORMANCE</div></header><div class="valerian-share-content"><div class="valerian-share-intro"><div><div class="valerian-share-kicker">تقرير تشغيلي</div><div class="valerian-share-title">ملخص أداء النشاط</div></div><span class="valerian-share-status">'+new Date().toLocaleDateString('ar-EG')+'</span></div><div class="valerian-share-metrics"><div class="valerian-share-stat"><div class="valerian-share-stat-label">المبيعات المسلّمة</div><div class="valerian-share-stat-value">'+fmtEgp(sales)+'</div></div><div class="valerian-share-stat"><div class="valerian-share-stat-label">عربون الحجوزات</div><div class="valerian-share-stat-value">'+fmtEgp(deposits)+'</div></div><div class="valerian-share-stat"><div class="valerian-share-stat-label">المصروفات</div><div class="valerian-share-stat-value">'+fmtEgp(expenses)+'</div></div><div class="valerian-share-stat"><div class="valerian-share-stat-label">تكلفة البضاعة المباعة</div><div class="valerian-share-stat-value">'+fmtEgp(cogs)+'</div></div></div><section class="valerian-share-summary"><div class="valerian-share-summary-row valerian-share-grand"><span>صافي الربح التقديري</span><strong>'+fmtEgp(net)+'</strong></div></section><p style="font-size:10px;line-height:1.8;color:#8c7958;margin-top:13px">هذا تقرير تشغيلي تقديري وفق البيانات المسجلة في محرك VALERIAN، ولا يشمل أي عمليات غير مسجلة.</p></div><footer class="valerian-share-foot">VALERIAN · THE ART OF FRAGRANCE</footer></article>';
       openSheet('previewModalSheet');
     };
+    window.v5AddLoyaltyTierRow=function(name,minPoints){
+      const list=document.getElementById('v5LoyaltyTiersList');if(!list)return;
+      const row=document.createElement('div');
+      row.className='grid grid-cols-[1fr_96px_34px] gap-1.5 items-center';
+      const nameInput=document.createElement('input');
+      nameInput.type='text';nameInput.placeholder='اسم المستوى';nameInput.maxLength=30;
+      nameInput.className='v5-tier-name rounded-lg bg-black/30 border border-white/15 p-2 text-white text-xs';
+      nameInput.value=String(name||'');
+      const minInput=document.createElement('input');
+      minInput.type='number';minInput.min='0';minInput.step='1';minInput.placeholder='النقاط';
+      minInput.className='v5-tier-min rounded-lg bg-black/30 border border-white/15 p-2 text-white text-xs bidi-ltr';
+      if(minPoints!==undefined&&minPoints!==null&&minPoints!=='')minInput.value=Number(minPoints)||0;
+      const removeBtn=document.createElement('button');
+      removeBtn.type='button';removeBtn.textContent='✕';
+      removeBtn.className='rounded-lg border border-white/15 bg-black/20 text-slate-300 text-sm h-9';
+      removeBtn.onclick=()=>row.remove();
+      row.appendChild(nameInput);row.appendChild(minInput);row.appendChild(removeBtn);
+      list.appendChild(row);
+    };
     window.saveLoyaltySettings=async function(){
       try{
+        const tiers=[...document.querySelectorAll('#v5LoyaltyTiersList > div')].map(row=>({
+          name:String(row.querySelector('.v5-tier-name')?.value||'').trim(),
+          minPoints:Math.max(0,Math.floor(Number(row.querySelector('.v5-tier-min')?.value)||0))
+        })).filter(t=>t.name);
         const r=await runEngine('updateSettings',{
           loyaltyPercentage:Number(document.getElementById('v5LoyaltyPercentage').value),
           loyaltyStartOrder:Number(document.getElementById('v5LoyaltyStartOrder').value),
-          pointValue:Number(document.getElementById('v5PointValue').value)
+          pointValue:Number(document.getElementById('v5PointValue').value),
+          loyaltyTiers:tiers
         });
         if(r.ok)showToast('تم حفظ إعدادات برنامج الولاء والنقاط.');
       }catch(err){window.ValerianReportError(err);}

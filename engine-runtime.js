@@ -6240,7 +6240,13 @@ async function previewPeriodicReportPrint() {
           if(!Number.isFinite(percentage)||percentage<0||percentage>100)throw new Error('نسبة اكتساب النقاط يجب أن تكون بين 0 و100.');
           if(!Number.isSafeInteger(startOrder)||startOrder<1)throw new Error('رقم أول طلب مؤهل يجب أن يكون 1 أو أكثر.');
           if(!Number.isFinite(pointValue)||pointValue<0)throw new Error('قيمة النقطة يجب أن تكون صفراً أو أكثر.');
-          state.settings={...(state.settings||{}),loyaltyPercentage:percentage,loyaltyStartOrder:startOrder,pointValue};
+          let tiersUpdate;
+          if(payload&&Object.prototype.hasOwnProperty.call(payload,'loyaltyTiers')){
+            if(!Array.isArray(payload.loyaltyTiers))throw new Error('مستويات الولاء يجب أن تكون قائمة.');
+            tiersUpdate=payload.loyaltyTiers.map(t=>({name:String(t&&t.name||'').trim(),minPoints:Math.max(0,Math.floor(Number(t&&t.minPoints)||0))})).filter(t=>t.name);
+            if(tiersUpdate.length>12)throw new Error('الحد الأقصى لمستويات الولاء 12 مستوى.');
+          }
+          state.settings={...(state.settings||{}),loyaltyPercentage:percentage,loyaltyStartOrder:startOrder,pointValue,...(tiersUpdate!==undefined?{loyaltyTiers:tiersUpdate}:{})};
           // Rebuild customer balances from delivered purchases immediately after settings change.
           // This makes the earn percentage effective on the purchase history, while pointValue only
           // changes the monetary value of each point and never rewrites the number of points.
