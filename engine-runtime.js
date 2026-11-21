@@ -2277,7 +2277,9 @@
     function getOrderSupplyRequirements(order){
       const items=Array.isArray(order?.items)?order.items:[];
       return (state.operatingSupplies||[]).filter(x=>!x.archivedAt&&x.active!==false).map(supply=>{
-        let qty=Math.max(0,Number(supply.recipePerOrder||0));
+        const perOrderQty=Math.max(0,Number(supply.recipePerOrder||0));
+        let qty=perOrderQty;
+        const itemParts=[];
         const productRecipes=supply.productRecipes&&typeof supply.productRecipes==='object'&&!Array.isArray(supply.productRecipes)?supply.productRecipes:null;
         items.forEach(item=>{
           const itemQty=Math.max(0,Number(item.qty||0)-Number(item.returnedQty||0));
@@ -2285,9 +2287,9 @@
           const productId=String(item.id||item.productId||'');
           const hasProductRate=!!productRecipes&&Object.prototype.hasOwnProperty.call(productRecipes,productId);
           const perUnit=hasProductRate?Number(productRecipes[productId]||0):Number(supply.recipePerUnit||0);
-          if(Number.isFinite(perUnit)&&perUnit>0)qty+=perUnit*itemQty;
+          if(Number.isFinite(perUnit)&&perUnit>0){qty+=perUnit*itemQty;itemParts.push({productId,qty:itemQty,rate:perUnit});}
         });
-        return {supply,qty:Math.max(0,qty)};
+        return {supply,qty:Math.max(0,qty),perOrderQty,itemParts};
       }).filter(x=>x.qty>0);
     }
     function validateOrderSupplyAvailability(order){
@@ -2297,8 +2299,28 @@
       if(!order||order.operatingSuppliesConsumed)return true;const req=getOrderSupplyRequirements(order);
       for(const r of req){if(Number(r.supply.quantity||0)+1e-9<r.qty)throw new Error(`رصيد ${r.supply.name} غير كافٍ عند اعتماد الطلب.`);}
       const ref=String(order.id||'ORDER');order.operatingSupplyConsumption=[];
-      req.forEach(r=>{r.supply.quantity=Number(r.supply.quantity||0)-r.qty;addOperatingSupplyMovement(r.supply,'ORDER_CONSUMPTION',-r.qty,ref,'استهلاك مستلزمات تجهيز الطلب '+ref);order.operatingSupplyConsumption.push({supplyId:r.supply.id,name:r.supply.name,quantity:r.qty,unit:r.supply.unit,unitCost:Number(r.supply.averageUnitCost||0),totalCost:r.qty*Number(r.supply.averageUnitCost||0)});});
+      req.forEach(r=>{r.supply.quantity=Number(r.supply.quantity||0)-r.qty;addOperatingSupplyMovement(r.supply,'ORDER_CONSUMPTION',-r.qty,ref,'استهلاك مستلزمات تجهيز الطلب '+ref);order.operatingSupplyConsumption.push({supplyId:r.supply.id,name:r.supply.name,quantity:r.qty,unit:r.supply.unit,unitCost:Number(r.supply.averageUnitCost||0),totalCost:r.qty*Number(r.supply.averageUnitCost||0),perOrderQty:Number(r.perOrderQty||0),items:(r.itemParts||[]).map(p=>({productId:p.productId,qty:p.qty,rate:p.rate}))});});
       order.operatingSuppliesConsumed=true;order.operatingSuppliesConsumedAt=new Date().toISOString();order.operatingSuppliesCost=(order.operatingSupplyConsumption||[]).reduce((a,x)=>a+Number(x.totalCost||0),0);return true;
+    }
+    // Per-unit packaging cost attributable to an order's RETURNED units, from the
+    // consumption-time attribution (rates + unit cost frozen at dispatch). The shared
+    // per-order part (carton) is deliberately excluded: by the owner's 2026-11-21 ruling
+    // it stays with the retained sale. Legacy orders whose consumption rows predate
+    // attribution carry no per-item split; their per-unit share cannot be derived
+    // honestly, so it is left in COGS (complete=false) rather than estimated.
+    function getReturnedUnitSupplyCost(order){
+      const consumption=Array.isArray(order?.operatingSupplyConsumption)?order.operatingSupplyConsumption:[];
+      let cost=0,complete=true;
+      consumption.forEach(row=>{
+        const parts=Array.isArray(row?.items)?row.items:null;
+        if(!parts){if(Number(row?.quantity||0)>0)complete=false;return;}
+        parts.forEach(entry=>{
+          const line=(order.items||[]).find(it=>String(it.id)===String(entry.productId));
+          const returnedQty=Math.min(Math.max(0,Number(line?.returnedQty||0)),Math.max(0,Number(entry.qty||0)));
+          if(returnedQty>0)cost+=Number(entry.rate||0)*returnedQty*Math.max(0,Number(row.unitCost||0));
+        });
+      });
+      return {cost:roundMoney(cost),complete};
     }
 
     // ==================== INVENTORY ====================
@@ -2511,9 +2533,19 @@
       if(!state.settings?.enableQr)return [];
       return (Array.isArray(state.settings.invoiceQrLinks)?state.settings.invoiceQrLinks:[]).filter(x=>x&&/^https?:\/\//i.test(String(x.url||''))).slice(0,4);
     }
+    const VALERIAN_LINKS_PAGE_URL='https://modeabutayeh2004-sketch.github.io/VALERIAN/links.html';
+    function buildEngineUnifiedQrUrl(links){
+      const clean=(Array.isArray(links)?links:[]).map(x=>({label:String(x.label||'رابط').trim().slice(0,32),url:String(x.url||'').trim()})).filter(x=>/^https?:\/\//i.test(x.url)).slice(0,4);
+      if(!clean.length)return '';
+      const compact=clean.map(x=>[x.label,x.url.replace(/^https:\/\//i,'')]);
+      const payload=btoa(unescape(encodeURIComponent(JSON.stringify(compact)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+      return VALERIAN_LINKS_PAGE_URL+'#links='+payload;
+    }
     function buildInvoiceQrHtml(){
       const links=getInvoiceQrLinks();if(!links.length)return '';
-      return `<section class="v20-doc-qr" aria-label="روابط VALERIAN"><div class="v20-doc-qr-title">تابعوا VALERIAN على منصاتنا</div><div class="v20-doc-qr-list">${links.map(x=>`<div class="v20-doc-qr-item"><div data-valerian-qr="${escapeHTML(x.url)}" class="v20-doc-qr-image"></div><span>${escapeHTML(x.label||'رابط')}</span></div>`).join('')}</div></section>`;
+      const unified=buildEngineUnifiedQrUrl(links);if(!unified)return '';
+      const names=links.map(x=>escapeHTML(x.label||'رابط')).join(' • ');
+      return `<section class="v20-doc-qr" aria-label="روابط VALERIAN"><div class="v20-doc-qr-title">تابعوا VALERIAN على منصاتنا</div><div class="v20-doc-qr-list"><div class="v20-doc-qr-item"><div data-valerian-qr="${escapeHTML(unified)}" class="v20-doc-qr-image"></div><span>${names}</span></div></div></section>`;
     }
     function renderInvoiceQrCodes(root){
       if(!root)return;
@@ -2526,11 +2558,11 @@
         }
         try{
           const temp=document.createElement('div');
-          new window.QRCode(temp,{text:url,width:240,height:240,colorDark:'#111827',colorLight:'#ffffff',correctLevel:window.QRCode.CorrectLevel.H});
+          new window.QRCode(temp,{text:url,width:280,height:280,colorDark:'#111827',colorLight:'#ffffff',correctLevel:window.QRCode.CorrectLevel.M});
           const canvas=temp.querySelector('canvas');
           const img=temp.querySelector('img');
           let data='';if(canvas)data=canvas.toDataURL('image/png');else if(img?.src)data=img.src;
-          if(data){target.innerHTML=`<img data-valerian-qr-image="1" alt="QR ${escapeHTML(url)}" src="${data}" style="display:block!important;width:160px!important;height:160px!important;max-width:160px!important;max-height:160px!important;object-fit:contain!important">`;}
+          if(data){target.innerHTML=`<img data-valerian-qr-image="1" alt="QR ${escapeHTML(url)}" src="${data}" style="display:block!important;width:200px!important;height:200px!important;max-width:200px!important;max-height:200px!important;object-fit:contain!important">`;}
           else target.textContent='تعذر إنشاء QR';
         }catch(e){target.textContent='تعذر إنشاء QR';}
       }
@@ -3036,6 +3068,14 @@ async function previewPeriodicReportPrint() {
           : order.type==='customer_profile'
             ? `مرحباً ${String(order.name||'عميلنا')}، مرفق ملفكم الشخصي وتفضيلاتكم العطرية وسجل تعاملاتكم من ڤاليريان. يسعدنا خدمتكم دائمًا.`
             : template.replace(/\{customer\}/g,String(order.name||'عميلنا')).replace(/\{order\}/g,String(order.id||'')).replace(/\{total\}/g,formatCurrency(Number(order.grandTotal||0))).replace(/\{remaining\}/g,formatCurrency(Number(order.remainingAmount||0))));
+        // Direct route (Android APK): open the customer's WhatsApp chat with the image
+        // attached and the message prefilled - no share-sheet detour. wa.me links cannot
+        // carry images, so this needs the native bridge; anything else falls through.
+        if(window.ValerianNative && typeof window.ValerianNative.shareImageToWhatsApp==='function') {
+          const dataUrl=await blobToDataUrl(blob);
+          const openedDirect=window.ValerianNative.shareImageToWhatsApp(dataUrl,file.name,file.type||'image/png',digits,message);
+          if(openedDirect){showToast('تم فتح محادثة العميل في واتساب مع الرسالة وصورة الفاتورة مرفقة.','success');return;}
+        }
         // Native file sharing hands the actual PNG to Android's share sheet; WhatsApp
         // receives the attachment when the user chooses WhatsApp and the customer chat.
         if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
@@ -3822,6 +3862,15 @@ async function previewPeriodicReportPrint() {
       let totalReturns = 0;
       let totalCogs = 0;
       let totalWriteoffLoss = 0;
+      // Returned goods' packaging is a loss (wastage), not cost of goods sold — the
+      // owner's standing rule (2026-11-21 09:12). Scope, settled by his same-day
+      // clarification: a FULL return reclassifies the order's whole supply cost; on a
+      // PARTIAL return the shared carton stays in COGS with the retained items (it never
+      // comes back), while each returned unit's own per-unit packaging reclassifies to
+      // the loss line. Reclassification of the SAME already-recognized cost — COGS loses
+      // exactly what the loss line gains, never a second deduction.
+      let totalReturnedPackagingLoss = 0;
+      const isFullyReturnedOrder=o=>(o.items||[]).length>0&&(o.items||[]).some(it=>Number(it.returnedQty||0)>0)&&(o.items||[]).every(it=>Number(it.returnedQty||0)>=Number(it.qty||0));
 
       // Losses follow the actual return date, not the original order date.
       // This keeps a damaged return from an older sale visible in the current report period.
@@ -3853,8 +3902,14 @@ async function previewPeriodicReportPrint() {
             const soldQty = Math.max(0, Number(item.qty || 0) - Number(item.returnedQty || 0));
             totalCogs += cost * soldQty;
           });
-          totalCogs += Math.max(0, Number(o.operatingSuppliesCost || 0));
+          const supplyCost=Math.max(0, Number(o.operatingSuppliesCost || 0));
+          if(isFullyReturnedOrder(o))totalReturnedPackagingLoss+=supplyCost;
+          else{const ret=getReturnedUnitSupplyCost(o);totalCogs+=roundMoney(supplyCost-ret.cost);totalReturnedPackagingLoss+=ret.cost;}
         } else {
+          // Failed shipment / full return before delivery: the order never entered sales or
+          // COGS, but its packaging was consumed at dispatch. Recognize it as the same loss.
+          const supplyCost=Math.max(0, Number(o.operatingSuppliesCost || 0));
+          if(isFullyReturnedOrder(o))totalReturnedPackagingLoss+=supplyCost;
           const refundPaid = (state.paymentTransactions || []).filter(t => t.orderId === o.id && t.type === 'REFUND_PAID').reduce((a,t)=>a+Number(t.amount||0),0);
           totalReservations += Math.max(0, Number(o.depositAmount || 0) - refundPaid);
         }
@@ -3862,7 +3917,7 @@ async function previewPeriodicReportPrint() {
 
       const totalExpenses = state.expenses.filter(e => { if (String(e.category||'').includes('استبدال نقاط عملاء')) return false; const d = new Date(e.date); if (period === 'today') return d.toDateString() === now.toDateString(); if (period === 'week') return (now - d) / 86400000 <= 7 && d <= now; if (period === 'month') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); return true; }).reduce((s, e) => s + Number(e.amount || 0), 0);
       // COGS uses the immutable unitCostAtSale snapshot when present; legacy rows fall back to current average cost.
-      const trueNetProfit = fullSales - totalCogs - totalExpenses - totalWriteoffLoss;
+      const trueNetProfit = fullSales - totalCogs - totalExpenses - totalWriteoffLoss - totalReturnedPackagingLoss;
       const supplierInvoices=Array.isArray(state.supplierInvoices)?state.supplierInvoices:[],supplierPayments=Array.isArray(state.supplierPayments)?state.supplierPayments:[];
       const supplierPaidNow=supplierInvoices.reduce((sum,inv)=>{const linked=supplierPayments.filter(p=>String(p.invoiceId)===String(inv.id)).reduce((a,p)=>a+Math.max(0,Number(p.amount||0)),0);return sum+Math.min(Math.max(0,Number(inv.totalAmount||0)),Math.max(Math.max(0,Number(inv.paidAmount||0)),linked));},0);
       const supplierDueNow=supplierInvoices.reduce((sum,inv)=>{const linked=supplierPayments.filter(p=>String(p.invoiceId)===String(inv.id)).reduce((a,p)=>a+Math.max(0,Number(p.amount||0)),0);const paid=Math.min(Math.max(0,Number(inv.totalAmount||0)),Math.max(Math.max(0,Number(inv.paidAmount||0)),linked));return sum+Math.max(0,Number(inv.totalAmount||0)-paid);},0);
@@ -3875,6 +3930,8 @@ async function previewPeriodicReportPrint() {
       document.getElementById('repExpenses').textContent = formatCurrency(totalExpenses);
       const writeoffEl = document.getElementById('repWriteoffLoss');
       if (writeoffEl) writeoffEl.textContent = formatCurrency(totalWriteoffLoss);
+      const retPackEl = document.getElementById('repReturnedPackagingLoss');
+      if (retPackEl) retPackEl.textContent = formatCurrency(totalReturnedPackagingLoss);
       document.getElementById('repNetProfit').textContent = formatCurrency(trueNetProfit); document.getElementById('repNetProfit').classList.toggle('finance-positive',trueNetProfit>=0); document.getElementById('repNetProfit').classList.toggle('finance-negative',trueNetProfit<0);
 
       const tbody = document.getElementById('reportsTableBody');
@@ -4377,6 +4434,9 @@ async function previewPeriodicReportPrint() {
       const before = structuredClone(state);
       state.cashbookAdjustments = state.cashbookAdjustments || [];
       state.cashbookAdjustments.unshift({ id:'CASH-ADJ-' + Date.now() + '-' + Math.random().toString(36).slice(2,6), direction, amount, method, date:new Date(date + 'T12:00:00').toISOString(), note, createdAt:new Date().toISOString() });
+      // Same guard as transfers: an outflow must not drive any later day negative
+      // (e.g. money already promised to a future-dated transfer).
+      if(direction==='OUT'){const timelineIssue=getPaymentMethodTimelineIssue(normalizePaymentMethod(method),date);if(timelineIssue){state=before;showToast(`لا يمكن تسجيل الحركة؛ ستؤدي إلى رصيد سالب في حساب ${normalizePaymentMethod(method)} بتاريخ ${timelineIssue.date} (الرصيد المتوقع ${formatCurrency(timelineIssue.balance)}). راجع الحركات اللاحقة.`, 'error');return;}}
       logAudit('CASH_ADJUSTMENT_CREATED', (direction === 'IN' ? 'إيداع ' : 'سحب ') + amount + ' — ' + note);
       if (!saveState()) { state = before; refreshAllViews(); return; }
       ['cashAdjustAmount','cashAdjustNote'].forEach(id => document.getElementById(id).value='');
@@ -5211,7 +5271,6 @@ async function previewPeriodicReportPrint() {
           if(removedDemo){persistLocal(state);await valQueueDurableState(state);await valDurableWritePromise;}
           refreshAllViews();
           try{loadSettingsToUI();}catch(_){}
-          showToast('تم استعادة أحدث بيانات النشاط من التخزين الدائم على الجهاز.','success');
         } else {
           await valImagesInit();
           // Seed IndexedDB once so future saves are not limited by localStorage quota.
@@ -5616,6 +5675,74 @@ async function previewPeriodicReportPrint() {
             if(!record||!parent||Number(parent.decantMlOpenedAvailable||0)!==Number(state.products.find(x=>String(x.id)===String(record.parentId))?.decantMlOpenedAvailable||0))throw new Error('قاعدة البيانات لم تؤكد فتح الزجاجة ورصيد السائل المفتوح.');
           }catch(err){throw new Error('تم فتح الزجاجة داخل المحرك لكن تعذر تأكيد الحفظ الدائم: '+String(err?.message||err));}
           return {ok:true,snapshot:snapshot()};
+        },
+        getTreasury:async ()=>{
+          await ready;
+          const methods=['نقدي','تحويل بنكي','محفظة إلكترونية','بطاقة','أخرى','غير محدد'];
+          const rows=getCashBookRows();
+          rows.forEach(r=>{if(!methods.includes(r.method))methods.push(r.method);});
+          (state.cashbookOpenings||[]).forEach(o=>{const m=normalizePaymentMethod(o.method);if(!methods.includes(m))methods.push(m);});
+          // Internal transfers move money between accounts: they are not income or spending.
+          const isTransfer=r=>String(r.reference||'').startsWith('CASH-TR-');
+          // One consistent cutoff for every figure: end of today. Future-dated movements
+          // appear in the transfers list but enter the sums and balance only when due.
+          const cutoff=new Date(new Date().toISOString().slice(0,10)+'T23:59:59.999');
+          const accounts=methods.map(method=>{
+            const mine=rows.filter(r=>r.method===method&&r.reference!=='OPENING'&&new Date(r.date)<=cutoff);
+            const opening=roundMoney((state.cashbookOpenings||[]).filter(o=>normalizePaymentMethod(o.method)===method&&(!o.date||new Date(o.date)<=cutoff)).reduce((a,o)=>a+Number(o.amount||0),0));
+            const received=roundMoney(mine.filter(r=>!isTransfer(r)).reduce((a,r)=>a+Number(r.incoming||0),0));
+            const spent=roundMoney(mine.filter(r=>!isTransfer(r)).reduce((a,r)=>a+Number(r.outgoing||0),0));
+            const transferIn=roundMoney(mine.filter(isTransfer).reduce((a,r)=>a+Number(r.incoming||0),0));
+            const transferOut=roundMoney(mine.filter(isTransfer).reduce((a,r)=>a+Number(r.outgoing||0),0));
+            // Transfers are stamped 12:00 on their date; a bare 'now' cutoff would hide a transfer
+            // made today before noon. Use the end of today so the balance includes every movement.
+            return {method,opening,received,spent,transferIn,transferOut,balance:getPaymentMethodBalance(method,new Date().toISOString().slice(0,10))};
+          }).filter(a=>a.opening||a.received||a.spent||a.transferIn||a.transferOut||Math.abs(a.balance)>0.0001);
+          const sum=k=>roundMoney(accounts.reduce((a,x)=>a+Number(x[k]||0),0));
+          const openings=(state.cashbookOpenings||[]).map(o=>({method:normalizePaymentMethod(o.method),amount:roundMoney(Number(o.amount||0)),date:o.date,note:String(o.note||'')}));
+          return {ok:true,accounts,totals:{opening:sum('opening'),received:sum('received'),spent:sum('spent'),transferIn:sum('transferIn'),transferOut:sum('transferOut'),balance:sum('balance')},transfers:(state.cashbookTransfers||[]).slice(0,30),openings};
+        },
+        setTreasuryOpeningBalance:async payload=>{
+          await ready;
+          // Same semantics as the legacy saveCashOpeningBalance: one opening per account,
+          // updating replaces it (never adds a second opening), date stamped at noon.
+          const allowed=['نقدي','تحويل بنكي','محفظة إلكترونية','بطاقة','أخرى'];
+          const method=normalizePaymentMethod(payload?.method);
+          const amount=roundMoney(Number(payload?.amount)),date=String(payload?.date||'').slice(0,10),note=String(payload?.note||'').trim();
+          if(!allowed.includes(method))throw new Error('اختر حساباً صحيحاً للرصيد الافتتاحي.');
+          if(!Number.isFinite(amount)||amount<0)throw new Error('أدخل رصيداً افتتاحياً صحيحاً (صفر أو أكثر).');
+          if(!date||!Number.isFinite(new Date(date+'T12:00:00').getTime()))throw new Error('حدد تاريخاً صحيحاً للرصيد الافتتاحي.');
+          const before=structuredClone(state);
+          state.cashbookOpenings=state.cashbookOpenings||[];
+          const existing=state.cashbookOpenings.find(x=>normalizePaymentMethod(x.method)===method);
+          const record={id:existing?.id||('CASH-OPEN-'+Date.now()),method,amount,date:new Date(date+'T12:00:00').toISOString(),note,updatedAt:new Date().toISOString()};
+          if(existing)Object.assign(existing,record);else state.cashbookOpenings.push(record);
+          logAudit('CASH_OPENING_SET','تحديد رصيد افتتاحي '+method+': '+amount);
+          if(!saveState()){state=before;refreshAllViews();throw new Error('تعذر حفظ الرصيد الافتتاحي.');}
+          try{await valDurableWritePromise;if(valDurableWriteError)throw valDurableWriteError;}catch(err){state=before;saveState();throw new Error('لم يكتمل الحفظ الدائم للرصيد الافتتاحي: '+String(err?.message||err));}
+          refreshAllViews();return {ok:true,id:record.id,snapshot:snapshot()};
+        },
+        transferBetweenAccounts:async payload=>{
+          await ready;
+          const fromMethod=normalizePaymentMethod(payload?.from),toMethod=normalizePaymentMethod(payload?.to);
+          const amount=roundMoney(Number(payload?.amount)),date=String(payload?.date||new Date().toISOString().slice(0,10)).slice(0,10),note=String(payload?.note||'').trim();
+          if(!payload?.from||!payload?.to||fromMethod===toMethod)throw new Error('اختر حسابين مختلفين للتحويل.');
+          if(!Number.isFinite(amount)||amount<=0)throw new Error('أدخل مبلغ تحويل صحيحًا أكبر من صفر.');
+          if(!note)throw new Error('سبب التحويل إجباري.');
+          const available=getPaymentMethodBalance(fromMethod,date);
+          if(amount>available+0.0001)throw new Error('الرصيد المتاح في حساب '+fromMethod+' هو '+formatCurrency(available)+' فقط.');
+          const before=structuredClone(state);
+          state.cashbookTransfers=state.cashbookTransfers||[];
+          // One record = one atomic movement: the OUT and IN rows are derived from it, so the
+          // pair can never be saved half-way or counted twice.
+          const id='CASH-TR-'+Date.now()+'-'+Math.random().toString(36).slice(2,6);
+          state.cashbookTransfers.unshift({id,fromMethod,toMethod,amount,date:new Date(date+'T12:00:00').toISOString(),note,createdAt:new Date().toISOString()});
+          const issue=getPaymentMethodTimelineIssue(fromMethod,date);
+          if(issue){state=before;throw new Error('التحويل سيؤدي إلى رصيد سالب في '+fromMethod+' بتاريخ '+issue.date+'.');}
+          logAudit('CASH_TRANSFER_CREATED','تحويل '+amount+' من '+fromMethod+' إلى '+toMethod+' — '+note);
+          if(!saveState()){state=before;refreshAllViews();throw new Error('تعذر حفظ التحويل.');}
+          try{await valDurableWritePromise;if(valDurableWriteError)throw valDurableWriteError;}catch(err){state=before;saveState();throw new Error('لم يكتمل الحفظ الدائم للتحويل: '+String(err?.message||err));}
+          refreshAllViews();return {ok:true,id,snapshot:snapshot()};
         },
         addShippingCompany:async name=>{
           await ready;const value=String(name||'').trim().replace(/\s+/g,' ');if(!value)throw new Error('اسم شركة الشحن مطلوب.');

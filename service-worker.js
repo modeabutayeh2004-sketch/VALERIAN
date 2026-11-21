@@ -2,10 +2,11 @@
 'use strict';
 
 // Bump this value whenever the HTML, application engine, or offline strategy changes.
-const CACHE_NAME = 'valerian-app-shell-v20-20261121-invoice-offline-hotfix';
+const CACHE_NAME = 'valerian-app-shell-v20-20261121-returns-wastage';
 const APP_SHELL = [
   './index.html',
-  './engine-runtime.js?v=v20-20261121-invoice-offline-hotfix',
+  './intro.html',
+  './engine-runtime.js?v=v20-20261121-returns-wastage',
   './manifest.webmanifest',
   './assets/valerian-icon.jpg',
   './vendor/html2canvas.min.js',
@@ -51,7 +52,7 @@ self.addEventListener('fetch', event => {
 
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
-    const isNavigation = request.mode === 'navigate';
+    const isNavigation = request.mode === 'navigate' && (request.destination === 'document' || request.destination === '');
     try {
       // Network-first keeps online users on the deployed V20 release.
       const response = await fetch(request, { cache: 'no-store' });
@@ -67,6 +68,10 @@ self.addEventListener('fetch', event => {
 
     if (isNavigation) {
       return (await cache.match(INDEX_URL)) || Response.error();
+    }
+    // The intro iframe carries a mode query (?embed=1); its cache entry does not.
+    if (url.pathname.endsWith('/intro.html')) {
+      return (await cache.match(request, { ignoreSearch: true })) || Response.error();
     }
     return (await cache.match(request)) || Response.error();
   })());
