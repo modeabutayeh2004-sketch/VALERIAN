@@ -6295,13 +6295,9 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       const isInvoiceCapture = source.matches('.valerian-invoice-paper');
       const previewBody = document.getElementById('previewSheetBody');
       const previewBodyRect = previewBody ? previewBody.getBoundingClientRect() : rect;
-      const width = isInvoiceCapture ? Math.ceil(rect.width) : (format==='social' ? 900 : Math.ceil(rect.width || source.offsetWidth || source.scrollWidth));
-      const height = isInvoiceCapture ? Math.ceil(rect.height) : 0;
+      const width = isInvoiceCapture ? Math.ceil(source.offsetWidth || 940) : (format==='social' ? 900 : Math.ceil(rect.width || source.offsetWidth || source.scrollWidth));
       const captureNode = source.cloneNode(true);
 
-      // Preserve the original mobile preview CSS/zoom and all of its layout context.
-      // The invoice clone is moved out of the scroll viewport only to prevent the
-      // viewport from clipping its lower portion during rasterization.
       if (!isInvoiceCapture) captureNode.querySelectorAll('.silver-text').forEach(node => {
         node.classList.remove('silver-text');
         node.style.removeProperty('background');
@@ -6321,8 +6317,18 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
 
       const captureHost = document.createElement('div');
       if (isInvoiceCapture) {
+        // Keep the same narrow parent width as the preview, but render the paper
+        // at its native layout width. The final bitmap is then scaled by the
+        // exact visible-to-layout ratio, rather than reflowing the document.
         captureHost.id = 'previewSheetBody';
         captureHost.style.cssText = 'position:fixed;left:0;top:0;z-index:-1;opacity:1;pointer-events:none;width:'+Math.ceil(previewBodyRect.width)+'px;max-width:'+Math.ceil(previewBodyRect.width)+'px;display:flex;justify-content:center;align-items:flex-start;background:transparent;direction:rtl;overflow:visible;';
+        captureNode.style.setProperty('zoom','1','important');
+        captureNode.style.setProperty('width',width+'px','important');
+        captureNode.style.setProperty('min-width',width+'px','important');
+        captureNode.style.setProperty('max-width',width+'px','important');
+        captureNode.style.setProperty('height','auto','important');
+        captureNode.style.setProperty('margin','0','important');
+        captureNode.style.setProperty('transform','none','important');
       } else {
         captureHost.style.cssText = 'position:fixed;left:'+rect.left+'px;top:'+rect.top+'px;z-index:-1;opacity:1;pointer-events:none;width:'+width+'px;max-width:'+width+'px;background:transparent;direction:rtl;overflow:visible;';
         captureNode.style.width = width + 'px';
@@ -6359,9 +6365,8 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
 
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       const captureBounds = captureNode.getBoundingClientRect();
-      const captureWidth = isInvoiceCapture ? width : Math.ceil(captureBounds.width);
-      const captureHeight = isInvoiceCapture ? height : Math.ceil(Math.max(captureNode.scrollHeight,captureBounds.height));
-      if (!captureWidth || !captureHeight) { captureHost.remove(); throw new Error('تعذر تحديد أبعاد المعاينة.'); }
+      const height = Math.ceil(Math.max(captureNode.scrollHeight,captureBounds.height));
+      if (!width || !height) { captureHost.remove(); throw new Error('تعذر تحديد أبعاد المعاينة.'); }
       const oldPriceStrikeRects = isInvoiceCapture ? [] : [...captureNode.querySelectorAll('.offer-old-price')].map(node => {
         const r = node.getBoundingClientRect();
         return {left:r.left-captureBounds.left,right:r.right-captureBounds.left,midY:r.top-captureBounds.top+(r.height/2)};
@@ -6370,14 +6375,14 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       captureNode.style.setProperty('text-rendering','geometricPrecision','important');
       captureNode.style.setProperty('-webkit-font-smoothing','antialiased','important');
       captureNode.style.setProperty('font-synthesis','none','important');
-      const scale = Math.max(2, Math.min(3, window.devicePixelRatio || 2, 9000 / Math.max(captureWidth, captureHeight)));
+      const scale = Math.max(2, Math.min(3, window.devicePixelRatio || 2, 9000 / Math.max(width, height)));
       let canvas;
       try {
         canvas = await capture(captureNode, {
-          scale,foreignObjectRendering:isInvoiceCapture,backgroundColor:null,useCORS:true,allowTaint:false,logging:false,
-          scrollX:0,scrollY:0,width:captureWidth,height:captureHeight,
+          scale,foreignObjectRendering:false,backgroundColor:null,useCORS:true,allowTaint:false,logging:false,
+          scrollX:0,scrollY:0,width,height,
           windowWidth:window.innerWidth,
-          windowHeight:Math.max(window.innerHeight,captureHeight),
+          windowHeight:Math.max(window.innerHeight,height),
           imageTimeout:15000
         });
       } finally { captureHost.remove(); }
@@ -6403,7 +6408,15 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         return receiptBlob;
       }
       if (isInvoiceCapture) {
-        const invoiceBlob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+        const output=document.createElement('canvas');
+        output.width=Math.max(1,Math.round(rect.width*scale));
+        output.height=Math.max(1,Math.round(rect.height*scale));
+        const out=output.getContext('2d');
+        if(!out)throw new Error('تعذر تجهيز مقاس صورة الفاتورة.');
+        out.imageSmoothingEnabled=true;
+        out.imageSmoothingQuality='high';
+        out.drawImage(canvas,0,0,canvas.width,canvas.height,0,0,output.width,output.height);
+        const invoiceBlob=await new Promise(resolve=>output.toBlob(resolve,'image/png'));
         if(!invoiceBlob||!invoiceBlob.size)throw new Error('تعذر إنشاء صورة الفاتورة.');
         return invoiceBlob;
       }
