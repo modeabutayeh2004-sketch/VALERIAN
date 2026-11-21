@@ -6383,7 +6383,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       let canvas;
       try {
         canvas = await capture(captureNode, {
-          scale,foreignObjectRendering:false,backgroundColor:null,useCORS:true,allowTaint:false,logging:false,
+          scale,foreignObjectRendering:isInvoiceCapture,backgroundColor:null,useCORS:true,allowTaint:false,logging:false,
           scrollX:0,scrollY:0,width,height,
           windowWidth:isInvoiceCapture ? window.innerWidth : Math.max(width,document.documentElement.clientWidth,window.innerWidth||0),
           windowHeight:isInvoiceCapture ? window.innerHeight : Math.max(height,document.documentElement.clientHeight,window.innerHeight||0),
