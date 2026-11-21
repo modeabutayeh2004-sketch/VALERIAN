@@ -5903,8 +5903,8 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
     }
 
     function isMobileOrderDelivered(order) {
-      const status=String(order?.status||'');
-      return !!order?.deliveredAt || (status.includes('تم التسليم')&&!status.includes('شركة الشحن'));
+      const status=String(order?.status||'').trim();
+      return !!order?.deliveredAt || status==='مؤكد / تم التسليم' || status==='تم التسليم';
     }
 
     let currentMoreOrdersView = 'reserved';
