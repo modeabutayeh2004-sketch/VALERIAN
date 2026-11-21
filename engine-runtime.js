@@ -36,6 +36,9 @@
         loyaltyStartOrder: 2,
         loyaltyPercentage: 5,
         pointValue: 1,
+        // V20: owner-configurable loyalty tiers ({name, minPoints} on lifetime earned points).
+        // Empty by default: no tier is assigned or shown until the owner configures tiers in settings.
+        loyaltyTiers: [],
         enableQr: true,
         invoiceQrLinks: [],
         invoiceReservationMsg: 'شكراً لثقتكم في ڤاليريان — برجاء الاحتفاظ بهذا الإيصال.',
@@ -2006,6 +2009,41 @@
       return Math.max(0,Math.round(earned-redeemed));
     }
 
+    // Lifetime earned points: same order-history derivation as the spendable balance but
+    // WITHOUT subtracting redemptions. Returns still reduce it (returnedValue is excluded),
+    // because points on returned value were never actually earned. No stored counter, no seeding.
+    function calculateLifetimeLoyaltyPoints(phone) {
+      const key=String(phone||'').trim();
+      if(!key) return 0;
+      const customerOrders=(state.orders||[]).filter(o=>String(o.phone||'').trim()===key);
+      const delivered=customerOrders.filter(isOrderDeliveredForLoyalty)
+        .sort((a,b)=>new Date(a.deliveredAt||a.date||0)-new Date(b.deliveredAt||b.date||0));
+      const start=Math.max(1,Math.floor(Number(state.settings.loyaltyStartOrder||1)));
+      const rate=Math.max(0,Number(state.settings.loyaltyPercentage||0));
+      let earned=0;
+      delivered.forEach((o,index)=>{
+        if(index+1>=start) {
+          const returned=Math.max(0,Number(o.returnedValue||0));
+          const eligibleValue=Math.max(0,Number(o.grandTotal||0)-returned);
+          earned+=Math.round(eligibleValue*rate/100);
+        }
+      });
+      return Math.max(0,Math.round(earned));
+    }
+
+    // Owner-configured tiers: [{name, minPoints}] on lifetime earned points, any count/names.
+    // Returns null when no tier is configured or none qualifies - never invents an assignment.
+    function resolveLoyaltyTier(lifetimePoints) {
+      const tiers=(Array.isArray(state.settings.loyaltyTiers)?state.settings.loyaltyTiers:[])
+        .map(t=>({name:String(t&&t.name||'').trim(),minPoints:Math.max(0,Math.floor(Number(t&&t.minPoints)||0))}))
+        .filter(t=>t.name)
+        .sort((a,b)=>a.minPoints-b.minPoints);
+      const lt=Math.max(0,Math.round(Number(lifetimePoints)||0));
+      let matched=null;
+      for(const t of tiers){ if(lt>=t.minPoints) matched=t; else break; }
+      return matched;
+    }
+
     function countCompletedOrdersForCustomer(phone, excludeOrderId = '') {
       const key=String(phone||'').trim();
       return (state.orders||[]).filter(o=>String(o.phone||'').trim()===key && String(o.id||'')!==String(excludeOrderId||'') && isOrderDeliveredForLoyalty(o)).length;
@@ -2782,7 +2820,7 @@ async function previewPeriodicReportPrint() {
       await Promise.all(sourceImgs.map(img=>img.complete&&img.naturalWidth>0?Promise.resolve():new Promise(resolve=>{img.onload=resolve;img.onerror=resolve;setTimeout(resolve,12000);})));
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       const isCard=source.classList.contains('v1960-loyalty-card');
-      const exportWidth=1080;
+      const exportWidth=isCard?860:1080;
       const stage=document.createElement('div');
       stage.id='val-share-export-stage';
       stage.style.cssText='position:fixed;left:-12000px;top:0;width:'+exportWidth+'px;max-width:none;z-index:-1;pointer-events:none;overflow:visible;background:#fffaf1;';
@@ -2790,7 +2828,7 @@ async function previewPeriodicReportPrint() {
       // V20.78: include configured platform QR codes in every single-image
       // export (invoice, report, customer sheet and loyalty card), not only
       // the templates that happened to include QR markup in their preview.
-      if(getInvoiceQrLinks().length&&!clone.querySelector('[data-valerian-qr]')){
+      if(getInvoiceQrLinks().length&&!clone.querySelector('[data-valerian-qr],[data-valerian-card-qr]')){
         const qrHost=document.createElement('div');
         qrHost.innerHTML=buildInvoiceQrHtml();
         const qrSection=qrHost.firstElementChild;
@@ -2844,6 +2882,7 @@ async function previewPeriodicReportPrint() {
           exportDoc.style.setProperty('margin','0','important');
           if(exportDoc.classList.contains('v20-doc')||exportDoc.classList.contains('v20-report')||exportDoc.classList.contains('v20-loyalty-report')||exportDoc.classList.contains('v20-customer-sheet'))exportDoc.style.setProperty('border-radius','0','important');
         }
+        if(isCard){clone.style.setProperty('zoom','1','important');clone.style.setProperty('width','860px','important');clone.style.setProperty('max-width','860px','important');}
         const cloneImgs=[...clone.querySelectorAll('img')];
         await Promise.all(cloneImgs.map(img=>img.complete&&img.naturalWidth>0?Promise.resolve():new Promise(resolve=>{img.onload=resolve;img.onerror=resolve;setTimeout(resolve,12000);})));
         if(document.fonts?.ready){try{await document.fonts.ready;}catch(e){}}
@@ -2856,7 +2895,12 @@ async function previewPeriodicReportPrint() {
         const maxSide=9000;
         const preferredScale=isCard?3:2.5;
         const scale=Math.max(1,Math.min(preferredScale,Math.sqrt(maxPixels/Math.max(1,cssWidth*cssHeight)),maxSide/Math.max(cssWidth,cssHeight)));
-        const canvas=await window.html2canvas(clone,{
+        let canvas=null;
+        if(isCard&&typeof window.captureInvoiceNodeViaSvg==='function'){
+          try{canvas=await window.captureInvoiceNodeViaSvg(clone,cssWidth,cssHeight,3);}
+          catch(fastError){console.warn('VALERIAN card SVG capture failed; falling back to html2canvas',fastError);canvas=null;}
+        }
+        if(!canvas)canvas=await window.html2canvas(clone,{
           scale,backgroundColor:'#fffaf1',useCORS:true,allowTaint:false,logging:false,
           scrollX:0,scrollY:0,width:cssWidth,height:cssHeight,
           windowWidth:exportWidth,windowHeight:Math.max(document.documentElement.clientHeight,cssHeight),
@@ -4211,6 +4255,65 @@ async function previewPeriodicReportPrint() {
       openModal('printPreviewModal');
     }
 
+
+    // V20 approved loyalty card design (user-approved v9, 2026-11-21): fixed 860x567 geometry,
+    // metallic tier skins, glass figure boxes, dual points display (lifetime vs spendable),
+    // configured-links QR below the phone. Shared by the desktop print preview and the mobile sheet.
+    const LOYALTY_CARD_SHEEN='radial-gradient(ellipse at 68% -10%,rgba(255,255,255,.34) 0%,rgba(255,255,255,0) 52%),linear-gradient(118deg,rgba(255,255,255,.60) 6%,rgba(255,255,255,.18) 17%,rgba(255,255,255,0) 30%,rgba(0,0,0,.07) 72%,rgba(255,255,255,.16) 100%)';
+    const LOYALTY_CARD_SKINS={
+      bronze:{bg:LOYALTY_CARD_SHEEN+',linear-gradient(155deg,#8a5a30 0%,#b3803f 38%,#7a4c26 72%,#96642f 100%)',border:'#d9b98a',brand:'#fff3e0',tag:'#f0d9b8',title:'#fff8ee',name:'#fffaf2',phone:'#ffe8c8',label:'#f3ddba',pts:'#ffffff',value:'#fff3df',foot:'#eed7b4',chipBg:'rgba(255,255,255,.16)',chipBorder:'#e8c795',emblemFilter:'brightness(0) invert(1) opacity(.92)'},
+      silver:{bg:LOYALTY_CARD_SHEEN+',linear-gradient(155deg,#aeb9c4 0%,#e8edf2 34%,#98a5b2 68%,#cfd8e0 100%)',border:'#f2f6f9',brand:'#2e3a45',tag:'#4c5b68',title:'#232e38',name:'#1d262e',phone:'#3a4854',label:'#4b5a66',pts:'#141c23',value:'#1d262e',foot:'#42505c',chipBg:'rgba(255,255,255,.5)',chipBorder:'#7f8e9b',emblemFilter:'grayscale(1) brightness(.55) contrast(1.05)'},
+      gold:{bg:LOYALTY_CARD_SHEEN+',linear-gradient(155deg,#c99b3f 0%,#f3dd9a 36%,#b98a2e 70%,#e6c868 100%)',border:'#f7e7b8',brand:'#4a3512',tag:'#6b4f1e',title:'#3f2d0e',name:'#2f2208',phone:'#4a3512',label:'#5c4416',pts:'#241a05',value:'#2f2208',foot:'#55400f',chipBg:'rgba(255,255,255,.35)',chipBorder:'#a07c28',emblemFilter:'brightness(.42) sepia(1) saturate(1.6) hue-rotate(355deg)'},
+      neutral:{bg:LOYALTY_CARD_SHEEN+',linear-gradient(155deg,#efe3cc 0%,#fbf6ea 40%,#e7d8bc 100%)',border:'#d8c79d',brand:'#765629',tag:'#96743d',title:'#493719',name:'#352b20',phone:'#806a48',label:'#806a48',pts:'#4b3a20',value:'#6f5734',foot:'#927b50',chipBg:'rgba(255,255,255,.5)',chipBorder:'#c9b37e',emblemFilter:'brightness(0) saturate(100%) invert(66%) sepia(25%) saturate(690%) hue-rotate(8deg) brightness(94%) contrast(91%)'}
+    };
+    // Lowest configured tier maps to bronze, then silver, then gold; 4th+ tiers stay gold.
+    function resolveLoyaltyCardSkinKey(tier){
+      if(!tier) return 'neutral';
+      const tiers=(Array.isArray(state.settings.loyaltyTiers)?state.settings.loyaltyTiers:[])
+        .map(t=>({name:String(t&&t.name||'').trim(),minPoints:Math.max(0,Math.floor(Number(t&&t.minPoints)||0))}))
+        .filter(t=>t.name).sort((a,b)=>a.minPoints-b.minPoints);
+      const rank=tiers.findIndex(t=>t.name===tier.name&&t.minPoints===tier.minPoints);
+      return ['bronze','silver','gold'][Math.min(Math.max(rank,0),2)];
+    }
+    async function prepareValerianCardQrDataUrl(){
+      try{
+        const links=getInvoiceQrLinks(); if(!links.length) return '';
+        const unified=buildEngineUnifiedQrUrl(links); if(!unified) return '';
+        if(typeof window.QRCode!=='function'){ const ok=await valLoadLib('QRCode'); if(!ok||typeof window.QRCode!=='function') return ''; }
+        const temp=document.createElement('div');
+        new window.QRCode(temp,{text:unified,width:640,height:640,colorDark:'#171717',colorLight:'#ffffff',correctLevel:window.QRCode.CorrectLevel.L});
+        const canvas=temp.querySelector('canvas'),img=temp.querySelector('img');
+        return canvas?canvas.toDataURL('image/png'):(img&&img.src?img.src:'');
+      }catch(e){ console.warn('VALERIAN loyalty card QR failed',e); return ''; }
+    }
+    function buildValerianLoyaltyCardHtml(o){
+      const k=LOYALTY_CARD_SKINS[o.skinKey]||LOYALTY_CARD_SKINS.neutral;
+      const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      const balance=Math.max(0,Math.round(Number(o.balance)||0));
+      const lifetime=Math.max(0,Math.round(Number(o.lifetime)||0));
+      const valueText=String(o.valueText||'');
+      const logo=String(o.logoUrl||'');
+      const glassBox='display:flex;flex-direction:column;align-items:center;min-width:230px;background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,.08));border:1px solid '+k.chipBorder+';border-radius:18px;padding:8px 20px;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 6px 16px rgba(30,20,8,.12)';
+      return '<article data-valerian-svg-capture-art="1" dir="rtl" style="width:860px;height:567px;display:flex;flex-direction:column;align-items:center;margin:0 auto;background:'+k.bg+';color:'+k.name+';border:1.5px solid '+k.border+';border-radius:30px;overflow:hidden;position:relative;box-shadow:0 18px 48px rgba(40,30,12,.28);font-family:\'Cairo\',Arial,Tahoma,sans-serif;line-height:1.5;text-align:center;box-sizing:border-box;padding:22px 44px 14px">'
+        +'<div style="position:absolute;inset:12px;border:1px solid '+k.border+';border-radius:22px;opacity:.55;pointer-events:none"></div>'
+        +(logo?'<img src="'+esc(logo)+'" alt="" style="position:absolute;width:360px;height:360px;bottom:-70px;left:-70px;opacity:.07;filter:'+k.emblemFilter+';pointer-events:none">':'')
+        +'<header style="display:flex;flex-direction:column;align-items:center;text-align:center">'+(logo?'<img src="'+esc(logo)+'" alt="VALERIAN" style="width:42px;height:42px;display:block;filter:'+k.emblemFilter+'">':'')+'<div style="font:700 27px Georgia,serif;letter-spacing:7px;color:'+k.brand+';margin-top:4px">VALERIAN</div><div style="font-size:10px;letter-spacing:4px;color:'+k.tag+';margin-top:1px">THE ART OF FRAGRANCE</div></header>'
+        +'<div style="margin-top:10px;font-size:33px;font-weight:900;color:'+k.title+';text-align:center">بطاقة الولاء</div>'
+        +(o.tierName?'<div style="display:flex;justify-content:center;margin-top:6px"><span style="display:inline-flex;align-items:center;font-size:14px;font-weight:900;color:'+k.title+';padding:4px 18px;line-height:1.5;border:1.5px solid '+k.chipBorder+';border-radius:50px;background:'+k.chipBg+'">'+esc(o.tierName)+'</span></div>':'')
+        +'<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:6px"><span style="display:block;width:70px;height:1px;background:'+k.title+';opacity:.45"></span><span style="font-size:9px;color:'+k.title+';opacity:.75">◆</span><span style="display:block;width:70px;height:1px;background:'+k.title+';opacity:.45"></span></div>'
+        +'<div style="margin-top:auto;margin-bottom:6px;display:flex;align-items:stretch;justify-content:center;gap:30px">'
+        +'<div style="'+glassBox+'"><div style="font-size:14px;color:'+k.label+';font-weight:800">إجمالي النقاط</div><div style="font-size:36px;line-height:1.25;font-weight:900;color:'+k.pts+';direction:ltr;text-shadow:0 1px 0 rgba(255,255,255,.25)">'+formatNumber(lifetime,0)+'</div></div>'
+        +'<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px"><span style="width:1px;flex:1;background:'+k.title+';opacity:.4"></span><span style="font-size:9px;color:'+k.title+';opacity:.75;line-height:1">◆</span><span style="width:1px;flex:1;background:'+k.title+';opacity:.4"></span></div>'
+        +'<div style="'+glassBox+'"><div style="font-size:14px;color:'+k.label+';font-weight:800">الرصيد المتاح</div><div style="font-size:36px;line-height:1.25;font-weight:900;color:'+k.pts+';direction:ltr;text-shadow:0 1px 0 rgba(255,255,255,.25)">'+formatNumber(balance,0)+'</div>'+(valueText?'<div style="font-size:12px;color:'+k.label+';margin-top:2px">القيمة الشرائية <b style="color:'+k.value+'">'+esc(valueText)+'</b></div>':'')+'</div>'
+        +'</div>'
+        +'<div style="margin-top:6px;display:flex;flex-direction:column;align-items:center"><div style="font-size:33px;font-weight:900;color:'+k.name+'">'+esc(o.name||'عميلنا')+'</div>'
+        +'<div dir="ltr" style="font-size:16px;color:'+k.phone+';font-weight:800;letter-spacing:1.5px;margin-top:2px"><bdi dir="ltr">'+esc(o.phone||'')+'</bdi></div></div>'
+        +(o.qrDataUrl?'<div style="margin-top:6px;margin-bottom:auto;background:#fff;border-radius:12px;padding:5px;box-shadow:0 4px 12px rgba(40,30,12,.25);line-height:0"><img data-valerian-card-qr="1" src="'+o.qrDataUrl+'" alt="QR" style="width:88px;height:88px;display:block"></div>':'<div style="margin-bottom:auto"></div>')
+        +'<div style="margin-top:auto;padding-top:8px;font-size:13px;color:'+k.foot+';line-height:1.6;text-align:center">شكراً لثقتكم — نعتز بكونكم جزءاً من عائلة فاليريان · VALERIAN · THE ART OF FRAGRANCE</div></article>';
+    }
+    window.buildValerianLoyaltyCardHtml=buildValerianLoyaltyCardHtml;
+    window.prepareValerianCardQrDataUrl=prepareValerianCardQrDataUrl;
+
     async function printCustomerLoyaltyCard(idx) {
       await window.__valImgReady;
       const c = (state.customers||[])[Number(idx)];
@@ -4232,21 +4335,26 @@ async function previewPeriodicReportPrint() {
       const loyaltyLogoSize=Math.min(88,Math.max(40,Number(loyaltyDesign.logoSize)||62));
       const loyaltyRadius=[24,14,6].includes(Number(loyaltyDesign.radius))?Number(loyaltyDesign.radius):24;
       const loyaltyBrand=('<div class="v1962-card-brand" style="display:flex;align-items:center;gap:12px;direction:ltr;align-self:flex-start;margin-bottom:8px">'+(logo?'<img src="'+logo+'" alt="VALERIAN" style="width:clamp(24px,6vw,var(--loyalty-logo-size));height:clamp(24px,6vw,var(--loyalty-logo-size));object-fit:contain;border-radius:10px;filter:brightness(0) saturate(100%) invert(66%) sepia(25%) saturate(690%) hue-rotate(8deg) brightness(94%) contrast(91%)"/>':'')+'<span style="display:flex;flex-direction:column;text-align:left"><strong style="font:700 clamp(12px,3vw,25px) Georgia,serif;letter-spacing:clamp(1px,.45vw,4px);color:#765629">VALERIAN</strong><small style="font:700 clamp(6px,1vw,8px) Arial,sans-serif;letter-spacing:clamp(.5px,.25vw,2px);color:#96743d;margin-top:2px">THE ART OF FRAGRANCE</small></span></div>');
-      pendingPrintHtml = '<div class="v1960-loyalty-card" dir="rtl" style="--loyalty-card-color:'+loyaltyColor+';--loyalty-logo-size:'+loyaltyLogoSize+'px;width:100%;max-width:760px;min-height:0;aspect-ratio:1.586;box-sizing:border-box;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;gap:3px;padding:4% 4.5%;border:1px solid #d8c79d;border-radius:'+loyaltyRadius+'px;background:radial-gradient(circle at 90% 5%,rgba(255,255,255,.75),transparent 34%),linear-gradient(135deg,#fffaf1 0%,var(--loyalty-card-color) 54%,#e4d1ac 100%);color:#493719;box-shadow:0 18px 42px rgba(5,14,22,.2);font-family:Cairo,Tahoma,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact">' +
-        '<div style="position:absolute;inset:10px;border:1px solid rgba(185,149,85,.55);border-radius:'+Math.max(4,loyaltyRadius-7)+'px;pointer-events:none"></div>' +
-        loyaltyBrand +
-        '<div class="v1960-card-title" style="font-size:clamp(12px,2.4vw,20px);font-weight:900;color:#493719;text-align:center;letter-spacing:.4px">بطاقة الولاء</div>' +
-        '<div class="v1960-card-subtitle" style="font-size:clamp(7px,1.2vw,10px);font-weight:700;color:#806a48;text-align:center;margin-top:-2px">امتيازات خاصة — لأن اختياركم يستحق التقدير</div>' +
-        '<div style="text-align:center;margin:4px 0"><div class="v1960-card-name" style="font-size:clamp(13px,3vw,25px);font-weight:900;color:#352b20;letter-spacing:.2px">'+escapeHTML(c.name||'عميلنا')+'</div>' +
-        '<div class="v1960-card-phone" dir="ltr" style="font-size:clamp(8px,1.5vw,12px);font-weight:700;color:#806a48;margin-top:2px"><bdi dir="ltr">'+escapeHTML(c.phone||'')+'</bdi></div></div>' +
-        '<div class="v1960-points-panel" style="align-self:center;width:min(100%,380px);box-sizing:border-box;text-align:center;background:linear-gradient(135deg,#fffdf8,#f0e2c5);border:1px solid #c6a66b;border-radius:14px;padding:clamp(6px,1.5vw,12px) clamp(8px,2vw,18px);color:#4b3a20;box-shadow:0 8px 18px rgba(0,0,0,.16)"><div style="font-size:clamp(7px,1.3vw,10px);font-weight:900;color:#65747e">رصيد نقاط الولاء الحالي</div>' +
-        '<div class="v1960-points-value" style="font:700 clamp(22px,4vw,34px) Georgia,serif;color:#8a6b3e;line-height:1.05">'+formatNumber(pts,0)+'</div><div style="font-size:clamp(7px,1.2vw,10px);font-weight:900;color:#53636d">نقطة</div>' +
-        '<div class="v1960-card-value" style="font-size:clamp(7px,1.2vw,10px);font-weight:900;color:#6f5734;margin-top:2px">قيمة الاستبدال '+formatCurrency(pts*state.settings.pointValue)+'</div></div>' +
-        '<div class="v1960-card-foot" style="text-align:center;font-size:clamp(7px,1.1vw,9px);font-weight:700;color:#806a48;border-top:1px solid rgba(185,149,85,.45);padding-top:9px">شكراً لثقتكم — نعتز بكونكم جزءاً من عائلة ڤاليريان</div></div>';
+      const ptsNow = calculateCurrentLoyaltyPoints(c.phone);
+      const lifetimeNow = calculateLifetimeLoyaltyPoints(c.phone);
+      const tierNow = resolveLoyaltyTier(lifetimeNow);
+      const qrDataUrl = await prepareValerianCardQrDataUrl();
+      const cardHtml = buildValerianLoyaltyCardHtml({
+        name:c.name, phone:c.phone, balance:ptsNow, lifetime:lifetimeNow,
+        valueText:formatCurrency(ptsNow*Number(state.settings.pointValue||0)),
+        tierName:tierNow?tierNow.name:'', skinKey:resolveLoyaltyCardSkinKey(tierNow),
+        qrDataUrl:qrDataUrl, logoUrl:logo
+      });
+      pendingPrintHtml = '<div class="v1960-loyalty-card" data-valerian-svg-capture="860x567" dir="rtl" style="width:860px;max-width:860px;margin:0 auto;position:relative">'+cardHtml+'</div>';
       document.getElementById('printPreviewBody').innerHTML = pendingPrintHtml;
       document.getElementById('printPaperSize').value='a4';
       v1953SyncPrintPreviewSize();
       openModal('printPreviewModal');
+      requestAnimationFrame(()=>{
+        const body=document.getElementById('printPreviewBody');
+        const wrap=body&&body.querySelector('.v1960-loyalty-card');
+        if(wrap){ const avail=body.clientWidth||860; wrap.style.zoom=String(Math.min(1,avail/860)); }
+      });
     }
     
     async function resetAllSystemData(password) {

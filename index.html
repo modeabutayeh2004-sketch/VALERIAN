@@ -6295,14 +6295,28 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
     };
 
 
-    function openDigitalLoyaltyCard(phone) {
+    async function openDigitalLoyaltyCard(phone) {
       const c=appState.customers.find(x=>x.phone===phone);
       if(!c)return;
       activePreviewShareContext={kind:'loyalty',id:'loyalty-'+String(c.phone||''),phone:String(c.phone||''),name:String(c.name||''),points:Number(c.points||0)};
-      document.getElementById('previewSheetTitle').textContent='بطاقة ولاء VALERIAN البلاتينية';
-      const pointValue=Number(c.points||0)*Number(appState.settings?.pointValue||0);
-      document.getElementById('previewSheetBody').innerHTML='<article class="valerian-share-card" dir="rtl"><header class="valerian-share-head"><img class="valerian-share-logo" src="'+VALERIAN_CARD_EMBLEM+'" alt="VALERIAN"><div class="valerian-share-brand">VALERIAN</div><div class="valerian-share-tag">THE ART OF FRAGRANCE</div><div class="valerian-share-headline">PLATINUM LOYALTY MEMBERSHIP</div></header><div class="valerian-share-content" style="text-align:center;padding-top:20px"><div class="valerian-share-kicker">عضوية النخبة</div><div class="valerian-share-title" style="font-size:28px">'+escapeHtmlMobile(c.name)+'</div><div dir="ltr" style="font-size:14px;color:#795b2c;font-weight:800;margin-top:4px;letter-spacing:1px">'+escapeHtmlMobile(c.phone)+'</div><div style="margin:16px auto 0;max-width:420px;padding:18px 16px;border:2px solid #b99555;border-radius:22px;background:linear-gradient(135deg,#fffaf0,#f1e4ca);box-shadow:0 10px 26px rgba(120,90,40,.14)"><div style="font-size:12px;color:#80643a;font-weight:800">رصيد نقاط الولاء</div><div style="font-size:46px;line-height:1.15;font-weight:900;color:#76572b;direction:ltr">'+Number(c.points||0)+' PTS</div><div style="font-size:12px;color:#756247;margin-top:6px">القيمة الشرائية للنقاط</div><div style="font-size:22px;font-weight:900;color:#30271d;margin-top:2px;direction:ltr">'+fmtEgp(pointValue)+'</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:420px;margin:14px auto 0"><div style="padding:12px;border:1px solid #d9c49a;border-radius:14px;background:#fffdf8"><div style="font-size:11px;color:#80643a;font-weight:800">عدد الطلبات</div><div style="font-size:18px;font-weight:900;color:#30271d;direction:ltr">'+Number(c.ordersCount||0)+'</div></div><div style="padding:12px;border:1px solid #d9c49a;border-radius:14px;background:#fffdf8"><div style="font-size:11px;color:#80643a;font-weight:800">إجمالي المشتريات</div><div style="font-size:18px;font-weight:900;color:#30271d;direction:ltr">'+fmtEgp(Number(c.totalSpent||0))+'</div></div></div></div><footer class="valerian-share-foot">نشكرك على ثقتك وولائك<br>VALERIAN · THE ART OF FRAGRANCE</footer></article>';
+      document.getElementById('previewSheetTitle').textContent='بطاقة ولاء VALERIAN';
+      const ptsNow=(typeof calculateCurrentLoyaltyPoints==='function')?calculateCurrentLoyaltyPoints(c.phone):Number(c.points||0);
+      const lifetimeNow=(typeof calculateLifetimeLoyaltyPoints==='function')?calculateLifetimeLoyaltyPoints(c.phone):ptsNow;
+      const tierNow=(typeof resolveLoyaltyTier==='function')?resolveLoyaltyTier(lifetimeNow):null;
+      const qrDataUrl=(typeof prepareValerianCardQrDataUrl==='function')?await prepareValerianCardQrDataUrl():'';
+      const cardHtml=buildValerianLoyaltyCardHtml({
+        name:c.name, phone:c.phone, balance:ptsNow, lifetime:lifetimeNow,
+        valueText:(typeof formatCurrency==='function'?formatCurrency:fmtEgp)(ptsNow*Number(appState.settings?.pointValue||0)),
+        tierName:tierNow?tierNow.name:'', skinKey:(typeof resolveLoyaltyCardSkinKey==='function')?resolveLoyaltyCardSkinKey(tierNow):'neutral',
+        qrDataUrl:qrDataUrl, logoUrl:VALERIAN_CARD_EMBLEM
+      });
+      document.getElementById('previewSheetBody').innerHTML='<div class="v1960-loyalty-card" data-valerian-svg-capture="860x567" dir="rtl" style="width:860px;max-width:860px;margin:0 auto;position:relative">'+cardHtml+'</div>';
       openSheet('previewModalSheet');
+      requestAnimationFrame(()=>{
+        const body=document.getElementById('previewSheetBody');
+        const wrap=body&&body.querySelector('.v1960-loyalty-card');
+        if(wrap){ const avail=body.clientWidth||360; wrap.style.zoom=String(Math.min(1,avail/860)); }
+      });
     }
 
     async function loadPreviewCaptureLibrary() {
@@ -6387,9 +6401,12 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
       const rect = source.getBoundingClientRect();
       const isInvoiceCapture = source.matches('.valerian-invoice-paper');
+      const cardSpec = (source.getAttribute('data-valerian-svg-capture')||'').match(/^(\d+)x(\d+)$/);
+      const isCardCapture = !isInvoiceCapture && !!cardSpec;
+      const isSvgCapture = isInvoiceCapture || isCardCapture;
       const previewBody = document.getElementById('previewSheetBody');
       const previewBodyRect = previewBody ? previewBody.getBoundingClientRect() : rect;
-      const width = isInvoiceCapture ? Math.ceil(source.offsetWidth || 940) : (format==='social' ? 900 : Math.ceil(rect.width || source.offsetWidth || source.scrollWidth));
+      const width = isInvoiceCapture ? Math.ceil(source.offsetWidth || 940) : (isCardCapture ? Number(cardSpec[1]) : (format==='social' ? 900 : Math.ceil(rect.width || source.offsetWidth || source.scrollWidth)));
       const captureNode = source.cloneNode(true);
 
       if (!isInvoiceCapture) captureNode.querySelectorAll('.silver-text').forEach(node => {
@@ -6421,6 +6438,17 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         captureNode.style.setProperty('margin','0','important');
         captureNode.style.setProperty('transform','none','important');
         captureNode.style.setProperty('overflow','hidden','important');
+      } else if (isCardCapture) {
+        // Fixed-geometry approved card: capture at its natural spec size, undoing the
+        // screen-fit zoom so export pixels match the design exactly.
+        captureHost.id = 'previewSheetBody';
+        captureHost.style.cssText = 'position:fixed;left:0;top:0;z-index:-1;opacity:1;pointer-events:none;width:'+width+'px!important;max-width:'+width+'px!important;display:block;background:transparent;direction:rtl;overflow:visible;';
+        captureNode.style.setProperty('zoom','1','important');
+        captureNode.style.setProperty('width',width+'px','important');
+        captureNode.style.setProperty('min-width',width+'px','important');
+        captureNode.style.setProperty('max-width',width+'px','important');
+        captureNode.style.setProperty('margin','0','important');
+        captureNode.style.setProperty('transform','none','important');
       } else {
         captureHost.style.cssText = 'position:fixed;left:'+rect.left+'px;top:'+rect.top+'px;z-index:-1;opacity:1;pointer-events:none;width:'+width+'px;max-width:'+width+'px;background:transparent;direction:rtl;overflow:visible;';
         captureNode.style.width = width + 'px';
@@ -6483,7 +6511,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
 
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       const captureBounds = captureNode.getBoundingClientRect();
-      const height = Math.ceil(isInvoiceCapture ? rect.height : Math.max(captureNode.scrollHeight,captureBounds.height));
+      const height = Math.ceil(isInvoiceCapture ? rect.height : (isCardCapture ? Number(cardSpec[2]) : Math.max(captureNode.scrollHeight,captureBounds.height)));
       if (isInvoiceCapture && Math.abs(captureBounds.width-rect.width)>1) { captureHost.remove(); throw new Error('تعذر مطابقة عرض نسخة التصدير مع نافذة المعاينة.'); }
       if(isInvoiceCapture){const items=[...captureNode.querySelectorAll('.product-container')];const itemRects=items.map(node=>{const r=node.getBoundingClientRect();return {top:r.top-captureBounds.top,bottom:r.bottom-captureBounds.top,height:r.height};});window.__valerianLastInvoiceExportMetrics={previewWidth:rect.width,previewHeight:rect.height,exportWidth:captureBounds.width,exportHeight:height,itemCount:items.length,itemRects};}
       if (!width || !height) { captureHost.remove(); throw new Error('تعذر تحديد أبعاد المعاينة.'); }
@@ -6522,9 +6550,9 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       let canvas;
       const captureOptions = {scale,backgroundColor:null,useCORS:true,allowTaint:false,logging:false,scrollX:0,scrollY:0,width,height,windowWidth:window.innerWidth,windowHeight:Math.max(window.innerHeight,height),imageTimeout:15000};
       try {
-        const runCapture = isInvoiceCapture
+        const runCapture = isSvgCapture
           ? () => captureInvoiceNodeViaSvg(captureNode, width, height, scale).catch(fastError => {
-              console.warn('VALERIAN fast invoice capture failed; falling back to html2canvas', fastError);
+              console.warn('VALERIAN fast document capture failed; falling back to html2canvas', fastError);
               return capture(captureNode, Object.assign({foreignObjectRendering:true}, captureOptions));
             })
           : () => capture(captureNode, Object.assign({foreignObjectRendering:false}, captureOptions));
