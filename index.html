@@ -6337,8 +6337,11 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         const expandForExport=(selector,styles)=>captureNode.querySelectorAll(selector).forEach(node=>Object.entries(styles).forEach(([key,val])=>node.style.setProperty(key,val,'important')));
         expandForExport('.receipt-body',{height:'auto',minHeight:'0',flex:'0 0 auto',overflow:'visible',justifyContent:'flex-start',gap:'8px'});
         expandForExport('.products-list',{height:'auto',minHeight:'0',maxHeight:'none',flex:'0 0 auto',overflow:'visible',overflowY:'visible',overscrollBehavior:'auto'});
-        expandForExport('.product-container',{height:'auto',minHeight:'64px',flex:'0 0 auto',overflow:'visible',justifyContent:'flex-start'});
-        expandForExport('.info-cards-grid,.summary-container,.social-qr-card,.receipt-footer,.top-banner',{flex:'0 0 auto',minHeight:'0',overflow:'visible'});
+        expandForExport('.product-container',{height:'auto',minHeight:'100px',flex:'0 0 auto',overflow:'visible',justifyContent:'flex-start',gap:'6px',padding:'8px 14px'});
+        expandForExport('.product-header,.product-size-line,.product-stats',{flexShrink:'0'});
+        expandForExport('.summary-container',{height:'auto',minHeight:'0',flex:'0 0 auto',overflow:'visible',justifyContent:'flex-start',gap:'5px',padding:'8px 16px'});
+        expandForExport('.summary-row,.total-gold-bar',{flexShrink:'0'});
+        expandForExport('.info-cards-grid,.social-qr-card,.receipt-footer,.top-banner',{flex:'0 0 auto',minHeight:'0',overflow:'visible'});
       } else {
         captureHost.style.cssText = 'position:fixed;left:'+rect.left+'px;top:'+rect.top+'px;z-index:-1;opacity:1;pointer-events:none;width:'+width+'px;max-width:'+width+'px;background:transparent;direction:rtl;overflow:visible;';
         captureNode.style.width = width + 'px';
