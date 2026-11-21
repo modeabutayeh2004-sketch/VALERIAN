@@ -43,7 +43,10 @@ try {
   }
 
   // ---- Seed fixtures via the real engine ----
-  const photoDataUrl='data:image/jpeg;base64,'+fs.readFileSync(path.resolve('scripts/fixtures/product-photo.jpg')).toString('base64');
+  // A real product photo can be supplied for fidelity checks without committing it:
+  // FIXTURE_PHOTO=/absolute/path.jpg node scripts/doc-exports-check.mjs
+  const photoPath = process.env.FIXTURE_PHOTO ? path.resolve(process.env.FIXTURE_PHOTO) : path.resolve('scripts/fixtures/product-photo.jpg');
+  const photoDataUrl='data:image/jpeg;base64,'+fs.readFileSync(photoPath).toString('base64');
   const seed = await page.evaluate(async (photo) => {
     const engine = window.ValerianEngine, stamp = Date.now();
     const p1 = await engine.addProduct({name:'Old Spice (Epic Legend)',category:'عطور',productType:'عطر',size:'100 مل',stockUnit:'قطعة',price:3438,offerPrice:1710,isOffer:true,averageCost:2000,stock:20,minimumStock:1,image:photo});
@@ -173,6 +176,40 @@ try {
     }
     const mean=s/n;
     return {count:best.count, box, std:+Math.sqrt(Math.max(0,s2/n-mean*mean)).toFixed(1)};
+  });
+  // Strike calibration: the old-price line must cross the digit band middle in the
+  // ACTUAL export (the rasterizer cannot be trusted to place text-decoration).
+  const strikeCheck = await page.evaluate(async () => {
+    const img = new Image(); img.src='check-poster.png'; await img.decode();
+    const c = document.createElement('canvas'); c.width=img.naturalWidth; c.height=img.naturalHeight;
+    const ctx = c.getContext('2d',{willReadFrequently:true}); ctx.drawImage(img,0,0);
+    const data = ctx.getImageData(0,0,c.width,c.height).data;
+    const isInk = (x,y,tol) => {
+      const i=(y*c.width+x)*4;
+      return Math.abs(data[i]-154)<tol && Math.abs(data[i+1]-139)<tol && Math.abs(data[i+2]-115)<tol;
+    };
+    const strikes=[];
+    for (let y=0; y<c.height; y++) {
+      let run=0,best=0;
+      for (let x=30; x<Math.min(340,c.width); x++) {
+        if (isInk(x,y,60)) { run++; if(run>best)best=run; } else run=0;
+      }
+      if (best>=45) strikes.push(y);
+    }
+    return strikes.map(sy => {
+      let minY=null,maxY=null;
+      for (let y=Math.max(0,sy-15); y<=Math.min(c.height-1,sy+15); y++) {
+        let ink=0;
+        for (let x=50; x<Math.min(200,c.width); x++) if (isInk(x,y,60)) ink++;
+        if (ink>=2) { if(minY==null)minY=y; maxY=y; }
+      }
+      return minY==null ? {strikeY:sy, error:'no digit band'} : {strikeY:sy, bandMiddle:(minY+maxY)/2, offset:+(sy-(minY+maxY)/2).toFixed(1)};
+    });
+  });
+  console.log('poster-strike-calibration', JSON.stringify(strikeCheck));
+  if (strikeCheck.length < 2) failures.push('poster: expected 2 old-price strikes in export, found '+strikeCheck.length);
+  strikeCheck.forEach((s,i) => {
+    if (s.error || Math.abs(s.offset) > 3) failures.push('poster: strike '+(i+1)+' misses the digit middle: '+JSON.stringify(s));
   });
   console.log('poster-photo-pixels', JSON.stringify(photoCheck));
   if (photoCheck.count < 3000) failures.push('poster: seeded product photo did not rasterize into the export: '+JSON.stringify(photoCheck));

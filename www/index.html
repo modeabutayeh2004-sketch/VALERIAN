@@ -6446,17 +6446,14 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
           } catch (_) {}
         });
         captureNode.querySelectorAll('.line-through,.valerian-share-old-price').forEach(node => {
-          // The capture rasterizer misplaces or drops text-decoration on RTL text; draw the
-          // strike as an explicit background line so the old price keeps its strikethrough.
-          let strikeColor = '#9a8b73';
-          try { strikeColor = getComputedStyle(node).color || strikeColor; } catch (_) {}
+          // The capture rasterizer misplaces or drops text-decoration on RTL text, and its
+          // background-position percentage handling cannot be trusted for a drawn strike
+          // either (verified: a 72% background line landed on the digit tops in the export).
+          // Strip the decoration here; the strike is drawn on the canvas after capture
+          // from the clone's measured rects (see oldPriceStrikeRects below).
           node.style.setProperty('text-decoration', 'none', 'important');
           node.style.setProperty('text-decoration-line', 'none', 'important');
           node.style.setProperty('display', 'inline-block', 'important');
-          node.style.setProperty('background-image', 'linear-gradient(to right,' + strikeColor + ',' + strikeColor + ')', 'important');
-          node.style.setProperty('background-repeat', 'no-repeat', 'important');
-          node.style.setProperty('background-size', '100% 1.5px', 'important');
-          node.style.setProperty('background-position', '0 72%', 'important');
         });
       }
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
@@ -6485,10 +6482,33 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       if (isInvoiceCapture && Math.abs(captureBounds.width-rect.width)>1) { captureHost.remove(); throw new Error('تعذر مطابقة عرض نسخة التصدير مع نافذة المعاينة.'); }
       if(isInvoiceCapture){const items=[...captureNode.querySelectorAll('.product-container')];const itemRects=items.map(node=>{const r=node.getBoundingClientRect();return {top:r.top-captureBounds.top,bottom:r.bottom-captureBounds.top,height:r.height};});window.__valerianLastInvoiceExportMetrics={previewWidth:rect.width,previewHeight:rect.height,exportWidth:captureBounds.width,exportHeight:height,itemCount:items.length,itemRects};}
       if (!width || !height) { captureHost.remove(); throw new Error('تعذر تحديد أبعاد المعاينة.'); }
-      const oldPriceStrikeRects = isInvoiceCapture ? [] : [...captureNode.querySelectorAll('.offer-old-price')].map(node => {
+      const strikeRect = (node, midFactor, color, widthFactor) => {
         const r = node.getBoundingClientRect();
-        return {left:r.left-captureBounds.left,right:r.right-captureBounds.left,midY:r.top-captureBounds.top+(r.height/2)};
-      }).filter(r => r.right > r.left);
+        return {left:r.left-captureBounds.left,right:r.right-captureBounds.left,midY:r.top-captureBounds.top+(r.height*midFactor),color,widthFactor};
+      };
+      // Digit strikes must cross the GLYPH middle, which is font-dependent (a fallback
+      // font parks the baseline much lower in the line box than Roboto does). Measure the
+      // actual digits: baseline = half-leading + font ascent; strike at baseline minus
+      // half the digits' actual ink ascent. Verified against exported pixels.
+      const strikeCtx = document.createElement('canvas').getContext('2d');
+      const measuredDigitStrikeRect = (node) => {
+        const r = node.getBoundingClientRect();
+        const cs = getComputedStyle(node);
+        const fsPx = parseFloat(cs.fontSize) || 11;
+        const lh = parseFloat(cs.lineHeight) || fsPx * 1.2;
+        strikeCtx.font = [cs.fontStyle, cs.fontWeight, cs.fontSize, cs.fontFamily].join(' ');
+        const m = strikeCtx.measureText(node.textContent || '');
+        const fontAscent = (m && m.fontBoundingBoxAscent) || fsPx * 0.8;
+        const inkAscent = (m && m.actualBoundingBoxAscent) || fontAscent * 0.72;
+        const midY = r.top - captureBounds.top + Math.max(0, (lh - fsPx) / 2) + fontAscent - inkAscent / 2;
+        let color = '#9a8b73';
+        try { color = cs.color || color; } catch (_) {}
+        return {left:r.left-captureBounds.left, right:r.right-captureBounds.left, midY, color, widthFactor:0.8};
+      };
+      const oldPriceStrikeRects = isInvoiceCapture ? [] : [
+        ...[...captureNode.querySelectorAll('.offer-old-price')].map(node => strikeRect(node, 0.5, '#cbd5e1', 1.25)),
+        ...[...captureNode.querySelectorAll('.valerian-share-old-price')].map(measuredDigitStrikeRect)
+      ].filter(r => r.right > r.left);
 
       captureNode.style.setProperty('text-rendering','geometricPrecision','important');
       captureNode.style.setProperty('-webkit-font-smoothing','antialiased','important');
@@ -6510,19 +6530,57 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         ]);
       } finally { captureHost.remove(); }
 
-      if (!isInvoiceCapture && canvas && oldPriceStrikeRects.length) {
-        const ctx = canvas.getContext('2d');
+      // The exact glyph middle is font- AND renderer-dependent, so refine each strike
+      // against the digits as actually rasterized: scan the captured canvas around the
+      // DOM-approximated midline for the digit ink band and center the line on it.
+      const refineStrikeCanvasY = (r) => {
+        try {
+          const cctx = canvas.getContext('2d');
+          const x0 = Math.max(0, Math.floor(r.left * scale)), x1 = Math.min(canvas.width - 1, Math.ceil(r.right * scale));
+          const yc = r.midY * scale, win = Math.max(18, 14 * scale);
+          const y0 = Math.max(0, Math.floor(yc - win)), y1 = Math.min(canvas.height - 1, Math.ceil(yc + win));
+          const region = cctx.getImageData(x0, y0, x1 - x0 + 1, y1 - y0 + 1).data;
+          const rw = x1 - x0 + 1;
+          const inkRows = [];
+          for (let y = 0; y <= y1 - y0; y++) {
+            let ink = 0;
+            for (let x = 0; x < rw; x++) {
+              const i = (y * rw + x) * 4;
+              if (0.299 * region[i] + 0.587 * region[i + 1] + 0.114 * region[i + 2] < 215) ink++;
+            }
+            if (ink >= 2) inkRows.push(y0 + y);
+          }
+          if (!inkRows.length) return null;
+          const bands = [];
+          inkRows.forEach(y => {
+            if (bands.length && y - bands[bands.length - 1][1] <= 2) bands[bands.length - 1][1] = y;
+            else bands.push([y, y]);
+          });
+          const maxBandH = 1.6 * 17 * scale;
+          const candidates = bands.filter(b => b[1] - b[0] >= 3 && b[1] - b[0] <= maxBandH);
+          if (!candidates.length) return null;
+          let best = candidates[0];
+          candidates.forEach(b => { if (Math.abs((b[0] + b[1]) / 2 - yc) < Math.abs((best[0] + best[1]) / 2 - yc)) best = b; });
+          return (best[0] + best[1]) / 2;
+        } catch (_) { return null; }
+      };
+      const drawStrikes = (ctx, factor, offsetX, offsetY, minWidth) => {
         ctx.save();
-        ctx.strokeStyle = '#cbd5e1';
-        ctx.lineWidth = Math.max(2, scale * 1.25);
         ctx.lineCap = 'butt';
         oldPriceStrikeRects.forEach(r => {
+          const canvasY = refineStrikeCanvasY(r);
+          const y = (canvasY == null ? r.midY * scale : canvasY);
+          ctx.strokeStyle = r.color;
+          ctx.lineWidth = Math.max(minWidth, scale * r.widthFactor * factor);
           ctx.beginPath();
-          ctx.moveTo(r.left * scale, r.midY * scale);
-          ctx.lineTo(r.right * scale, r.midY * scale);
+          ctx.moveTo(offsetX + r.left * scale * factor, offsetY + y * factor);
+          ctx.lineTo(offsetX + r.right * scale * factor, offsetY + y * factor);
           ctx.stroke();
         });
         ctx.restore();
+      };
+      if (!isInvoiceCapture && canvas && oldPriceStrikeRects.length && format === 'receipt') {
+        drawStrikes(canvas.getContext('2d'), 1, 0, 0, 1.5);
       }
       if(!canvas)throw new Error('تعذر إنشاء صورة المستند.');
       if(format==='receipt'){
@@ -6549,6 +6607,9 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       out.fillStyle=bg;out.fillRect(0,0,outputWidth,outputHeight);
       out.fillStyle='#fffdf8';out.fillRect(outerMargin-2,outerMargin-2,drawW+4,drawH+4);
       out.drawImage(canvas,outerMargin,outerMargin,drawW,drawH);
+      // Draw strikes on the FINAL canvas: drawing them pre-downscale shrinks the line
+      // below one output pixel and it anti-aliases into invisibility.
+      if (!isInvoiceCapture && oldPriceStrikeRects.length) drawStrikes(out, factor, outerMargin, outerMargin, 2);
       out.strokeStyle='rgba(185,149,85,.72)';out.lineWidth=2;out.strokeRect(outerMargin,outerMargin,drawW,drawH);
       const socialBlob=await new Promise(resolve=>output.toBlob(resolve,'image/png'));
       if(!socialBlob||!socialBlob.size)throw new Error('تعذر إنشاء صورة المشاركة.');
