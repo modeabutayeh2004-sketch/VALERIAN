@@ -7627,15 +7627,15 @@ html[data-valerian-theme="light"] #kpiWaterOrig + .bottle-content > span{
 /* Keep product and totals rows intact inside the fixed-height mobile preview. */
 #previewSheetBody .title-status-bar{min-height:52px!important;gap:12px!important}
 #previewSheetBody .doc-heading h2{line-height:1.35!important}
-#previewSheetBody .product-container{height:100%!important;min-height:0!important;flex:none!important;justify-content:space-between!important;gap:3px!important;padding:5px 8px!important;overflow:hidden!important}
-#previewSheetBody .product-header,#previewSheetBody .product-size-line,#previewSheetBody .product-stats{flex-shrink:1!important;min-width:0!important}
-#previewSheetBody .product-header{min-height:0!important;line-height:1.15!important}
-#previewSheetBody .product-title{font-size:clamp(9px,1.05vh,12px)!important;line-height:1.2!important;overflow-wrap:anywhere}
-#previewSheetBody .product-size-line{line-height:1.2!important;min-height:0!important;margin:0!important;padding:0!important;font-size:clamp(8px,.9vh,10px)!important}
-#previewSheetBody .product-stats{min-height:0!important;gap:3px!important}
-#previewSheetBody .stat-box{min-height:0!important;padding:3px 2px!important}
-#previewSheetBody .stat-box span{font-size:clamp(7px,.85vh,9px)!important}
-#previewSheetBody .stat-box strong{font-size:clamp(7px,.8vh,9px)!important}
+#previewSheetBody .product-container{height:100%!important;min-height:0!important;flex:none!important;display:grid!important;grid-template-rows:minmax(0,1fr) auto auto!important;align-content:stretch!important;justify-content:initial!important;gap:2px!important;padding:2px 6px!important;overflow:hidden!important}
+#previewSheetBody .product-header{min-height:0!important;min-width:0!important;display:flex!important;align-items:center!important;gap:4px!important;overflow:hidden!important;line-height:1.05!important}
+#previewSheetBody .product-title{flex:1 1 auto!important;min-width:0!important;font-size:9px!important;line-height:1.05!important;max-height:19px!important;display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;overflow:hidden!important;overflow-wrap:anywhere!important}
+#previewSheetBody .product-num-badge{width:15px!important;height:15px!important;flex:0 0 15px!important;font-size:8px!important}
+#previewSheetBody .product-size-line{min-height:0!important;max-height:10px!important;min-width:0!important;margin:0!important;padding:0!important;font-size:8px!important;line-height:1!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+#previewSheetBody .product-stats{height:24px!important;min-height:24px!important;max-height:24px!important;gap:3px!important;overflow:hidden!important}
+#previewSheetBody .stat-box{height:24px!important;min-height:0!important;max-height:24px!important;padding:2px 1px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:1px!important;overflow:hidden!important}
+#previewSheetBody .stat-box span{font-size:7px!important;line-height:1!important;white-space:nowrap!important}
+#previewSheetBody .stat-box strong{font-size:7px!important;line-height:1.05!important;margin-top:0!important;white-space:nowrap!important}
 #previewSheetBody .summary-container{height:auto!important;min-height:0!important;justify-content:flex-start!important;gap:5px!important;padding:8px 16px!important}
 #previewSheetBody .summary-row,#previewSheetBody .total-gold-bar{flex-shrink:0!important;min-height:18px}
 #previewSheetBody .summary-row{line-height:1.35!important}
