@@ -100,7 +100,21 @@ try {
     const logo = document.querySelector('#previewSheetBody .valerian-share-logo');
     const lr = logo ? logo.getBoundingClientRect() : null;
     const pimg = document.querySelector('#previewSheetBody img.valerian-share-product-image');
-    return {dbg:window.__dbgPoster, hasOldPrice: !!oldPrice, oldPriceText: oldPrice?oldPrice.textContent:null, logoBox: lr?{top:lr.top,left:lr.left,width:lr.width,height:lr.height}:null, hasPhotoElement: !!pimg};
+    // Social exports always capture the card at exactly 900 CSS px (see createPreviewImageBlob),
+    // so measure the photo's box in a 900px-wide clone: it maps linearly into the export.
+    let photoBox = null;
+    if (pimg) {
+      const srcCard = document.querySelector('#previewSheetBody > *');
+      const host = document.createElement('div');
+      host.style.cssText = 'position:fixed;left:-3000px;top:0;width:900px;';
+      const clone = srcCard.cloneNode(true);
+      host.appendChild(clone); document.body.appendChild(host);
+      const cr = clone.getBoundingClientRect();
+      const ir = clone.querySelector('img.valerian-share-product-image').getBoundingClientRect();
+      photoBox = {left: ir.left - cr.left, top: ir.top - cr.top, w: ir.width, h: ir.height};
+      host.remove();
+    }
+    return {dbg:window.__dbgPoster, hasOldPrice: !!oldPrice, oldPriceText: oldPrice?oldPrice.textContent:null, logoBox: lr?{top:lr.top,left:lr.left,width:lr.width,height:lr.height}:null, hasPhotoElement: !!pimg, photoBox};
   });
   console.log('poster-dom', JSON.stringify(poster));
   if (!poster.hasOldPrice) failures.push('poster: old price element missing');
@@ -125,58 +139,35 @@ try {
   console.log('poster-logo-pixels', JSON.stringify(logoCheck));
   if (!(logoCheck.gold > logoCheck.silver)) failures.push('poster: exported logo is not gold (gold='+logoCheck.gold+' silver='+logoCheck.silver+')');
   // Real-photo path: the seeded JPEG must actually rasterize into the export.
-  // The fixture photo has a unique dark-brown ring (brown = r>g>b, unlike black text
-  // where r~g~b). Locate its pixel cluster in the export and verify size + variance.
+  // The photo's box is measured in a 900px-wide clone (the exact social capture width),
+  // which maps linearly into the exported image: px = 24 + css * (imgW-48)/900.
+  // A real photo has high distinct-color count and luminance variance; the VALERIAN
+  // placeholder (flat cream + text) has neither.
   if (!poster.hasPhotoElement) failures.push('poster: product photo element missing from the preview');
-  const photoCheck = await page.evaluate(async () => {
-    const img = new Image(); img.src='check-poster.png'; await img.decode();
-    const c = document.createElement('canvas'); c.width=img.naturalWidth; c.height=img.naturalHeight;
-    const ctx = c.getContext('2d',{willReadFrequently:true}); ctx.drawImage(img,0,0);
-    const W=img.naturalWidth, H=img.naturalHeight;
-    const data = ctx.getImageData(0,0,W,H).data;
-    const mask = new Uint8Array(W*H);
-    for (let i=0; i<W*H; i++) {
-      const r=data[i*4], g=data[i*4+1], b=data[i*4+2];
-      if (r+g+b<400 && r-g>25 && g-b>15) mask[i]=1;
-    }
-    // Erode: keep only pixels whose 3x3 neighborhood is all mask. Thin text strokes
-    // and borders vanish; solid regions (the photo) survive.
-    const solid = new Uint8Array(W*H);
-    for (let y=1; y<H-1; y++) for (let x=1; x<W-1; x++) {
-      const i=y*W+x;
-      if (mask[i]&&mask[i-1]&&mask[i+1]&&mask[i-W]&&mask[i+W]&&mask[i-W-1]&&mask[i-W+1]&&mask[i+W-1]&&mask[i+W+1]) solid[i]=1;
-    }
-    // Largest connected component: the product photo is the biggest solid blob and
-    // the only roughly-square one; pills and dividers are wide and thin.
-    let best=null;
-    const seen = new Uint8Array(W*H);
-    const stack = [];
-    for (let y=0; y<H; y++) for (let x=0; x<W; x++) {
-      const i0=y*W+x;
-      if (!solid[i0]||seen[i0]) continue;
-      let count=0, minX=1e9, minY=1e9, maxX=-1, maxY=-1;
-      stack.length=0; stack.push(i0); seen[i0]=1;
-      while (stack.length) {
-        const i=stack.pop(), cy=(i/W)|0, cx=i%W;
-        count++; if(cx<minX)minX=cx; if(cx>maxX)maxX=cx; if(cy<minY)minY=cy; if(cy>maxY)maxY=cy;
-        if(cx>0&&solid[i-1]&&!seen[i-1]){seen[i-1]=1;stack.push(i-1);}
-        if(cx<W-1&&solid[i+1]&&!seen[i+1]){seen[i+1]=1;stack.push(i+1);}
-        if(cy>0&&solid[i-W]&&!seen[i-W]){seen[i-W]=1;stack.push(i-W);}
-        if(cy<H-1&&solid[i+W]&&!seen[i+W]){seen[i+W]=1;stack.push(i+W);}
+  else if (!poster.photoBox) failures.push('poster: could not measure the photo box');
+  else {
+    const photoCheck = await page.evaluate(async (box) => {
+      const img = new Image(); img.src='check-poster.png'; await img.decode();
+      const c = document.createElement('canvas'); c.width=img.naturalWidth; c.height=img.naturalHeight;
+      const ctx = c.getContext('2d',{willReadFrequently:true}); ctx.drawImage(img,0,0);
+      const K = (img.naturalWidth - 48) / 900;
+      const x0 = Math.round(24 + box.left * K), y0 = Math.round(24 + box.top * K);
+      const w = Math.round(box.w * K), h = Math.round(box.h * K);
+      const data = ctx.getImageData(x0, y0, w, h).data;
+      const colors = new Set(); let n=0,s=0,s2=0;
+      for (let y=2; y<h-2; y++) for (let x=2; x<w-2; x++) {
+        const i=(y*w+x)*4;
+        colors.add((data[i]>>4<<8)|(data[i+1]>>4<<4)|(data[i+2]>>4));
+        const lum=0.299*data[i]+0.587*data[i+1]+0.114*data[i+2];
+        n++; s+=lum; s2+=lum*lum;
       }
-      if (!best || count>best.count) best={count, box:{x:minX,y:minY,w:maxX-minX+1,h:maxY-minY+1}};
-    }
-    if (!best) return {count:0};
-    const {box}=best;
-    let n=0, s=0, s2=0;
-    for (let y=box.y; y<box.y+box.h; y+=2) for (let x=box.x; x<box.x+box.w; x+=2) {
-      const i=(y*W+x)*4;
-      const lum=0.299*data[i]+0.587*data[i+1]+0.114*data[i+2];
-      n++; s+=lum; s2+=lum*lum;
-    }
-    const mean=s/n;
-    return {count:best.count, box, std:+Math.sqrt(Math.max(0,s2/n-mean*mean)).toFixed(1)};
-  });
+      const mean=s/n, std=Math.sqrt(Math.max(0,s2/n-mean*mean));
+      return {box:{x:x0,y:y0,w,h}, distinct:colors.size, std:+std.toFixed(1), mean:+mean.toFixed(1)};
+    }, poster.photoBox);
+    console.log('poster-photo-pixels', JSON.stringify(photoCheck));
+    if (photoCheck.distinct < 25 || photoCheck.std < 12) failures.push('poster: seeded product photo did not rasterize into the export (placeholder-like): '+JSON.stringify(photoCheck));
+  }
+
   // Strike calibration: the old-price line must cross the digit band middle in the
   // ACTUAL export (the rasterizer cannot be trusted to place text-decoration).
   const strikeCheck = await page.evaluate(async () => {
@@ -194,7 +185,7 @@ try {
       for (let x=30; x<Math.min(340,c.width); x++) {
         if (isInk(x,y,60)) { run++; if(run>best)best=run; } else run=0;
       }
-      if (best>=45) strikes.push(y);
+      if (best>=45 && best<=120) strikes.push(y);  // strikes ~60-75px; card borders run 250+
     }
     return strikes.map(sy => {
       let minY=null,maxY=null;
@@ -211,19 +202,11 @@ try {
   strikeCheck.forEach((s,i) => {
     if (s.error || Math.abs(s.offset) > 3) failures.push('poster: strike '+(i+1)+' misses the digit middle: '+JSON.stringify(s));
   });
-  console.log('poster-photo-pixels', JSON.stringify(photoCheck));
-  if (photoCheck.count < 3000) failures.push('poster: seeded product photo did not rasterize into the export: '+JSON.stringify(photoCheck));
-  else {
-    const {w,h} = photoCheck.box;
-    const ratio = w/h;
-    if (w<40 || w>200 || h<40 || h>200 || ratio<0.75 || ratio>1.33) failures.push('poster: largest solid region is not the square photo thumbnail: '+JSON.stringify(photoCheck));
-    if (photoCheck.std < 15) failures.push('poster: photo area has no photographic variance (flat/blank): '+JSON.stringify(photoCheck));
-  }
 
   // ---- 3) LOYALTY CARD ----
   await page.evaluate(async () => {
     const lc=appState.customers.find(x=>x.phone==='01000000001');
-    if (lc) { lc.points=2660; lc.totalSpent=6386; lc.ordersCount=2; } else appState.customers.push({name:'عميل تجريبي',phone:'01000000000',address:'البلد',points:2660,totalSpent:6386,ordersCount:2});
+    if (lc) { lc.points=2660; lc.totalSpent=6386; lc.ordersCount=2; } else appState.customers.push({name:'عميل تجريبي',phone:'01000000001',address:'البلد',points:2660,totalSpent:6386,ordersCount:2});
     window.openDigitalLoyaltyCard('01000000001');
     await new Promise(r=>setTimeout(r,400));
   });
