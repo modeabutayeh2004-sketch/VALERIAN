@@ -122,7 +122,8 @@ try {
 
   // ---- 3) LOYALTY CARD ----
   await page.evaluate(async () => {
-    appState.customers.push({name:'عميل تجريبي',phone:'01000000000',address:'البلد',points:2660,totalSpent:6386,ordersCount:2});
+    const lc=appState.customers.find(x=>x.phone==='01000000000');
+    if (lc) { lc.points=2660; lc.totalSpent=6386; lc.ordersCount=2; } else appState.customers.push({name:'عميل تجريبي',phone:'01000000000',address:'البلد',points:2660,totalSpent:6386,ordersCount:2});
     window.openDigitalLoyaltyCard('01000000000');
     await new Promise(r=>setTimeout(r,400));
   });

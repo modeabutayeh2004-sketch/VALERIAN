@@ -6252,7 +6252,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       activePreviewShareContext={kind:'loyalty',id:'loyalty-'+String(c.phone||''),phone:String(c.phone||''),name:String(c.name||''),points:Number(c.points||0)};
       document.getElementById('previewSheetTitle').textContent='بطاقة ولاء VALERIAN البلاتينية';
       const pointValue=Number(c.points||0)*Number(appState.settings?.pointValue||0);
-      document.getElementById('previewSheetBody').innerHTML='<article class="valerian-share-card" dir="rtl"><header class="valerian-share-head"><img class="valerian-share-logo" src="'+VALERIAN_CARD_EMBLEM+'" alt="VALERIAN"><div class="valerian-share-brand">VALERIAN</div><div class="valerian-share-tag">THE ART OF FRAGRANCE</div><div class="valerian-share-headline">PLATINUM LOYALTY MEMBERSHIP</div></header><div class="valerian-share-content" style="text-align:center"><div class="valerian-share-kicker">عضوية النخبة</div><div class="valerian-share-title">'+escapeHtmlMobile(c.name)+'</div><div dir="ltr" style="font-size:13px;color:#795b2c;font-weight:800;margin-top:4px">'+escapeHtmlMobile(c.phone)+'</div><div style="margin:20px auto 0;max-width:340px;padding:20px 14px;border:1px solid #d9c49a;border-radius:20px;background:linear-gradient(135deg,#fffaf0,#f1e4ca)"><div style="font-size:11px;color:#80643a;font-weight:800">رصيد نقاط الولاء</div><div style="font-size:38px;line-height:1.2;font-weight:900;color:#76572b;direction:ltr">'+Number(c.points||0)+' PTS</div><div style="font-size:12px;color:#756247;margin-top:8px">القيمة الشرائية للنقاط</div><div style="font-size:20px;font-weight:900;color:#30271d;margin-top:3px;direction:ltr">'+fmtEgp(pointValue)+'</div></div></div><footer class="valerian-share-foot">نشكرك على ثقتك وولائك<br>VALERIAN · THE ART OF FRAGRANCE</footer></article>';
+      document.getElementById('previewSheetBody').innerHTML='<article class="valerian-share-card" dir="rtl"><header class="valerian-share-head"><img class="valerian-share-logo" src="'+VALERIAN_CARD_EMBLEM+'" alt="VALERIAN"><div class="valerian-share-brand">VALERIAN</div><div class="valerian-share-tag">THE ART OF FRAGRANCE</div><div class="valerian-share-headline">PLATINUM LOYALTY MEMBERSHIP</div></header><div class="valerian-share-content" style="text-align:center;padding-top:20px"><div class="valerian-share-kicker">عضوية النخبة</div><div class="valerian-share-title" style="font-size:28px">'+escapeHtmlMobile(c.name)+'</div><div dir="ltr" style="font-size:14px;color:#795b2c;font-weight:800;margin-top:4px;letter-spacing:1px">'+escapeHtmlMobile(c.phone)+'</div><div style="margin:16px auto 0;max-width:420px;padding:18px 16px;border:2px solid #b99555;border-radius:22px;background:linear-gradient(135deg,#fffaf0,#f1e4ca);box-shadow:0 10px 26px rgba(120,90,40,.14)"><div style="font-size:12px;color:#80643a;font-weight:800">رصيد نقاط الولاء</div><div style="font-size:46px;line-height:1.15;font-weight:900;color:#76572b;direction:ltr">'+Number(c.points||0)+' PTS</div><div style="font-size:12px;color:#756247;margin-top:6px">القيمة الشرائية للنقاط</div><div style="font-size:22px;font-weight:900;color:#30271d;margin-top:2px;direction:ltr">'+fmtEgp(pointValue)+'</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:420px;margin:14px auto 0"><div style="padding:12px;border:1px solid #d9c49a;border-radius:14px;background:#fffdf8"><div style="font-size:11px;color:#80643a;font-weight:800">عدد الطلبات</div><div style="font-size:18px;font-weight:900;color:#30271d;direction:ltr">'+Number(c.ordersCount||0)+'</div></div><div style="padding:12px;border:1px solid #d9c49a;border-radius:14px;background:#fffdf8"><div style="font-size:11px;color:#80643a;font-weight:800">إجمالي المشتريات</div><div style="font-size:18px;font-weight:900;color:#30271d;direction:ltr">'+fmtEgp(Number(c.totalSpent||0))+'</div></div></div></div><footer class="valerian-share-foot">نشكرك على ثقتك وولائك<br>VALERIAN · THE ART OF FRAGRANCE</footer></article>';
       openSheet('previewModalSheet');
     }
 
@@ -6392,7 +6392,8 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
           try {
             const spacing = getComputedStyle(node).letterSpacing;
             if (spacing && spacing !== 'normal' && parseFloat(spacing) !== 0 && /[؀-ۿ]/.test(node.textContent || '')) {
-              node.style.setProperty('letter-spacing', '0', 'important');
+              node.style.setProperty('letter-spacing', 'normal', 'important');
+              node.style.setProperty('font-family', 'Arial, Tahoma, sans-serif', 'important');
             }
           } catch (_) {}
         });
@@ -6407,7 +6408,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
           node.style.setProperty('background-image', 'linear-gradient(to right,' + strikeColor + ',' + strikeColor + ')', 'important');
           node.style.setProperty('background-repeat', 'no-repeat', 'important');
           node.style.setProperty('background-size', '100% 1.5px', 'important');
-          node.style.setProperty('background-position', '0 58%', 'important');
+          node.style.setProperty('background-position', '0 72%', 'important');
         });
       }
       const invoiceDialog = isInvoiceCapture ? document.querySelector('#previewModalSheet .preview-document-dialog') : null;
