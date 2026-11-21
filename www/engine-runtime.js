@@ -3832,6 +3832,12 @@ async function previewPeriodicReportPrint() {
       let totalReturns = 0;
       let totalCogs = 0;
       let totalWriteoffLoss = 0;
+      // Packaging/supplies of a fully returned order are a loss (wastage), not cost of goods
+      // sold: nothing was sold. This is a reclassification of the SAME already-recognized
+      // supply cost — COGS loses exactly what the loss line gains, never a second deduction.
+      // Partial returns keep the full supply cost in COGS until the owner picks an allocation.
+      let totalReturnedPackagingLoss = 0;
+      const isFullyReturnedOrder=o=>(o.items||[]).length>0&&(o.items||[]).some(it=>Number(it.returnedQty||0)>0)&&(o.items||[]).every(it=>Number(it.returnedQty||0)>=Number(it.qty||0));
 
       // Losses follow the actual return date, not the original order date.
       // This keeps a damaged return from an older sale visible in the current report period.
@@ -3863,8 +3869,13 @@ async function previewPeriodicReportPrint() {
             const soldQty = Math.max(0, Number(item.qty || 0) - Number(item.returnedQty || 0));
             totalCogs += cost * soldQty;
           });
-          totalCogs += Math.max(0, Number(o.operatingSuppliesCost || 0));
+          const supplyCost=Math.max(0, Number(o.operatingSuppliesCost || 0));
+          if(isFullyReturnedOrder(o))totalReturnedPackagingLoss+=supplyCost;else totalCogs+=supplyCost;
         } else {
+          // Failed shipment / full return before delivery: the order never entered sales or
+          // COGS, but its packaging was consumed at dispatch. Recognize it as the same loss.
+          const supplyCost=Math.max(0, Number(o.operatingSuppliesCost || 0));
+          if(isFullyReturnedOrder(o))totalReturnedPackagingLoss+=supplyCost;
           const refundPaid = (state.paymentTransactions || []).filter(t => t.orderId === o.id && t.type === 'REFUND_PAID').reduce((a,t)=>a+Number(t.amount||0),0);
           totalReservations += Math.max(0, Number(o.depositAmount || 0) - refundPaid);
         }
@@ -3872,7 +3883,7 @@ async function previewPeriodicReportPrint() {
 
       const totalExpenses = state.expenses.filter(e => { if (String(e.category||'').includes('استبدال نقاط عملاء')) return false; const d = new Date(e.date); if (period === 'today') return d.toDateString() === now.toDateString(); if (period === 'week') return (now - d) / 86400000 <= 7 && d <= now; if (period === 'month') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); return true; }).reduce((s, e) => s + Number(e.amount || 0), 0);
       // COGS uses the immutable unitCostAtSale snapshot when present; legacy rows fall back to current average cost.
-      const trueNetProfit = fullSales - totalCogs - totalExpenses - totalWriteoffLoss;
+      const trueNetProfit = fullSales - totalCogs - totalExpenses - totalWriteoffLoss - totalReturnedPackagingLoss;
       const supplierInvoices=Array.isArray(state.supplierInvoices)?state.supplierInvoices:[],supplierPayments=Array.isArray(state.supplierPayments)?state.supplierPayments:[];
       const supplierPaidNow=supplierInvoices.reduce((sum,inv)=>{const linked=supplierPayments.filter(p=>String(p.invoiceId)===String(inv.id)).reduce((a,p)=>a+Math.max(0,Number(p.amount||0)),0);return sum+Math.min(Math.max(0,Number(inv.totalAmount||0)),Math.max(Math.max(0,Number(inv.paidAmount||0)),linked));},0);
       const supplierDueNow=supplierInvoices.reduce((sum,inv)=>{const linked=supplierPayments.filter(p=>String(p.invoiceId)===String(inv.id)).reduce((a,p)=>a+Math.max(0,Number(p.amount||0)),0);const paid=Math.min(Math.max(0,Number(inv.totalAmount||0)),Math.max(Math.max(0,Number(inv.paidAmount||0)),linked));return sum+Math.max(0,Number(inv.totalAmount||0)-paid);},0);
@@ -3885,6 +3896,8 @@ async function previewPeriodicReportPrint() {
       document.getElementById('repExpenses').textContent = formatCurrency(totalExpenses);
       const writeoffEl = document.getElementById('repWriteoffLoss');
       if (writeoffEl) writeoffEl.textContent = formatCurrency(totalWriteoffLoss);
+      const retPackEl = document.getElementById('repReturnedPackagingLoss');
+      if (retPackEl) retPackEl.textContent = formatCurrency(totalReturnedPackagingLoss);
       document.getElementById('repNetProfit').textContent = formatCurrency(trueNetProfit); document.getElementById('repNetProfit').classList.toggle('finance-positive',trueNetProfit>=0); document.getElementById('repNetProfit').classList.toggle('finance-negative',trueNetProfit<0);
 
       const tbody = document.getElementById('reportsTableBody');
