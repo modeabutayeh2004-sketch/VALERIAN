@@ -1975,7 +1975,8 @@
     // Pending reservations do not earn points, but points redeemed on them remain reserved until returned.
     function isOrderDeliveredForLoyalty(o) {
       const status=String(o?.status||'');
-      return !!o?.deliveredAt || status.includes('تم التسليم') || (!o?.shippedAt && !!o?.stockDeducted && !!o?.returnedAt && status.includes('مرتجع'));
+      const explicitlyDelivered=status.includes('تم التسليم')&&!status.includes('شركة الشحن');
+      return !!o?.deliveredAt || explicitlyDelivered || (!o?.shippedAt && !!o?.stockDeducted && !!o?.returnedAt && status.includes('مرتجع'));
     }
 
     // Recalculate the balance from current settings. Returns reverse earned points on returned value
@@ -3884,15 +3885,16 @@ async function previewPeriodicReportPrint() {
           const netQty = Math.max(0, Number(item.qty || 0) - Number(item.returnedQty || 0));
           orderCost += Number(item.unitCostAtSale ?? (prod ? (prod.averageCost ?? prod.totalCost ?? 0) : 0)) * netQty;
         });
-        const orderProfit = Number(o.grandTotal || 0) - Number(o.returnedValue || 0) - orderCost;
+        const deliveredForReport=isOrderDeliveredForLoyalty(o);
+        const orderProfit = deliveredForReport ? Number(o.grandTotal || 0) - Number(o.returnedValue || 0) - orderCost : 0;
         return `
           <tr>
             <td class="py-2.5 px-3 font-bold text-brand-700">${o.id}</td>
             <td class="py-2.5 px-3 text-slate-400">${new Date(o.date).toLocaleDateString('ar-EG')}</td>
             <td class="py-2.5 px-3 font-bold">${escapeHTML(o.name)}</td>
             <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${o.status.includes('مرتجع') ? 'bg-rose-100 text-rose-700' : (o.status.includes('مؤكد') ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700')}">${escapeHTML(o.status)}</span></td>
-            <td class="py-2.5 px-3 font-extrabold">${formatCurrency(Math.max(0, Number(o.grandTotal || 0) - Number(o.returnedValue || 0)))}</td>
-            <td class="py-2.5 px-3 font-bold text-brand-700">${o.status.includes('مرتجع') ? 'مرتجع' : formatCurrency(orderProfit)}</td>
+            <td class="py-2.5 px-3 font-extrabold">${deliveredForReport?formatCurrency(Math.max(0, Number(o.grandTotal || 0) - Number(o.returnedValue || 0))):'بانتظار تأكيد الاستلام'}</td>
+            <td class="py-2.5 px-3 font-bold text-brand-700">${o.status.includes('مرتجع') ? 'مرتجع' : (deliveredForReport?formatCurrency(orderProfit):'—')}</td>
           </tr>
         `;
       }).join('') : `<tr><td colspan="6" class="py-6 text-center text-slate-400">لا توجد طلبات مسجلة في هذه الفترة</td></tr>`;
