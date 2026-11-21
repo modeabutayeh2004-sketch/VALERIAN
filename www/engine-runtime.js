@@ -3046,6 +3046,14 @@ async function previewPeriodicReportPrint() {
           : order.type==='customer_profile'
             ? `مرحباً ${String(order.name||'عميلنا')}، مرفق ملفكم الشخصي وتفضيلاتكم العطرية وسجل تعاملاتكم من ڤاليريان. يسعدنا خدمتكم دائمًا.`
             : template.replace(/\{customer\}/g,String(order.name||'عميلنا')).replace(/\{order\}/g,String(order.id||'')).replace(/\{total\}/g,formatCurrency(Number(order.grandTotal||0))).replace(/\{remaining\}/g,formatCurrency(Number(order.remainingAmount||0))));
+        // Direct route (Android APK): open the customer's WhatsApp chat with the image
+        // attached and the message prefilled - no share-sheet detour. wa.me links cannot
+        // carry images, so this needs the native bridge; anything else falls through.
+        if(window.ValerianNative && typeof window.ValerianNative.shareImageToWhatsApp==='function') {
+          const dataUrl=await blobToDataUrl(blob);
+          const openedDirect=window.ValerianNative.shareImageToWhatsApp(dataUrl,file.name,file.type||'image/png',digits,message);
+          if(openedDirect){showToast('تم فتح محادثة العميل في واتساب مع الرسالة وصورة الفاتورة مرفقة.','success');return;}
+        }
         // Native file sharing hands the actual PNG to Android's share sheet; WhatsApp
         // receives the attachment when the user chooses WhatsApp and the customer chat.
         if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {

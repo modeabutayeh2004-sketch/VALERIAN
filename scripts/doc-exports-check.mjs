@@ -219,6 +219,40 @@ try {
   });
   await exportCurrentPreview('profile');
 
+  // ---- 5) WHATSAPP DIRECT-SHARE WIRING ----
+  // Headless has no Android bridge: stub window.ValerianNative to prove the direct
+  // route is preferred when present, and that a false return falls through to wa.me.
+  const waWiring = await page.evaluate(async (orderId) => {
+    const opened=[]; const nativeCalls=[];
+    const origOpen=window.open; const origArchive=window.archivePrintableBlob;
+    window.open=(url)=>{ opened.push(String(url||'')); return {opener:null}; };
+    window.archivePrintableBlob=async()=>({archived:false,cloudArchived:false});
+    window.ValerianNative={ shareImageToWhatsApp:(dataUrl,fileName,mimeType,phone,message)=>{ nativeCalls.push({hasImage:String(dataUrl||'').startsWith('data:image/'),bytes:String(dataUrl||'').length,fileName,mimeType,phone,message}); return true; } };
+    const order=appState.orders.find(o=>String(o.id)===String(orderId));
+    const result={orderFound:!!order};
+    try {
+      if(!order) throw new Error('seeded order missing');
+      await window.previewDocumentPrint(order,'final_invoice');
+      await window.shareInvoiceToCustomerWhatsApp();
+      const expectedPhone=window.v1958NormalizeWhatsAppPhone(order.phone);
+      result.direct={called:nativeCalls.length===1,phoneOk:nativeCalls[0]?.phone===expectedPhone,imageOk:nativeCalls[0]?.hasImage===true&&nativeCalls[0]?.bytes>50000,messageOk:(nativeCalls[0]?.message||'').includes(String(orderId)),noFallback:opened.length===0};
+      nativeCalls.length=0; opened.length=0;
+      window.ValerianNative.shareImageToWhatsApp=()=>false;
+      await window.previewDocumentPrint(order,'final_invoice');
+      await window.shareInvoiceToCustomerWhatsApp();
+      result.fallback={waMeOpened:opened.some(u=>u.includes('wa.me/'))};
+    } catch(e) { result.error=String(e&&e.message||e); }
+    finally { window.open=origOpen; window.archivePrintableBlob=origArchive; delete window.ValerianNative; }
+    return result;
+  }, seed.orderId);
+  console.log('whatsapp-wiring', JSON.stringify(waWiring));
+  if (waWiring.error) failures.push('whatsapp wiring threw: '+waWiring.error);
+  else {
+    if (!waWiring.direct?.called || !waWiring.direct?.phoneOk || !waWiring.direct?.imageOk || !waWiring.direct?.messageOk || !waWiring.direct?.noFallback)
+      failures.push('whatsapp: native direct route not preferred correctly: '+JSON.stringify(waWiring.direct));
+    if (!waWiring.fallback?.waMeOpened) failures.push('whatsapp: native false did not fall through to wa.me: '+JSON.stringify(waWiring.fallback));
+  }
+
   await page.screenshot({path:'www/check-doc-exports-screen.png',fullPage:false});
   if (failures.length) { console.error('DOC_EXPORTS_FAILED: ' + failures.join(' | ')); process.exitCode = 1; }
   else console.log('DOC_EXPORTS_OK');

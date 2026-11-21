@@ -1,8 +1,13 @@
 package com.valerian.business;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
+import android.content.ClipData;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import androidx.core.content.FileProvider;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
@@ -161,6 +166,48 @@ public final class NativeFileBridge {
             return true;
         } catch (Exception e) {
             activity.runOnUiThread(() -> Toast.makeText(activity, "فشل حفظ الصورة: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            return false;
+        }
+    }
+
+    // One-tap customer share: opens WhatsApp directly on the customer's chat with the
+    // invoice image attached and the message prefilled (wa.me links cannot carry images).
+    // Returns false when WhatsApp is absent so the page can fall back to its own paths.
+    @JavascriptInterface
+    public boolean shareImageToWhatsApp(String base64, String fileName, String mimeType, String phone, String message) {
+        try {
+            PackageManager pm = activity.getPackageManager();
+            try { pm.getPackageInfo("com.whatsapp", 0); } catch (PackageManager.NameNotFoundException e) { return false; }
+            String clean = base64 == null ? "" : base64.replaceFirst("^data:[^,]*,", "");
+            byte[] bytes = Base64.decode(clean, Base64.DEFAULT);
+            if (bytes.length == 0) throw new IllegalArgumentException("صورة الفاتورة فارغة");
+            File dir = new File(activity.getCacheDir(), "wa_share");
+            if (!dir.exists() && !dir.mkdirs()) throw new IllegalStateException("تعذر تجهيز مجلد المشاركة");
+            File[] stale = dir.listFiles();
+            if (stale != null) for (File f : stale) { if (f.isFile()) f.delete(); }
+            File out = new File(dir, System.currentTimeMillis() + "_" + safeImageName(fileName));
+            try (FileOutputStream fos = new FileOutputStream(out)) { fos.write(bytes); fos.flush(); }
+            Uri uri = FileProvider.getUriForFile(activity, activity.getPackageName() + ".fileprovider", out);
+            String digits = phone == null ? "" : phone.replaceAll("\\D", "");
+            if (digits.startsWith("00")) digits = digits.substring(2);
+            if (digits.length() == 11 && digits.startsWith("0")) digits = "20" + digits.substring(1);
+            final Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setPackage("com.whatsapp");
+            intent.setType((mimeType == null || mimeType.isEmpty()) ? "image/png" : mimeType);
+            intent.putExtra(Intent.EXTRA_STREAM, uri);
+            if (message != null && !message.isEmpty()) intent.putExtra(Intent.EXTRA_TEXT, message);
+            if (!digits.isEmpty()) intent.putExtra("jid", digits + "@s.whatsapp.net");
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            intent.setClipData(ClipData.newRawUri("VALERIAN", uri));
+            if (intent.resolveActivity(pm) == null) return false;
+            activity.runOnUiThread(() -> {
+                try { activity.startActivity(intent); }
+                catch (ActivityNotFoundException e) { Toast.makeText(activity, "واتساب غير مثبت على هذا الجهاز", Toast.LENGTH_LONG).show(); }
+            });
+            return true;
+        } catch (Exception e) {
+            final String msg = e.getMessage() == null ? "خطأ غير معروف" : e.getMessage();
+            activity.runOnUiThread(() -> Toast.makeText(activity, "فشل تجهيز مشاركة واتساب: " + msg, Toast.LENGTH_LONG).show());
             return false;
         }
     }
