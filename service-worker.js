@@ -2,12 +2,14 @@
 'use strict';
 
 // Bump this value whenever the HTML, application engine, or offline strategy changes.
-const CACHE_NAME = 'valerian-app-shell-v20-20261121-cancel-shipping-offline-ui';;
+const CACHE_NAME = 'valerian-app-shell-v20-20261121-offline-vendor-and-workflows';
 const APP_SHELL = [
   './index.html',
   './engine-runtime.js?v=v20-20261120-arabic-native-poster-gold91',
   './manifest.webmanifest',
-  './assets/valerian-icon.jpg'
+  './assets/valerian-icon.jpg',
+  './vendor/html2canvas.min.js',
+  './vendor/qrcode.min.js'
 ];
 
 const INDEX_URL = new URL('./index.html', self.registration.scope).href;
