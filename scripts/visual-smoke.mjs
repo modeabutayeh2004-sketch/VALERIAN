@@ -127,10 +127,13 @@ try {
         const metrics=window.__valerianLastInvoiceExportMetrics;
         const allRowsPresent=metrics?.itemCount===4&&metrics.itemRects.every((r,i)=>r.height>=64&&(i===0||r.top>=metrics.itemRects[i-1].bottom-1));
         const fullHeight=bitmap.height>Math.round(previewRect.height*3)+100;
-        const result={previewHeight:Math.round(previewRect.height),previewItemCount:previewItems.length,exportWidth:bitmap.width,exportHeight:bitmap.height,metrics,allRowsPresent,fullHeight,bytes:blob.size};
+        const dataUrl=await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||''));reader.readAsDataURL(blob);});
+        const result={previewHeight:Math.round(previewRect.height),previewItemCount:previewItems.length,exportWidth:bitmap.width,exportHeight:bitmap.height,metrics,allRowsPresent,fullHeight,bytes:blob.size,dataUrl};
         bitmap.close?.();
         return result;
       });
+      fs.writeFileSync('www/visual-multiproduct-invoice-export.png',Buffer.from(multiProductCheck.dataUrl.split(',')[1],'base64'));
+      delete multiProductCheck.dataUrl;
       console.log(JSON.stringify({multiProductExport:multiProductCheck.allRowsPresent&&multiProductCheck.fullHeight?'ok':'failed',...multiProductCheck}));
       if(!multiProductCheck.allRowsPresent||!multiProductCheck.fullHeight)throw new Error('Multi-product invoice export did not preserve every product in a full-height image: '+JSON.stringify(multiProductCheck));
       const documentVariants=await page.evaluate(async()=>{
