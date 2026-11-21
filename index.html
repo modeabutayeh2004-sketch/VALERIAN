@@ -6293,19 +6293,18 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
       const rect = source.getBoundingClientRect();
       const isInvoiceCapture = source.matches('.valerian-invoice-paper');
-      // Invoice export must use the same narrow layout width as the visible sheet.
-      // The capture viewport is also set to that width below so desktop CI/browser
-      // dimensions cannot silently activate wide-screen media queries.
-      const width = isInvoiceCapture ? Math.ceil(source.getBoundingClientRect().width || source.offsetWidth || window.innerWidth) : (format==='social' ? 900 : Math.ceil(rect.width || source.offsetWidth || source.scrollWidth));
-      const captureNode = source.cloneNode(true);
-      // The invoice is captured from its original 940px paper layout. Its preview
-      // uses CSS zoom only; remove that presentation zoom in the capture clone.
-      if (isInvoiceCapture) { captureNode.style.setProperty('zoom','1','important'); captureNode.style.setProperty('width',width+'px','important'); captureNode.style.setProperty('height',Math.ceil(source.getBoundingClientRect().height)+'px','important'); captureNode.style.setProperty('max-width','none','important'); }
-      // html2canvas can paint background-clip:text as a rectangular gradient.
-      // Keep the live preview untouched; normalize gradient text only in non-invoice exports.
+
+      // Invoice export must rasterize the actual preview node, not a resized clone.
+      // The preview intentionally uses CSS zoom on a 940px paper; removing that
+      // zoom or assigning the visible pixel width as the CSS layout width causes
+      // text, grids and spacing to reflow and overlap in the exported PNG.
+      const width = isInvoiceCapture
+        ? Math.ceil(rect.width)
+        : (format==='social' ? 900 : Math.ceil(rect.width || source.offsetWidth || source.scrollWidth));
+      const captureNode = isInvoiceCapture ? source : source.cloneNode(true);
+
+      // Keep the existing poster-specific capture fixes isolated from invoices.
       if (!isInvoiceCapture) captureNode.querySelectorAll('.silver-text').forEach(node => {
-        // Remove the gradient-text class entirely: html2canvas may still paint
-        // its background layer as a full-width rectangle on some Android browsers.
         node.classList.remove('silver-text');
         node.style.removeProperty('background');
         node.style.removeProperty('background-image');
@@ -6317,30 +6316,27 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         node.style.setProperty('color', '#e2e8f0', 'important');
         node.style.setProperty('display', 'inline-block', 'important');
       });
-      // Do not rely on CSS text-decoration in html2canvas: Android capture
-      // can move the strike to the baseline/underline position. Draw it onto
-      // the final bitmap using the measured old-price element bounds instead.
       if (!isInvoiceCapture) captureNode.querySelectorAll('.line-through').forEach(node => {
         node.style.setProperty('text-decoration', 'none', 'important');
         node.style.setProperty('text-decoration-line', 'none', 'important');
       });
-      captureNode.style.width = width + 'px'; captureNode.style.maxWidth = 'none';
-      captureNode.style.height = isInvoiceCapture ? Math.ceil(source.getBoundingClientRect().height)+'px' : 'auto'; captureNode.style.minHeight = '0';
-      captureNode.style.margin = isInvoiceCapture ? '0 auto' : '0'; captureNode.style.transform = 'none';
-      captureNode.style.boxSizing = 'border-box'; captureNode.style.overflow = 'visible';
-      const captureHost = document.createElement('div');
-      // Recreate the invoice's stylesheet scope so #previewSheetBody rules apply
-      // to the saved image exactly as they do to the visible invoice preview.
-      if (source.matches('.valerian-invoice-paper')) captureHost.id = 'previewSheetBody';
-      // Keep the clone at the preview's real viewport coordinates. foreignObject
-      // rendering clips content placed far outside the viewport; opacity must stay
-      // fully opaque because SVG foreignObject inherits ancestor opacity.
-      captureHost.style.cssText = 'position:fixed;left:'+(isInvoiceCapture?0:rect.left)+'px;top:'+(isInvoiceCapture?0:rect.top)+'px;z-index:-1;opacity:1;pointer-events:none;width:'+width+'px;max-width:'+width+'px;background:transparent;direction:rtl;overflow:visible;';
-      captureHost.appendChild(captureNode);
-      // Keep the invoice capture host outside the scrollable preview sheet and
-      // anchor it at viewport origin; otherwise a narrow capture viewport would
-      // place the cloned invoice outside that viewport and clip it.
-      (isInvoiceCapture ? document.body : (source.parentElement || document.body)).appendChild(captureHost);
+
+      let captureHost = null;
+      if (!isInvoiceCapture) {
+        captureNode.style.width = width + 'px';
+        captureNode.style.maxWidth = 'none';
+        captureNode.style.height = 'auto';
+        captureNode.style.minHeight = '0';
+        captureNode.style.margin = '0';
+        captureNode.style.transform = 'none';
+        captureNode.style.boxSizing = 'border-box';
+        captureNode.style.overflow = 'visible';
+        captureHost = document.createElement('div');
+        captureHost.style.cssText = 'position:fixed;left:'+rect.left+'px;top:'+rect.top+'px;z-index:-1;opacity:1;pointer-events:none;width:'+width+'px;max-width:'+width+'px;background:transparent;direction:rtl;overflow:visible;';
+        captureHost.appendChild(captureNode);
+        (source.parentElement || document.body).appendChild(captureHost);
+      }
+
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       const imageNodes=[...captureNode.querySelectorAll('img')];
       try {
@@ -6357,37 +6353,40 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
           if(!img.naturalWidth||!img.naturalHeight)throw new Error('إحدى صور المستند غير متاحة للتصدير.');
         }));
       } catch(err) {
-        captureHost.remove();
+        if(captureHost)captureHost.remove();
         throw err;
       }
-      // Image decoding can change intrinsic layout after the clone is attached.
-      // Wait for that layout to settle before measuring the final capture bounds.
+
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       const captureBounds = captureNode.getBoundingClientRect();
-      const height = Math.ceil(Math.max(captureNode.scrollHeight, captureBounds.height));
-      if (!width || !height) { captureHost.remove(); throw new Error('تعذر تحديد أبعاد المعاينة.'); }
-      const oldPriceStrikeRects = [...captureNode.querySelectorAll('.offer-old-price')].map(node => {
+      // getBoundingClientRect is the rendered (zoomed) paper size. scrollHeight
+      // is the unzoomed layout size and must not be mixed into invoice dimensions.
+      const height = isInvoiceCapture
+        ? Math.ceil(captureBounds.height)
+        : Math.ceil(Math.max(captureNode.scrollHeight, captureBounds.height));
+      if (!width || !height) { if(captureHost)captureHost.remove(); throw new Error('تعذر تحديد أبعاد المعاينة.'); }
+      const oldPriceStrikeRects = isInvoiceCapture ? [] : [...captureNode.querySelectorAll('.offer-old-price')].map(node => {
         const r = node.getBoundingClientRect();
         return {left:r.left-captureBounds.left,right:r.right-captureBounds.left,midY:r.top-captureBounds.top+(r.height/2)};
       }).filter(r => r.right > r.left);
-      // Arabic must be painted by the browser's native HTML text engine.
-      // html2canvas's default canvas text renderer can split Arabic shaping into
-      // isolated glyphs or smear joined forms on Android WebView. Its
-      // foreignObject renderer delegates glyph shaping, ligatures and bidi
-      // layout back to Chromium, preserving the live poster typography.
+
       captureNode.style.setProperty('text-rendering','geometricPrecision','important');
       captureNode.style.setProperty('-webkit-font-smoothing','antialiased','important');
       captureNode.style.setProperty('font-synthesis','none','important');
-      // Preserve the original high-quality supersampling. The final shared image
-      // remains 1080px wide; this scale improves text and fine-detail rendering.
       const scale = Math.max(2, Math.min(3, window.devicePixelRatio || 2, 9000 / Math.max(width, height)));
       let canvas;
       try {
-        canvas = await capture(captureNode, {scale,foreignObjectRendering:false,backgroundColor:null,useCORS:true,allowTaint:false,logging:false,
-          scrollX:0,scrollY:0,width,height,windowWidth:isInvoiceCapture?Math.max(document.documentElement.clientWidth,window.innerWidth||0):Math.max(width,document.documentElement.clientWidth,window.innerWidth||0),windowHeight:Math.max(height,document.documentElement.clientHeight,window.innerHeight||0),imageTimeout:15000});
-      } finally { captureHost.remove(); }
-      // Paint a true horizontal strike through the center of each old price
-      // after html2canvas has finished, so it cannot drift onto the new price.
+        canvas = await capture(captureNode, {
+          scale,foreignObjectRendering:false,backgroundColor:null,useCORS:true,allowTaint:false,logging:false,
+          scrollX:0,scrollY:0,width,height,
+          // Invoices retain the exact live device viewport so their CSS media
+          // queries and zoomed mobile layout match the preview one-to-one.
+          windowWidth:isInvoiceCapture ? window.innerWidth : Math.max(width,document.documentElement.clientWidth,window.innerWidth||0),
+          windowHeight:isInvoiceCapture ? window.innerHeight : Math.max(height,document.documentElement.clientHeight,window.innerHeight||0),
+          imageTimeout:15000
+        });
+      } finally { if(captureHost)captureHost.remove(); }
+
       if (!isInvoiceCapture && canvas && oldPriceStrikeRects.length) {
         const ctx = canvas.getContext('2d');
         ctx.save();
@@ -6408,14 +6407,11 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         if(!receiptBlob||!receiptBlob.size)throw new Error('تعذر إنشاء ملف الطباعة.');
         return receiptBlob;
       }
-      // Invoice export is the original paper canvas itself: no added frame,
-      // no crop, no resizing pass, and no second canvas. PNG is lossless.
       if (isInvoiceCapture) {
         const invoiceBlob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
         if(!invoiceBlob||!invoiceBlob.size)throw new Error('تعذر إنشاء صورة الفاتورة.');
         return invoiceBlob;
       }
-      // Non-invoice social assets retain their existing platform framing.
       const outputWidth=1080;
       const outerMargin=24;
       const drawW=outputWidth-(outerMargin*2);
