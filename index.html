@@ -6329,7 +6329,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         // Capture the same fixed-size paper geometry displayed in the preview.
         // Never reset zoom or expand scroll content during image export.
         captureHost.id = 'previewSheetBody';
-        captureHost.style.cssText = 'position:fixed;left:0;top:0;z-index:-1;opacity:1;pointer-events:none;width:'+Math.ceil(previewBodyRect.width)+'px!important;max-width:'+Math.ceil(previewBodyRect.width)+'px!important;height:'+Math.ceil(previewBodyRect.height)+'px!important;min-height:0!important;display:flex;justify-content:center;align-items:flex-start;background:transparent;direction:rtl;overflow:hidden;';
+        captureHost.style.cssText = 'position:fixed;left:0;top:0;z-index:-1;opacity:1;pointer-events:none;width:'+Math.ceil(rect.width)+'px!important;max-width:'+Math.ceil(rect.width)+'px!important;height:'+Math.ceil(rect.height)+'px!important;min-height:'+Math.ceil(rect.height)+'px!important;display:flex;justify-content:center;align-items:flex-start;background:transparent;direction:rtl;overflow:visible;';
         captureNode.style.setProperty('height',Math.ceil(rect.height)+'px','important');
         captureNode.style.setProperty('min-height',Math.ceil(rect.height)+'px','important');
         captureNode.style.setProperty('align-self','flex-start','important');
@@ -6391,7 +6391,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       let canvas;
       try {
         canvas = await capture(captureNode, {
-          scale,foreignObjectRendering:false,backgroundColor:null,useCORS:true,allowTaint:false,logging:false,
+          scale,foreignObjectRendering:isInvoiceCapture,backgroundColor:null,useCORS:true,allowTaint:false,logging:false,
           scrollX:0,scrollY:0,width,height,
           windowWidth:window.innerWidth,
           windowHeight:Math.max(window.innerHeight,height),
