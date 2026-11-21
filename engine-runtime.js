@@ -616,7 +616,7 @@
       }catch(e){console.warn('تعذر تنظيف الصور غير المستخدمة؛ تم الاحتفاظ بها لحماية البيانات.',e);}
     }
     // ---- library cache (works offline after the first online load) ----
-    const VAL_LIB_URLS={supabase:'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',QRCode:'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js',html2canvas:'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js'};
+    const VAL_LIB_URLS={supabase:'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',QRCode:'./vendor/qrcode.min.js',html2canvas:'./vendor/html2canvas.min.js'};
     const VAL_LIB_OK={supabase:()=>!!(window.supabase&&window.supabase.createClient),QRCode:()=>typeof window.QRCode==='function',html2canvas:()=>typeof window.html2canvas==='function'};
     function valInject(src,revoke){
       return new Promise(res=>{const s=document.createElement('script');s.src=src;s.onload=()=>{if(revoke)URL.revokeObjectURL(src);res(true);};s.onerror=()=>{if(revoke)URL.revokeObjectURL(src);res(false);};document.head.appendChild(s);});
