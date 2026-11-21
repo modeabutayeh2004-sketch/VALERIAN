@@ -5279,7 +5279,7 @@ async function previewPeriodicReportPrint() {
         }
         if(valDurableWriteError) throw valDurableWriteError;
       }catch(err){console.error('VALERIAN durable startup',err);showToast('تعذر تأكيد التخزين الدائم. صدّر نسخة احتياطية قبل متابعة العمليات.','error');}
-      finally{valStartupLock.remove();window.__valerianStartupComplete=true;window.__valerianReadyResolve?.();}
+      finally{valStartupLock.remove();window.__valerianStartupComplete=true;window.dispatchEvent(new CustomEvent('valerian:startup-complete'));window.__valerianReadyResolve?.();}
     })();
 
     // V19.31: reusable table printing with optional date-range filtering.
