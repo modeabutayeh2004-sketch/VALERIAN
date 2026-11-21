@@ -74,8 +74,9 @@ try{
   if(!eq(r.supplyAfterDispatch,84)) failures.push('supply stock after 4 dispatches expected 84, got '+r.supplyAfterDispatch);
   // Before returns: all 160 in COGS-era; packaging loss line must be 0.
   if(!eq(r.before.packLoss,0)) failures.push('packaging loss before any full return should be 0, got '+r.before.packLoss);
-  // Partial return: supply cost stays in COGS entirely (allocation pending user decision).
-  if(!eq(r.afterPartial.packLoss,0)) failures.push('partial return must NOT reclassify packaging (pending user decision), got '+r.afterPartial.packLoss);
+  // Partial return (owner decision 2026-11-21): shared packaging cost stays fully in COGS
+  // with the retained sale; the carton never comes back, so nothing is split or reclassified.
+  if(!eq(r.afterPartial.packLoss,0)) failures.push('partial return must NOT reclassify shared packaging (decided rule: carton cost stays with retained sale), got '+r.afterPartial.packLoss);
   if(!eq(r.afterPartial.net,r.before.net-0)) { /* partial return changes sales/cogs of products; net moves, no fixed delta asserted */ }
   // Full return on C: 40 reclassified from COGS to loss; writeoff adds 200 (damaged P2).
   if(!eq(r.afterFull.packLoss,40)) failures.push('full return packaging loss expected 40, got '+r.afterFull.packLoss);

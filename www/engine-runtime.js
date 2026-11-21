@@ -3843,7 +3843,10 @@ async function previewPeriodicReportPrint() {
       // Packaging/supplies of a fully returned order are a loss (wastage), not cost of goods
       // sold: nothing was sold. This is a reclassification of the SAME already-recognized
       // supply cost — COGS loses exactly what the loss line gains, never a second deduction.
-      // Partial returns keep the full supply cost in COGS until the owner picks an allocation.
+      // Partial returns (owner decision 2026-11-21): the order's shared packaging (carton)
+      // stays entirely in COGS, attributed to the items the customer kept — the carton never
+      // comes back, so its cost is not split and not reclassified. The returned item comes
+      // back on its own, without the carton. No packaging-condition question is asked.
       let totalReturnedPackagingLoss = 0;
       const isFullyReturnedOrder=o=>(o.items||[]).length>0&&(o.items||[]).some(it=>Number(it.returnedQty||0)>0)&&(o.items||[]).every(it=>Number(it.returnedQty||0)>=Number(it.qty||0));
 
