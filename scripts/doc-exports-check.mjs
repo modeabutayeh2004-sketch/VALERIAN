@@ -204,13 +204,26 @@ try {
   });
 
   // ---- 3) LOYALTY CARD ----
-  await page.evaluate(async () => {
+  // Anchor the points valuation to the CONFIGURED conversion: use a non-1 pointValue so
+  // a hardcoded 1:1 assumption cannot pass. Assert the displayed value = points x config.
+  const loyaltyValue = await page.evaluate(async () => {
+    appState.settings.pointValue=2;
     const lc=appState.customers.find(x=>x.phone==='01000000001');
     if (lc) { lc.points=2660; lc.totalSpent=6386; lc.ordersCount=2; } else appState.customers.push({name:'عميل تجريبي',phone:'01000000001',address:'البلد',points:2660,totalSpent:6386,ordersCount:2});
     window.openDigitalLoyaltyCard('01000000001');
     await new Promise(r=>setTimeout(r,400));
+    const labels=[...document.querySelectorAll('#previewSheetBody div')];
+    const label=labels.find(d=>d.textContent.trim()==='القيمة الشرائية للنقاط');
+    const valueText=label&&label.nextElementSibling?label.nextElementSibling.textContent:'';
+    const m=valueText.match(/[\d,]+(?:\.\d+)?/);
+    const displayed=m?Number(m[0].replace(/,/g,'')):null;
+    return {configured:appState.settings.pointValue,points:2660,expected:2660*appState.settings.pointValue,displayed};
   });
+  console.log('loyalty-points-valuation', JSON.stringify(loyaltyValue));
+  if (loyaltyValue.displayed !== loyaltyValue.expected)
+    failures.push('loyalty: displayed points value '+loyaltyValue.displayed+' != points x configured pointValue ('+loyaltyValue.expected+')');
   const loyaltyRes = await exportCurrentPreview('loyalty');
+  await page.evaluate(() => { appState.settings.pointValue=1; });
 
   // ---- 4) CUSTOMER PROFILE card ----
   await page.evaluate(async () => {
