@@ -6293,17 +6293,13 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
       const rect = source.getBoundingClientRect();
       const isInvoiceCapture = source.matches('.valerian-invoice-paper');
-
-      // Invoice export must rasterize the actual preview node, not a resized clone.
-      // The preview intentionally uses CSS zoom on a 940px paper; removing that
-      // zoom or assigning the visible pixel width as the CSS layout width causes
-      // text, grids and spacing to reflow and overlap in the exported PNG.
+      const previewZoom = isInvoiceCapture ? (parseFloat(getComputedStyle(source).zoom) || 1) : 1;
       const width = isInvoiceCapture
-        ? Math.ceil(rect.width)
+        ? Math.ceil(source.offsetWidth || 940)
         : (format==='social' ? 900 : Math.ceil(rect.width || source.offsetWidth || source.scrollWidth));
       const captureNode = source.cloneNode(true);
 
-      // Keep the existing poster-specific capture fixes isolated from invoices.
+      // Keep poster-only compatibility fixes away from document invoices.
       if (!isInvoiceCapture) captureNode.querySelectorAll('.silver-text').forEach(node => {
         node.classList.remove('silver-text');
         node.style.removeProperty('background');
@@ -6321,15 +6317,20 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         node.style.setProperty('text-decoration-line', 'none', 'important');
       });
 
-      let captureHost = null;
+      let captureHost = document.createElement('div');
       if (isInvoiceCapture) {
-        // Preserve the paper's native 940px layout width and its exact CSS zoom.
-        // Only the raster bounds use the visible on-screen dimensions.
-        captureHost = document.createElement('div');
+        // Render at the paper's native 940px layout width, then downsample the
+        // finished bitmap by the preview's CSS zoom. This preserves the exact
+        // mobile media-query layout without forcing a 342px reflow.
         captureHost.id = 'previewSheetBody';
-        captureHost.style.cssText = 'position:fixed;left:0;top:0;z-index:-1;opacity:1;pointer-events:none;width:940px;max-width:940px;display:flex;justify-content:center;align-items:flex-start;background:transparent;direction:rtl;overflow:visible;';
-        captureHost.appendChild(captureNode);
-        document.body.appendChild(captureHost);
+        captureHost.style.cssText = 'position:fixed;left:0;top:0;z-index:-1;opacity:1;pointer-events:none;width:'+width+'px;max-width:'+width+'px;display:flex;justify-content:center;align-items:flex-start;background:transparent;direction:rtl;overflow:visible;';
+        captureNode.style.setProperty('zoom','1','important');
+        captureNode.style.setProperty('width',width+'px','important');
+        captureNode.style.setProperty('min-width',width+'px','important');
+        captureNode.style.setProperty('max-width',width+'px','important');
+        captureNode.style.setProperty('height','auto','important');
+        captureNode.style.setProperty('margin','0','important');
+        captureNode.style.setProperty('transform','none','important');
       } else {
         captureNode.style.width = width + 'px';
         captureNode.style.maxWidth = 'none';
@@ -6339,11 +6340,10 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         captureNode.style.transform = 'none';
         captureNode.style.boxSizing = 'border-box';
         captureNode.style.overflow = 'visible';
-        captureHost = document.createElement('div');
         captureHost.style.cssText = 'position:fixed;left:'+rect.left+'px;top:'+rect.top+'px;z-index:-1;opacity:1;pointer-events:none;width:'+width+'px;max-width:'+width+'px;background:transparent;direction:rtl;overflow:visible;';
-        captureHost.appendChild(captureNode);
-        (source.parentElement || document.body).appendChild(captureHost);
       }
+      captureHost.appendChild(captureNode);
+      document.body.appendChild(captureHost);
 
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       const imageNodes=[...captureNode.querySelectorAll('img')];
@@ -6361,18 +6361,16 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
           if(!img.naturalWidth||!img.naturalHeight)throw new Error('إحدى صور المستند غير متاحة للتصدير.');
         }));
       } catch(err) {
-        if(captureHost)captureHost.remove();
+        captureHost.remove();
         throw err;
       }
 
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       const captureBounds = captureNode.getBoundingClientRect();
-      // getBoundingClientRect is the rendered (zoomed) paper size. scrollHeight
-      // is the unzoomed layout size and must not be mixed into invoice dimensions.
       const height = isInvoiceCapture
-        ? Math.ceil(rect.height)
-        : Math.ceil(Math.max(captureNode.scrollHeight, captureBounds.height));
-      if (!width || !height) { if(captureHost)captureHost.remove(); throw new Error('تعذر تحديد أبعاد المعاينة.'); }
+        ? Math.ceil(Math.max(captureNode.scrollHeight,captureBounds.height))
+        : Math.ceil(Math.max(captureNode.scrollHeight,captureBounds.height));
+      if (!width || !height) { captureHost.remove(); throw new Error('تعذر تحديد أبعاد المعاينة.'); }
       const oldPriceStrikeRects = isInvoiceCapture ? [] : [...captureNode.querySelectorAll('.offer-old-price')].map(node => {
         const r = node.getBoundingClientRect();
         return {left:r.left-captureBounds.left,right:r.right-captureBounds.left,midY:r.top-captureBounds.top+(r.height/2)};
@@ -6385,15 +6383,13 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       let canvas;
       try {
         canvas = await capture(captureNode, {
-          scale,foreignObjectRendering:isInvoiceCapture,backgroundColor:null,useCORS:true,allowTaint:false,logging:false,
+          scale,foreignObjectRendering:false,backgroundColor:null,useCORS:true,allowTaint:false,logging:false,
           scrollX:0,scrollY:0,width,height,
-          // Invoices retain the exact live device viewport so their CSS media
-          // queries and zoomed mobile layout match the preview one-to-one.
           windowWidth:isInvoiceCapture ? window.innerWidth : Math.max(width,document.documentElement.clientWidth,window.innerWidth||0),
           windowHeight:isInvoiceCapture ? window.innerHeight : Math.max(height,document.documentElement.clientHeight,window.innerHeight||0),
           imageTimeout:15000
         });
-      } finally { if(captureHost)captureHost.remove(); }
+      } finally { captureHost.remove(); }
 
       if (!isInvoiceCapture && canvas && oldPriceStrikeRects.length) {
         const ctx = canvas.getContext('2d');
@@ -6416,7 +6412,17 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         return receiptBlob;
       }
       if (isInvoiceCapture) {
-        const invoiceBlob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+        // Match the visible paper's zoomed pixel bounds exactly; only raster
+        // resolution changes, never the document's layout or proportions.
+        const output=document.createElement('canvas');
+        output.width=Math.max(1,Math.round(rect.width*scale));
+        output.height=Math.max(1,Math.round(rect.height*scale));
+        const out=output.getContext('2d');
+        if(!out)throw new Error('تعذر تجهيز مقاس صورة الفاتورة.');
+        out.imageSmoothingEnabled=true;
+        out.imageSmoothingQuality='high';
+        out.drawImage(canvas,0,0,canvas.width,canvas.height,0,0,output.width,output.height);
+        const invoiceBlob=await new Promise(resolve=>output.toBlob(resolve,'image/png'));
         if(!invoiceBlob||!invoiceBlob.size)throw new Error('تعذر إنشاء صورة الفاتورة.');
         return invoiceBlob;
       }
