@@ -6317,31 +6317,19 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
 
       const captureHost = document.createElement('div');
       if (isInvoiceCapture) {
-        // Keep the same narrow parent width as the preview, but render the paper
-        // at its native layout width. The final bitmap is then scaled by the
-        // exact visible-to-layout ratio, rather than reflowing the document.
+        // Capture the same fixed-size paper geometry displayed in the preview.
+        // Never reset zoom or expand scroll content during image export.
         captureHost.id = 'previewSheetBody';
-        // Export-only layout: keep the phone paper width and minimum height,
-        // but expand the product stack instead of exporting its scroll viewport.
-        captureHost.style.cssText = 'position:fixed;left:0;top:0;z-index:-1;opacity:1;pointer-events:none;width:'+Math.ceil(previewBodyRect.width)+'px!important;max-width:'+Math.ceil(previewBodyRect.width)+'px!important;height:auto!important;min-height:'+Math.ceil(rect.height)+'px!important;display:flex;justify-content:center;align-items:flex-start;background:transparent;direction:rtl;overflow:visible;';
-        captureNode.style.setProperty('height','auto','important');
+        captureHost.style.cssText = 'position:fixed;left:0;top:0;z-index:-1;opacity:1;pointer-events:none;width:'+Math.ceil(previewBodyRect.width)+'px!important;max-width:'+Math.ceil(previewBodyRect.width)+'px!important;height:'+Math.ceil(previewBodyRect.height)+'px!important;min-height:0!important;display:flex;justify-content:center;align-items:flex-start;background:transparent;direction:rtl;overflow:hidden;';
+        captureNode.style.setProperty('height',Math.ceil(rect.height)+'px','important');
         captureNode.style.setProperty('min-height',Math.ceil(rect.height)+'px','important');
         captureNode.style.setProperty('align-self','flex-start','important');
-        captureNode.style.setProperty('zoom','1','important');
-        captureNode.style.setProperty('width',width+'px','important');
-        captureNode.style.setProperty('min-width',width+'px','important');
-        captureNode.style.setProperty('max-width',width+'px','important');
+        captureNode.style.setProperty('width',Math.ceil(rect.width)+'px','important');
+        captureNode.style.setProperty('min-width',Math.ceil(rect.width)+'px','important');
+        captureNode.style.setProperty('max-width',Math.ceil(rect.width)+'px','important');
         captureNode.style.setProperty('margin','0','important');
         captureNode.style.setProperty('transform','none','important');
-        captureNode.style.setProperty('overflow','visible','important');
-        const expandForExport=(selector,styles)=>captureNode.querySelectorAll(selector).forEach(node=>Object.entries(styles).forEach(([key,val])=>node.style.setProperty(key,val,'important')));
-        expandForExport('.receipt-body',{height:'auto',minHeight:'0',flex:'0 0 auto',overflow:'visible',justifyContent:'flex-start',gap:'8px'});
-        expandForExport('.products-list',{height:'auto',minHeight:'0',maxHeight:'none',flex:'0 0 auto',overflow:'visible',overflowY:'visible',overscrollBehavior:'auto'});
-        expandForExport('.product-container',{height:'auto',minHeight:'124px',flex:'0 0 auto',overflow:'visible',justifyContent:'flex-start',gap:'9px',padding:'10px 14px'});
-        expandForExport('.product-header,.product-size-line,.product-stats',{flexShrink:'0'});
-        expandForExport('.summary-container',{height:'auto',minHeight:'0',flex:'0 0 auto',overflow:'visible',justifyContent:'flex-start',gap:'5px',padding:'8px 16px'});
-        expandForExport('.summary-row,.total-gold-bar',{flexShrink:'0'});
-        expandForExport('.info-cards-grid,.social-qr-card,.receipt-footer,.top-banner',{flex:'0 0 auto',minHeight:'0',overflow:'visible'});
+        captureNode.style.setProperty('overflow','hidden','important');
       } else {
         captureHost.style.cssText = 'position:fixed;left:'+rect.left+'px;top:'+rect.top+'px;z-index:-1;opacity:1;pointer-events:none;width:'+width+'px;max-width:'+width+'px;background:transparent;direction:rtl;overflow:visible;';
         captureNode.style.width = width + 'px';
@@ -6378,7 +6366,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
 
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       const captureBounds = captureNode.getBoundingClientRect();
-      const height = Math.ceil(Math.max(captureNode.scrollHeight,captureBounds.height,isInvoiceCapture?rect.height:0));
+      const height = Math.ceil(isInvoiceCapture ? rect.height : Math.max(captureNode.scrollHeight,captureBounds.height));
       if (isInvoiceCapture && Math.abs(captureBounds.width-rect.width)>1) { captureHost.remove(); throw new Error('تعذر مطابقة عرض نسخة التصدير مع نافذة المعاينة.'); }
       if(isInvoiceCapture){const items=[...captureNode.querySelectorAll('.product-container')];const itemRects=items.map(node=>{const r=node.getBoundingClientRect();return {top:r.top-captureBounds.top,bottom:r.bottom-captureBounds.top,height:r.height};});window.__valerianLastInvoiceExportMetrics={previewWidth:rect.width,previewHeight:rect.height,exportWidth:captureBounds.width,exportHeight:height,itemCount:items.length,itemRects};}
       if (!width || !height) { captureHost.remove(); throw new Error('تعذر تحديد أبعاد المعاينة.'); }
@@ -7611,7 +7599,7 @@ html[data-valerian-theme="light"] #kpiWaterOrig + .bottle-content > span{
 #previewSheetBody .left-num{direction:ltr;text-align:left;font-family:'Montserrat','Cairo',sans-serif}
 #previewSheetBody .products-heading{font-size:clamp(11px,1.4vh,13.5px);font-weight:800;color:var(--gold-dark);text-align:right;line-height:1.15;flex-shrink:0;display:flex;align-items:center;gap:8px}
 #previewSheetBody .products-heading:after{content:"";flex:1;height:1px;background:linear-gradient(to left,var(--border-soft),transparent)}
- #previewSheetBody .products-list{flex:.85;min-height:0;display:flex;flex-direction:column;gap:clamp(3px,.45vh,6px);overflow-y:auto;overscroll-behavior:contain}#previewSheetBody .products-list .product-container{flex:0 0 auto;min-height:64px}#previewSheetBody .product-container{background:#fff;border:1px solid var(--border-soft);border-radius:11px;padding:clamp(5px,.7vh,8px) 14px;display:flex;flex-direction:column;justify-content:space-between;gap:clamp(3px,.45vh,6px);flex:.85;min-height:0;overflow:hidden}
+ #previewSheetBody .products-list{flex:1;min-height:0;min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);align-content:stretch;gap:clamp(4px,.55vh,7px);overflow:hidden;overscroll-behavior:contain}#previewSheetBody .products-list:has(.product-container:only-child){grid-template-columns:minmax(0,1fr)}#previewSheetBody .products-list .product-container{min-width:0;min-height:0;height:100%;flex:none}#previewSheetBody .product-container{background:#fff;border:1px solid var(--border-soft);border-radius:9px;padding:clamp(3px,.45vh,6px) 9px;display:flex;flex-direction:column;justify-content:space-between;gap:clamp(2px,.3vh,4px);min-height:0;overflow:hidden}
 #previewSheetBody .product-header{display:flex;justify-content:flex-end;align-items:center;gap:8px;direction:ltr}
 #previewSheetBody .product-title{font-family:'Montserrat',sans-serif;font-size:clamp(11px,1.4vh,13.5px);font-weight:700;color:var(--text-main);line-height:1.15}
 #previewSheetBody .product-num-badge{background:var(--gold-mid);color:#fff;font-size:clamp(8.5px,1.05vh,10px);font-weight:700;width:17px;height:17px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -7639,12 +7627,15 @@ html[data-valerian-theme="light"] #kpiWaterOrig + .bottle-content > span{
 /* Keep product and totals rows intact inside the fixed-height mobile preview. */
 #previewSheetBody .title-status-bar{min-height:52px!important;gap:12px!important}
 #previewSheetBody .doc-heading h2{line-height:1.35!important}
-#previewSheetBody .product-container{height:auto!important;min-height:124px!important;flex:0 0 auto!important;justify-content:flex-start!important;gap:9px!important;padding:10px 14px!important;overflow:visible!important}
-#previewSheetBody .product-header,#previewSheetBody .product-size-line,#previewSheetBody .product-stats{flex-shrink:0!important}
-#previewSheetBody .product-header{min-height:22px!important;line-height:1.25!important}
-#previewSheetBody .product-size-line{line-height:1.35!important;min-height:20px!important;margin-bottom:2px!important}
-#previewSheetBody .product-stats{min-height:44px!important}
-#previewSheetBody .stat-box{min-height:42px!important}
+#previewSheetBody .product-container{height:100%!important;min-height:0!important;flex:none!important;justify-content:space-between!important;gap:3px!important;padding:5px 8px!important;overflow:hidden!important}
+#previewSheetBody .product-header,#previewSheetBody .product-size-line,#previewSheetBody .product-stats{flex-shrink:1!important;min-width:0!important}
+#previewSheetBody .product-header{min-height:0!important;line-height:1.15!important}
+#previewSheetBody .product-title{font-size:clamp(9px,1.05vh,12px)!important;line-height:1.2!important;overflow-wrap:anywhere}
+#previewSheetBody .product-size-line{line-height:1.2!important;min-height:0!important;margin:0!important;padding:0!important;font-size:clamp(8px,.9vh,10px)!important}
+#previewSheetBody .product-stats{min-height:0!important;gap:3px!important}
+#previewSheetBody .stat-box{min-height:0!important;padding:3px 2px!important}
+#previewSheetBody .stat-box span{font-size:clamp(7px,.85vh,9px)!important}
+#previewSheetBody .stat-box strong{font-size:clamp(7px,.8vh,9px)!important}
 #previewSheetBody .summary-container{height:auto!important;min-height:0!important;justify-content:flex-start!important;gap:5px!important;padding:8px 16px!important}
 #previewSheetBody .summary-row,#previewSheetBody .total-gold-bar{flex-shrink:0!important;min-height:18px}
 #previewSheetBody .summary-row{line-height:1.35!important}
