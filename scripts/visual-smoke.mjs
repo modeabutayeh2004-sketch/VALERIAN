@@ -124,8 +124,14 @@ try {
         const productScroller=preview.querySelector('.products-list');
         const previewScroll={clientHeight:productScroller?.clientHeight||0,scrollHeight:productScroller?.scrollHeight||0,overflowY:productScroller?getComputedStyle(productScroller).overflowY:'missing'};
         if(previewItems.length!==4)throw new Error('Preview did not show all four mixed products');
-        const previewRows=previewItems.map(node=>{const r=node.getBoundingClientRect(),p=productScroller.getBoundingClientRect();return {top:r.top-p.top,bottom:r.bottom-p.top,height:r.height,inside:r.top>=p.top-1&&r.bottom<=p.bottom+1};});
-        if(previewScroll.scrollHeight>previewScroll.clientHeight+2||previewRows.some(x=>!x.inside||x.height<45))throw new Error('Multi-product rows are clipped or internally scrollable: '+JSON.stringify({previewScroll,previewRows}));
+        const previewRows=previewItems.map(node=>{
+          const r=node.getBoundingClientRect(),p=productScroller.getBoundingClientRect();
+          const header=node.querySelector('.product-header')?.getBoundingClientRect(),size=node.querySelector('.product-size-line')?.getBoundingClientRect(),stats=node.querySelector('.product-stats')?.getBoundingClientRect();
+          return {top:r.top-p.top,bottom:r.bottom-p.top,height:r.height,inside:r.top>=p.top-1&&r.bottom<=p.bottom+1,
+            contentOrdered:!!header&&!!size&&!!stats&&header.bottom<=size.top+1&&size.bottom<=stats.top+1&&stats.bottom<=r.bottom+1,
+            headerHeight:header?.height||0,sizeHeight:size?.height||0,statsHeight:stats?.height||0};
+        });
+        if(previewScroll.scrollHeight>previewScroll.clientHeight+2||previewRows.some(x=>!x.inside||x.height<45||!x.contentOrdered))throw new Error('Multi-product rows or their text blocks overlap or clip: '+JSON.stringify({previewScroll,previewRows}));
         const blob=await window.__valerianCreatePreviewImageBlob();
         const bitmap=await createImageBitmap(blob);
         const metrics=window.__valerianLastInvoiceExportMetrics;
