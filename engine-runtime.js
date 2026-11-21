@@ -2852,9 +2852,9 @@ async function previewPeriodicReportPrint() {
         const cssWidth=Math.ceil(Math.max(clone.scrollWidth,rect.width,exportWidth));
         const cssHeight=Math.ceil(Math.max(clone.scrollHeight,rect.height));
         if(!cssWidth||!cssHeight)throw new Error('تعذر تحديد أبعاد التصميم للتصدير');
-        const maxPixels=isCard?12000000:20000000;
+        const maxPixels=isCard?18000000:24000000;
         const maxSide=9000;
-        const preferredScale=isCard?1.8:1.5;
+        const preferredScale=isCard?3:2.5;
         const scale=Math.max(1,Math.min(preferredScale,Math.sqrt(maxPixels/Math.max(1,cssWidth*cssHeight)),maxSide/Math.max(cssWidth,cssHeight)));
         const canvas=await window.html2canvas(clone,{
           scale,backgroundColor:'#fffaf1',useCORS:true,allowTaint:false,logging:false,

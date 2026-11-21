@@ -6598,13 +6598,13 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         if(!invoiceBlob||!invoiceBlob.size)throw new Error('تعذر إنشاء صورة الفاتورة.');
         return invoiceBlob;
       }
-      const outputWidth=1080;
-      const outerMargin=24;
+      const outputWidth=2160;
+      const outerMargin=48;
       const drawW=outputWidth-(outerMargin*2);
       const factor=drawW/canvas.width;
       const drawH=Math.ceil(canvas.height*factor);
       const outputHeight=drawH+(outerMargin*2);
-      if(outputHeight>6000)throw new Error('المستند طويل جدًا لتصديره كصورة واحدة.');
+      if(outputHeight>12000)throw new Error('المستند طويل جدًا لتصديره كصورة واحدة.');
       const output=document.createElement('canvas');output.width=outputWidth;output.height=outputHeight;
       const out=output.getContext('2d');if(!out)throw new Error('تعذر تجهيز مقاس المشاركة.');
       const bg=out.createLinearGradient(0,0,outputWidth,outputHeight);
