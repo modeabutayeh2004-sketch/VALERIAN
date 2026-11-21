@@ -2,7 +2,7 @@
 'use strict';
 
 // Bump this value whenever the HTML, application engine, or offline strategy changes.
-const CACHE_NAME = 'valerian-app-shell-v20-20261120-arabic-native-poster-gold91';
+const CACHE_NAME = 'valerian-app-shell-v20-20261121-cancel-shipping-offline-ui';;
 const APP_SHELL = [
   './index.html',
   './engine-runtime.js?v=v20-20261120-arabic-native-poster-gold91',
