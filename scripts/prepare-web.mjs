@@ -27,6 +27,9 @@ fs.rmSync(out,{recursive:true,force:true});fs.mkdirSync(out,{recursive:true});
 for(const file of ['index.html','engine-runtime.js','service-worker.js']) fs.copyFileSync(path.join(root,file),path.join(out,file));
 // The service worker pre-caches this exact path. Include the source emblem in
 // the web bundle so cache.addAll() succeeds during first installation.
+const vendorOut=path.join(out,'vendor');fs.mkdirSync(vendorOut,{recursive:true});
+fs.copyFileSync(path.join(root,'node_modules/html2canvas/dist/html2canvas.min.js'),path.join(vendorOut,'html2canvas.min.js'));
+fs.copyFileSync(path.join(root,'node_modules/qrcodejs/qrcode.min.js'),path.join(vendorOut,'qrcode.min.js'));
 const assetsOut=path.join(out,'assets');fs.mkdirSync(assetsOut,{recursive:true});
 fs.copyFileSync(path.join(root,'assets/valerian-icon.jpg'),path.join(assetsOut,'valerian-icon.jpg'));
 const icon=fs.readFileSync(path.join(root,'assets/valerian-icon.jpg'));
