@@ -3665,14 +3665,23 @@ async function previewPeriodicReportPrint() {
       ctx.fillStyle='#96743d';ctx.font='700 31px Arial,Tahoma,sans-serif';ctx.fillText('THE ART OF FRAGRANCE',groupX+logoW+32,166);
       ctx.restore();
       ctx.fillStyle='#493719';ctx.textAlign='center';ctx.direction='rtl';ctx.font='800 56px Cairo,Tahoma,Arial,sans-serif';ctx.fillText('قائمة العروض والتخفيضات الحصرية',W/2,265);
-      ctx.fillStyle='#96743d';ctx.font='400 30px Cairo,Tahoma,Arial,sans-serif';ctx.fillText('تاريخ الإصدار: '+new Date().toLocaleDateString('ar-EG'),W/2,340);
-      ctx.strokeStyle='#d8c79d';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(margin,405);ctx.lineTo(W-margin,405);ctx.stroke();
+      ctx.fillStyle='#96743d';ctx.font='400 30px Cairo,Tahoma,Arial,sans-serif';ctx.fillText('تاريخ الإصدار: '+new Date().toLocaleDateString('ar-EG'),W/2,330);
+      // V20: approved catalog design — diamond ornament rule under the header.
+      const ruleY=398;
+      ctx.strokeStyle='#c9b37e';ctx.lineWidth=3;
+      ctx.beginPath();ctx.moveTo(margin+120,ruleY);ctx.lineTo(W/2-70,ruleY);ctx.moveTo(W/2+70,ruleY);ctx.lineTo(W-margin-120,ruleY);ctx.stroke();
+      ctx.save();ctx.translate(W/2,ruleY);ctx.rotate(Math.PI/4);ctx.fillStyle='#b08d3e';ctx.fillRect(-14,-14,28,28);ctx.restore();
       const premium=layout==='premium';
-      const cols=premium?1:2,rows=premium?1:2,gap= premium?40:34;
-      const areaTop=455,areaBottom=H-150,cellW=(W-margin*2-gap*(cols-1))/cols,cellH=(areaBottom-areaTop-gap*(rows-1))/rows;
+      const cols=premium?1:2,rows=premium?1:2,gap=40;
+      const areaTop=458,areaBottom=H-150,cellW=(W-margin*2-gap*(cols-1))/cols,cellH=(areaBottom-areaTop-gap*(rows-1))/rows;
       for(let i=0;i<products.length;i++){
         const p=products[i],col=i%cols,row=Math.floor(i/cols),x=margin+col*(cellW+gap),y=areaTop+row*(cellH+gap);
-        v1940RoundRect(ctx,x,y,cellW,cellH,34,'#fffdf8','#d8c79d');
+        ctx.save();ctx.shadowColor='rgba(90,70,35,0.18)';ctx.shadowBlur=26;ctx.shadowOffsetY=10;
+        v1940RoundRect(ctx,x,y,cellW,cellH,36,'#ffffff','#e2d5b8');
+        ctx.restore();
+        v1940RoundRect(ctx,x,y,cellW,cellH,36,null,'#e2d5b8');
+        const priceNum=Number(p.price)||0, offerNum=Number(p.offerPrice||p.price)||0;
+        const discountPct=priceNum>0&&offerNum<priceNum?Math.round((1-offerNum/priceNum)*100):0;
         const img=await v1940LoadImage(p.image);
         if(premium){
           const imageBox=1050,imageX=x+cellW-imageBox-70,imageY=y+110;
@@ -3685,13 +3694,36 @@ async function previewPeriodicReportPrint() {
           yy+=v1940Text(ctx,'قبل الخصم: '+formatCurrency(p.price),tx,yy,tw,{size:48,color:'#a28d69',maxLines:1,strike:true})+35;
           v1940Text(ctx,'بعد الخصم: '+formatCurrency(p.offerPrice||p.price),tx,yy,tw,{size:76,weight:'900',color:'#765629',maxLines:1});
         }else{
-          const imageSize=650,imageX=x+(cellW-imageSize)/2,imageY=y+90;
-          v1940RoundRect(ctx,imageX-15,imageY-15,imageSize+30,imageSize+30,26,'#fffaf1','#e6d7b9');v1940DrawImage(ctx,img,imageX,imageY,imageSize,imageSize);
-          ctx.fillStyle='#80632d';ctx.font='800 32px Cairo,sans-serif';ctx.textAlign='center';ctx.fillText('عرض حصري',x+cellW/2,y+820);
-          let yy=y+890;yy+=v1940Text(ctx,p.name,x+cellW/2,yy,cellW-110,{size:48,weight:'900',align:'center',maxLines:2})+24;
-          yy+=v1940Text(ctx,'الحجم: '+(p.size||'—'),x+cellW/2,yy,cellW-110,{size:34,color:'#806a48',align:'center',maxLines:1})+30;
-          yy+=v1940Text(ctx,'قبل الخصم: '+formatCurrency(p.price),x+cellW/2,yy,cellW-110,{size:34,color:'#a28d69',align:'center',maxLines:1,strike:true})+20;
-          v1940Text(ctx,'بعد الخصم: '+formatCurrency(p.offerPrice||p.price),x+cellW/2,yy,cellW-110,{size:48,weight:'900',color:'#765629',align:'center',maxLines:1});
+          // V20: approved catalog design — discount ribbon, larger photo, size chip, gold price band.
+          if(discountPct>0){
+            const pillW=320,pillH=100,px=x+cellW-pillW-26,py=y-40;
+            const g=ctx.createLinearGradient(px,py,px,py+pillH);g.addColorStop(0,'#d9b45f');g.addColorStop(1,'#b08d3e');
+            v1940RoundRect(ctx,px,py,pillW,pillH,48,g,null);
+            ctx.fillStyle='#fff';ctx.font='800 52px Cairo,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+            ctx.fillText('خصم '+discountPct+'٪',px+pillW/2,py+pillH/2+4);ctx.textBaseline='top';
+          }
+          const imageSize=800,imageX=x+(cellW-imageSize)/2,imageY=y+70;
+          v1940RoundRect(ctx,imageX-15,imageY-15,imageSize+30,imageSize+30,26,'#fbf7ee','#eadfc8');v1940DrawImage(ctx,img,imageX,imageY,imageSize,imageSize);
+          let yy=y+930;
+          yy+=v1940Text(ctx,p.name,x+cellW/2,yy,cellW-110,{size:56,weight:'900',align:'center',maxLines:2})+28;
+          const sizeText='الحجم: '+(p.size||'—');
+          ctx.font='700 34px Cairo,sans-serif';
+          const sw=ctx.measureText(sizeText).width+72;
+          v1940RoundRect(ctx,x+(cellW-sw)/2,yy,sw,64,32,'#f3ecdc',null);
+          ctx.fillStyle='#806a48';ctx.textAlign='center';ctx.fillText(sizeText,x+cellW/2,yy+12);
+          const bandH=172,bandY=y+cellH-bandH;
+          ctx.save();v1940RoundRect(ctx,x,bandY,cellW,bandH,36,'#f7eeda',null);ctx.restore();
+          ctx.fillStyle='#f7eeda';ctx.fillRect(x,bandY,cellW,bandH/2);
+          v1940RoundRect(ctx,x,bandY,cellW,bandH,36,null,'#e2d5b8');
+          const by=bandY+26;
+          ctx.fillStyle='#a28d69';ctx.font='400 34px Cairo,sans-serif';ctx.textAlign='center';
+          const beforeText='قبل: '+formatCurrency(priceNum);
+          const bw=ctx.measureText(beforeText).width;
+          ctx.fillText(beforeText,x+cellW/2,by);
+          ctx.strokeStyle='#a28d69';ctx.lineWidth=3;
+          ctx.beginPath();ctx.moveTo(x+cellW/2-bw/2,by+20);ctx.lineTo(x+cellW/2+bw/2,by+20);ctx.stroke();
+          ctx.fillStyle='#7a5a22';ctx.font='900 64px Cairo,sans-serif';
+          ctx.fillText(formatCurrency(offerNum),x+cellW/2,by+58);
         }
       }
       ctx.fillStyle='#96743d';ctx.font='400 24px Cairo,Tahoma,sans-serif';ctx.textAlign='center';ctx.fillText(`VALERIAN  •  ${pageNo} / ${totalPages}`,W/2,H-75);
