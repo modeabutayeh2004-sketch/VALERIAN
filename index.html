@@ -5392,24 +5392,79 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       return '<article class="valerian-share-card valerian-invoice-paper" dir="rtl"><header class="top-banner"><div class="brand-center">'+logo+'<div class="brand-words"><h1>VALERIAN</h1><p>THE ART OF FRAGRANCE</p></div></div><div><span class="reservation-pill">'+value(data.banner||data.subtitle||'CUSTOMER DOCUMENT')+'</span></div></header><main class="receipt-body"><div class="title-status-bar"><div class="doc-heading"><span>'+value(data.kicker||'CUSTOMER DOCUMENT')+'</span><h2>'+value(data.title)+'</h2></div><div class="status-tag">'+value(data.status||'—')+'</div></div><div class="info-cards-grid">'+fields+'</div><div class="products-heading">'+value(data.productsTitle||'تفاصيل المنتجات')+'</div>'+ '<div class="products-list" style="--product-columns:'+productColumns+';--product-rows:'+productRows+';--product-font:'+productFontSize+'px">'+(products||'<div class="product-container">لا توجد أصناف مسجلة</div>')+'</div>'+'<div class="summary-container">'+summary+'<div class="total-gold-bar"><span>'+value(data.totalLabel||'قيمة المستند الكاملة')+'</span><span class="price">'+value(data.totalDisplay!==undefined?data.totalDisplay:money(data.total))+'</span></div></div>'+qr+'</main><footer class="receipt-footer"><div>'+value(data.footer||'نشكركم لاختيار VALERIAN • أصالة العطر • دقة الاختيار • رفاهية التجربة')+'</div><div class="en-bottom">VALERIAN - THE ART OF FRAGRANCE</div></footer></article>';
     }
 
-    function openThermalReceiptPreview(order) {
+    async function openThermalReceiptPreview(order) {
       const delivered=isMobileOrderDelivered(order);
       const reservation=order.mode==='reservation'&&!delivered;
       activePreviewShareContext={kind:'order',id:String(order.id||''),phone:String(order.phone||''),name:String(order.name||''),total:Number(order.grandTotal||0),remaining:Number(order.remainingAmount||0)};
       document.getElementById('previewSheetTitle').textContent=reservation?'إيصال حجز VALERIAN':'فاتورة مبيعات VALERIAN';
       const esc=value=>escapeHtmlMobile(value===undefined||value===null||value===''?'—':value);
-      const rows=(order.items||[]).map((item,index)=>{
-        const qty=Math.max(0,Number(item.qty||0)),unit=Number(item.price??item.unitPrice??item.salePrice??0),total=Number(item.total??(qty*unit));
-        return '<article class="valerian-invoice-product"><div class="valerian-invoice-product-head"><span class="valerian-invoice-product-name">'+esc(item.name||item.productName||'منتج')+'</span><span class="valerian-invoice-product-index">'+(index+1)+'</span></div><div class="valerian-invoice-product-size">'+esc(item.size||'')+'</div><div class="valerian-invoice-product-stats"><div><span>الكمية</span><strong>'+qty+'</strong></div><div><span>سعر الوحدة</span><strong>'+fmtEgp(unit)+'</strong></div><div><span>الإجمالي</span><strong>'+fmtEgp(total)+'</strong></div></div></article>';
+      const egp=n=>Number(n||0).toLocaleString('en-US',{maximumFractionDigits:2})+' EGP';
+      const o=order;
+      const paid=Number(o.depositAmount||0),remaining=Number(o.remainingAmount||0),grand=Number(o.grandTotal||0);
+      const subtotal=Number(o.subtotal??grand),shipping=Number(o.shipping||0),discount=Number(o.discount||0)+Number(o.pointsDiscount||0);
+      const stateLabel=reservation?'قيد الانتظار / حجز مسبق':(o.status||'تم البيع');
+      const docDate=new Date(o.date||Date.now());
+      const dateLabel=docDate.toLocaleDateString('en-CA')+' · '+docDate.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      const items=(o.items||[]).map(it=>{
+        const name=esc(it.name||it.productName||'صنف');
+        const size=esc(it.size||'');
+        const qty=Math.max(0,Number(it.qty||0));
+        const unit=Number(it.price??it.unitPrice??it.salePrice??0);
+        const total=Number(it.total??(unit*qty));
+        return '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 2px;border-bottom:1px dashed #e0d2b2">'
+          +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+          +'<span dir="ltr" style="font-size:21px;font-weight:900;color:#30271d">'+name+'</span>'
+          +(size?'<span dir="rtl" style="font-size:15px;font-weight:700;color:#8a7a5c;background:#f4ead3;border-radius:8px;padding:2px 10px">'+size+'</span>':'')
+          +'<span dir="ltr" style="font-size:16px;font-weight:900;color:#75571e;border:1.5px solid #d9c49a;border-radius:8px;padding:2px 10px">× '+qty+'</span>'
+          +'</div>'
+          +'<div dir="ltr" style="font-size:20px;font-weight:900;color:#30271d;white-space:nowrap">'+egp(total)+'</div></div>';
       }).join('');
-      const dateLabel=new Date(order.date||Date.now()).toLocaleDateString('ar-EG');
-      const paid=Number(order.depositAmount||0),remaining=Number(order.remainingAmount||0),grand=Number(order.grandTotal||0);
-      const subtotal=Number(order.subtotal??grand),shipping=Number(order.shipping||0),discount=Number(order.discount||0)+Number(order.pointsDiscount||0);
-      const title=reservation?'إيصال حجز مسبق':'فاتورة إتمام بيع';
-      const stateLabel=reservation?'قيد الانتظار / حجز مسبق':(order.status||'تم البيع');
-      document.getElementById('previewSheetBody').innerHTML=renderValerianOriginalDocument({banner:reservation?'RESERVATION CONFIRMATION':'SALES INVOICE',kicker:'CUSTOMER DOCUMENT',title, status:stateLabel, fields:[{label:'رقم المستند',value:order.id,ltr:true},{label:'التاريخ',value:dateLabel,ltr:true},{label:'اسم العميل',value:order.name},{label:'رقم الهاتف',value:order.phone,ltr:true},{label:'العنوان',value:order.address,full:true}],items:(order.items||[]).map(item=>{const qty=Math.max(0,Number(item.qty||0)),unit=Number(item.price??item.unitPrice??item.salePrice??0);return {name:item.name||item.productName||'منتج',size:item.size,qty,unit,total:Number(item.total??qty*unit)};}),summary:[{label:'إجمالي المنتجات',value:subtotal},...(shipping>0?[{label:'الشحن',value:shipping}]:[]),...(discount>0?[{label:'الخصومات',display:'−'+fmtEgp(discount)}]:[]),{label:reservation?'المقدم المستلم':'المبلغ المسدد',value:paid},{label:'المتبقي',value:remaining}],total:grand,totalLabel:reservation?'قيمة الفاتورة الكاملة':'إجمالي البيع'});
+      // Only the owner's configured platform links produce a QR. No configured links = no QR box;
+      // a placeholder link is never invented.
+      const qrData=(typeof prepareValerianCardQrDataUrl==='function')?await prepareValerianCardQrDataUrl():'';
+      const summaryRows=
+        '<div style="display:flex;justify-content:space-between;font-size:19px;padding:3px 0"><span style="color:#80643a;font-weight:800">إجمالي المنتجات</span><span dir="ltr" style="font-weight:900;color:#30271d">'+egp(subtotal)+'</span></div>'
+        +(shipping>0?'<div style="display:flex;justify-content:space-between;font-size:19px;padding:3px 0"><span style="color:#80643a;font-weight:800">الشحن</span><span dir="ltr" style="font-weight:900;color:#30271d">'+egp(shipping)+'</span></div>':'')
+        +(discount>0?'<div style="display:flex;justify-content:space-between;font-size:19px;padding:3px 0"><span style="color:#80643a;font-weight:800">الخصومات</span><span dir="ltr" style="font-weight:900;color:#30271d">−'+egp(discount)+'</span></div>':'')
+        +'<div style="display:flex;justify-content:space-between;font-size:19px;padding:3px 0"><span style="color:#80643a;font-weight:800">'+(reservation?'المقدم المستلم':'المبلغ المسدد')+'</span><span dir="ltr" style="font-weight:900;color:#2e7d32">'+egp(paid)+'</span></div>'
+        +'<div style="display:flex;justify-content:space-between;font-size:22px;padding:8px 0 6px;border-top:1.5px solid #d9c49a;margin-top:6px"><span style="color:#8a3b12;font-weight:900">المتبقي</span><span dir="ltr" style="font-weight:900;color:#8a3b12">'+egp(remaining)+'</span></div>';
+      const logo=(typeof VALERIAN_CARD_EMBLEM!=='undefined')?VALERIAN_CARD_EMBLEM:'';
+      const html='<article dir="rtl" style="width:860px;margin:0 auto;background:linear-gradient(165deg,#fffdf7 0%,#f9f1e0 70%,#f4e9d1 100%);color:#30271d;border:1.5px solid #c9a55e;border-radius:28px;overflow:hidden;box-shadow:0 16px 44px rgba(87,64,30,.14);font-family:\'Cairo\',Arial,Tahoma,sans-serif;line-height:1.5;box-sizing:border-box;padding:22px 36px 18px">'
+        +'<header style="display:flex;align-items:center;justify-content:space-between;gap:12px">'
+        +'<div style="display:flex;align-items:center;gap:12px"><img src="'+logo+'" alt="VALERIAN" style="width:46px;height:46px;display:block;filter:sepia(1) saturate(1.8) hue-rotate(355deg) brightness(.82)"><div><div style="font:700 26px Georgia,serif;letter-spacing:4px;color:#795b2c">VALERIAN</div><div style="font-size:10px;letter-spacing:3px;color:#a8873e">THE ART OF FRAGRANCE</div></div></div>'
+        +'<div style="display:inline-flex;align-items:center;font-size:17px;font-weight:900;color:#75571e;padding:7px 18px;line-height:1.4;border:1.5px solid #a8873e;border-radius:50px;background:rgba(255,255,255,.6)">'+esc(stateLabel)+'</div>'
+        +'</header>'
+        +'<div style="margin-top:14px;padding:16px 18px;border-radius:18px;background:linear-gradient(135deg,#8a6a2f,#b99555);color:#fff;display:flex;align-items:center;justify-content:space-between">'
+        +'<div style="font-size:19px;font-weight:800;line-height:1.4">'+(reservation?'قيمة الفاتورة الكاملة':'إجمالي البيع')+'</div>'
+        +'<div dir="ltr" style="font-size:42px;font-weight:900;line-height:1.15">'+egp(grand)+'</div></div>'
+        +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-top:14px">'
+        +'<div style="font-size:17px;color:#80643a;font-weight:800">رقم المستند<br><span dir="ltr" style="font-size:21px;color:#30271d;font-weight:900">'+esc(o.id)+'</span></div>'
+        +'<div style="font-size:17px;color:#80643a;font-weight:800">التاريخ<br><span dir="ltr" style="font-size:21px;color:#30271d;font-weight:900">'+esc(dateLabel)+'</span></div>'
+        +'<div style="font-size:17px;color:#80643a;font-weight:800">اسم العميل<br><span style="font-size:21px;color:#30271d;font-weight:900">'+esc(o.name)+'</span></div>'
+        +'<div style="font-size:17px;color:#80643a;font-weight:800">رقم الهاتف<br><span dir="ltr" style="font-size:21px;color:#30271d;font-weight:900">'+esc(o.phone)+'</span></div>'
+        +'</div>'
+        +'<div style="margin-top:14px;padding:4px 14px 8px;border:1.5px solid #d9c49a;border-radius:16px;background:#fffdf8">'
+        +'<div style="font-size:17px;color:#80643a;font-weight:800;padding:6px 2px">تفاصيل المنتجات</div>'
+        +items
+        +'</div>'
+        +'<div style="margin-top:12px;padding:10px 16px;border:1.5px solid #d9c49a;border-radius:16px;background:#fffaf0">'
+        +summaryRows
+        +'</div>'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px">'
+        +'<div style="font-size:13px;color:#8a7a5c;line-height:1.6">شكراً لثقتكم — نعتز بكونكم جزءاً من عائلة فاليريان<br>VALERIAN · THE ART OF FRAGRANCE</div>'
+        +(qrData?'<div style="padding:7px;border:1.5px solid #d9c49a;border-radius:14px;background:#ffffff;display:flex;flex-direction:column;align-items:center">'
+        +'<img data-valerian-card-qr="1" src="'+qrData+'" alt="QR" style="width:130px;height:130px;display:block">'
+        +'<div style="font-size:10px;color:#80643a;font-weight:800;margin-top:4px">امسح لمتابعة منصاتنا</div>'
+        +'</div>':'')
+        +'</div>'
+        +'</article>';
+      document.getElementById('previewSheetBody').innerHTML='<div class="v1960-compact-invoice" data-valerian-svg-capture="860" dir="rtl" style="width:860px;max-width:860px;margin:0 auto;position:relative">'+html+'</div>';
       openSheet('previewModalSheet');
-      ensureMobileInvoiceQr(document.getElementById('previewSheetBody')).catch(err=>{console.error('VALERIAN invoice QR failed',err);showToast('تعذر تجهيز QR: '+String(err?.message||err));});
+      requestAnimationFrame(()=>{
+        const body=document.getElementById('previewSheetBody');
+        const wrap=body&&body.querySelector('.v1960-compact-invoice');
+        if(wrap){ const avail=body.clientWidth||360; wrap.style.zoom=String(Math.min(1,avail/860)); }
+      });
     }
     window.__valerianOpenThermalReceiptPreview=openThermalReceiptPreview;
 
@@ -6409,8 +6464,9 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
       const rect = source.getBoundingClientRect();
       const isInvoiceCapture = source.matches('.valerian-invoice-paper');
-      const cardSpec = (source.getAttribute('data-valerian-svg-capture')||'').match(/^(\d+)x(\d+)$/);
+      const cardSpec = (source.getAttribute('data-valerian-svg-capture')||'').match(/^(\d+)(?:x(\d+))?$/);
       const isCardCapture = !isInvoiceCapture && !!cardSpec;
+      const isDocCapture = isCardCapture && !cardSpec[2];
       const isSvgCapture = isInvoiceCapture || isCardCapture;
       const previewBody = document.getElementById('previewSheetBody');
       const previewBodyRect = previewBody ? previewBody.getBoundingClientRect() : rect;
@@ -6519,7 +6575,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
 
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       const captureBounds = captureNode.getBoundingClientRect();
-      const height = Math.ceil(isInvoiceCapture ? rect.height : (isCardCapture ? Number(cardSpec[2]) : Math.max(captureNode.scrollHeight,captureBounds.height)));
+      const height = Math.ceil(isInvoiceCapture ? rect.height : ((isCardCapture && cardSpec[2]) ? Number(cardSpec[2]) : Math.max(captureNode.scrollHeight,captureBounds.height)));
       if (isInvoiceCapture && Math.abs(captureBounds.width-rect.width)>1) { captureHost.remove(); throw new Error('تعذر مطابقة عرض نسخة التصدير مع نافذة المعاينة.'); }
       if(isInvoiceCapture){const items=[...captureNode.querySelectorAll('.product-container')];const itemRects=items.map(node=>{const r=node.getBoundingClientRect();return {top:r.top-captureBounds.top,bottom:r.bottom-captureBounds.top,height:r.height};});window.__valerianLastInvoiceExportMetrics={previewWidth:rect.width,previewHeight:rect.height,exportWidth:captureBounds.width,exportHeight:height,itemCount:items.length,itemRects};}
       if (!width || !height) { captureHost.remove(); throw new Error('تعذر تحديد أبعاد المعاينة.'); }
@@ -6629,7 +6685,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         if(!receiptBlob||!receiptBlob.size)throw new Error('تعذر إنشاء ملف الطباعة.');
         return receiptBlob;
       }
-      if (isInvoiceCapture) {
+      if (isInvoiceCapture || isDocCapture) {
         const invoiceBlob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
         if(!invoiceBlob||!invoiceBlob.size)throw new Error('تعذر إنشاء صورة الفاتورة.');
         return invoiceBlob;
