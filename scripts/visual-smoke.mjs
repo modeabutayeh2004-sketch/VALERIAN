@@ -124,21 +124,23 @@ try {
         const productScroller=preview.querySelector('.products-list');
         const previewScroll={clientHeight:productScroller?.clientHeight||0,scrollHeight:productScroller?.scrollHeight||0,overflowY:productScroller?getComputedStyle(productScroller).overflowY:'missing'};
         if(previewItems.length!==4)throw new Error('Preview did not show all four mixed products');
-        if(!(previewScroll.scrollHeight>previewScroll.clientHeight&&previewScroll.overflowY==='auto'))throw new Error('Product list is not scrollable within the fixed mobile preview: '+JSON.stringify(previewScroll));
+        const previewRows=previewItems.map(node=>{const r=node.getBoundingClientRect(),p=productScroller.getBoundingClientRect();return {top:r.top-p.top,bottom:r.bottom-p.top,height:r.height,inside:r.top>=p.top-1&&r.bottom<=p.bottom+1};});
+        if(previewScroll.scrollHeight>previewScroll.clientHeight+2||previewRows.some(x=>!x.inside||x.height<45))throw new Error('Multi-product rows are clipped or internally scrollable: '+JSON.stringify({previewScroll,previewRows}));
         const blob=await window.__valerianCreatePreviewImageBlob();
         const bitmap=await createImageBitmap(blob);
         const metrics=window.__valerianLastInvoiceExportMetrics;
-        const allRowsPresent=metrics?.itemCount===4&&metrics.itemRects.every((r,i)=>r.height>=64&&(i===0||r.top>=metrics.itemRects[i-1].bottom-1));
-        const fullHeight=bitmap.height>Math.round(previewRect.height*3)+100;
+        const samePageSize=Math.abs(bitmap.width-Math.round(previewRect.width*3))<=3&&Math.abs(bitmap.height-Math.round(previewRect.height*3))<=3;
+        const allRowsPresent=metrics?.itemCount===4&&metrics.itemRects.every(r=>r.height>=45);
+        const fullHeight=bitmap.height===Math.round(previewRect.height*3);
         const dataUrl=await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||''));reader.readAsDataURL(blob);});
-        const result={previewHeight:Math.round(previewRect.height),previewItemCount:previewItems.length,previewScroll,exportWidth:bitmap.width,exportHeight:bitmap.height,metrics,allRowsPresent,fullHeight,bytes:blob.size,dataUrl};
+        const result={previewHeight:Math.round(previewRect.height),previewWidth:Math.round(previewRect.width),previewItemCount:previewItems.length,previewScroll,previewRows,exportWidth:bitmap.width,exportHeight:bitmap.height,metrics,allRowsPresent,fullHeight,samePageSize,bytes:blob.size,dataUrl};
         bitmap.close?.();
         return result;
       });
       fs.writeFileSync('www/visual-multiproduct-invoice-export.png',Buffer.from(multiProductCheck.dataUrl.split(',')[1],'base64'));
       delete multiProductCheck.dataUrl;
       console.log(JSON.stringify({multiProductExport:multiProductCheck.allRowsPresent&&multiProductCheck.fullHeight?'ok':'failed',...multiProductCheck}));
-      if(!multiProductCheck.allRowsPresent||!multiProductCheck.fullHeight)throw new Error('Multi-product invoice export did not preserve every product in a full-height image: '+JSON.stringify(multiProductCheck));
+      if(!multiProductCheck.allRowsPresent||!multiProductCheck.fullHeight||!multiProductCheck.samePageSize)throw new Error('Multi-product invoice export does not match the fixed preview page or preserve every product: '+JSON.stringify(multiProductCheck));
       const documentVariants=await page.evaluate(async()=>{
         const verify=async(kind)=>{
           const node=document.querySelector('#previewSheetBody > .valerian-invoice-paper');
