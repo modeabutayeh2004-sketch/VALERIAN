@@ -96,7 +96,7 @@ try {
         const dimensionsValid=Math.abs(bitmap.width-expectedWidth)<=3&&Math.abs(bitmap.height-expectedHeight)<=3&&bitmap.width<=1170&&bitmap.width>=900&&bitmap.height<=3000&&bitmap.height>=1800;
         const visibleContentValid=visibleSamples>=1500;
         const dataUrl=await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||''));reader.readAsDataURL(blob);});
-        return {qrImages:qrImages.length,mobileModal:modalMetrics,paperCssWidth:paperRect.width,paperCssHeight:paperRect.height,expectedWidth,expectedHeight,exportBytes:blob.size,width:bitmap.width,height:bitmap.height,visibleSamples,dimensionsValid,visibleContentValid,dataUrl};
+        return {qrImages:qrImages.length,mobileModal:modalMetrics,paperCssWidth:paperRect.width,paperCssHeight:paperRect.height,expectedWidth,expectedHeight,exportBytes:blob.size,width:bitmap.width,height:bitmap.height,visibleSamples,dimensionsValid,visibleContentValid,captureDebug:window.__valerianInvoiceCaptureDebug,dataUrl};
       });
       fs.writeFileSync('www/visual-invoice-export.png',Buffer.from(invoiceCheck.dataUrl.split(',')[1],'base64'));
       delete invoiceCheck.dataUrl;
