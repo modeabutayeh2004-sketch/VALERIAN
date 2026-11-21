@@ -121,14 +121,17 @@ try {
         const preview=document.querySelector('#previewSheetBody > .valerian-invoice-paper');
         const previewRect=preview.getBoundingClientRect();
         const previewItems=[...preview.querySelectorAll('.product-container')];
+        const productScroller=preview.querySelector('.products-list');
+        const previewScroll={clientHeight:productScroller?.clientHeight||0,scrollHeight:productScroller?.scrollHeight||0,overflowY:productScroller?getComputedStyle(productScroller).overflowY:'missing'};
         if(previewItems.length!==4)throw new Error('Preview did not show all four mixed products');
+        if(!(previewScroll.scrollHeight>previewScroll.clientHeight&&previewScroll.overflowY==='auto'))throw new Error('Product list is not scrollable within the fixed mobile preview: '+JSON.stringify(previewScroll));
         const blob=await window.__valerianCreatePreviewImageBlob();
         const bitmap=await createImageBitmap(blob);
         const metrics=window.__valerianLastInvoiceExportMetrics;
         const allRowsPresent=metrics?.itemCount===4&&metrics.itemRects.every((r,i)=>r.height>=64&&(i===0||r.top>=metrics.itemRects[i-1].bottom-1));
         const fullHeight=bitmap.height>Math.round(previewRect.height*3)+100;
         const dataUrl=await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||''));reader.readAsDataURL(blob);});
-        const result={previewHeight:Math.round(previewRect.height),previewItemCount:previewItems.length,exportWidth:bitmap.width,exportHeight:bitmap.height,metrics,allRowsPresent,fullHeight,bytes:blob.size,dataUrl};
+        const result={previewHeight:Math.round(previewRect.height),previewItemCount:previewItems.length,previewScroll,exportWidth:bitmap.width,exportHeight:bitmap.height,metrics,allRowsPresent,fullHeight,bytes:blob.size,dataUrl};
         bitmap.close?.();
         return result;
       });
