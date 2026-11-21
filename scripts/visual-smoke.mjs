@@ -104,6 +104,35 @@ try {
       console.log(JSON.stringify({invoiceExport:invoiceCheck.visibleContentValid&&invoiceCheck.dimensionsValid?'ok':'failed',...invoiceCheck}));
       if(!invoiceCheck.dimensionsValid)throw new Error('Mobile export does not preserve the original phone-sized paper dimensions: '+invoiceCheck.width+'x'+invoiceCheck.height);
       if(!invoiceCheck.visibleContentValid)throw new Error('Invoice export appears blank or missing rendered poster content; visible pixel samples: '+invoiceCheck.visibleSamples);
+      const multiProductCheck=await page.evaluate(async()=>{
+        const products=[
+          {id:'smoke-p1',name:'Mixed Product 01 - Eau de Parfum',size:'100 ml • عطر أصلي',qty:1,price:1250,total:1250},
+          {id:'smoke-p2',name:'Mixed Product 02 - Decant',size:'10 ml • تقسيم',qty:2,price:180,total:360},
+          {id:'smoke-p3',name:'Mixed Product 03 - Deodorant',size:'150 ml • مزيل عرق',qty:1,price:320,total:320},
+          {id:'smoke-p4',name:'Mixed Product 04 - Hair Care',size:'250 ml • عناية بالشعر',qty:1,price:275,total:275}
+        ];
+        window.__valerianOpenThermalReceiptPreview({
+          id:'VAL-SMOKE-MULTI',date:'2026-11-21',mode:'reservation',status:'حجز مسبق',
+          name:'عميل اختبار متعدد المنتجات',phone:'01000000000',address:'القاهرة',
+          grandTotal:2205,depositAmount:500,remainingAmount:1705,items:products
+        });
+        const until=Date.now()+20000;
+        while(Date.now()<until&&!document.querySelector('#previewSheetBody .valerian-share-qr img'))await new Promise(r=>setTimeout(r,150));
+        const preview=document.querySelector('#previewSheetBody > .valerian-invoice-paper');
+        const previewRect=preview.getBoundingClientRect();
+        const previewItems=[...preview.querySelectorAll('.product-container')];
+        if(previewItems.length!==4)throw new Error('Preview did not show all four mixed products');
+        const blob=await window.__valerianCreatePreviewImageBlob();
+        const bitmap=await createImageBitmap(blob);
+        const metrics=window.__valerianLastInvoiceExportMetrics;
+        const allRowsPresent=metrics?.itemCount===4&&metrics.itemRects.every((r,i)=>r.height>=64&&(i===0||r.top>=metrics.itemRects[i-1].bottom-1));
+        const fullHeight=bitmap.height>Math.round(previewRect.height*3)+100;
+        const result={previewHeight:Math.round(previewRect.height),previewItemCount:previewItems.length,exportWidth:bitmap.width,exportHeight:bitmap.height,metrics,allRowsPresent,fullHeight,bytes:blob.size};
+        bitmap.close?.();
+        return result;
+      });
+      console.log(JSON.stringify({multiProductExport:multiProductCheck.allRowsPresent&&multiProductCheck.fullHeight?'ok':'failed',...multiProductCheck}));
+      if(!multiProductCheck.allRowsPresent||!multiProductCheck.fullHeight)throw new Error('Multi-product invoice export did not preserve every product in a full-height image: '+JSON.stringify(multiProductCheck));
       const documentVariants=await page.evaluate(async()=>{
         const verify=async(kind)=>{
           const node=document.querySelector('#previewSheetBody > .valerian-invoice-paper');
