@@ -5641,7 +5641,9 @@ async function previewPeriodicReportPrint() {
             const spent=roundMoney(mine.filter(r=>!isTransfer(r)).reduce((a,r)=>a+Number(r.outgoing||0),0));
             const transferIn=roundMoney(mine.filter(isTransfer).reduce((a,r)=>a+Number(r.incoming||0),0));
             const transferOut=roundMoney(mine.filter(isTransfer).reduce((a,r)=>a+Number(r.outgoing||0),0));
-            return {method,opening,received,spent,transferIn,transferOut,balance:getPaymentMethodBalance(method)};
+            // Transfers are stamped 12:00 on their date; a bare 'now' cutoff would hide a transfer
+            // made today before noon. Use the end of today so the balance includes every movement.
+            return {method,opening,received,spent,transferIn,transferOut,balance:getPaymentMethodBalance(method,new Date().toISOString().slice(0,10))};
           }).filter(a=>a.opening||a.received||a.spent||a.transferIn||a.transferOut||Math.abs(a.balance)>0.0001);
           const sum=k=>roundMoney(accounts.reduce((a,x)=>a+Number(x[k]||0),0));
           return {ok:true,accounts,totals:{opening:sum('opening'),received:sum('received'),spent:sum('spent'),transferIn:sum('transferIn'),transferOut:sum('transferOut'),balance:sum('balance')},transfers:(state.cashbookTransfers||[]).slice(0,30)};

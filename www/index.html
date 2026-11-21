@@ -3964,6 +3964,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
           <button onclick="setMoreTab('crm')" data-more="crm" class="more-pill px-4 py-2 rounded-full text-xs font-bold glass-pill text-slate-200 shrink-0">👑 العملاء والولاء</button>
           <button onclick="setMoreTab('offers')" data-more="offers" class="more-pill px-4 py-2 rounded-full text-xs font-bold glass-pill text-slate-200 shrink-0">🎁 كتالوج العروض</button>
           <button onclick="setMoreTab('reports')" data-more="reports" class="more-pill px-4 py-2 rounded-full text-xs font-bold glass-pill text-slate-200 shrink-0">📊 التقارير والذكاء</button>
+          <button onclick="setMoreTab('treasury')" data-more="treasury" class="more-pill px-4 py-2 rounded-full text-xs font-bold glass-pill text-slate-200 shrink-0">🏦 الخزنة</button>
         </div>
 
         <div id="more-orders" class="more-view space-y-3">
@@ -3988,6 +3989,29 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
             <button onclick="openOffersPosterPreview()" class="silver-btn px-3.5 py-2 rounded-full text-[11px] font-black shrink-0">معاينة البوستر</button>
           </div>
           <div id="moreOffersContainer" data-slot="offers-container" class="space-y-2.5"></div>
+        </div>
+
+        <div id="more-treasury" class="more-view hidden space-y-3">
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="glass-card rounded-2xl p-3.5"><span class="text-[10px] text-slate-400">إجمالي الرصيد المتبقي</span><strong id="trsBalance" class="text-base font-black text-emerald-300 block mt-1 bidi-ltr">0 EGP</strong></div>
+            <div class="glass-card rounded-2xl p-3.5"><span class="text-[10px] text-slate-400">إجمالي المصروف</span><strong id="trsSpent" class="text-base font-black text-rose-300 block mt-1 bidi-ltr">0 EGP</strong></div>
+          </div>
+          <div id="trsAccounts" class="space-y-2.5"></div>
+          <div class="glass-card rounded-2xl p-4 space-y-2.5 text-xs">
+            <strong class="text-white text-sm">تحويل رصيد بين حسابين</strong>
+            <div class="grid grid-cols-2 gap-2">
+              <select id="trsFrom" class="rounded-xl glass-pill px-3 py-2 text-slate-100"></select>
+              <select id="trsTo" class="rounded-xl glass-pill px-3 py-2 text-slate-100"></select>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <input id="trsAmount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="المبلغ" class="rounded-xl glass-pill px-3 py-2 text-slate-100">
+              <input id="trsDate" type="date" class="rounded-xl glass-pill px-3 py-2 text-slate-100">
+            </div>
+            <input id="trsNote" type="text" maxlength="160" placeholder="سبب التحويل (إجباري)" class="w-full rounded-xl glass-pill px-3 py-2 text-slate-100">
+            <div id="trsError" class="hidden text-[11px] text-rose-300"></div>
+            <button id="trsSubmit" onclick="submitTreasuryTransfer()" class="w-full py-2.5 rounded-full silver-btn font-black">تسجيل التحويل</button>
+          </div>
+          <div class="glass-card rounded-2xl p-4 text-xs"><strong class="text-white text-sm block mb-2">آخر التحويلات</strong><div id="trsTransfers" class="space-y-1.5"></div></div>
         </div>
 
         <div id="more-reports" class="more-view hidden space-y-4">
@@ -5875,6 +5899,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       if (tab === 'crm') renderCrmMobile();
       if (tab === 'offers') renderMoreOffers();
       if (tab === 'reports') renderMoreReports();
+      if (tab === 'treasury') renderMoreTreasury();
     }
 
     function isMobileOrderDelivered(order) {
@@ -7456,6 +7481,36 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
       }catch(err){window.ValerianReportError(err);}
     };
     window.settleMobileRefund=function(orderId){ openMoneyActionModal('refund',orderId); };
+    window.renderMoreTreasury=async function(){
+      const box=document.getElementById('trsAccounts');if(!box)return;
+      try{
+        const api=window.ValerianEngine;if(!api)throw new Error('المحرك غير جاهز.');
+        const t=await api.getTreasury();
+        document.getElementById('trsBalance').textContent=fmtEgp(t.totals.balance);
+        document.getElementById('trsSpent').textContent=fmtEgp(t.totals.spent);
+        box.innerHTML=t.accounts.length?t.accounts.map(a=>'<div class="glass-card rounded-2xl p-3.5 text-xs"><div class="flex items-center justify-between"><strong class="text-white text-sm">'+escapeHtmlMobile(a.method)+'</strong><strong class="bidi-ltr '+(a.balance<0?'text-rose-300':'text-emerald-300')+'">'+fmtEgp(a.balance)+'</strong></div><div class="grid grid-cols-3 gap-2 mt-2 text-[10px] text-slate-400"><span>المقبوض<b class="text-white block bidi-ltr">'+fmtEgp(a.received)+'</b></span><span>المصروف<b class="text-white block bidi-ltr">'+fmtEgp(a.spent)+'</b></span><span>تحويلات (دخل/خرج)<b class="text-white block bidi-ltr">'+fmtEgp(a.transferIn)+' / '+fmtEgp(a.transferOut)+'</b></span></div></div>').join(''):'<div class="glass-card rounded-2xl p-4 text-xs text-slate-400 text-center">لا توجد أرصدة أو حركات بعد.</div>';
+        const methods=['نقدي','تحويل بنكي','محفظة إلكترونية','بطاقة','أخرى'];
+        t.accounts.forEach(a=>{if(!methods.includes(a.method))methods.push(a.method);});
+        const opts=methods.map(m=>'<option value="'+escapeHtmlMobile(m)+'">'+escapeHtmlMobile(m)+'</option>').join('');
+        const f=document.getElementById('trsFrom'),to=document.getElementById('trsTo'),pf=f.value,pt=to.value;
+        f.innerHTML=opts;to.innerHTML=opts;if(pf)f.value=pf;if(pt)to.value=pt;else if(methods.length>1)to.selectedIndex=1;
+        const d=document.getElementById('trsDate');if(!d.value)d.value=new Date().toISOString().slice(0,10);
+        document.getElementById('trsTransfers').innerHTML=t.transfers.length?t.transfers.map(x=>'<div class="flex justify-between gap-2 text-[11px] text-slate-300"><span>'+escapeHtmlMobile(x.fromMethod)+' ← '+escapeHtmlMobile(x.toMethod)+(x.note?' — '+escapeHtmlMobile(x.note):'')+'</span><b class="bidi-ltr text-white">'+fmtEgp(x.amount)+'</b></div>').join(''):'<span class="text-slate-400 text-[11px]">لا توجد تحويلات.</span>';
+      }catch(err){box.innerHTML='<div class="glass-card rounded-2xl p-4 text-xs text-rose-300">'+escapeHtmlMobile(String(err?.message||err))+'</div>';}
+    };
+    window.submitTreasuryTransfer=async function(){
+      const err=document.getElementById('trsError'),btn=document.getElementById('trsSubmit');err.classList.add('hidden');btn.disabled=true;
+      try{
+        const api=window.ValerianEngine;if(!api)throw new Error('المحرك غير جاهز.');
+        const r=await api.transferBetweenAccounts({from:document.getElementById('trsFrom').value,to:document.getElementById('trsTo').value,amount:document.getElementById('trsAmount').value,date:document.getElementById('trsDate').value,note:document.getElementById('trsNote').value});
+        if(!r||r.ok!==true)throw new Error('تعذر تسجيل التحويل.');
+        document.getElementById('trsAmount').value='';document.getElementById('trsNote').value='';
+        if(r.snapshot&&typeof syncFromEngine==='function')syncFromEngine(r.snapshot);
+        await window.renderMoreTreasury();showToast('تم تسجيل التحويل بين الحسابين.');
+      }catch(ex){err.textContent=String(ex?.message||ex);err.classList.remove('hidden');}
+      finally{btn.disabled=false;}
+    };
+
     window.renderMoreReports=function(){
       const delivered=appState.orders.filter(isMobileOrderDelivered);
       const sales=delivered.reduce((sum,o)=>sum+Math.max(0,Number(o.grandTotal||0)-Number(o.returnedValue||0)),0);
