@@ -99,6 +99,7 @@ try {
         return {qrImages:qrImages.length,mobileModal:modalMetrics,paperCssWidth:paperRect.width,paperCssHeight:paperRect.height,expectedWidth,expectedHeight,exportBytes:blob.size,width:bitmap.width,height:bitmap.height,visibleSamples,dimensionsValid,visibleContentValid,captureDebug:window.__valerianInvoiceCaptureDebug,dataUrl};
       });
       fs.writeFileSync('www/visual-invoice-export.png',Buffer.from(invoiceCheck.dataUrl.split(',')[1],'base64'));
+      await page.locator('#previewSheetBody > *').screenshot({path:'www/visual-invoice-preview-element.png',animations:'disabled'});
       delete invoiceCheck.dataUrl;
       await page.screenshot({path:'www/visual-mobile-invoice.png',fullPage:true,animations:'disabled'});
       console.log(JSON.stringify({invoiceExport:invoiceCheck.visibleContentValid&&invoiceCheck.dimensionsValid?'ok':'failed',...invoiceCheck}));
