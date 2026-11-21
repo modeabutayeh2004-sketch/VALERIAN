@@ -147,6 +147,39 @@ try {
       delete multiProductCheck.dataUrl;
       console.log(JSON.stringify({multiProductExport:multiProductCheck.allRowsPresent&&multiProductCheck.fullHeight?'ok':'failed',...multiProductCheck}));
       if(!multiProductCheck.allRowsPresent||!multiProductCheck.fullHeight||!multiProductCheck.samePageSize)throw new Error('Multi-product invoice export does not match the fixed preview page or preserve every product: '+JSON.stringify(multiProductCheck));
+      const responsiveProductLayouts=await page.evaluate(async()=>{
+        const results=[];
+        for(const count of [1,2,4,6,8]){
+          const items=Array.from({length:count},(_,i)=>({id:'responsive-'+count+'-'+i,name:'VALERIAN Long Product Name '+String(i+1).padStart(2,'0')+' Eau de Parfum',size:'100 ml • وصف الحجم والتفاصيل',qty:i+1,qtyLabel:'الكمية',unit:1250,unitLabel:'سعر الوحدة',total:(i+1)*1250,totalLabel:'الإجمالي'}));
+          window.__valerianOpenThermalReceiptPreview({id:'VAL-RESPONSIVE-'+count,date:'2026-11-21',mode:'reservation',status:'حجز مسبق',name:'عميل اختبار',phone:'01000000000',address:'القاهرة',grandTotal:items.reduce((s,x)=>s+x.total,0),depositAmount:0,remainingAmount:0,items});
+          const until=Date.now()+12000;
+          while(Date.now()<until&&!document.querySelector('#previewSheetBody .valerian-share-qr img'))await new Promise(r=>setTimeout(r,100));
+          const paper=document.querySelector('#previewSheetBody > .valerian-invoice-paper');
+          const list=paper?.querySelector('.products-list');
+          const cards=[...(list?.querySelectorAll('.product-container')||[])];
+          const listRect=list?.getBoundingClientRect();
+          const rows=cards.map(card=>{
+            const cr=card.getBoundingClientRect(),head=card.querySelector('.product-header'),title=head?.querySelector('.product-title'),badge=head?.querySelector('.product-num-badge'),size=card.querySelector('.product-size-line'),stats=card.querySelector('.product-stats');
+            const hr=head?.getBoundingClientRect(),tr=title?.getBoundingClientRect(),br=badge?.getBoundingClientRect(),sr=size?.getBoundingClientRect(),str=stats?.getBoundingClientRect();
+            const statRows=[...(stats?.querySelectorAll('.stat-box')||[])].map(box=>{
+              const boxRect=box.getBoundingClientRect(),label=box.querySelector('span')?.getBoundingClientRect(),value=box.querySelector('strong')?.getBoundingClientRect();
+              return {inside:boxRect.left>=cr.left-1&&boxRect.right<=cr.right+1&&boxRect.top>=cr.top-1&&boxRect.bottom<=cr.bottom+1,ordered:!!label&&!!value&&label.bottom<=value.top+1};
+            });
+            return {inside:cr.left>=listRect.left-1&&cr.right<=listRect.right+1&&cr.top>=listRect.top-1&&cr.bottom<=listRect.bottom+1,
+              titleBadgeSeparate:!!tr&&!!br&&(tr.right<=br.left+1||br.right<=tr.left+1),
+              verticalOrder:!!hr&&!!sr&&!!str&&hr.bottom<=sr.top+1&&sr.bottom<=str.top+1&&str.bottom<=cr.bottom+1,
+              statRows};
+          });
+          const cols=getComputedStyle(list).gridTemplateColumns.split(' ').length;
+          results.push({count,columns:cols,areaHeight:listRect.height,cardCount:cards.length,rows});
+          if(cards.length!==count||rows.some(x=>!x.inside||!x.titleBadgeSeparate||!x.verticalOrder||x.statRows.length!==3||x.statRows.some(s=>!s.inside||!s.ordered)))throw new Error('Responsive product fields overlap or escape their fixed cells: '+JSON.stringify(results.at(-1)));
+        }
+        const heights=results.map(x=>x.areaHeight);
+        if(Math.max(...heights)-Math.min(...heights)>2)throw new Error('Reserved/sold product area changed height as item count changed: '+JSON.stringify(results));
+        return results;
+      });
+      console.log(JSON.stringify({responsiveProductLayouts:'ok',layouts:responsiveProductLayouts}));
+
       const documentVariants=await page.evaluate(async()=>{
         const verify=async(kind)=>{
           const node=document.querySelector('#previewSheetBody > .valerian-invoice-paper');
