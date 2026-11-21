@@ -7663,7 +7663,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
     window.v5AddLoyaltyTierRow=function(name,minPoints){
       const list=document.getElementById('v5LoyaltyTiersList');if(!list)return;
       const row=document.createElement('div');
-      row.className='grid grid-cols-[1fr_96px_34px] gap-1.5 items-center';
+      row.style.cssText='display:grid;grid-template-columns:1fr 96px 34px;gap:6px;align-items:center';
       const nameInput=document.createElement('input');
       nameInput.type='text';nameInput.placeholder='اسم المستوى';nameInput.maxLength=30;
       nameInput.className='v5-tier-name rounded-lg bg-black/30 border border-white/15 p-2 text-white text-xs';

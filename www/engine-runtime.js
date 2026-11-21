@@ -4266,9 +4266,15 @@ async function previewPeriodicReportPrint() {
       gold:{bg:LOYALTY_CARD_SHEEN+',linear-gradient(155deg,#c99b3f 0%,#f3dd9a 36%,#b98a2e 70%,#e6c868 100%)',border:'#f7e7b8',brand:'#4a3512',tag:'#6b4f1e',title:'#3f2d0e',name:'#2f2208',phone:'#4a3512',label:'#5c4416',pts:'#241a05',value:'#2f2208',foot:'#55400f',chipBg:'rgba(255,255,255,.35)',chipBorder:'#a07c28',emblemFilter:'brightness(.42) sepia(1) saturate(1.6) hue-rotate(355deg)'},
       neutral:{bg:LOYALTY_CARD_SHEEN+',linear-gradient(155deg,#efe3cc 0%,#fbf6ea 40%,#e7d8bc 100%)',border:'#d8c79d',brand:'#765629',tag:'#96743d',title:'#493719',name:'#352b20',phone:'#806a48',label:'#806a48',pts:'#4b3a20',value:'#6f5734',foot:'#927b50',chipBg:'rgba(255,255,255,.5)',chipBorder:'#c9b37e',emblemFilter:'brightness(0) saturate(100%) invert(66%) sepia(25%) saturate(690%) hue-rotate(8deg) brightness(94%) contrast(91%)'}
     };
-    // Lowest configured tier maps to bronze, then silver, then gold; 4th+ tiers stay gold.
+    // A tier NAMED after a metal takes that metal's skin (ذهبي/ذهب/gold -> gold,
+    // فضي/فضة/silver -> silver, برونزي/برونز/bronze -> bronze). Otherwise the lowest
+    // configured tier maps to bronze, then silver, then gold; 4th+ tiers stay gold.
     function resolveLoyaltyCardSkinKey(tier){
       if(!tier) return 'neutral';
+      const nm=String(tier.name||'');
+      if(/ذهب|gold/i.test(nm)) return 'gold';
+      if(/فض|silver/i.test(nm)) return 'silver';
+      if(/برونز|bronze/i.test(nm)) return 'bronze';
       const tiers=(Array.isArray(state.settings.loyaltyTiers)?state.settings.loyaltyTiers:[])
         .map(t=>({name:String(t&&t.name||'').trim(),minPoints:Math.max(0,Math.floor(Number(t&&t.minPoints)||0))}))
         .filter(t=>t.name).sort((a,b)=>a.minPoints-b.minPoints);
