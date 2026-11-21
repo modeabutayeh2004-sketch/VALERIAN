@@ -2,11 +2,11 @@
 'use strict';
 
 // Bump this value whenever the HTML, application engine, or offline strategy changes.
-const CACHE_NAME = 'valerian-app-shell-v20-20261121-unified-qr-intro';
+const CACHE_NAME = 'valerian-app-shell-v20-20261121-doc-exports-polish';
 const APP_SHELL = [
   './index.html',
   './intro.html',
-  './engine-runtime.js?v=v20-20261121-unified-qr-intro',
+  './engine-runtime.js?v=v20-20261121-doc-exports-polish',
   './manifest.webmanifest',
   './assets/valerian-icon.jpg',
   './vendor/html2canvas.min.js',

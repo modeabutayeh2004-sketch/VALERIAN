@@ -7,6 +7,20 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&display=swap" rel="stylesheet" />
+  <script>
+    (function () {
+      try {
+        if (new URLSearchParams(location.search).get('embed') !== '1') return;
+        var t = localStorage.getItem('valerian-theme-preference-v2');
+        if (t === 'dark') {
+          document.documentElement.classList.add('embed-pre-night');
+          var st = document.createElement('style');
+          st.textContent = 'html.embed-pre-night body{background:radial-gradient(circle at 50% 45%, #231d17 0%, #16120e 60%, #0d0a08 100%)!important}';
+          (document.head || document.documentElement).appendChild(st);
+        }
+      } catch (_) {}
+    })();
+  </script>
   <style>
     body.embed-mode .top-bar, body.embed-mode .bottom-bar { display: none !important; }
     :root {
@@ -1317,6 +1331,12 @@ ${closeScript}
         document.body.classList.add('embed-mode');
         var detectNight = function () {
           if (q.get('theme') === 'night') return true;
+          if (q.get('theme') === 'day') return false;
+          try {
+            var saved = localStorage.getItem('valerian-theme-preference-v2');
+            if (saved === 'dark') return true;
+            if (saved === 'light') return false;
+          } catch (_) {}
           try {
             if (window.parent && window.parent.document) {
               var t = window.parent.document.documentElement.getAttribute('data-valerian-theme');
