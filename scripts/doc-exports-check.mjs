@@ -43,9 +43,10 @@ try {
   }
 
   // ---- Seed fixtures via the real engine ----
-  const seed = await page.evaluate(async () => {
+  const photoDataUrl='data:image/jpeg;base64,'+fs.readFileSync(path.resolve('scripts/fixtures/product-photo.jpg')).toString('base64');
+  const seed = await page.evaluate(async (photo) => {
     const engine = window.ValerianEngine, stamp = Date.now();
-    const p1 = await engine.addProduct({name:'Old Spice (Epic Legend)',category:'عطور',productType:'عطر',size:'100 مل',stockUnit:'قطعة',price:3438,offerPrice:1710,isOffer:true,averageCost:2000,stock:20,minimumStock:1});
+    const p1 = await engine.addProduct({name:'Old Spice (Epic Legend)',category:'عطور',productType:'عطر',size:'100 مل',stockUnit:'قطعة',price:3438,offerPrice:1710,isOffer:true,averageCost:2000,stock:20,minimumStock:1,image:photo});
     const p2 = await engine.addProduct({name:'Prestige Black تقسيم',category:'عطور',productType:'عطر',size:'50 مل',stockUnit:'قطعة',price:500,offerPrice:400,isOffer:true,averageCost:250,stock:15,minimumStock:1});
     if(!p1?.ok || !p2?.ok) throw new Error('seed products');
     await engine.addShippingCompany('شركة شحن تجريبية');
@@ -54,7 +55,7 @@ try {
     if(!created?.ok) throw new Error('seed order: '+JSON.stringify(created));
     const dispatched = await engine.dispatchOrder({orderId:created.order.id,tracking:'TRK-'+stamp});
     return {orderId:String(created.order.id), dispatch:!!dispatched?.ok, p1:String(p1.product.id), p2:String(p2.product.id)};
-  });
+  }, photoDataUrl);
   console.log('seed', JSON.stringify(seed));
 
   // ---- 1) WAYBILL: his exact case ----
@@ -95,7 +96,8 @@ try {
     const oldPrice = document.querySelector('.valerian-share-old-price');
     const logo = document.querySelector('#previewSheetBody .valerian-share-logo');
     const lr = logo ? logo.getBoundingClientRect() : null;
-    return {dbg:window.__dbgPoster, hasOldPrice: !!oldPrice, oldPriceText: oldPrice?oldPrice.textContent:null, logoBox: lr?{top:lr.top,left:lr.left,width:lr.width,height:lr.height}:null};
+    const pimg = document.querySelector('#previewSheetBody img.valerian-share-product-image');
+    return {dbg:window.__dbgPoster, hasOldPrice: !!oldPrice, oldPriceText: oldPrice?oldPrice.textContent:null, logoBox: lr?{top:lr.top,left:lr.left,width:lr.width,height:lr.height}:null, hasPhotoElement: !!pimg};
   });
   console.log('poster-dom', JSON.stringify(poster));
   if (!poster.hasOldPrice) failures.push('poster: old price element missing');
@@ -119,6 +121,67 @@ try {
   });
   console.log('poster-logo-pixels', JSON.stringify(logoCheck));
   if (!(logoCheck.gold > logoCheck.silver)) failures.push('poster: exported logo is not gold (gold='+logoCheck.gold+' silver='+logoCheck.silver+')');
+  // Real-photo path: the seeded JPEG must actually rasterize into the export.
+  // The fixture photo has a unique dark-brown ring (brown = r>g>b, unlike black text
+  // where r~g~b). Locate its pixel cluster in the export and verify size + variance.
+  if (!poster.hasPhotoElement) failures.push('poster: product photo element missing from the preview');
+  const photoCheck = await page.evaluate(async () => {
+    const img = new Image(); img.src='check-poster.png'; await img.decode();
+    const c = document.createElement('canvas'); c.width=img.naturalWidth; c.height=img.naturalHeight;
+    const ctx = c.getContext('2d',{willReadFrequently:true}); ctx.drawImage(img,0,0);
+    const W=img.naturalWidth, H=img.naturalHeight;
+    const data = ctx.getImageData(0,0,W,H).data;
+    const mask = new Uint8Array(W*H);
+    for (let i=0; i<W*H; i++) {
+      const r=data[i*4], g=data[i*4+1], b=data[i*4+2];
+      if (r+g+b<400 && r-g>25 && g-b>15) mask[i]=1;
+    }
+    // Erode: keep only pixels whose 3x3 neighborhood is all mask. Thin text strokes
+    // and borders vanish; solid regions (the photo) survive.
+    const solid = new Uint8Array(W*H);
+    for (let y=1; y<H-1; y++) for (let x=1; x<W-1; x++) {
+      const i=y*W+x;
+      if (mask[i]&&mask[i-1]&&mask[i+1]&&mask[i-W]&&mask[i+W]&&mask[i-W-1]&&mask[i-W+1]&&mask[i+W-1]&&mask[i+W+1]) solid[i]=1;
+    }
+    // Largest connected component: the product photo is the biggest solid blob and
+    // the only roughly-square one; pills and dividers are wide and thin.
+    let best=null;
+    const seen = new Uint8Array(W*H);
+    const stack = [];
+    for (let y=0; y<H; y++) for (let x=0; x<W; x++) {
+      const i0=y*W+x;
+      if (!solid[i0]||seen[i0]) continue;
+      let count=0, minX=1e9, minY=1e9, maxX=-1, maxY=-1;
+      stack.length=0; stack.push(i0); seen[i0]=1;
+      while (stack.length) {
+        const i=stack.pop(), cy=(i/W)|0, cx=i%W;
+        count++; if(cx<minX)minX=cx; if(cx>maxX)maxX=cx; if(cy<minY)minY=cy; if(cy>maxY)maxY=cy;
+        if(cx>0&&solid[i-1]&&!seen[i-1]){seen[i-1]=1;stack.push(i-1);}
+        if(cx<W-1&&solid[i+1]&&!seen[i+1]){seen[i+1]=1;stack.push(i+1);}
+        if(cy>0&&solid[i-W]&&!seen[i-W]){seen[i-W]=1;stack.push(i-W);}
+        if(cy<H-1&&solid[i+W]&&!seen[i+W]){seen[i+W]=1;stack.push(i+W);}
+      }
+      if (!best || count>best.count) best={count, box:{x:minX,y:minY,w:maxX-minX+1,h:maxY-minY+1}};
+    }
+    if (!best) return {count:0};
+    const {box}=best;
+    let n=0, s=0, s2=0;
+    for (let y=box.y; y<box.y+box.h; y+=2) for (let x=box.x; x<box.x+box.w; x+=2) {
+      const i=(y*W+x)*4;
+      const lum=0.299*data[i]+0.587*data[i+1]+0.114*data[i+2];
+      n++; s+=lum; s2+=lum*lum;
+    }
+    const mean=s/n;
+    return {count:best.count, box, std:+Math.sqrt(Math.max(0,s2/n-mean*mean)).toFixed(1)};
+  });
+  console.log('poster-photo-pixels', JSON.stringify(photoCheck));
+  if (photoCheck.count < 3000) failures.push('poster: seeded product photo did not rasterize into the export: '+JSON.stringify(photoCheck));
+  else {
+    const {w,h} = photoCheck.box;
+    const ratio = w/h;
+    if (w<40 || w>200 || h<40 || h>200 || ratio<0.75 || ratio>1.33) failures.push('poster: largest solid region is not the square photo thumbnail: '+JSON.stringify(photoCheck));
+    if (photoCheck.std < 15) failures.push('poster: photo area has no photographic variance (flat/blank): '+JSON.stringify(photoCheck));
+  }
 
   // ---- 3) LOYALTY CARD ----
   await page.evaluate(async () => {
