@@ -5879,6 +5879,34 @@ async function previewPeriodicReportPrint() {
           }catch(err){throw new Error('تم تنفيذ المرتجع داخل المحرك لكن تعذر تأكيد حفظه الدائم: '+String(err?.message||err));}
           return {ok:true,snapshot:snapshot()};
         },
+        settleCustomerRefundDebt:async payload=>{
+          await ready;
+          const phone=String(payload?.phone||'').trim(),customer=state.customers.find(c=>String(c.phone||'').trim()===phone);
+          if(!customer)throw new Error('ملف العميل غير موجود.');
+          const outstanding=Math.max(0,Number(customer.debtToCustomer||0)),amount=roundMoney(Number(payload?.amount??outstanding)),method=normalizePaymentMethod(payload?.method||'نقدي');
+          if(outstanding<=0)throw new Error('لا توجد مديونية مستحقة لهذا العميل.');
+          if(!Number.isFinite(amount)||amount<=0||amount>outstanding+0.0001)throw new Error('أدخل مبلغ تسوية صحيحاً لا يتجاوز مديونية العميل.');
+          const allowed=['نقدي','تحويل بنكي','محفظة إلكترونية','بطاقة','أخرى'];if(!allowed.includes(method))throw new Error('اختر وسيلة رد صحيحة.');
+          const before=structuredClone(state),orders=(state.orders||[]).filter(o=>String(o.phone||'').trim()===phone&&Number(o.refundLiability||0)>0).sort((a,b)=>new Date(a.date||0)-new Date(b.date||0));
+          const ledgerDue=orders.reduce((sum,o)=>sum+Math.max(0,Number(o.refundLiability||0)),0);
+          if(ledgerDue+0.0001<amount)throw new Error('إجمالي مستحقات الطلبات لا يطابق مديونية العميل؛ أوقفنا التسوية لحماية الحسابات.');
+          let remaining=amount;const allocations=[];
+          for(const order of orders){if(remaining<=0.0001)break;const part=roundMoney(Math.min(remaining,Math.max(0,Number(order.refundLiability||0))));if(part<=0)continue;
+            order.refundedAmount=Number(order.refundedAmount||0)+part;order.refundLiability=Math.max(0,roundMoney(Number(order.refundLiability||0)-part));order.refundStatus=order.refundLiability>0?'تم رد جزء — متبقي مستحق':'تم رد المبلغ بالكامل';
+            addPaymentTransaction(order,'REFUND_PAID',part,'تسوية مديونية العميل من صفحة العملاء — '+method,method);
+            state.refundTransactions=Array.isArray(state.refundTransactions)?state.refundTransactions:[];
+            state.refundTransactions.unshift({id:'RFD-CRM-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),orderId:order.id,customerPhone:phone,amount:part,method,status:'PAID',date:new Date().toISOString(),note:'تسوية مديونية من صفحة العملاء'});
+            let payoutLeft=part;(state.returnRecords||[]).filter(row=>String(row.orderId)===String(order.id)).forEach(row=>{if(payoutLeft<=0)return;const dueOnReturn=Math.max(0,Number(row.liability||0)-Number(row.cashRefunded||0)),allocated=Math.min(dueOnReturn,payoutLeft);row.cashRefunded=Number(row.cashRefunded||0)+allocated;payoutLeft-=allocated;});
+            allocations.push({orderId:order.id,amount:part});remaining=roundMoney(remaining-part);
+          }
+          if(remaining>0.01){state=before;throw new Error('تعذر توزيع كامل مبلغ التسوية على الطلبات المرتبطة بالعميل.');}
+          customer.debtToCustomer=Math.max(0,roundMoney(outstanding-amount));
+          logAudit('CUSTOMER_REFUND_DEBT_SETTLED','تسوية مديونية العميل '+(customer.name||phone)+' بمبلغ '+amount+' عبر '+method+' — '+allocations.map(x=>x.orderId+':'+x.amount).join('، '));
+          if(!saveState()){state=before;refreshAllViews();throw new Error(window.__valerianLastSaveError?.message||'تعذر حفظ تسوية مديونية العميل.');}
+          try{await valDurableWritePromise;if(valDurableWriteError)throw valDurableWriteError;await valIdbFlush();}
+          catch(error){state=before;saveState();refreshAllViews();throw new Error('لم يكتمل الحفظ الدائم لتسوية المديونية: '+String(error?.message||error));}
+          refreshAllViews();return {ok:true,amount,remainingDebt:customer.debtToCustomer,allocations,snapshot:snapshot()};
+        },
         settleRefund:async payload=>{
           await ready;
           const idx=findOrder(payload?.orderId);if(idx<0)throw new Error('الطلب غير موجود.');
