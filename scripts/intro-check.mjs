@@ -28,7 +28,7 @@ try {
     await page.addInitScript((t) => localStorage.setItem('valerian-theme-preference-v2', t), theme);
     await page.goto('http://127.0.0.1:4178/', {waitUntil:'domcontentloaded',timeout:30000});
     await page.waitForSelector('#splashIntroFrame', {timeout:15000});
-    await page.waitForTimeout(3500); // let the intro animation play in
+    await page.waitForTimeout(5500); // animation settled, before app dismisses the splash
     await page.screenshot({path:'www/check-intro-'+theme+'.png'});
     // intro must eventually be dismissed by the app watchdog
     await page.waitForFunction(() => window.__valerianSplashDismissed === true, null, {timeout:30000});
