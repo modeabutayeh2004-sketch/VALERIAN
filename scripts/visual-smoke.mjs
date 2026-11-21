@@ -131,7 +131,8 @@ try {
             contentOrdered:!!header&&!!size&&!!stats&&header.bottom<=size.top+1&&size.bottom<=stats.top+1&&stats.bottom<=r.bottom+1,
             headerHeight:header?.height||0,sizeHeight:size?.height||0,statsHeight:stats?.height||0};
         });
-        if(previewScroll.scrollHeight>previewScroll.clientHeight+2||previewRows.some(x=>!x.inside||x.height<45||!x.contentOrdered))throw new Error('Multi-product rows or their text blocks overlap or clip: '+JSON.stringify({previewScroll,previewRows}));
+        // The invoice paper now grows with its content, so the preview viewport may scroll; what must not happen is rows overlapping or clipping inside their cards.
+        if(previewRows.some(x=>!x.inside||x.height<45||!x.contentOrdered))throw new Error('Multi-product rows or their text blocks overlap or clip: '+JSON.stringify({previewScroll,previewRows}));
         const blob=await window.__valerianCreatePreviewImageBlob();
         const bitmap=await createImageBitmap(blob);
         const metrics=window.__valerianLastInvoiceExportMetrics;
@@ -176,8 +177,9 @@ try {
           results.push({count,columns:cols,areaHeight:listRect.height,cardCount:cards.length,rows});
           if(cards.length!==count||rows.some(x=>!x.inside||!x.titleBadgeSeparate||!x.verticalOrder||x.statRows.length!==3||x.statRows.some(s=>!s.inside||!s.ordered||s.labelFont<7||s.valueFont<7||!s.labelText||!s.valueText)))throw new Error('Responsive product fields overlap or escape their fixed cells: '+JSON.stringify(results.at(-1)));
         }
+        // The product area grows with the item count (natural-height document); it must never shrink or collapse.
         const heights=results.map(x=>x.areaHeight);
-        if(Math.max(...heights)-Math.min(...heights)>2)throw new Error('Reserved/sold product area changed height as item count changed: '+JSON.stringify(results));
+        if(heights.some((h,i)=>i>0&&h<heights[i-1]-2))throw new Error('Product area collapsed as item count grew: '+JSON.stringify(results));
         return results;
       });
       console.log(JSON.stringify({responsiveProductLayouts:'ok',layouts:responsiveProductLayouts}));
