@@ -6347,6 +6347,15 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       const invoiceDialog = isInvoiceCapture ? document.querySelector('#previewModalSheet .preview-document-dialog') : null;
       (invoiceDialog || document.body).appendChild(captureHost);
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      if(isInvoiceCapture) {
+        const probes=['.valerian-share-head','.valerian-share-content','.valerian-share-status','.valerian-share-grid','.valerian-share-field','.valerian-share-summary','.valerian-share-summary-row','.valerian-share-grand','.valerian-share-qr'];
+        window.__valerianInvoiceCaptureDebug = window.__valerianInvoiceCaptureDebug || {};
+        window.__valerianInvoiceCaptureDebug.probes = probes.map(sel=>{
+          const x=source.querySelector(sel), y=captureNode.querySelector(sel);
+          const snap=n=>{if(!n)return null;const r=n.getBoundingClientRect(),c=getComputedStyle(n);return {rect:{x:r.x,y:r.y,width:r.width,height:r.height},fontSize:c.fontSize,lineHeight:c.lineHeight,padding:c.padding,margin:c.margin,gap:c.gap,display:c.display,gridTemplateColumns:c.gridTemplateColumns,justifyContent:c.justifyContent,alignItems:c.alignItems};};
+          return {selector:sel,source:snap(x),clone:snap(y)};
+        });
+      }
 
       const imageNodes=[...captureNode.querySelectorAll('img')];
       try {
