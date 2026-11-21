@@ -1,0 +1,54 @@
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import {chromium} from 'playwright';
+const root=process.cwd(),mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.webmanifest':'application/manifest+json; charset=utf-8','.png':'image/png','.jpg':'image/jpeg'};
+const server=http.createServer((req,res)=>{try{const u=new URL(req.url||'/','http://127.0.0.1'),rel=decodeURIComponent(u.pathname==='/'?'/index.html':u.pathname),target=path.resolve(root,'.'+rel);if(!target.startsWith(root+path.sep)&&target!==path.join(root,'index.html')){res.writeHead(403).end();return;}fs.readFile(target,(e,d)=>{if(e){res.writeHead(404).end();return;}res.writeHead(200,{'Content-Type':mime[path.extname(target)]||'application/octet-stream','Cache-Control':'no-store'});res.end(d);});}catch{res.writeHead(400).end();}});
+const listen=()=>new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',()=>resolve(server.address().port));});
+let browser;
+try{
+ const port=await listen();browser=await chromium.launch({headless:true});const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:'+port+'/index.html',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>!!window.ValerianEngine&&!!window.ValerianEngine.ready,null,{timeout:60000});await page.evaluate(()=>window.ValerianEngine.ready);
+ await page.evaluate(()=>document.getElementById('splashOverlay')?.remove());
+ await page.locator('[data-nav="more"]').click();
+ await page.locator('[data-more="finance"]').click();
+ await page.locator('#mobileExpenseCategory').selectOption('إعلانات ممولة (Meta/TikTok)');
+ await page.locator('#mobileExpenseNote').fill('VALERIAN mobile finance UI test');
+ await page.locator('#mobileExpenseAmount').fill('200');
+ await page.locator('#mobileExpenseMethod').selectOption('نقدي');
+ await page.locator('#mobileExpenseForm button[type="submit"]').click();
+ await page.waitForTimeout(500);
+ const financeDiag=await page.evaluate(async()=>({submitHandler:typeof window.submitMobileExpense,moreVisible:!document.getElementById('more-finance').classList.contains('hidden'),formVisible:document.getElementById('mobileExpenseForm').getBoundingClientRect().height>0,toast:document.getElementById('mobileToast')?.innerText||'',listText:document.getElementById('mobileExpensesList')?.innerText||'',listHtml:document.getElementById('mobileExpensesList')?.innerHTML||'',renderFunction:typeof window.renderMoreFinance,engineFunction:typeof window.ValerianEngine?.createExpense,expenses:(await window.ValerianEngine.getFinanceSnapshot()).expenses.map(x=>({note:x.note,amount:x.amount}))}));
+ if(!financeDiag.expenses.some(x=>x.note==='VALERIAN mobile finance UI test')||!financeDiag.listText.includes('VALERIAN mobile finance UI test'))throw new Error('Mobile expense form/render did not complete: '+JSON.stringify(financeDiag)+' pageErrors='+JSON.stringify(errors));
+ await page.locator('#mobileExpensesList').getByText('VALERIAN mobile finance UI test').waitFor({timeout:10000});
+ await page.locator('[data-more="cashbook"]').click();
+ const date=await page.evaluate(()=>new Date().toISOString().slice(0,10));
+ await page.locator('#mobileCashOpeningAmount').fill('1000');
+ await page.locator('#mobileCashOpeningDate').fill(date);
+ await page.locator('form[onsubmit="submitMobileCashOpening(event)"] button[type="submit"]').click();
+ await page.waitForFunction(()=>document.querySelector('#mobileToast div')?.textContent.includes('تم حفظ الرصيد الافتتاحي'));
+ await page.locator('#mobileCashAdjustAmount').fill('100');
+ await page.locator('#mobileCashAdjustDate').fill(date);
+ await page.locator('#mobileCashAdjustNote').fill('إيداع اختبار واجهة الموبايل');
+ await page.locator('form[onsubmit="submitMobileCashAdjustment(event)"] button[type="submit"]').click();
+ await page.waitForFunction(()=>document.querySelector('#mobileToast div')?.textContent.includes('تم تسجيل التسوية النقدية'));
+ await page.locator('[data-more="transfers"]').click();
+ await page.locator('#more-transfers').waitFor({state:'visible'});
+ await page.locator('#mobileCashTransferAmount').fill('300');
+ await page.locator('#mobileCashTransferDate').fill(date);
+ await page.locator('#mobileCashTransferNote').fill('تحويل اختبار واجهة الموبايل');
+ await page.locator('form[onsubmit="submitMobileCashTransfer(event)"] button[type="submit"]').click();
+ await page.waitForFunction(()=>document.querySelector('#mobileToast div')?.textContent.includes('تم تسجيل التحويل بين الحسابات'));
+ const result=await page.evaluate(async()=>{
+  const f=await window.ValerianEngine.getFinanceSnapshot(),cash=f.balances.find(x=>x.method==='نقدي'),bank=f.balances.find(x=>x.method==='تحويل بنكي');
+  return {expenses:f.expenses.length,expense:f.expenses[0]?.note,cash:cash?.balance,bank:bank?.balance,rows:f.cashbookRows.length,transferCount:f.cashbookTransfers?.length||0};
+ });
+ if(result.expenses!==1||result.expense!=='VALERIAN mobile finance UI test'||Number(result.cash)!==600||Number(result.bank)!==300||result.rows!==5||result.transferCount!==1)throw new Error('Mobile finance UI did not update the finance engine correctly: '+JSON.stringify(result));
+ await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>!!window.ValerianEngine&&!!window.ValerianEngine.ready,null,{timeout:60000});
+ const persisted=await page.evaluate(async()=>{await window.ValerianEngine.ready;const f=await window.ValerianEngine.getFinanceSnapshot();return {expenses:f.expenses.length,cash:f.balances.find(x=>x.method==='نقدي')?.balance,bank:f.balances.find(x=>x.method==='تحويل بنكي')?.balance,rows:f.cashbookRows.length,transferCount:f.cashbookTransfers?.length||0};});
+ if(persisted.expenses!==1||Number(persisted.cash)!==600||Number(persisted.bank)!==300||persisted.rows!==5||persisted.transferCount!==1)throw new Error('Mobile finance UI data did not survive reload: '+JSON.stringify(persisted));
+ if(errors.length)throw new Error('Browser runtime errors: '+errors.join(' | '));
+ console.log('VALERIAN mobile finance UI browser test: PASSED');console.log(JSON.stringify({result,persisted}));console.log(' - Finance/cashbook navigation, expense form, opening balance, cash deposit, transfer form, calculated balances, and reload persistence verified.');
+ await context.close();
+}catch(e){console.error('VALERIAN mobile finance UI browser test: FAILED');console.error(e?.stack||e);process.exitCode=1;}
+finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
