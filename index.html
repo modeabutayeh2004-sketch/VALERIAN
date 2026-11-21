@@ -7633,6 +7633,17 @@ html[data-valerian-theme="light"] #kpiWaterOrig + .bottle-content > span{
 #previewSheetBody .receipt-footer .en-bottom{font-family:'Cinzel',serif;font-size:clamp(7px,1vh,10px);font-weight:700;letter-spacing:1.6px;color:var(--gold-dark)}
 #previewSheetBody .valerian-share-qr{display:flex;flex-direction:column;align-items:center;gap:4px;margin:0;padding:0;border:0;background:transparent}#previewSheetBody .valerian-share-qr-list{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}#previewSheetBody .valerian-share-qr-item{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9px;color:#75571e}#previewSheetBody .social-qr-card:has(.valerian-share-qr-item)>.qr-frame,#previewSheetBody .social-qr-card:has(.valerian-share-qr-item)>.fb-label{display:none!important}#previewSheetBody .valerian-share-qr-code img{width:clamp(54px,8.4vh,88px)!important;height:clamp(54px,8.4vh,88px)!important;max-width:none!important}
 @media(max-height:700px){#previewSheetBody .receipt-body{gap:3px;padding-top:4px;padding-bottom:4px}#previewSheetBody .social-qr-card{padding-top:3px}#previewSheetBody .qr-frame img{width:48px;height:48px}}
+/* Keep product and totals rows intact inside the fixed-height mobile preview. */
+#previewSheetBody .product-container{height:auto!important;min-height:100px!important;flex:0 0 auto!important;justify-content:flex-start!important;gap:6px!important;padding:8px 14px!important;overflow:visible!important}
+#previewSheetBody .product-header,#previewSheetBody .product-size-line,#previewSheetBody .product-stats{flex-shrink:0!important}
+#previewSheetBody .product-header{min-height:18px!important}
+#previewSheetBody .product-size-line{line-height:1.25!important;min-height:13px!important}
+#previewSheetBody .product-stats{min-height:38px!important}
+#previewSheetBody .stat-box{min-height:36px!important}
+#previewSheetBody .summary-container{height:auto!important;min-height:0!important;justify-content:flex-start!important;gap:5px!important;padding:8px 16px!important}
+#previewSheetBody .summary-row,#previewSheetBody .total-gold-bar{flex-shrink:0!important;min-height:18px}
+#previewSheetBody .summary-row{line-height:1.35!important}
+#previewSheetBody .total-gold-bar{min-height:34px!important}
 </style>
 </body>
 </html>
