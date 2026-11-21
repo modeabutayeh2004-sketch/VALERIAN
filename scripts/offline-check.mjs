@@ -43,17 +43,23 @@ try {
   await page.waitForFunction(async () => {
     if (!navigator.serviceWorker.controller) return false;
     const keys = await caches.keys();
-    const key = keys.find(k => k.includes('invoice-offline-hotfix'));
+    const key = keys.find(k => k.includes('unified-qr-intro'));
     if (!key) return false;
     const cache = await caches.open(key);
     const cached = await cache.keys();
     return cached.length >= 5;
   }, null, {timeout:30000});
 
-  // Go offline and reload
+  // Go offline and reload; the first navigation can race service-worker startup
+  // right after an update, so retry once before judging.
   await context.setOffline(true);
-  await page.reload({waitUntil:'domcontentloaded',timeout:30000});
-  const offlineState = await page.evaluate(async () => {
+  try {
+    await page.reload({waitUntil:'domcontentloaded',timeout:30000});
+  } catch (e) {
+    await page.waitForTimeout(1500);
+    await page.reload({waitUntil:'domcontentloaded',timeout:30000});
+  }
+  const readOfflineState = () => page.evaluate(async () => {
     const wait = (fn, ms) => new Promise(res => { const t0=Date.now(); const tick=()=>{ let v; try{v=fn();}catch(_){v=null;} if(v||Date.now()-t0>ms) res(v||null); else setTimeout(tick,200); }; tick(); });
     const booted = await wait(() => !!(window.ValerianEngine && window.ValerianUI), 30000);
     if (!booted) return {booted:false};
@@ -72,6 +78,11 @@ try {
     const bodyText = document.body.innerText.slice(0, 400);
     return {booted:true, theme, hasOrder, orders:(snap.orders||[]).length, writeOk, writeError, bodyText:bodyText.replace(/\s+/g,' ').slice(0,200)};
   });
+  let offlineState = await readOfflineState();
+  if (!offlineState.booted) {
+    await page.reload({waitUntil:'domcontentloaded',timeout:30000}).catch(()=>{});
+    offlineState = await readOfflineState();
+  }
   console.log('OFFLINE_STATE', JSON.stringify(offlineState));
   await page.screenshot({path:'www/check-offline-home.png', fullPage:false});
   if (!offlineState.booted) failures.push('engine did not boot offline');

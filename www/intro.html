@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>VALERIAN — The Art of Fragrance | إنترو فاليريان</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body.embed-mode .top-bar, body.embed-mode .bottom-bar { display: none !important; }
+    :root {
+      --bg-gradient: radial-gradient(circle at 50% 45%, #efe6d5 0%, #e4d8c3 58%, #d6c7ad 100%);
+      --orb-primary: rgba(158, 115, 37, 0.16);
+      --orb-secondary: rgba(212, 175, 55, 0.14);
+      --bokeh-color: rgba(130, 91, 22, 0.34);
+      --tagline-color: #825b16;
+      --shadow-color: rgba(105, 72, 16, 0.22);
+      --ui-bg: rgba(239, 230, 213, 0.86);
+      --ui-border: rgba(158, 115, 37, 0.32);
+      --ui-text: #563a0b;
+      --ui-active-bg: linear-gradient(135deg, #9e7325 0%, #c99c3c 55%, #825b16 100%);
+      --ui-active-text: #fffaf0;
+      --sweep-core: rgba(212, 162, 56, 0.34);
+      --sweep-edge: rgba(158, 115, 37, 0.12);
+      --ease-silk: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    body.theme-night {
+      --bg-gradient: radial-gradient(circle at 50% 45%, #231d17 0%, #16120e 60%, #0d0a08 100%);
+      --orb-primary: rgba(212, 175, 55, 0.12);
+      --orb-secondary: rgba(184, 139, 54, 0.10);
+      --bokeh-color: rgba(235, 208, 130, 0.28);
+      --tagline-color: #ebd082;
+      --shadow-color: rgba(0, 0, 0, 0.65);
+      --ui-bg: rgba(22, 18, 14, 0.86);
+      --ui-border: rgba(235, 208, 130, 0.26);
+      --ui-text: #f3dfb0;
+      --ui-active-bg: linear-gradient(135deg, #b88b36 0%, #ebd082 55%, #b88b36 100%);
+      --ui-active-text: #16120e;
+      --sweep-core: rgba(255, 242, 198, 0.52);
+      --sweep-edge: rgba(235, 208, 130, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, "Times New Roman", serif;
+      transition: background 0.65s var(--ease-silk);
+      user-select: none;
+    }
+
+    /* Living atmospheric background layer */
+    .ambient-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .light-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(55px);
+      will-change: transform;
+    }
+
+    .light-orb.orb-1 {
+      width: min(68vw, 420px);
+      height: min(68vw, 420px);
+      top: 10%;
+      left: 8%;
+      background: radial-gradient(circle, var(--orb-primary) 0%, transparent 72%);
+      animation: driftOrb1 16s ease-in-out infinite alternate;
+    }
+
+    .light-orb.orb-2 {
+      width: min(72vw, 460px);
+      height: min(72vw, 460px);
+      bottom: 8%;
+      right: 6%;
+      background: radial-gradient(circle, var(--orb-secondary) 0%, transparent 72%);
+      animation: driftOrb2 20s ease-in-out infinite alternate;
+    }
+
+    .light-orb.orb-3 {
+      width: min(50vw, 300px);
+      height: min(50vw, 300px);
+      top: 52%;
+      left: 55%;
+      background: radial-gradient(circle, var(--orb-primary) 0%, transparent 74%);
+      animation: driftOrb3 14s ease-in-out infinite alternate;
+    }
+
+    #bokehCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    @keyframes driftOrb1 {
+      0% { transform: translate3d(0, 0, 0) scale(0.95); }
+      100% { transform: translate3d(42px, 28px, 0) scale(1.08); }
+    }
+
+    @keyframes driftOrb2 {
+      0% { transform: translate3d(0, 0, 0) scale(1.05); }
+      100% { transform: translate3d(-46px, -32px, 0) scale(0.94); }
+    }
+
+    @keyframes driftOrb3 {
+      0% { transform: translate3d(0, 0, 0) scale(0.92); }
+      100% { transform: translate3d(-30px, 34px, 0) scale(1.06); }
+    }
+
+    .top-bar {
+      position: fixed;
+      top: max(16px, env(safe-area-inset-top, 16px));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px;
+      border-radius: 999px;
+      background: var(--ui-bg);
+      border: 1px solid var(--ui-border);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
+      max-width: calc(100vw - 20px);
+      direction: ltr;
+    }
+
+    .edition-btn {
+      border: none;
+      background: transparent;
+      color: var(--ui-text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.3s var(--ease-silk);
+    }
+
+    .edition-btn:hover {
+      background: rgba(158, 115, 37, 0.12);
+    }
+
+    .edition-btn.active {
+      background: var(--ui-active-bg);
+      color: var(--ui-active-text);
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.18);
+    }
+
+    /* Full stage wraps emblem, VALERIAN lettering, tagline, and full-stage sweep together */
+    .splash-stage {
+      position: relative;
+      z-index: 10;
+      width: min(88vw, 430px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 18px 8px 30px;
+      overflow: hidden;
+      border-radius: 22px;
+      direction: ltr;
+    }
+
+    svg.splash-svg {
+      width: 100%;
+      height: auto;
+      overflow: visible;
+      filter: drop-shadow(0 12px 24px var(--shadow-color));
+      transition: filter 0.6s var(--ease-silk);
+    }
+
+    /* Compact viewBox so the wordmark sits snugly right beneath the emblem */
+    svg.splash-svg.emblem-only-svg {
+      margin-bottom: -2px;
+    }
+
+    .pen-path {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: opacity 0.65s ease;
+    }
+
+    .pen-path.done-outline {
+      opacity: 0.32;
+    }
+
+    /* Single unified SVG wordmark letters: each classic serif letter traces and fills letter-by-letter in place */
+    .wordmark-letter-stroke {
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, "Times New Roman", serif;
+      font-size: 47px;
+      font-weight: 700;
+      fill: none;
+      stroke: url(#wordmarkStrokeMetal);
+      stroke-width: 1.85px;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 240;
+      stroke-dashoffset: 240;
+      transition: stroke-opacity 0.55s ease;
+    }
+
+    .wordmark-letter-stroke.settled {
+      stroke-opacity: 0.65;
+    }
+
+    .wordmark-letter-fill {
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, "Times New Roman", serif;
+      font-size: 47px;
+      font-weight: 700;
+      fill: url(#wordmarkBodyMetal);
+      opacity: 0;
+      transition: opacity 0.42s var(--ease-silk);
+    }
+
+    .wordmark-letter-fill.filled {
+      opacity: 1;
+    }
+
+    #penGlow, #penTip {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .tagline {
+      margin-top: 6px;
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+      font-size: clamp(10px, 2.5vw, 11.5px);
+      font-weight: 600;
+      letter-spacing: 0.42em;
+      color: var(--tagline-color);
+      text-transform: uppercase;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.8s var(--ease-silk), transform 0.8s var(--ease-silk), color 0.6s ease;
+    }
+
+    .tagline.visible {
+      opacity: 0.96;
+      transform: translateY(0);
+    }
+
+    /* Single full-stage light sweep gliding over emblem + wordmark + tagline together */
+    .stage-sweep-overlay {
+      position: absolute;
+      top: -20%;
+      bottom: -20%;
+      left: 0;
+      width: 58%;
+      transform: translateX(-140%) skewX(-18deg);
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--sweep-edge) 30%,
+        var(--sweep-core) 50%,
+        var(--sweep-edge) 70%,
+        transparent 100%
+      );
+      opacity: 0;
+      pointer-events: none;
+      z-index: 20;
+      will-change: transform, opacity;
+    }
+
+    .bottom-bar {
+      position: fixed;
+      bottom: max(16px, env(safe-area-inset-bottom, 16px));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 5px;
+      border-radius: 999px;
+      background: var(--ui-bg);
+      border: 1px solid var(--ui-border);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
+      max-width: calc(100vw - 20px);
+      direction: ltr;
+    }
+
+    .ctrl-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: none;
+      background: transparent;
+      color: var(--ui-text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.25s var(--ease-silk);
+    }
+
+    .ctrl-btn:hover {
+      background: rgba(158, 115, 37, 0.14);
+    }
+
+    .ctrl-btn:active {
+      transform: scale(0.95);
+    }
+
+    .ctrl-btn svg {
+      width: 13px;
+      height: 13px;
+      stroke: currentColor;
+      flex-shrink: 0;
+    }
+
+    .sep {
+      width: 1px;
+      height: 16px;
+      background: var(--ui-border);
+    }
+
+    .toast {
+      position: fixed;
+      top: 68px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-8px);
+      z-index: 40;
+      padding: 8px 16px;
+      border-radius: 999px;
+      background: var(--ui-active-bg);
+      color: var(--ui-active-text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 11.5px;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s var(--ease-silk);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 440px) {
+      .edition-btn { font-size: 10.5px; padding: 7px 11px; }
+      .ctrl-btn { font-size: 10.5px; padding: 7px 9px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Living Atmospheric Background Layer -->
+  <div class="ambient-layer" aria-hidden="true">
+    <div class="light-orb orb-1"></div>
+    <div class="light-orb orb-2"></div>
+    <div class="light-orb orb-3"></div>
+    <canvas id="bokehCanvas"></canvas>
+  </div>
+
+  <header class="top-bar" role="tablist" aria-label="Splash Editions">
+    <button id="btnV1" class="edition-btn active" type="button" role="tab" aria-selected="true">
+      Daylight · نهاري
+    </button>
+    <button id="btnV2" class="edition-btn" type="button" role="tab" aria-selected="false">
+      Night · ليلي
+    </button>
+  </header>
+
+  <div id="toast" class="toast" role="status" aria-live="polite">تم النسخ</div>
+
+  <main id="splashStage" class="splash-stage" aria-label="VALERIAN — The Art of Fragrance">
+    <svg id="splashSvg" class="splash-svg emblem-only-svg" viewBox="0 0 500 325" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="strokeMetal" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop id="sm1" offset="0%" stop-color="#825b16" />
+          <stop id="sm2" offset="32%" stop-color="#f5df9c" />
+          <stop id="sm3" offset="68%" stop-color="#d4af37" />
+          <stop id="sm4" offset="100%" stop-color="#9e7325" />
+        </linearGradient>
+
+        <linearGradient id="bodyMetal" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop id="bm1" offset="0%" stop-color="#825b16" />
+          <stop id="bm2" offset="25%" stop-color="#f5df9c" />
+          <stop id="bm3" offset="52%" stop-color="#d4af37" />
+          <stop id="bm4" offset="78%" stop-color="#fff2c6" />
+          <stop id="bm5" offset="100%" stop-color="#9e7325" />
+        </linearGradient>
+
+        <linearGradient id="facetMetal" x1="100%" y1="0%" x2="0%" y2="100%">
+          <stop id="fm1" offset="0%" stop-color="#fff2c6" stop-opacity="0.6" />
+          <stop id="fm2" offset="50%" stop-color="#d4af37" stop-opacity="0.16" />
+          <stop id="fm3" offset="100%" stop-color="#825b16" stop-opacity="0.48" />
+        </linearGradient>
+
+        <!-- Dedicated high-contrast glossy metallic gradient for VALERIAN wordmark -->
+        <linearGradient id="wordmarkStrokeMetal" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop id="wsm1" offset="0%" stop-color="#4a2f06" />
+          <stop id="wsm2" offset="35%" stop-color="#9e6d18" />
+          <stop id="wsm3" offset="70%" stop-color="#613f0a" />
+          <stop id="wsm4" offset="100%" stop-color="#855810" />
+        </linearGradient>
+
+        <linearGradient id="wordmarkBodyMetal" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop id="wbm1" offset="0%" stop-color="#4d3107" />
+          <stop id="wbm2" offset="32%" stop-color="#9c6b17" />
+          <stop id="wbm3" offset="55%" stop-color="#5c3b09" />
+          <stop id="wbm4" offset="82%" stop-color="#875a11" />
+          <stop id="wbm5" offset="100%" stop-color="#3b2404" />
+        </linearGradient>
+
+        <radialGradient id="tipGlow" cx="50%" cy="50%" r="50%">
+          <stop id="tg1" offset="0%" stop-color="#ffffff" stop-opacity="1" />
+          <stop id="tg2" offset="45%" stop-color="#f5df9c" stop-opacity="0.88" />
+          <stop id="tg3" offset="100%" stop-color="#d4af37" stop-opacity="0" />
+        </radialGradient>
+
+        <clipPath id="clipPart0">
+          <rect id="clipRect0" x="80" y="25" width="175" height="0" />
+        </clipPath>
+        <clipPath id="clipPart1">
+          <rect id="clipRect1" x="85" y="40" width="165" height="0" />
+        </clipPath>
+        <clipPath id="clipPart2">
+          <rect id="clipRect2" x="225" y="25" width="195" height="0" />
+        </clipPath>
+        <clipPath id="clipPart3">
+          <rect id="clipRect3" x="250" y="40" width="165" height="0" />
+        </clipPath>
+        <clipPath id="clipPart4">
+          <rect id="clipRect4" x="220" y="192" width="60" height="0" />
+        </clipPath>
+      </defs>
+
+      <!-- Top-to-Bottom Smoothly Filled Emblem Segments -->
+      <g id="filledEmblem">
+        <g clip-path="url(#clipPart0)">
+          <path fill="url(#bodyMetal)" d="M 90,32 C 160,32 185,42 245,127 L 228,149 C 175,72 150,52 90,32 Z" />
+          <path fill="url(#facetMetal)" d="M 90,32 C 160,32 185,42 245,127 L 236,138 C 180,58 155,42 90,32 Z" />
+        </g>
+
+        <g clip-path="url(#clipPart1)">
+          <path fill="url(#bodyMetal)" d="M 92,45 C 145,62 170,82 243,189 L 223,215 C 160,122 130,82 92,45 Z" />
+          <path fill="url(#facetMetal)" d="M 92,45 C 145,62 170,82 243,189 L 233,202 C 165,102 138,68 92,45 Z" />
+        </g>
+
+        <g clip-path="url(#clipPart2)">
+          <path fill="url(#bodyMetal)" d="M 410,32 C 340,32 315,42 235,159 L 250,182 C 325,72 350,52 410,32 Z" />
+          <path fill="url(#facetMetal)" d="M 410,32 C 340,32 315,42 235,159 L 242,170 C 320,58 345,42 410,32 Z" />
+        </g>
+
+        <g clip-path="url(#clipPart3)">
+          <path fill="url(#bodyMetal)" d="M 408,45 C 355,62 330,82 257,189 L 277,215 C 340,122 370,82 408,45 Z" />
+          <path fill="url(#facetMetal)" d="M 408,45 C 355,62 330,82 257,189 L 267,202 C 335,102 362,68 408,45 Z" />
+        </g>
+
+        <g clip-path="url(#clipPart4)">
+          <path fill="url(#bodyMetal)" d="M 250,199 L 270,225 L 250,257 L 230,225 Z" />
+          <path fill="url(#facetMetal)" d="M 250,199 L 270,225 L 250,257 Z" />
+        </g>
+      </g>
+
+      <!-- Sequential Outline Paths for the 5 Emblem Parts -->
+      <g id="emblemOutlines">
+        <path class="pen-path" stroke="url(#strokeMetal)" stroke-width="2.2" data-ms="260"
+              d="M 90,32 C 160,32 185,42 245,127 L 228,149 C 175,72 150,52 90,32" />
+        <path class="pen-path" stroke="url(#strokeMetal)" stroke-width="2.2" data-ms="275"
+              d="M 92,45 C 145,62 170,82 243,189 L 223,215 C 160,122 130,82 92,45" />
+        <path class="pen-path" stroke="url(#strokeMetal)" stroke-width="2.2" data-ms="265"
+              d="M 410,32 C 340,32 315,42 235,159 L 250,182 C 325,72 350,52 410,32" />
+        <path class="pen-path" stroke="url(#strokeMetal)" stroke-width="2.2" data-ms="275"
+              d="M 408,45 C 355,62 330,82 257,189 L 277,215 C 340,122 370,82 408,45" />
+        <path class="pen-path" stroke="url(#strokeMetal)" stroke-width="2.2" data-ms="195"
+              d="M 250,199 L 270,225 L 250,257 L 230,225 Z" />
+      </g>
+
+      <!-- Single Unified VALERIAN Serif Wordmark: each letter writes and fills one by one in place -->
+      <g id="wordmarkGroup" transform="translate(0, 312)">
+        <g class="wm-char" data-x="72">
+          <text class="wordmark-letter-fill" x="72" text-anchor="middle">V</text>
+          <text class="wordmark-letter-stroke" x="72" text-anchor="middle">V</text>
+        </g>
+        <g class="wm-char" data-x="124">
+          <text class="wordmark-letter-fill" x="124" text-anchor="middle">A</text>
+          <text class="wordmark-letter-stroke" x="124" text-anchor="middle">A</text>
+        </g>
+        <g class="wm-char" data-x="174">
+          <text class="wordmark-letter-fill" x="174" text-anchor="middle">L</text>
+          <text class="wordmark-letter-stroke" x="174" text-anchor="middle">L</text>
+        </g>
+        <g class="wm-char" data-x="222">
+          <text class="wordmark-letter-fill" x="222" text-anchor="middle">E</text>
+          <text class="wordmark-letter-stroke" x="222" text-anchor="middle">E</text>
+        </g>
+        <g class="wm-char" data-x="272">
+          <text class="wordmark-letter-fill" x="272" text-anchor="middle">R</text>
+          <text class="wordmark-letter-stroke" x="272" text-anchor="middle">R</text>
+        </g>
+        <g class="wm-char" data-x="314">
+          <text class="wordmark-letter-fill" x="314" text-anchor="middle">I</text>
+          <text class="wordmark-letter-stroke" x="314" text-anchor="middle">I</text>
+        </g>
+        <g class="wm-char" data-x="360">
+          <text class="wordmark-letter-fill" x="360" text-anchor="middle">A</text>
+          <text class="wordmark-letter-stroke" x="360" text-anchor="middle">A</text>
+        </g>
+        <g class="wm-char" data-x="418">
+          <text class="wordmark-letter-fill" x="418" text-anchor="middle">N</text>
+          <text class="wordmark-letter-stroke" x="418" text-anchor="middle">N</text>
+        </g>
+      </g>
+
+      <!-- Glowing Pen Tip -->
+      <circle id="penGlow" cx="0" cy="0" r="14" fill="url(#tipGlow)" />
+      <circle id="penTip" cx="0" cy="0" r="3.2" fill="#ffffff" />
+    </svg>
+
+    <div id="tagline" class="tagline">THE ART OF FRAGRANCE</div>
+
+    <!-- Single full-stage light sweep gliding over emblem + wordmark + tagline together -->
+    <div id="stageSweep" class="stage-sweep-overlay" aria-hidden="true"></div>
+  </main>
+
+  <footer class="bottom-bar">
+    <button id="replayBtn" class="ctrl-btn" type="button" title="Replay Animation">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+        <path d="M3 3v5h5" />
+      </svg>
+      <span>Replay</span>
+    </button>
+
+    <div class="sep"></div>
+
+    <button id="copyV1Btn" class="ctrl-btn" type="button" title="Copy Standalone Daylight V1 HTML">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+      </svg>
+      <span>Copy V1 HTML</span>
+    </button>
+
+    <button id="copyV2Btn" class="ctrl-btn" type="button" title="Copy Standalone Night V2 HTML">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+      </svg>
+      <span>Copy V2 HTML</span>
+    </button>
+  </footer>
+
+  <script>
+    (function () {
+      const btnV1 = document.getElementById('btnV1');
+      const btnV2 = document.getElementById('btnV2');
+      const replayBtn = document.getElementById('replayBtn');
+      const copyV1Btn = document.getElementById('copyV1Btn');
+      const copyV2Btn = document.getElementById('copyV2Btn');
+      const toast = document.getElementById('toast');
+
+      const penGlow = document.getElementById('penGlow');
+      const penTip = document.getElementById('penTip');
+      const tagline = document.getElementById('tagline');
+      const stageSweep = document.getElementById('stageSweep');
+      const bokehCanvas = document.getElementById('bokehCanvas');
+
+      const CLIP_BOUNDS = [
+        { id: 'clipRect0', top: 25, height: 135 },
+        { id: 'clipRect1', top: 40, height: 185 },
+        { id: 'clipRect2', top: 25, height: 165 },
+        { id: 'clipRect3', top: 40, height: 185 },
+        { id: 'clipRect4', top: 192, height: 72 }
+      ];
+
+      const THEMES = {
+        1: {
+          title: 'VALERIAN — Daylight Cream & Gold Splash',
+          bg: 'radial-gradient(circle at 50% 45%, #efe6d5 0%, #e4d8c3 58%, #d6c7ad 100%)',
+          tagline: '#825b16',
+          shadow: 'rgba(105, 72, 16, 0.22)',
+          orbPrimary: 'rgba(158, 115, 37, 0.16)',
+          orbSecondary: 'rgba(212, 175, 55, 0.14)',
+          bokeh: 'rgba(130, 91, 22, 0.34)',
+          sweepCore: 'rgba(212, 162, 56, 0.34)',
+          sweepEdge: 'rgba(158, 115, 37, 0.12)',
+          stroke: ['#825b16', '#f5df9c', '#d4af37', '#9e7325'],
+          body: ['#825b16', '#f5df9c', '#d4af37', '#fff2c6', '#9e7325'],
+          wordmarkStroke: ['#4a2f06', '#9e6d18', '#613f0a', '#855810'],
+          wordmarkBody: ['#4d3107', '#9c6b17', '#5c3b09', '#875a11', '#3b2404'],
+          facet: ['#fff2c6', '#d4af37', '#825b16'],
+          glow: ['#ffffff', '#f5df9c', '#d4af37']
+        },
+        2: {
+          title: 'VALERIAN — Night Espresso & Gold Splash',
+          bg: 'radial-gradient(circle at 50% 45%, #231d17 0%, #16120e 60%, #0d0a08 100%)',
+          tagline: '#ebd082',
+          shadow: 'rgba(0, 0, 0, 0.65)',
+          orbPrimary: 'rgba(212, 175, 55, 0.12)',
+          orbSecondary: 'rgba(184, 139, 54, 0.10)',
+          bokeh: 'rgba(235, 208, 130, 0.28)',
+          sweepCore: 'rgba(255, 242, 198, 0.52)',
+          sweepEdge: 'rgba(235, 208, 130, 0.14)',
+          stroke: ['#b88b36', '#fff2c6', '#ebd082', '#d4af37'],
+          body: ['#b88b36', '#fff2c6', '#ebd082', '#d4af37', '#8f6720'],
+          wordmarkStroke: ['#b88b36', '#fff2c6', '#ebd082', '#d4af37'],
+          wordmarkBody: ['#b88b36', '#fff2c6', '#ebd082', '#d4af37', '#8f6720'],
+          facet: ['#fff2c6', '#ebd082', '#8f6720'],
+          glow: ['#ffffff', '#ebd082', '#d4af37']
+        }
+      };
+
+      let currentEdition = 1;
+      let runId = 0;
+
+      // Living golden bokeh canvas loop with safe resize and zero errors
+      let bokehParticles = [];
+      function initBokeh() {
+        if (!bokehCanvas) return;
+        const ctx = bokehCanvas.getContext('2d');
+        if (!ctx) return;
+
+        function resize() {
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          bokehCanvas.width = Math.max(1, Math.floor(window.innerWidth * dpr));
+          bokehCanvas.height = Math.max(1, Math.floor(window.innerHeight * dpr));
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        resize();
+        window.addEventListener('resize', resize);
+
+        const count = window.innerWidth < 500 ? 16 : 26;
+        bokehParticles = Array.from({ length: count }, (_, i) => ({
+          x: Math.random() * window.innerWidth,
+          y: Math.random() * window.innerHeight,
+          r: 1.5 + Math.random() * 3.5,
+          vx: (Math.random() - 0.5) * 0.22,
+          vy: -(0.12 + Math.random() * 0.25),
+          phase: i * 0.7,
+          speed: 0.008 + Math.random() * 0.01
+        }));
+
+        function renderBokeh() {
+          try {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            ctx.clearRect(0, 0, w, h);
+            const color = THEMES[currentEdition].bokeh;
+
+            for (let i = 0; i < bokehParticles.length; i++) {
+              const p = bokehParticles[i];
+              p.x += p.vx;
+              p.y += p.vy;
+              p.phase += p.speed;
+
+              if (p.y < -16) {
+                p.y = h + 16;
+                p.x = Math.random() * w;
+              }
+              if (p.x < -16) p.x = w + 16;
+              if (p.x > w + 16) p.x = -16;
+
+              const pulse = 0.45 + 0.55 * Math.sin(p.phase);
+              ctx.save();
+              ctx.globalAlpha = pulse;
+              ctx.fillStyle = color;
+              ctx.beginPath();
+              ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.restore();
+            }
+          } catch (err) {
+            // Keep animation resilient even if context is momentarily unavailable
+          }
+          requestAnimationFrame(renderBokeh);
+        }
+
+        requestAnimationFrame(renderBokeh);
+      }
+
+      function applyTheme(edition) {
+        const t = THEMES[edition];
+        document.getElementById('sm1').setAttribute('stop-color', t.stroke[0]);
+        document.getElementById('sm2').setAttribute('stop-color', t.stroke[1]);
+        document.getElementById('sm3').setAttribute('stop-color', t.stroke[2]);
+        document.getElementById('sm4').setAttribute('stop-color', t.stroke[3]);
+
+        document.getElementById('bm1').setAttribute('stop-color', t.body[0]);
+        document.getElementById('bm2').setAttribute('stop-color', t.body[1]);
+        document.getElementById('bm3').setAttribute('stop-color', t.body[2]);
+        document.getElementById('bm4').setAttribute('stop-color', t.body[3]);
+        document.getElementById('bm5').setAttribute('stop-color', t.body[4]);
+
+        document.getElementById('wsm1').setAttribute('stop-color', t.wordmarkStroke[0]);
+        document.getElementById('wsm2').setAttribute('stop-color', t.wordmarkStroke[1]);
+        document.getElementById('wsm3').setAttribute('stop-color', t.wordmarkStroke[2]);
+        document.getElementById('wsm4').setAttribute('stop-color', t.wordmarkStroke[3]);
+
+        document.getElementById('wbm1').setAttribute('stop-color', t.wordmarkBody[0]);
+        document.getElementById('wbm2').setAttribute('stop-color', t.wordmarkBody[1]);
+        document.getElementById('wbm3').setAttribute('stop-color', t.wordmarkBody[2]);
+        document.getElementById('wbm4').setAttribute('stop-color', t.wordmarkBody[3]);
+        document.getElementById('wbm5').setAttribute('stop-color', t.wordmarkBody[4]);
+
+        document.getElementById('fm1').setAttribute('stop-color', t.facet[0]);
+        document.getElementById('fm2').setAttribute('stop-color', t.facet[1]);
+        document.getElementById('fm3').setAttribute('stop-color', t.facet[2]);
+
+        document.getElementById('tg1').setAttribute('stop-color', t.glow[0]);
+        document.getElementById('tg2').setAttribute('stop-color', t.glow[1]);
+        document.getElementById('tg3').setAttribute('stop-color', t.glow[2]);
+      }
+
+      function easeInOut(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      }
+
+      function setClipRatio(partIndex, ratio) {
+        const cfg = CLIP_BOUNDS[partIndex];
+        const rect = document.getElementById(cfg.id);
+        if (!rect) return;
+        const clamped = Math.max(0, Math.min(1, ratio));
+        rect.setAttribute('height', (cfg.height * clamped).toFixed(2));
+      }
+
+      function finishClipFill(partIndex, fromRatio, durationMs, token) {
+        return new Promise((resolve) => {
+          let start = null;
+          function step(now) {
+            if (token !== runId) return resolve();
+            if (!start) start = now;
+            const p = Math.min((now - start) / durationMs, 1);
+            const val = fromRatio + (1 - fromRatio) * easeInOut(p);
+            setClipRatio(partIndex, val);
+            if (p < 1) {
+              requestAnimationFrame(step);
+            } else {
+              resolve();
+            }
+          }
+          requestAnimationFrame(step);
+        });
+      }
+
+      function drawPath(path, durationMs, token, onStep) {
+        return new Promise((resolve) => {
+          const total = path.getTotalLength();
+          path.style.strokeDasharray = total;
+          path.style.strokeDashoffset = total;
+          let start = null;
+
+          function tick(now) {
+            if (token !== runId) return resolve();
+            if (!start) start = now;
+            const raw = Math.min((now - start) / durationMs, 1);
+            const eased = easeInOut(raw);
+            const drawn = total * eased;
+
+            path.style.strokeDashoffset = total - drawn;
+            if (onStep) onStep(eased);
+
+            const pt = path.getPointAtLength(drawn);
+            penGlow.setAttribute('cx', pt.x);
+            penGlow.setAttribute('cy', pt.y);
+            penTip.setAttribute('cx', pt.x);
+            penTip.setAttribute('cy', pt.y);
+
+            if (raw < 1) {
+              requestAnimationFrame(tick);
+            } else {
+              resolve();
+            }
+          }
+          requestAnimationFrame(tick);
+        });
+      }
+
+      // Single full-stage sweep across emblem, VALERIAN lettering, and tagline together
+      function animateStageSweep(durationMs, token) {
+        return new Promise((resolve) => {
+          let start = null;
+          stageSweep.style.opacity = '1';
+          stageSweep.style.transform = 'translateX(-145%) skewX(-18deg)';
+
+          function step(now) {
+            if (token !== runId) {
+              stageSweep.style.opacity = '0';
+              return resolve();
+            }
+            if (!start) start = now;
+            const p = Math.min((now - start) / durationMs, 1);
+            const eased = easeInOut(p);
+            const pos = -145 + 315 * eased;
+            stageSweep.style.transform = 'translateX(' + pos.toFixed(1) + '%) skewX(-18deg)';
+
+            if (p < 1) {
+              requestAnimationFrame(step);
+            } else {
+              stageSweep.style.opacity = '0';
+              resolve();
+            }
+          }
+          requestAnimationFrame(step);
+        });
+      }
+
+      function wait(ms) {
+        return new Promise((r) => setTimeout(r, ms));
+      }
+
+      // Writes VALERIAN letter-by-letter in classic serif typography and fills each letter in place
+      async function writeWordmarkLetterByLetter(perLetterMs, token) {
+        const chars = Array.from(document.querySelectorAll('#wordmarkGroup .wm-char'));
+        if (!chars.length) return;
+
+        penGlow.style.opacity = '1';
+        penTip.style.opacity = '1';
+
+        for (let i = 0; i < chars.length; i++) {
+          if (token !== runId) return;
+          const charGroup = chars[i];
+          const strokeEl = charGroup.querySelector('.wordmark-letter-stroke');
+          const fillEl = charGroup.querySelector('.wordmark-letter-fill');
+          const cx = parseFloat(charGroup.dataset.x) || 250;
+          const totalDash = 240;
+
+          await new Promise((resolve) => {
+            let start = null;
+            function step(now) {
+              if (token !== runId) return resolve();
+              if (!start) start = now;
+              const raw = Math.min((now - start) / perLetterMs, 1);
+              const eased = easeInOut(raw);
+
+              if (strokeEl) {
+                strokeEl.style.strokeDashoffset = (totalDash * (1 - eased)).toFixed(1);
+              }
+
+              const tipX = cx - 12 + 24 * eased;
+              const tipY = 296 + Math.sin(eased * Math.PI * 2) * 11;
+              penGlow.setAttribute('cx', tipX.toFixed(1));
+              penGlow.setAttribute('cy', tipY.toFixed(1));
+              penTip.setAttribute('cx', tipX.toFixed(1));
+              penTip.setAttribute('cy', tipY.toFixed(1));
+
+              if (raw > 0.55 && fillEl) {
+                fillEl.classList.add('filled');
+              }
+
+              if (raw < 1) {
+                requestAnimationFrame(step);
+              } else {
+                if (strokeEl) {
+                  strokeEl.style.strokeDashoffset = '0';
+                  strokeEl.classList.add('settled');
+                }
+                if (fillEl) {
+                  fillEl.classList.add('filled');
+                }
+                resolve();
+              }
+            }
+            requestAnimationFrame(step);
+          });
+        }
+      }
+
+      async function runAnimation() {
+        const token = ++runId;
+
+        for (let i = 0; i < CLIP_BOUNDS.length; i++) {
+          setClipRatio(i, 0);
+        }
+        document.querySelectorAll('#wordmarkGroup .wordmark-letter-stroke').forEach((el) => {
+          el.classList.remove('settled');
+          el.style.strokeDashoffset = '240';
+        });
+        document.querySelectorAll('#wordmarkGroup .wordmark-letter-fill').forEach((el) => {
+          el.classList.remove('filled');
+        });
+        tagline.classList.remove('visible');
+        stageSweep.style.opacity = '0';
+        stageSweep.style.transform = 'translateX(-145%) skewX(-18deg)';
+        penGlow.style.opacity = '0';
+        penTip.style.opacity = '0';
+
+        const emblemPaths = Array.from(document.querySelectorAll('#emblemOutlines .pen-path'));
+
+        emblemPaths.forEach((p) => {
+          const len = p.getTotalLength();
+          p.classList.remove('done-outline');
+          p.style.strokeDasharray = len;
+          p.style.strokeDashoffset = len;
+        });
+
+        await wait(200);
+        if (token !== runId) return;
+
+        const startPt = emblemPaths[0].getPointAtLength(0);
+        penGlow.setAttribute('cx', startPt.x);
+        penGlow.setAttribute('cy', startPt.y);
+        penTip.setAttribute('cx', startPt.x);
+        penTip.setAttribute('cy', startPt.y);
+        penGlow.style.opacity = '1';
+        penTip.style.opacity = '1';
+
+        for (let i = 0; i < emblemPaths.length; i++) {
+          if (token !== runId) return;
+          const path = emblemPaths[i];
+          const ms = parseInt(path.dataset.ms, 10) || 260;
+
+          await drawPath(path, ms, token, (progress) => {
+            setClipRatio(i, progress * 0.78);
+          });
+          if (token !== runId) return;
+
+          path.classList.add('done-outline');
+          finishClipFill(i, 0.78, 360, token);
+        }
+
+        // Write VALERIAN letter-by-letter in classic serif directly beneath the emblem
+        await writeWordmarkLetterByLetter(175, token);
+        if (token !== runId) return;
+
+        penGlow.style.opacity = '0';
+        penTip.style.opacity = '0';
+
+        await wait(300);
+        if (token !== runId) return;
+        tagline.classList.add('visible');
+
+        await wait(340);
+        if (token !== runId) return;
+        await animateStageSweep(940, token);
+      }
+
+      function selectEdition(edition) {
+        currentEdition = edition;
+        const isNight = edition === 2;
+        document.body.classList.toggle('theme-night', isNight);
+
+        btnV1.classList.toggle('active', !isNight);
+        btnV1.setAttribute('aria-selected', String(!isNight));
+        btnV2.classList.toggle('active', isNight);
+        btnV2.setAttribute('aria-selected', String(isNight));
+
+        applyTheme(edition);
+        runAnimation();
+      }
+
+      function showToast(msg) {
+        toast.textContent = msg;
+        toast.classList.add('show');
+        clearTimeout(showToast._timer);
+        showToast._timer = setTimeout(() => {
+          toast.classList.remove('show');
+        }, 1800);
+      }
+
+      function generateStandaloneHtml(edition) {
+        const t = THEMES[edition];
+        const stageClone = document.getElementById('splashStage').cloneNode(true);
+        stageClone.removeAttribute('id');
+        const svgEl = stageClone.querySelector('svg');
+        svgEl.removeAttribute('id');
+        const sweepEl = stageClone.querySelector('#stageSweep');
+        sweepEl.removeAttribute('id');
+
+        svgEl.querySelector('#sm1').setAttribute('stop-color', t.stroke[0]);
+        svgEl.querySelector('#sm2').setAttribute('stop-color', t.stroke[1]);
+        svgEl.querySelector('#sm3').setAttribute('stop-color', t.stroke[2]);
+        svgEl.querySelector('#sm4').setAttribute('stop-color', t.stroke[3]);
+        svgEl.querySelector('#bm1').setAttribute('stop-color', t.body[0]);
+        svgEl.querySelector('#bm2').setAttribute('stop-color', t.body[1]);
+        svgEl.querySelector('#bm3').setAttribute('stop-color', t.body[2]);
+        svgEl.querySelector('#bm4').setAttribute('stop-color', t.body[3]);
+        svgEl.querySelector('#bm5').setAttribute('stop-color', t.body[4]);
+        svgEl.querySelector('#wsm1').setAttribute('stop-color', t.wordmarkStroke[0]);
+        svgEl.querySelector('#wsm2').setAttribute('stop-color', t.wordmarkStroke[1]);
+        svgEl.querySelector('#wsm3').setAttribute('stop-color', t.wordmarkStroke[2]);
+        svgEl.querySelector('#wsm4').setAttribute('stop-color', t.wordmarkStroke[3]);
+        svgEl.querySelector('#wbm1').setAttribute('stop-color', t.wordmarkBody[0]);
+        svgEl.querySelector('#wbm2').setAttribute('stop-color', t.wordmarkBody[1]);
+        svgEl.querySelector('#wbm3').setAttribute('stop-color', t.wordmarkBody[2]);
+        svgEl.querySelector('#wbm4').setAttribute('stop-color', t.wordmarkBody[3]);
+        svgEl.querySelector('#wbm5').setAttribute('stop-color', t.wordmarkBody[4]);
+        svgEl.querySelector('#fm1').setAttribute('stop-color', t.facet[0]);
+        svgEl.querySelector('#fm2').setAttribute('stop-color', t.facet[1]);
+        svgEl.querySelector('#fm3').setAttribute('stop-color', t.facet[2]);
+        svgEl.querySelector('#tg1').setAttribute('stop-color', t.glow[0]);
+        svgEl.querySelector('#tg2').setAttribute('stop-color', t.glow[1]);
+        svgEl.querySelector('#tg3').setAttribute('stop-color', t.glow[2]);
+
+        const closeScript = '</' + 'script>';
+
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>${t.title}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: ${t.bg};
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+  }
+  .ambient-layer { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+  .light-orb { position: absolute; border-radius: 50%; filter: blur(55px); }
+  .orb-1 { width: min(68vw, 420px); height: min(68vw, 420px); top: 10%; left: 8%; background: radial-gradient(circle, ${t.orbPrimary} 0%, transparent 72%); animation: drift1 16s ease-in-out infinite alternate; }
+  .orb-2 { width: min(72vw, 460px); height: min(72vw, 460px); bottom: 8%; right: 6%; background: radial-gradient(circle, ${t.orbSecondary} 0%, transparent 72%); animation: drift2 20s ease-in-out infinite alternate; }
+  @keyframes drift1 { 0% { transform: translate3d(0,0,0) scale(0.95); } 100% { transform: translate3d(42px,28px,0) scale(1.08); } }
+  @keyframes drift2 { 0% { transform: translate3d(0,0,0) scale(1.05); } 100% { transform: translate3d(-46px,-32px,0) scale(0.94); } }
+  #bokehCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .splash-stage {
+    position: relative; z-index: 10;
+    width: min(88vw, 430px);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 18px 8px 30px; overflow: hidden; border-radius: 22px;
+  }
+  svg.splash-svg {
+    width: 100%; height: auto; overflow: visible;
+    margin-bottom: -2px;
+    filter: drop-shadow(0 12px 24px ${t.shadow});
+  }
+  .pen-path { fill: none; stroke-linecap: round; stroke-linejoin: round; transition: opacity 0.65s ease; }
+  .pen-path.done-outline { opacity: 0.32; }
+  .wordmark-letter-stroke {
+    font-family: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, "Times New Roman", serif;
+    font-size: 47px; font-weight: 700;
+    fill: none; stroke: url(#wordmarkStrokeMetal); stroke-width: 1.85px;
+    stroke-linecap: round; stroke-linejoin: round;
+    stroke-dasharray: 240; stroke-dashoffset: 240;
+    transition: stroke-opacity 0.55s ease;
+  }
+  .wordmark-letter-stroke.settled { stroke-opacity: 0.65; }
+  .wordmark-letter-fill {
+    font-family: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, "Times New Roman", serif;
+    font-size: 47px; font-weight: 700;
+    fill: url(#wordmarkBodyMetal); opacity: 0;
+    transition: opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .wordmark-letter-fill.filled { opacity: 1; }
+  #penGlow, #penTip { opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
+  .tagline {
+    margin-top: 6px;
+    font-size: clamp(10px, 2.5vw, 11.5px); font-weight: 600;
+    letter-spacing: 0.42em; color: ${t.tagline}; text-transform: uppercase;
+    opacity: 0; transform: translateY(8px);
+    transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .tagline.visible { opacity: 0.96; transform: translateY(0); }
+  .stage-sweep-overlay {
+    position: absolute; top: -20%; bottom: -20%; left: 0; width: 58%;
+    transform: translateX(-140%) skewX(-18deg);
+    background: linear-gradient(90deg, transparent 0%, ${t.sweepEdge} 30%, ${t.sweepCore} 50%, ${t.sweepEdge} 70%, transparent 100%);
+    opacity: 0; pointer-events: none; z-index: 20;
+  }
+</style>
+</head>
+<body>
+<div class="ambient-layer" aria-hidden="true">
+  <div class="light-orb orb-1"></div>
+  <div class="light-orb orb-2"></div>
+  <canvas id="bokehCanvas"></canvas>
+</div>
+${stageClone.outerHTML}
+<script>
+(function() {
+  const CLIP_BOUNDS = [
+    { id: 'clipRect0', height: 135 },
+    { id: 'clipRect1', height: 185 },
+    { id: 'clipRect2', height: 165 },
+    { id: 'clipRect3', height: 185 },
+    { id: 'clipRect4', height: 72 }
+  ];
+  const penGlow = document.getElementById('penGlow');
+  const penTip = document.getElementById('penTip');
+  const tagline = document.getElementById('tagline');
+  const stageSweep = document.querySelector('.stage-sweep-overlay');
+  const bokehCanvas = document.getElementById('bokehCanvas');
+  const easeInOut = t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+
+  function startBokeh() {
+    if (!bokehCanvas) return;
+    const ctx = bokehCanvas.getContext('2d');
+    if (!ctx) return;
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      bokehCanvas.width = Math.max(1, Math.floor(window.innerWidth * dpr));
+      bokehCanvas.height = Math.max(1, Math.floor(window.innerHeight * dpr));
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    const dots = Array.from({ length: 22 }, (_, i) => ({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      r: 1.5 + Math.random() * 3.2,
+      vx: (Math.random() - 0.5) * 0.2,
+      vy: -(0.12 + Math.random() * 0.22),
+      phase: i * 0.7
+    }));
+    function loop() {
+      const w = window.innerWidth, h = window.innerHeight;
+      ctx.clearRect(0, 0, w, h);
+      for (const d of dots) {
+        d.x += d.vx; d.y += d.vy; d.phase += 0.012;
+        if (d.y < -15) { d.y = h + 15; d.x = Math.random() * w; }
+        ctx.save();
+        ctx.globalAlpha = 0.45 + 0.55 * Math.sin(d.phase);
+        ctx.fillStyle = '${t.bokeh}';
+        ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  }
+
+  function setClipRatio(i, r) {
+    const rect = document.getElementById(CLIP_BOUNDS[i].id);
+    if (rect) rect.setAttribute('height', (CLIP_BOUNDS[i].height * Math.max(0, Math.min(1, r))).toFixed(2));
+  }
+  function finishClipFill(i, fromR, ms) {
+    return new Promise(resolve => {
+      let start = null;
+      function step(now) {
+        if (!start) start = now;
+        const p = Math.min((now - start) / ms, 1);
+        setClipRatio(i, fromR + (1 - fromR) * easeInOut(p));
+        p < 1 ? requestAnimationFrame(step) : resolve();
+      }
+      requestAnimationFrame(step);
+    });
+  }
+  function drawPath(path, ms, onStep) {
+    return new Promise(resolve => {
+      const total = path.getTotalLength();
+      path.style.strokeDasharray = total;
+      path.style.strokeDashoffset = total;
+      let start = null;
+      function tick(now) {
+        if (!start) start = now;
+        const raw = Math.min((now - start) / ms, 1);
+        const eased = easeInOut(raw);
+        const drawn = total * eased;
+        path.style.strokeDashoffset = total - drawn;
+        if (onStep) onStep(eased);
+        const pt = path.getPointAtLength(drawn);
+        penGlow.setAttribute('cx', pt.x); penGlow.setAttribute('cy', pt.y);
+        penTip.setAttribute('cx', pt.x); penTip.setAttribute('cy', pt.y);
+        raw < 1 ? requestAnimationFrame(tick) : resolve();
+      }
+      requestAnimationFrame(tick);
+    });
+  }
+  function animateStageSweep(ms) {
+    return new Promise(resolve => {
+      if (!stageSweep) return resolve();
+      let start = null;
+      stageSweep.style.opacity = '1';
+      stageSweep.style.transform = 'translateX(-145%) skewX(-18deg)';
+      function step(now) {
+        if (!start) start = now;
+        const p = Math.min((now - start) / ms, 1);
+        const pos = -145 + 315 * easeInOut(p);
+        stageSweep.style.transform = 'translateX(' + pos.toFixed(1) + '%) skewX(-18deg)';
+        if (p < 1) requestAnimationFrame(step);
+        else { stageSweep.style.opacity = '0'; resolve(); }
+      }
+      requestAnimationFrame(step);
+    });
+  }
+  async function writeWordmarkLetterByLetter(perLetterMs) {
+    const chars = Array.from(document.querySelectorAll('#wordmarkGroup .wm-char'));
+    if (!chars.length) return;
+    penGlow.style.opacity = '1'; penTip.style.opacity = '1';
+    for (let i = 0; i < chars.length; i++) {
+      const charGroup = chars[i];
+      const strokeEl = charGroup.querySelector('.wordmark-letter-stroke');
+      const fillEl = charGroup.querySelector('.wordmark-letter-fill');
+      const cx = parseFloat(charGroup.dataset.x) || 250;
+      const totalDash = 240;
+      await new Promise(resolve => {
+        let start = null;
+        function step(now) {
+          if (!start) start = now;
+          const raw = Math.min((now - start) / perLetterMs, 1);
+          const eased = easeInOut(raw);
+          if (strokeEl) strokeEl.style.strokeDashoffset = (totalDash * (1 - eased)).toFixed(1);
+          const tipX = cx - 12 + 24 * eased;
+          const tipY = 296 + Math.sin(eased * Math.PI * 2) * 11;
+          penGlow.setAttribute('cx', tipX.toFixed(1)); penGlow.setAttribute('cy', tipY.toFixed(1));
+          penTip.setAttribute('cx', tipX.toFixed(1)); penTip.setAttribute('cy', tipY.toFixed(1));
+          if (raw > 0.55 && fillEl) fillEl.classList.add('filled');
+          if (raw < 1) requestAnimationFrame(step);
+          else {
+            if (strokeEl) { strokeEl.style.strokeDashoffset = '0'; strokeEl.classList.add('settled'); }
+            if (fillEl) fillEl.classList.add('filled');
+            resolve();
+          }
+        }
+        requestAnimationFrame(step);
+      });
+    }
+  }
+  window.addEventListener('load', async () => {
+    startBokeh();
+    const emblemPaths = Array.from(document.querySelectorAll('#emblemOutlines .pen-path'));
+    emblemPaths.forEach(p => {
+      const len = p.getTotalLength();
+      p.style.strokeDasharray = len;
+      p.style.strokeDashoffset = len;
+    });
+    await wait(200);
+    const pt0 = emblemPaths[0].getPointAtLength(0);
+    penGlow.setAttribute('cx', pt0.x); penGlow.setAttribute('cy', pt0.y);
+    penTip.setAttribute('cx', pt0.x); penTip.setAttribute('cy', pt0.y);
+    penGlow.style.opacity = '1'; penTip.style.opacity = '1';
+    for (let i = 0; i < emblemPaths.length; i++) {
+      const p = emblemPaths[i];
+      await drawPath(p, parseInt(p.dataset.ms, 10) || 260, pr => setClipRatio(i, pr * 0.78));
+      p.classList.add('done-outline');
+      finishClipFill(i, 0.78, 360);
+    }
+    await writeWordmarkLetterByLetter(175);
+    penGlow.style.opacity = '0'; penTip.style.opacity = '0';
+    await wait(300);
+    tagline.classList.add('visible');
+    await wait(340);
+    await animateStageSweep(940);
+  });
+})();
+${closeScript}
+</body>
+</html>`;
+      }
+
+      function copyText(text, label) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(() => showToast(label)).catch(() => fallbackCopy(text, label));
+        } else {
+          fallbackCopy(text, label);
+        }
+      }
+
+      function fallbackCopy(text, label) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          document.execCommand('copy');
+          showToast(label);
+        } catch (err) {
+          showToast('تعذر النسخ');
+        }
+        document.body.removeChild(ta);
+      }
+
+      if (btnV1) btnV1.addEventListener('click', () => selectEdition(1));
+      if (btnV2) btnV2.addEventListener('click', () => selectEdition(2));
+      if (replayBtn) replayBtn.addEventListener('click', runAnimation);
+      if (copyV1Btn) copyV1Btn.addEventListener('click', () => copyText(generateStandaloneHtml(1), 'تم نسخ كود الوضع النهاري (V1)'));
+      if (copyV2Btn) copyV2Btn.addEventListener('click', () => copyText(generateStandaloneHtml(2), 'تم نسخ كود الوضع الليلي (V2)'));
+
+      window.addEventListener('load', () => {
+        applyTheme(currentEdition);
+        initBokeh();
+        runAnimation();
+      });
+    })();
+  </script>
+  <script>
+    (function () {
+      try {
+        var q = new URLSearchParams(location.search);
+        if (q.get('embed') !== '1') return;
+        document.body.classList.add('embed-mode');
+        var detectNight = function () {
+          if (q.get('theme') === 'night') return true;
+          try {
+            if (window.parent && window.parent.document) {
+              var t = window.parent.document.documentElement.getAttribute('data-valerian-theme');
+              if (t) return t === 'dark';
+            }
+          } catch (_) {}
+          return null;
+        };
+        var applied = false;
+        var applyNight = function () {
+          if (applied) return;
+          var night = detectNight();
+          if (night !== true) return;
+          applied = true;
+          var b = document.getElementById('btnV2');
+          if (b) b.click();
+          document.body.classList.add('theme-night');
+        };
+        applyNight();
+        if (document.readyState === 'complete') applyNight();
+        else window.addEventListener('load', applyNight);
+        setTimeout(applyNight, 400);
+        setTimeout(applyNight, 1500);
+      } catch (_) {}
+    })();
+  </script>
+</body>
+</html>

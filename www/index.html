@@ -3606,87 +3606,9 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
 
   <!-- ==================== SPLASH SCREEN INTRO ==================== -->
   <div id="splashOverlay">
-    <div class="splash-inner">
-      <canvas id="splashParticles"></canvas>
-      <div class="logo-stage">
-        <svg class="valerian-svg" viewBox="0 0 800 620" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <filter id="brushedMetal" x="-10%" y="-10%" width="120%" height="120%">
-              <feTurbulence type="fractalNoise" baseFrequency="0.015 0.45" numOctaves="3" seed="8" result="noise"/>
-              <feColorMatrix type="matrix" values="0 0 0 0 0.85 0 0 0 0 0.88 0 0 0 0 0.92 0 0 0 0.14 0" in="noise" result="coloredNoise"/>
-              <feComposite operator="in" in="coloredNoise" in2="SourceGraphic" result="clippedNoise"/>
-              <feBlend mode="overlay" in="SourceGraphic" in2="clippedNoise" result="textured"/>
-              <feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#010709" flood-opacity="0.75"/>
-            </filter>
-            <filter id="lineGlow" x="-30%" y="-30%" width="160%" height="160%">
-              <feGaussianBlur stdDeviation="3.5" result="blur1"/>
-              <feGaussianBlur stdDeviation="8" result="blur2"/>
-              <feMerge><feMergeNode in="blur2"/><feMergeNode in="blur1"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-            <filter id="metalTextShadow" x="-15%" y="-15%" width="130%" height="130%">
-              <feDropShadow dx="0" dy="3" stdDeviation="2" flood-color="#010608" flood-opacity="0.85"/>
-              <feDropShadow dx="0" dy="-0.8" stdDeviation="0.5" flood-color="#ffffff" flood-opacity="0.45"/>
-            </filter>
-            <linearGradient id="luminousLineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#9B7536"/><stop offset="50%" stop-color="#FFF0C8"/><stop offset="100%" stop-color="#B99555"/>
-            </linearGradient>
-            <linearGradient id="silverFacetLight" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#FFF5DC"/><stop offset="22%" stop-color="#E8D4A5"/><stop offset="48%" stop-color="#B99555"/><stop offset="72%" stop-color="#F4E5C0"/><stop offset="100%" stop-color="#8B6A30"/>
-            </linearGradient>
-            <linearGradient id="silverFacetDark" x1="100%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#D9BB7A"/><stop offset="35%" stop-color="#765629"/><stop offset="68%" stop-color="#D4B06A"/><stop offset="100%" stop-color="#5B421D"/>
-            </linearGradient>
-            <linearGradient id="silverFacetRight" x1="0%" y1="100%" x2="100%" y2="0%">
-              <stop offset="0%" stop-color="#8B6A30"/><stop offset="30%" stop-color="#E2C37F"/><stop offset="55%" stop-color="#FFF2C8"/><stop offset="80%" stop-color="#A47A37"/><stop offset="100%" stop-color="#E8D2A0"/>
-            </linearGradient>
-            <linearGradient id="silverTextGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#FFF1C9"/><stop offset="32%" stop-color="#E3C37D"/><stop offset="52%" stop-color="#98713A"/><stop offset="78%" stop-color="#F3DEAB"/><stop offset="100%" stop-color="#765629"/>
-            </linearGradient>
-            <linearGradient id="silverSubGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stop-color="#A47A37"/><stop offset="25%" stop-color="#F6E7C1"/><stop offset="50%" stop-color="#B99555"/><stop offset="75%" stop-color="#FFF0C8"/><stop offset="100%" stop-color="#96713A"/>
-            </linearGradient>
-            <linearGradient id="bevelStroke" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#FFF2C8" stop-opacity="0.8"/><stop offset="50%" stop-color="#765629" stop-opacity="0.6"/><stop offset="100%" stop-color="#E8D2A0" stop-opacity="0.8"/>
-            </linearGradient>
-            <linearGradient id="sweepGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/><stop offset="40%" stop-color="#ffffff" stop-opacity="0.15"/><stop offset="50%" stop-color="#ffffff" stop-opacity="0.85"/><stop offset="60%" stop-color="#ffffff" stop-opacity="0.15"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
-            </linearGradient>
-            <clipPath id="logoClip">
-              <path d="M 162,72 C 232,96 276,144 328,224 L 389,316 L 368,348 L 162,72 Z"/>
-              <path d="M 178,52 C 268,54 316,96 364,174 L 395,222 L 372,256 L 315,170 C 276,112 238,76 178,52 Z"/>
-              <path d="M 622,52 C 532,54 484,96 436,174 L 378,264 L 400,298 L 485,170 C 524,112 562,76 622,52 Z"/>
-              <path d="M 638,72 C 568,96 524,144 472,224 L 411,316 L 432,348 L 638,72 Z"/>
-              <path d="M 400,334 L 424,368 L 400,404 L 376,368 Z"/>
-              <text x="404" y="492" text-anchor="middle" font-family="Cinzel, serif" font-weight="500" font-size="74" letter-spacing="14">VALERIAN</text>
-              <text x="403" y="544" text-anchor="middle" font-family="Cinzel, serif" font-weight="400" font-size="21.5" letter-spacing="11.5">THE ART OF FRAGRANCE</text>
-            </clipPath>
-          </defs>
-
-          <g class="metallic-fill" filter="url(#brushedMetal)">
-            <path d="M 162,72 C 232,96 276,144 328,224 L 389,316 L 368,348 L 162,72 Z" fill="url(#silverFacetLight)" stroke="#765629" stroke-width="1.2"/>
-            <path d="M 162,72 C 218,112 262,168 315,248 L 368,348 L 378,332 L 162,72 Z" fill="url(#silverFacetDark)" opacity="0.55"/>
-            <path d="M 178,52 C 268,54 316,96 364,174 L 395,222 L 372,256 L 315,170 C 276,112 238,76 178,52 Z" fill="url(#silverFacetDark)" stroke="#765629" stroke-width="1.2"/>
-            <path d="M 178,52 C 268,54 316,96 364,174 L 395,222 L 384,239 C 332,158 282,86 178,52 Z" fill="url(#silverFacetLight)" opacity="0.7"/>
-            <path d="M 622,52 C 532,54 484,96 436,174 L 378,264 L 400,298 L 485,170 C 524,112 562,76 622,52 Z" fill="url(#silverFacetRight)" stroke="#765629" stroke-width="1.2"/>
-            <path d="M 622,52 C 542,72 496,124 446,198 L 400,298 L 389,281 L 436,184 C 488,108 538,64 622,52 Z" fill="url(#silverFacetDark)" opacity="0.65"/>
-            <path d="M 638,72 C 568,96 524,144 472,224 L 411,316 L 432,348 L 638,72 Z" fill="url(#silverFacetRight)" stroke="#765629" stroke-width="1.2"/>
-            <path d="M 638,72 C 582,112 538,168 485,248 L 432,348 L 422,332 L 638,72 Z" fill="url(#silverFacetDark)" opacity="0.5"/>
-            <path d="M 400,334 L 400,404 L 376,368 Z" fill="url(#silverFacetLight)" stroke="#765629" stroke-width="1"/>
-            <path d="M 400,334 L 424,368 L 400,404 Z" fill="url(#silverFacetDark)" stroke="#765629" stroke-width="1"/>
-          </g>
-
-          <text x="404" y="492" text-anchor="middle" class="brand-title-splash">VALERIAN</text>
-          <text x="403" y="544" text-anchor="middle" class="brand-subtitle-splash">THE ART OF FRAGRANCE</text>
-
-          <g class="light-sweep-group" clip-path="url(#logoClip)">
-            <rect class="sweep-bar" x="0" y="0" width="220" height="620" fill="url(#sweepGradient)"/>
-          </g>
-
-          <path class="continuous-line" d="M 178,52 C 268,54 316,96 364,174 L 395,222 L 372,256 L 315,170 C 276,112 238,76 178,52 L 162,72 C 232,96 276,144 328,224 L 389,316 L 368,348 L 162,72 C 245,175 315,270 376,368 L 400,404 L 424,368 L 400,334 L 376,368 C 386,352 398,334 411,316 L 472,224 C 524,144 568,96 638,72 L 432,348 L 411,316 C 465,245 545,145 622,52 C 532,54 484,96 436,174 L 378,264 L 400,298 L 485,170 C 524,112 562,76 622,52 C 440,145 215,310 112,438 L 138,492 L 164,438 C 182,438 195,465 184,492 L 210,438 L 234,492 M 192,474 L 225,474 C 242,474 252,455 256,438 L 256,492 L 296,492 C 312,492 318,465 322,438 L 362,438 M 322,465 L 354,465 M 322,492 L 364,492 C 382,492 388,465 390,438 L 390,492 M 390,438 C 424,438 426,466 394,466 L 432,492 C 445,492 454,465 456,438 L 456,492 C 472,492 486,465 504,438 L 530,492 M 488,474 L 521,474 C 538,474 548,455 554,438 L 554,492 L 604,438 L 604,492 C 565,522 285,532 184,544 L 618,544"/>
-        </svg>
-      </div>
-</div>
+    <iframe id="splashIntroFrame" src="intro.html?embed=1" title="VALERIAN" style="position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:transparent" allowtransparency="true"></iframe>
   </div>
+
   <!-- Independent splash failsafe: must run even if a later application script fails. -->
   <script id="valerian-splash-watchdog">
     (function () {
@@ -4555,7 +4477,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
 <div id="v5DeleteCredentialModal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="v5DeleteCredentialTitle" dir="rtl"><div class="v5-delete-panel"><div class="flex items-center gap-3 mb-4"><div class="w-11 h-11 rounded-2xl flex items-center justify-center bg-rose-500/15 border border-rose-300/25 text-rose-200 text-xl">🔐</div><div><h3 id="v5DeleteCredentialTitle" class="text-lg font-black text-white">تأكيد الحذف</h3><p class="text-[10px] text-slate-400 mt-1">VALERIAN • حماية البيانات</p></div></div><p id="v5DeleteCredentialDescription" class="text-xs leading-7 text-slate-300 mb-4"></p><label id="v5DeleteCredentialLabel" for="v5DeleteCredentialInput" class="block text-xs font-extrabold text-slate-200 mb-2">كلمة المرور</label><input id="v5DeleteCredentialInput" class="v5-delete-input" type="password" autocomplete="current-password" dir="auto"><p id="v5DeleteCredentialError" class="hidden text-xs text-rose-300 mt-2"></p><div class="grid grid-cols-2 gap-2 mt-5"><button id="v5DeleteCredentialCancel" type="button" class="rounded-xl border border-white/15 bg-white/5 py-3 text-xs font-extrabold text-slate-200">إلغاء</button><button id="v5DeleteCredentialConfirm" type="button" class="rounded-xl bg-gradient-to-br from-rose-200 to-rose-400 py-3 text-xs font-black text-slate-950">تأكيد الحذف</button></div></div></div>
 
   <!-- ==================== CLEAN DECOUPLED UI CHASSIS ENGINE V5.0 ==================== -->
-  <script src="./engine-runtime.js?v=v20-20261121-invoice-offline-hotfix"></script>
+  <script src="./engine-runtime.js?v=v20-20261121-unified-qr-intro"></script>
   <script>
     const defaultEmptySchema = () => ({
       settings: {
@@ -6815,6 +6737,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
 
     /* ==================== SPLASH SCREEN PARTICLE ENGINE ==================== */
     const splashCanvas = document.getElementById('splashParticles');
+    if (splashCanvas) {
     const sCtx = splashCanvas.getContext('2d');
     let splashParticles = [];
     let splashStartTime = performance.now();
@@ -6919,6 +6842,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
     initSplashParticles();
     if(window.__valerianSplashDismissed)dismissSplash();
     else splashAnimationFrame = requestAnimationFrame(animateSplashParticles);
+    }
 
     renderAllViews();
   </script>
@@ -7552,7 +7476,7 @@ function openV5DeleteCredential(options={}){const modal=document.getElementById(
       });
       window.addEventListener('load',async()=>{
         try{
-          const registration=await navigator.serviceWorker.register('./service-worker.js?v=v20-20261121-invoice-offline-hotfix',{scope:'./',updateViaCache:'none'});
+          const registration=await navigator.serviceWorker.register('./service-worker.js?v=v20-20261121-unified-qr-intro',{scope:'./',updateViaCache:'none'});
           if(registration.waiting) registration.waiting.postMessage({type:'SKIP_WAITING'});
           registration.addEventListener('updatefound',()=>{
             const next=registration.installing;
