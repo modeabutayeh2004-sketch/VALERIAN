@@ -6321,17 +6321,24 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         // at its native layout width. The final bitmap is then scaled by the
         // exact visible-to-layout ratio, rather than reflowing the document.
         captureHost.id = 'previewSheetBody';
-        captureHost.style.cssText = 'position:fixed;left:0;top:0;z-index:-1;opacity:1;pointer-events:none;width:'+Math.ceil(previewBodyRect.width)+'px!important;max-width:'+Math.ceil(previewBodyRect.width)+'px!important;height:'+Math.ceil(rect.height)+'px!important;min-height:'+Math.ceil(rect.height)+'px!important;display:flex;justify-content:center;align-items:stretch;background:transparent;direction:rtl;overflow:visible;';
-        captureNode.style.setProperty('height',Math.ceil(rect.height)+'px','important');
+        // Export-only layout: keep the phone paper width and minimum height,
+        // but expand the product stack instead of exporting its scroll viewport.
+        captureHost.style.cssText = 'position:fixed;left:0;top:0;z-index:-1;opacity:1;pointer-events:none;width:'+Math.ceil(previewBodyRect.width)+'px!important;max-width:'+Math.ceil(previewBodyRect.width)+'px!important;height:auto!important;min-height:'+Math.ceil(rect.height)+'px!important;display:flex;justify-content:center;align-items:flex-start;background:transparent;direction:rtl;overflow:visible;';
+        captureNode.style.setProperty('height','auto','important');
         captureNode.style.setProperty('min-height',Math.ceil(rect.height)+'px','important');
-        captureNode.style.setProperty('align-self','stretch','important');
+        captureNode.style.setProperty('align-self','flex-start','important');
         captureNode.style.setProperty('zoom','1','important');
         captureNode.style.setProperty('width',width+'px','important');
         captureNode.style.setProperty('min-width',width+'px','important');
         captureNode.style.setProperty('max-width',width+'px','important');
-        captureNode.style.setProperty('height','auto','important');
         captureNode.style.setProperty('margin','0','important');
         captureNode.style.setProperty('transform','none','important');
+        captureNode.style.setProperty('overflow','visible','important');
+        const expandForExport=(selector,styles)=>captureNode.querySelectorAll(selector).forEach(node=>Object.entries(styles).forEach(([key,val])=>node.style.setProperty(key,val,'important')));
+        expandForExport('.receipt-body',{height:'auto',minHeight:'0',flex:'0 0 auto',overflow:'visible',justifyContent:'flex-start',gap:'8px'});
+        expandForExport('.products-list',{height:'auto',minHeight:'0',maxHeight:'none',flex:'0 0 auto',overflow:'visible',overflowY:'visible',overscrollBehavior:'auto'});
+        expandForExport('.product-container',{height:'auto',minHeight:'64px',flex:'0 0 auto',overflow:'visible',justifyContent:'flex-start'});
+        expandForExport('.info-cards-grid,.summary-container,.social-qr-card,.receipt-footer,.top-banner',{flex:'0 0 auto',minHeight:'0',overflow:'visible'});
       } else {
         captureHost.style.cssText = 'position:fixed;left:'+rect.left+'px;top:'+rect.top+'px;z-index:-1;opacity:1;pointer-events:none;width:'+width+'px;max-width:'+width+'px;background:transparent;direction:rtl;overflow:visible;';
         captureNode.style.width = width + 'px';
@@ -6368,8 +6375,9 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
 
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       const captureBounds = captureNode.getBoundingClientRect();
-      const height = isInvoiceCapture ? Math.ceil(rect.height) : Math.ceil(Math.max(captureNode.scrollHeight,captureBounds.height));
-      if (isInvoiceCapture && (Math.abs(captureBounds.width-rect.width)>1 || Math.abs(captureBounds.height-rect.height)>1)) { captureHost.remove(); throw new Error('تعذر مطابقة أبعاد نسخة التصدير مع نافذة المعاينة.'); }
+      const height = Math.ceil(Math.max(captureNode.scrollHeight,captureBounds.height,isInvoiceCapture?rect.height:0));
+      if (isInvoiceCapture && Math.abs(captureBounds.width-rect.width)>1) { captureHost.remove(); throw new Error('تعذر مطابقة عرض نسخة التصدير مع نافذة المعاينة.'); }
+      if(isInvoiceCapture){const items=[...captureNode.querySelectorAll('.product-container')];const itemRects=items.map(node=>{const r=node.getBoundingClientRect();return {top:r.top-captureBounds.top,bottom:r.bottom-captureBounds.top,height:r.height};});window.__valerianLastInvoiceExportMetrics={previewWidth:rect.width,previewHeight:rect.height,exportWidth:captureBounds.width,exportHeight:height,itemCount:items.length,itemRects};}
       if (!width || !height) { captureHost.remove(); throw new Error('تعذر تحديد أبعاد المعاينة.'); }
       const oldPriceStrikeRects = isInvoiceCapture ? [] : [...captureNode.querySelectorAll('.offer-old-price')].map(node => {
         const r = node.getBoundingClientRect();
