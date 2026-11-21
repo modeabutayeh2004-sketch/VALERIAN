@@ -5325,7 +5325,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       const links=configuredLinks.length?configuredLinks:[{label:'Facebook',url:'https://www.facebook.com'}];
       let section=card.querySelector('.valerian-share-qr');
       if(typeof window.QRCode!=='function'){
-        if(!window.__valerianQrLibraryPromise){window.__valerianQrLibraryPromise=new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';script.async=true;script.onload=()=>typeof window.QRCode==='function'?resolve(true):reject(new Error('مكتبة QR لم تبدأ.'));script.onerror=()=>reject(new Error('تعذر تحميل مكتبة QR. تحقق من الاتصال بالإنترنت.'));document.head.appendChild(script);}).catch(err=>{window.__valerianQrLibraryPromise=null;throw err;});}
+        if(!window.__valerianQrLibraryPromise){window.__valerianQrLibraryPromise=new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='./vendor/qrcode.min.js';script.async=true;script.onload=()=>typeof window.QRCode==='function'?resolve(true):reject(new Error('مكتبة QR لم تبدأ.'));script.onerror=()=>reject(new Error('تعذر تحميل مكتبة QR. تحقق من الاتصال بالإنترنت.'));document.head.appendChild(script);}).catch(err=>{window.__valerianQrLibraryPromise=null;throw err;});}
         await window.__valerianQrLibraryPromise;
       }
       if(!section){section=document.createElement('section');section.className='valerian-share-qr';section.innerHTML='<div class="valerian-share-section-title">تابع VALERIAN على منصاتنا</div><div class="valerian-share-qr-list"></div>';card.insertBefore(section,card.querySelector('.valerian-share-foot'));}
@@ -6284,7 +6284,7 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
       if (!window.__v5Html2CanvasPromise) {
         window.__v5Html2CanvasPromise = new Promise((resolve, reject) => {
           const script = document.createElement('script');
-          script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+          script.src = './vendor/html2canvas.min.js';
           script.async = true;
           script.onload = () => typeof window.html2canvas === 'function' ? resolve(window.html2canvas) : reject(new Error('مكتبة تجهيز الصورة لم تبدأ.'));
           script.onerror = () => reject(new Error('تعذر تحميل أداة تجهيز الصورة. تأكد من الاتصال بالإنترنت.'));
