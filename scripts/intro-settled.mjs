@@ -20,7 +20,7 @@ await page.route('**/*', route => {
 await page.goto('http://127.0.0.1:4181/intro.html?embed=1', {waitUntil:'domcontentloaded'});
 await page.waitForTimeout(8000);
 await page.screenshot({path:'www/check-intro-settled-day.png'});
-await page.click('#btnV2');
+await page.evaluate(() => document.getElementById('btnV2').click());
 await page.waitForTimeout(8000);
 await page.screenshot({path:'www/check-intro-settled-night.png'});
 await browser.close(); server.close();
