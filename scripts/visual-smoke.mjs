@@ -227,6 +227,40 @@ try {
       }));
       if(nativeSaveCheck.chunks<2||nativeSaveCheck.maxChunk>131072||nativeSaveCheck.base64Length<10000||nativeSaveCheck.mimeType!=='image/png')throw new Error('Chunked Android image-save bridge smoke test failed: '+JSON.stringify(nativeSaveCheck));
       console.log(JSON.stringify({nativeChunkedSave:'ok',...nativeSaveCheck}));
+      const businessFlowCheck=await page.evaluate(async()=>{
+        const engine=window.ValerianEngine,stamp=Date.now();
+        const added=await engine.addProduct({name:'VALERIAN Smoke Supply '+stamp,category:'مستلزمات',productType:'مستلزمات',size:'قطعة',stockUnit:'قطعة',price:100,averageCost:50,stock:5,minimumStock:1});
+        if(!added?.ok||!added.product?.id)throw new Error('Offline flow test could not create its local test product.');
+        const company='شركة شحن اختبار '+stamp;
+        const companyResult=await engine.addShippingCompany(company);
+        if(!companyResult?.ok)throw new Error('Shipping company registration failed in the business-flow test.');
+        const customer={name:'عميل اختبار محلي',phone:'01000000000',address:'القاهرة'};
+        const first=await engine.createOrder({mode:'reservation',items:[{id:added.product.id,qty:1}],customer,deposit:25,shippingCompany:company});
+        if(!first?.ok||!first.order?.id)throw new Error('Reservation with a preselected shipping company could not be created.');
+        const tracking='TRACK-'+stamp;
+        const dispatch=await engine.dispatchOrder({orderId:first.order.id,tracking});
+        const afterDispatch=engine.getSnapshot(),shipped=afterDispatch.orders.find(x=>String(x.id)===String(first.order.id));
+        if(!dispatch?.ok||!shipped?.shippedAt||shipped.deliveredAt||shipped.shippingCompany!==company||shipped.trackingNumber!==tracking)throw new Error('Dispatch did not retain the selected company/tracking or incorrectly marked customer receipt.');
+        const second=await engine.createOrder({mode:'reservation',items:[{id:added.product.id,qty:1}],customer,deposit:50,shippingCompany:company});
+        if(!second?.ok||!second.order?.id)throw new Error('Second reservation for cancellation test could not be created.');
+        const cancelled=await engine.cancelReservation({orderId:second.order.id,method:'نقدي'});
+        const afterCancel=engine.getSnapshot(),cancelledOrder=afterCancel.orders.find(x=>String(x.id)===String(second.order.id)),product=afterCancel.products.find(x=>String(x.id)===String(added.product.id));
+        const refund=afterCancel.paymentTransactions.some(x=>String(x.orderId)===String(second.order.id)&&x.type==='REFUND_PAID'&&Number(x.amount)===50);
+        if(!cancelled?.ok||!String(cancelledOrder?.status||'').includes('ملغي')||Number(cancelledOrder?.depositRefundedAmount)!==50||Number(product?.reservedStock)!==0||!refund)throw new Error('Reservation cancellation did not release stock and record the full deposit refund.');
+        return {shippingCompanySaved:true,trackingSaved:true,shipmentPendingReceipt:!shipped.deliveredAt,reservationCancelled:true,depositRefunded:cancelledOrder.depositRefundedAmount,reservedStockAfterCancel:product.reservedStock,cashRefundRecorded:refund};
+      });
+      console.log(JSON.stringify({reservationShippingCancellation:'ok',...businessFlowCheck}));
+      await context.setOffline(true);
+      const offlineWrite=await page.evaluate(async()=>{
+        const engine=window.ValerianEngine,stamp=Date.now(),snapshot=engine.getSnapshot();
+        const product=snapshot.products.find(p=>String(p.name||'').startsWith('VALERIAN Smoke Supply '));
+        const result=await engine.createOrder({mode:'reservation',items:[{id:product.id,qty:1}],customer:{name:'عميل دون اتصال',phone:'01000000001',address:'القاهرة'},deposit:0});
+        const local=engine.getSnapshot().orders.find(x=>String(x.id)===String(result.order?.id));
+        if(!result?.ok||!local)throw new Error('A local reservation could not be saved while the browser was offline.');
+        return {savedOffline:true,orderId:local.id,localOrderPresent:true};
+      });
+      await context.setOffline(false);
+      console.log(JSON.stringify({offlineLocalWrite:'ok',...offlineWrite}));
     }
     const status = await page.evaluate(() => ({
       title:document.title,
