@@ -3252,6 +3252,97 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
 }
 </style>
 
+
+<style id="v20-navy-delivery-refinement">
+/* V20.12 — delivery workspace visual refinement only; preserve shipment, payment and return behavior. */
+@media screen{
+  #tab-tracking>div:first-child{
+    background:radial-gradient(circle at 96% 0%,rgba(205,218,234,.13),transparent 38%),linear-gradient(145deg,rgba(29,47,70,.97),rgba(11,23,39,.99))!important;
+    border:1px solid rgba(195,210,229,.2)!important;border-radius:18px!important;
+    box-shadow:0 14px 32px rgba(0,0,0,.2)!important;padding:16px!important;
+  }
+  #tab-tracking>div:first-child h2{color:#f1f4f8!important;line-height:1.7!important;}
+  #tab-tracking>div:first-child>div{
+    background:rgba(195,210,229,.055)!important;
+    border:1px solid rgba(195,210,229,.16)!important;border-radius:14px!important;
+  }
+  #tab-tracking>div:first-child>div>div:first-child{color:#e4ebf3!important;}
+  #tab-tracking #newShippingCompanyName{
+    min-height:42px!important;background:rgba(4,12,23,.62)!important;
+    color:#edf2f8!important;border:1px solid rgba(195,210,229,.22)!important;border-radius:10px!important;
+  }
+  #tab-tracking #newShippingCompanyName::placeholder{color:#91a2b8!important;}
+  #tab-tracking>div:first-child button{
+    min-height:42px!important;background:linear-gradient(135deg,#e6ebf1,#b8c6d5)!important;
+    color:#142238!important;border:1px solid rgba(238,244,250,.58)!important;
+    border-radius:10px!important;font-weight:800!important;
+    box-shadow:0 6px 16px rgba(0,0,0,.16)!important;
+  }
+  #tab-tracking>div:nth-child(2){
+    background:linear-gradient(145deg,rgba(27,45,68,.97),rgba(12,24,40,.99))!important;
+    border:1px solid rgba(195,210,229,.18)!important;border-radius:17px!important;
+    box-shadow:0 12px 28px rgba(0,0,0,.17)!important;
+  }
+  #tab-tracking>div:nth-child(2)>div{
+    max-width:100%!important;overflow-x:auto!important;overscroll-behavior-inline:contain!important;
+    -webkit-overflow-scrolling:touch!important;scrollbar-width:thin!important;
+    scrollbar-color:rgba(180,197,217,.35) transparent!important;
+  }
+  #tab-tracking>div:nth-child(2)>div::-webkit-scrollbar{height:7px!important;}
+  #tab-tracking>div:nth-child(2)>div::-webkit-scrollbar-thumb{background:rgba(180,197,217,.32)!important;border-radius:20px!important;}
+  #tab-tracking table{
+    min-width:1120px!important;width:100%!important;border-collapse:separate!important;
+    border-spacing:0!important;color:#dce5ef!important;
+  }
+  #tab-tracking table thead{background:rgba(195,210,229,.09)!important;color:#dfe7f0!important;}
+  #tab-tracking table thead th{
+    background:rgba(195,210,229,.09)!important;color:#dfe7f0!important;
+    border-bottom:1px solid rgba(195,210,229,.18)!important;
+    font-weight:800!important;white-space:nowrap!important;padding:13px 12px!important;
+  }
+  #tab-tracking table tbody td{
+    color:#d6e0ec!important;border-bottom:1px solid rgba(195,210,229,.1)!important;
+    padding:12px!important;vertical-align:middle!important;
+  }
+  #tab-tracking table tbody tr:last-child td{border-bottom:0!important;}
+  #tab-tracking table tbody tr:hover td{background:rgba(195,210,229,.045)!important;}
+  #tab-tracking table tbody td button{
+    min-height:36px!important;border-radius:9px!important;padding:7px 11px!important;
+    white-space:nowrap!important;
+  }
+  #tab-tracking table input,#tab-tracking table select{
+    min-height:38px!important;max-width:100%!important;border-radius:9px!important;
+    background:rgba(4,12,23,.62)!important;color:#edf2f8!important;
+    border:1px solid rgba(195,210,229,.2)!important;
+  }
+  #tab-tracking button:focus-visible,#tab-tracking input:focus-visible,#tab-tracking select:focus-visible{
+    outline:2px solid rgba(210,224,240,.72)!important;outline-offset:2px!important;
+  }
+}
+@media screen and (max-width:767px){
+  #tab-tracking{gap:14px!important;}
+  #tab-tracking>div:first-child{padding:14px!important;}
+  #tab-tracking>div:first-child>div{padding:11px!important;}
+  #tab-tracking #newShippingCompanyName{min-width:0!important;width:100%!important;flex:1 1 100%!important;}
+  #tab-tracking>div:first-child button{width:100%!important;min-height:44px!important;}
+  #tab-tracking>div:nth-child(2){border-radius:14px!important;}
+  #tab-tracking table{min-width:1080px!important;font-size:11px!important;}
+  #tab-tracking table th,#tab-tracking table td{padding:11px 10px!important;}
+}
+@media (prefers-reduced-motion:reduce){
+  #tab-tracking button,#tab-tracking input,#tab-tracking select{transition:none!important;}
+}
+@media print{
+  #tab-tracking>div:first-child,#tab-tracking>div:nth-child(2){
+    background:#fff!important;color:#111!important;box-shadow:none!important;border-color:#ddd!important;
+  }
+  #tab-tracking h2,#tab-tracking p,#tab-tracking table,#tab-tracking table th,#tab-tracking table td{color:#111!important;}
+  #tab-tracking>div:nth-child(2)>div{overflow:visible!important;}
+  #tab-tracking table{min-width:0!important;width:100%!important;}
+  #tab-tracking table th,#tab-tracking table td{background:#fff!important;border-color:#ddd!important;}
+}
+</style>
+
 </head>
 <!-- V19.30: smart operating supplies inventory; preserve original layout and schemaVersion 18 -->
 <!-- V19.37: compact A4 landscape inventory print with fixed image thumbnails -->
