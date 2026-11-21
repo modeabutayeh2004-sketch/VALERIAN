@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VALERIAN — تابعنا على منصاتنا</title>
+<meta name="description" content="كل روابط VALERIAN في مكان واحد.">
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+    background: radial-gradient(circle at 50% 0%, #fbf3df 0%, #f3e6c8 45%, #e6d2a8 100%);
+    color: #4a3a16;
+    display: flex; align-items: center; justify-content: center;
+    padding: 32px 18px;
+  }
+  .card {
+    width: 100%; max-width: 420px;
+    background: linear-gradient(180deg, #fffdf8, #faf3e2);
+    border: 1px solid #d9bd7f;
+    border-radius: 26px;
+    box-shadow: 0 24px 60px rgba(122, 91, 20, .18), inset 0 1px 0 #ffffff;
+    overflow: hidden;
+    text-align: center;
+  }
+  .head {
+    padding: 34px 24px 22px;
+    background: linear-gradient(112deg, #fffdf8 0%, #f5ead4 58%, #ead8b4 100%);
+    border-bottom: 3px solid #b58a43;
+  }
+  .logo { width: 92px; height: auto; margin-bottom: 12px; }
+  .brand { font-size: 30px; letter-spacing: 7px; font-weight: 800; color: #7a5b14; font-family: Georgia, "Times New Roman", serif; }
+  .tag { font-size: 12px; letter-spacing: 2px; color: #a88438; margin-top: 4px; font-weight: 700; }
+  .body { padding: 24px 22px 30px; }
+  .lead { font-size: 15px; font-weight: 700; color: #6b5220; margin-bottom: 18px; }
+  .links { display: grid; gap: 12px; }
+  .link-btn {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 15px 18px;
+    border-radius: 16px;
+    border: 1px solid rgba(181, 138, 67, .45);
+    background: linear-gradient(135deg, #fffdf6, #f7ecd4);
+    color: #6b5220;
+    font-size: 16px; font-weight: 800;
+    text-decoration: none;
+    box-shadow: 0 6px 16px rgba(150, 112, 40, .10), inset 0 1px 0 #fff;
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .link-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(150, 112, 40, .18), inset 0 1px 0 #fff; }
+  .link-btn:active { transform: scale(.98); }
+  .link-btn .arrow { font-size: 18px; color: #b58a43; }
+  .empty { font-size: 14px; color: #8a6d33; line-height: 1.9; padding: 12px 6px; }
+  .foot { margin-top: 22px; font-size: 11px; letter-spacing: 3px; color: #b39654; font-weight: 700; }
+</style>
+</head>
+<body>
+  <main class="card">
+    <div class="head">
+      <svg class="logo" viewBox="0 0 220 180" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="goldShine1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f7e6b5"/><stop offset="35%" stop-color="#c9a34e"/><stop offset="65%" stop-color="#f0d996"/><stop offset="100%" stop-color="#7d5d1e"/></linearGradient><linearGradient id="goldShine2" x1="100%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#e8cf89"/><stop offset="45%" stop-color="#9e7a31"/><stop offset="75%" stop-color="#e3c578"/><stop offset="100%" stop-color="#694d16"/></linearGradient><linearGradient id="diamondLeft"><stop offset="0%" stop-color="#f5e2ad"/><stop offset="100%" stop-color="#a88438"/></linearGradient><linearGradient id="diamondRight"><stop offset="0%" stop-color="#96742b"/><stop offset="100%" stop-color="#5e4412"/></linearGradient></defs><path d="M16 12C62 12 80 22 108 68L96 84C72 44 54 28 16 12Z" fill="url(#goldShine1)" stroke="#5c4212" stroke-width="1.3"/><path d="M18 22C56 38 74 56 105 114L93 130 18 22Z" fill="url(#goldShine2)" stroke="#5c4212" stroke-width="1.3"/><path d="M204 12C158 12 140 22 101 89L113 105C148 46 166 28 204 12Z" fill="url(#goldShine1)" stroke="#5c4212" stroke-width="1.3"/><path d="M202 22C164 38 146 56 115 114L127 130 202 22Z" fill="url(#goldShine2)" stroke="#5c4212" stroke-width="1.3"/><polygon points="110,122 97,140 110,164" fill="url(#diamondLeft)" stroke="#5c4212" stroke-width="1.2"/><polygon points="110,122 123,140 110,164" fill="url(#diamondRight)" stroke="#5c4212" stroke-width="1.2"/></svg>
+      <div class="brand">VALERIAN</div>
+      <div class="tag">LUXURY PERFUMES</div>
+    </div>
+    <div class="body">
+      <p class="lead">تابعنا على منصاتنا</p>
+      <div class="links" id="links"></div>
+      <div class="foot">VALERIAN &copy; جميع الحقوق محفوظة</div>
+    </div>
+  </main>
+<script>
+(function () {
+  var host = document.getElementById('links');
+  function showEmpty() {
+    var d = document.createElement('div');
+    d.className = 'empty';
+    d.textContent = 'رابط غير صالح أو منتهي. اطلب من VALERIAN رمز QR جديد.';
+    host.appendChild(d);
+  }
+  function decodePayload() {
+    var hash = window.location.hash || '';
+    var m = hash.match(/links=([A-Za-z0-9\-_]+)/);
+    if (!m) return null;
+    var b64 = m[1].replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4) b64 += '=';
+    var json = decodeURIComponent(escape(atob(b64)));
+    var raw = JSON.parse(json);
+    if (!Array.isArray(raw)) return null;
+    var out = [];
+    for (var i = 0; i < raw.length && out.length < 6; i++) {
+      var item = raw[i];
+      var label, url;
+      if (Array.isArray(item)) { label = String(item[0] || ''); url = String(item[1] || ''); }
+      else if (item && typeof item === 'object') { label = String(item.label || ''); url = String(item.url || ''); }
+      else continue;
+      if (!/^https?:\/\//i.test(url)) url = 'https://' + url.replace(/^\/+/, '');
+      if (!/^https:\/\/[^\s]+\.[^\s]+/i.test(url)) continue;
+      label = label.trim().slice(0, 40) || 'رابط';
+      out.push({ label: label, url: url });
+    }
+    return out.length ? out : null;
+  }
+  try {
+    var items = decodePayload();
+    if (!items) { showEmpty(); return; }
+    items.forEach(function (item) {
+      var a = document.createElement('a');
+      a.className = 'link-btn';
+      a.href = item.url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      var name = document.createElement('span');
+      name.textContent = item.label;
+      var arrow = document.createElement('span');
+      arrow.className = 'arrow';
+      arrow.textContent = '↖';
+      a.appendChild(name);
+      a.appendChild(arrow);
+      host.appendChild(a);
+    });
+  } catch (e) {
+    showEmpty();
+  }
+})();
+</script>
+</body>
+</html>

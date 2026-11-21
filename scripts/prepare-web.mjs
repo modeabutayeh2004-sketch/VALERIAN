@@ -24,7 +24,7 @@ for(const [index,match] of [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/scri
 fs.rmSync(inlineCheckDir,{recursive:true,force:true});
 console.log(`Validated ${inlineScriptsChecked} inline application scripts.`);
 fs.rmSync(out,{recursive:true,force:true});fs.mkdirSync(out,{recursive:true});
-for(const file of ['index.html','engine-runtime.js','service-worker.js']) fs.copyFileSync(path.join(root,file),path.join(out,file));
+for(const file of ['index.html','engine-runtime.js','service-worker.js','intro.html','links.html']) fs.copyFileSync(path.join(root,file),path.join(out,file));
 // The service worker pre-caches this exact path. Include the source emblem in
 // the web bundle so cache.addAll() succeeds during first installation.
 const vendorOut=path.join(out,'vendor');fs.mkdirSync(vendorOut,{recursive:true});
