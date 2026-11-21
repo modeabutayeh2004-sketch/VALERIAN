@@ -2045,7 +2045,7 @@
       const orderObj = {
         id:orderId, date:new Date().toISOString(), createdAt:new Date().toISOString(), reservedAt:new Date().toISOString(), deliveredAt:'', mode:posOrderMode,
         status:posOrderMode === 'reservation' ? 'قيد الانتظار / حجز مسبق' : 'مؤكد / مدفوع بالكامل — بانتظار الشحن',
-        phone,name,address,shippingCompany:'',trackingNumber:'',
+        phone,name,address,shippingCompany:String(document.getElementById('posShippingCompany')?.value||'').trim(),trackingNumber:'',
         items:structuredClone(cart).map(item => { const p=state.products.find(x=>x.id===item.id); return {...item,unitCostAtSale:Number(p?.averageCost ?? p?.totalCost ?? 0),costSnapshotDate:new Date().toISOString()}; }),
         stockDeducted:false, ...totals, depositAmount:deposit,
         remainingAmount:Math.max(0,totals.grandTotal-deposit), earnedPoints, loyaltyEligibleAtSale, loyaltyRateAtSale, loyaltyStartOrderAtSale:Number(state.settings.loyaltyStartOrder||1), loyaltyAwarded:false, pointsUsed
@@ -3807,6 +3807,7 @@ async function previewPeriodicReportPrint() {
       const now = new Date();
 
       const filteredOrders = state.orders.filter(o => {
+        if(String(o.status||'').includes('ملغي')||o.cancelledAt)return false;
         const d = new Date(o.date);
         let matchPeriod = true;
         if (period === 'today') matchPeriod = (d.toDateString() === now.toDateString());
@@ -5624,14 +5625,46 @@ async function previewPeriodicReportPrint() {
           if(!state.shippingCompanies.includes(value))throw new Error('لم يتم تأكيد تسجيل شركة الشحن داخل المحرك.');
           refreshAllViews();return {ok:true,company:value,snapshot:snapshot()};
         },
+        cancelReservation:async payload=>{
+          await ready;
+          const idx=findOrder(payload?.orderId);if(idx<0)throw new Error('الحجز غير موجود.');
+          const order=state.orders[idx];
+          if(order.mode!=='reservation')throw new Error('إلغاء هذه العملية متاح للحجوزات فقط.');
+          if(order.stockDeducted||order.shippedAt||order.deliveredAt)throw new Error('لا يمكن إلغاء حجز بعد خروجه للشحن؛ استخدم إجراءات المرتجع.');
+          if(String(order.status||'').includes('ملغي')||order.cancelledAt)throw new Error('تم إلغاء هذا الحجز بالفعل.');
+          if((order.items||[]).some(item=>Number(item.returnedQty||0)>0))throw new Error('هذا الحجز يحتوي على مرتجع مسجل؛ راجع سجل المرتجعات قبل الإلغاء.');
+          const method=normalizePaymentMethod(payload?.method||'نقدي'),allowed=['نقدي','تحويل بنكي','محفظة إلكترونية','بطاقة','أخرى'];
+          if(!allowed.includes(method))throw new Error('اختر وسيلة رد صحيحة للمقدم.');
+          const before=structuredClone(state),refund=roundMoney(Math.max(0,Number(order.depositAmount||0)));
+          for(const item of (order.items||[])){
+            const product=state.products.find(p=>String(p.id)===String(item.id));
+            const qty=Math.max(0,Number(item.qty||0)-Number(item.returnedQty||0));
+            if(!product||!qty)continue;
+            if(Number(product.reservedStock||0)+0.0001<qty){state=before;throw new Error('رصيد الحجز غير متطابق للمنتج '+(product.name||item.name||item.id)+'؛ أوقفنا الإلغاء لحماية المخزون.');}
+            product.reservedStock=Math.max(0,Number(product.reservedStock||0)-qty);
+            addInventoryMovement(product.id,'CANCEL_RESERVATION',-qty,order.id,'إلغاء حجز وتحرير الكمية المحجوزة');
+          }
+          if(refund>0){
+            addPaymentTransaction(order,'REFUND_PAID',refund,'رد مقدم الحجز عند إلغاء الحجز',method);
+            state.refundTransactions=Array.isArray(state.refundTransactions)?state.refundTransactions:[];
+            state.refundTransactions.unshift({id:'RFD-CANCEL-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),orderId:order.id,customerPhone:order.phone,amount:refund,method,status:'PAID',date:new Date().toISOString(),note:'رد كامل مقدم الحجز عند إلغاء الحجز'});
+          }
+          order.cancelledAt=new Date().toISOString();order.cancelledBy='customer_request';order.depositRefundedAmount=refund;order.refundStatus=refund>0?'تم رد مقدم الحجز بالكامل':'لا يوجد مقدم مستحق للرد';order.remainingAmount=0;order.pointsUsedRestored=Math.max(Number(order.pointsUsedRestored||0),Number(order.pointsUsed||0));order.status=refund>0?'ملغي / تم رد المقدم':'ملغي / دون مقدم';
+          const customer=state.customers.find(c=>String(c.phone||'')===String(order.phone||''));if(customer)customer.points=calculateCurrentLoyaltyPoints(customer.phone);
+          logAudit('RESERVATION_CANCELLED','إلغاء الحجز '+order.id+' وتحرير المخزون ورد المقدم '+refund+' عبر '+method);
+          if(!saveState()){state=before;refreshAllViews();throw new Error(window.__valerianLastSaveError?.message||'تعذر حفظ إلغاء الحجز.');}
+          try{await valDurableWritePromise;if(valDurableWriteError)throw valDurableWriteError;await valIdbFlush();}
+          catch(error){state=before;saveState();refreshAllViews();throw new Error('لم يكتمل الحفظ الدائم لإلغاء الحجز: '+String(error?.message||error));}
+          refreshAllViews();return {ok:true,refundAmount:refund,snapshot:snapshot()};
+        },
         dispatchOrder:async payload=>{
           await ready;
           const idx=findOrder(payload?.orderId);if(idx<0)throw new Error('الطلب غير موجود.');
           const order=state.orders[idx];
           if(order.deliveredAt)throw new Error('لا يمكن شحن طلب تم تسليمه بالفعل.');
           if(order.stockDeducted&&order.shippedAt)throw new Error('الطلب مسجل بالفعل كطلب مشحون.');
-          const company=String(payload?.company||'').trim(),tracking=String(payload?.tracking||'').trim();
-          if(!company||!(state.shippingCompanies||[]).some(x=>String(x)===company))throw new Error('اختر شركة شحن مسجلة قبل اعتماد الشحنة.');
+          const company=String(payload?.company||order.shippingCompany||'').trim(),tracking=String(payload?.tracking||'').trim();
+          if(!company||!(state.shippingCompanies||[]).some(x=>String(x)===company))throw new Error('سجّل شركة الشحن عند إنشاء الطلب أو اختر شركة مسجلة قبل اعتماد الشحنة.');
           const before=JSON.stringify(order);
           openOrderShippingEditor(idx);
           el('dispatchCompanySelect').value=company;
