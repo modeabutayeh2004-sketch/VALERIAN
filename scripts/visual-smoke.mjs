@@ -96,10 +96,9 @@ try {
         const dimensionsValid=Math.abs(bitmap.width-expectedWidth)<=3&&Math.abs(bitmap.height-expectedHeight)<=3&&bitmap.width<=1170&&bitmap.width>=900&&bitmap.height<=3000&&bitmap.height>=1800;
         const visibleContentValid=visibleSamples>=1500;
         const dataUrl=await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||''));reader.readAsDataURL(blob);});
-        return {qrImages:qrImages.length,mobileModal:modalMetrics,paperCssWidth:paperRect.width,paperCssHeight:paperRect.height,expectedWidth,expectedHeight,exportBytes:blob.size,width:bitmap.width,height:bitmap.height,visibleSamples,dimensionsValid,visibleContentValid,captureDebug:window.__valerianInvoiceCaptureDebug,dataUrl};
+        return {qrImages:qrImages.length,mobileModal:modalMetrics,paperCssWidth:paperRect.width,paperCssHeight:paperRect.height,expectedWidth,expectedHeight,exportBytes:blob.size,width:bitmap.width,height:bitmap.height,visibleSamples,dimensionsValid,visibleContentValid,dataUrl};
       });
       fs.writeFileSync('www/visual-invoice-export.png',Buffer.from(invoiceCheck.dataUrl.split(',')[1],'base64'));
-      await page.locator('#previewSheetBody > *').screenshot({path:'www/visual-invoice-preview-element.png',animations:'disabled'});
       delete invoiceCheck.dataUrl;
       await page.screenshot({path:'www/visual-mobile-invoice.png',fullPage:true,animations:'disabled'});
       console.log(JSON.stringify({invoiceExport:invoiceCheck.visibleContentValid&&invoiceCheck.dimensionsValid?'ok':'failed',...invoiceCheck}));
