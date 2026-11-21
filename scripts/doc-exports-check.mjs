@@ -49,7 +49,7 @@ try {
     const p2 = await engine.addProduct({name:'Prestige Black تقسيم',category:'عطور',productType:'عطر',size:'50 مل',stockUnit:'قطعة',price:500,offerPrice:400,isOffer:true,averageCost:250,stock:15,minimumStock:1});
     if(!p1?.ok || !p2?.ok) throw new Error('seed products');
     await engine.addShippingCompany('شركة شحن تجريبية');
-    const customer = {name:'عميل تجريبي',phone:'01000000000',address:'البلد'};
+    const customer = {name:'عميل تجريبي',phone:'01000000001',address:'البلد'};
     const created = await engine.createOrder({mode:'reservation',items:[{id:p1.product.id,qty:1},{id:p2.product.id,qty:1}],customer,deposit:1916,shippingCompany:'شركة شحن تجريبية'});
     if(!created?.ok) throw new Error('seed order: '+JSON.stringify(created));
     const dispatched = await engine.dispatchOrder({orderId:created.order.id,tracking:'TRK-'+stamp});
@@ -122,16 +122,16 @@ try {
 
   // ---- 3) LOYALTY CARD ----
   await page.evaluate(async () => {
-    const lc=appState.customers.find(x=>x.phone==='01000000000');
+    const lc=appState.customers.find(x=>x.phone==='01000000001');
     if (lc) { lc.points=2660; lc.totalSpent=6386; lc.ordersCount=2; } else appState.customers.push({name:'عميل تجريبي',phone:'01000000000',address:'البلد',points:2660,totalSpent:6386,ordersCount:2});
-    window.openDigitalLoyaltyCard('01000000000');
+    window.openDigitalLoyaltyCard('01000000001');
     await new Promise(r=>setTimeout(r,400));
   });
   const loyaltyRes = await exportCurrentPreview('loyalty');
 
   // ---- 4) CUSTOMER PROFILE card ----
   await page.evaluate(async () => {
-    window.printMobileCustomerProfile('01000000000');
+    window.printMobileCustomerProfile('01000000001');
     await new Promise(r=>setTimeout(r,400));
   });
   await exportCurrentPreview('profile');

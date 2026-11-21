@@ -6428,6 +6428,10 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
         captureNode.style.overflow = 'visible';
       }
       captureHost.appendChild(captureNode);
+      // Attach FIRST: getComputedStyle returns unresolved values on a detached subtree,
+      // which silently disabled the Arabic letter-spacing probe below.
+      const invoiceDialog = isInvoiceCapture ? document.querySelector('#previewModalSheet .preview-document-dialog') : null;
+      (invoiceDialog || document.body).appendChild(captureHost);
       if (!isInvoiceCapture) {
         // Computed styles only exist after insertion: run capture-only text fixes here.
         captureNode.querySelectorAll('*').forEach(node => {
@@ -6455,8 +6459,6 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
           node.style.setProperty('background-position', '0 72%', 'important');
         });
       }
-      const invoiceDialog = isInvoiceCapture ? document.querySelector('#previewModalSheet .preview-document-dialog') : null;
-      (invoiceDialog || document.body).appendChild(captureHost);
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       const imageNodes=[...captureNode.querySelectorAll('img')];
       try {
