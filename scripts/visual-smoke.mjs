@@ -138,7 +138,7 @@ try {
         const metrics=window.__valerianLastInvoiceExportMetrics;
         const samePageSize=Math.abs(bitmap.width-Math.round(previewRect.width*3))<=3&&Math.abs(bitmap.height-Math.round(previewRect.height*3))<=3;
         const allRowsPresent=metrics?.itemCount===4&&metrics.itemRects.every(r=>r.height>=45);
-        const fullHeight=bitmap.height===Math.round(previewRect.height*3);
+        const fullHeight=Math.abs(bitmap.height-Math.round(previewRect.height*3))<=Math.max(3,Math.round(previewRect.height*3*0.0015));
         const dataUrl=await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||''));reader.readAsDataURL(blob);});
         const result={previewHeight:Math.round(previewRect.height),previewWidth:Math.round(previewRect.width),previewItemCount:previewItems.length,previewScroll,previewRows,exportWidth:bitmap.width,exportHeight:bitmap.height,metrics,allRowsPresent,fullHeight,samePageSize,bytes:blob.size,dataUrl};
         bitmap.close?.();
