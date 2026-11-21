@@ -4387,6 +4387,9 @@ async function previewPeriodicReportPrint() {
       const before = structuredClone(state);
       state.cashbookAdjustments = state.cashbookAdjustments || [];
       state.cashbookAdjustments.unshift({ id:'CASH-ADJ-' + Date.now() + '-' + Math.random().toString(36).slice(2,6), direction, amount, method, date:new Date(date + 'T12:00:00').toISOString(), note, createdAt:new Date().toISOString() });
+      // Same guard as transfers: an outflow must not drive any later day negative
+      // (e.g. money already promised to a future-dated transfer).
+      if(direction==='OUT'){const timelineIssue=getPaymentMethodTimelineIssue(normalizePaymentMethod(method),date);if(timelineIssue){state=before;showToast(`لا يمكن تسجيل الحركة؛ ستؤدي إلى رصيد سالب في حساب ${normalizePaymentMethod(method)} بتاريخ ${timelineIssue.date} (الرصيد المتوقع ${formatCurrency(timelineIssue.balance)}). راجع الحركات اللاحقة.`, 'error');return;}}
       logAudit('CASH_ADJUSTMENT_CREATED', (direction === 'IN' ? 'إيداع ' : 'سحب ') + amount + ' — ' + note);
       if (!saveState()) { state = before; refreshAllViews(); return; }
       ['cashAdjustAmount','cashAdjustNote'].forEach(id => document.getElementById(id).value='');
@@ -5634,9 +5637,12 @@ async function previewPeriodicReportPrint() {
           (state.cashbookOpenings||[]).forEach(o=>{const m=normalizePaymentMethod(o.method);if(!methods.includes(m))methods.push(m);});
           // Internal transfers move money between accounts: they are not income or spending.
           const isTransfer=r=>String(r.reference||'').startsWith('CASH-TR-');
+          // One consistent cutoff for every figure: end of today. Future-dated movements
+          // appear in the transfers list but enter the sums and balance only when due.
+          const cutoff=new Date(new Date().toISOString().slice(0,10)+'T23:59:59.999');
           const accounts=methods.map(method=>{
-            const mine=rows.filter(r=>r.method===method&&r.reference!=='OPENING');
-            const opening=roundMoney((state.cashbookOpenings||[]).filter(o=>normalizePaymentMethod(o.method)===method).reduce((a,o)=>a+Number(o.amount||0),0));
+            const mine=rows.filter(r=>r.method===method&&r.reference!=='OPENING'&&new Date(r.date)<=cutoff);
+            const opening=roundMoney((state.cashbookOpenings||[]).filter(o=>normalizePaymentMethod(o.method)===method&&(!o.date||new Date(o.date)<=cutoff)).reduce((a,o)=>a+Number(o.amount||0),0));
             const received=roundMoney(mine.filter(r=>!isTransfer(r)).reduce((a,r)=>a+Number(r.incoming||0),0));
             const spent=roundMoney(mine.filter(r=>!isTransfer(r)).reduce((a,r)=>a+Number(r.outgoing||0),0));
             const transferIn=roundMoney(mine.filter(isTransfer).reduce((a,r)=>a+Number(r.incoming||0),0));
@@ -5646,7 +5652,28 @@ async function previewPeriodicReportPrint() {
             return {method,opening,received,spent,transferIn,transferOut,balance:getPaymentMethodBalance(method,new Date().toISOString().slice(0,10))};
           }).filter(a=>a.opening||a.received||a.spent||a.transferIn||a.transferOut||Math.abs(a.balance)>0.0001);
           const sum=k=>roundMoney(accounts.reduce((a,x)=>a+Number(x[k]||0),0));
-          return {ok:true,accounts,totals:{opening:sum('opening'),received:sum('received'),spent:sum('spent'),transferIn:sum('transferIn'),transferOut:sum('transferOut'),balance:sum('balance')},transfers:(state.cashbookTransfers||[]).slice(0,30)};
+          const openings=(state.cashbookOpenings||[]).map(o=>({method:normalizePaymentMethod(o.method),amount:roundMoney(Number(o.amount||0)),date:o.date,note:String(o.note||'')}));
+          return {ok:true,accounts,totals:{opening:sum('opening'),received:sum('received'),spent:sum('spent'),transferIn:sum('transferIn'),transferOut:sum('transferOut'),balance:sum('balance')},transfers:(state.cashbookTransfers||[]).slice(0,30),openings};
+        },
+        setTreasuryOpeningBalance:async payload=>{
+          await ready;
+          // Same semantics as the legacy saveCashOpeningBalance: one opening per account,
+          // updating replaces it (never adds a second opening), date stamped at noon.
+          const allowed=['نقدي','تحويل بنكي','محفظة إلكترونية','بطاقة','أخرى'];
+          const method=normalizePaymentMethod(payload?.method);
+          const amount=roundMoney(Number(payload?.amount)),date=String(payload?.date||'').slice(0,10),note=String(payload?.note||'').trim();
+          if(!allowed.includes(method))throw new Error('اختر حساباً صحيحاً للرصيد الافتتاحي.');
+          if(!Number.isFinite(amount)||amount<0)throw new Error('أدخل رصيداً افتتاحياً صحيحاً (صفر أو أكثر).');
+          if(!date||!Number.isFinite(new Date(date+'T12:00:00').getTime()))throw new Error('حدد تاريخاً صحيحاً للرصيد الافتتاحي.');
+          const before=structuredClone(state);
+          state.cashbookOpenings=state.cashbookOpenings||[];
+          const existing=state.cashbookOpenings.find(x=>normalizePaymentMethod(x.method)===method);
+          const record={id:existing?.id||('CASH-OPEN-'+Date.now()),method,amount,date:new Date(date+'T12:00:00').toISOString(),note,updatedAt:new Date().toISOString()};
+          if(existing)Object.assign(existing,record);else state.cashbookOpenings.push(record);
+          logAudit('CASH_OPENING_SET','تحديد رصيد افتتاحي '+method+': '+amount);
+          if(!saveState()){state=before;refreshAllViews();throw new Error('تعذر حفظ الرصيد الافتتاحي.');}
+          try{await valDurableWritePromise;if(valDurableWriteError)throw valDurableWriteError;}catch(err){state=before;saveState();throw new Error('لم يكتمل الحفظ الدائم للرصيد الافتتاحي: '+String(err?.message||err));}
+          refreshAllViews();return {ok:true,id:record.id,snapshot:snapshot()};
         },
         transferBetweenAccounts:async payload=>{
           await ready;
