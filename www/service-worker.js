@@ -2,11 +2,11 @@
 'use strict';
 
 // Bump this value whenever the HTML, application engine, or offline strategy changes.
-const CACHE_NAME = 'valerian-app-shell-v20-20261121-whatsapp-share';
+const CACHE_NAME = 'valerian-app-shell-v20-20261121-returns-wastage';
 const APP_SHELL = [
   './index.html',
   './intro.html',
-  './engine-runtime.js?v=v20-20261121-whatsapp-share',
+  './engine-runtime.js?v=v20-20261121-returns-wastage',
   './manifest.webmanifest',
   './assets/valerian-icon.jpg',
   './vendor/html2canvas.min.js',
