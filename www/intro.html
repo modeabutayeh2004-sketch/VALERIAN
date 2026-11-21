@@ -10,7 +10,7 @@
   <script>
     (function () {
       try {
-        if (new URLSearchParams(location.search).get('embed') !== '1') return;
+        if (new URLSearchParams(location.search).get('embed') !== '1' && window.self === window.top) return;
         var t = localStorage.getItem('valerian-theme-preference-v2');
         if (t === 'dark') {
           document.documentElement.classList.add('embed-pre-night');
@@ -1327,7 +1327,7 @@ ${closeScript}
     (function () {
       try {
         var q = new URLSearchParams(location.search);
-        if (q.get('embed') !== '1') return;
+        if (q.get('embed') !== '1' && window.self === window.top) return;
         document.body.classList.add('embed-mode');
         var detectNight = function () {
           if (q.get('theme') === 'night') return true;

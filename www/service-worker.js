@@ -2,7 +2,7 @@
 'use strict';
 
 // Bump this value whenever the HTML, application engine, or offline strategy changes.
-const CACHE_NAME = 'valerian-app-shell-v20-20261121-intro-boot';
+const CACHE_NAME = 'valerian-app-shell-v20-20261121-intro-boot-2';
 const APP_SHELL = [
   './index.html',
   './intro.html',
@@ -66,12 +66,14 @@ self.addEventListener('fetch', event => {
       // Continue with the canonical offline application shell.
     }
 
-    if (isNavigation) {
-      return (await cache.match(INDEX_URL)) || Response.error();
-    }
     // The intro iframe carries a mode query (?embed=1); its cache entry does not.
+    // Iframe loads are navigation requests too, so this must run BEFORE the
+    // navigation fallback or the app shell would be served inside the intro frame.
     if (url.pathname.endsWith('/intro.html')) {
       return (await cache.match(request, { ignoreSearch: true })) || Response.error();
+    }
+    if (isNavigation) {
+      return (await cache.match(INDEX_URL)) || Response.error();
     }
     return (await cache.match(request)) || Response.error();
   })());
