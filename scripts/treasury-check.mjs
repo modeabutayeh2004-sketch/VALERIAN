@@ -139,6 +139,20 @@ try{
   // Clean captures after toast dismissal
   await page.waitForFunction(()=>{const m=document.getElementById('mobileToast');const tc=document.getElementById('toastContainer');return (!m||m.classList.contains('hidden'))&&(!tc||!tc.children.length);},null,{timeout:9000}).catch(()=>{});
   await page.screenshot({path:'www/check-treasury.png'});
+  // Scroll-bottom clearance: last treasury content must not sit under the fixed bottom nav.
+  const clearance = await page.evaluate(async ()=>{
+    window.scrollTo(0,document.documentElement.scrollHeight);
+    await new Promise(r=>setTimeout(r,500));
+    const view=document.getElementById('more-treasury');
+    const last=view.lastElementChild.getBoundingClientRect();
+    const nav=document.querySelector('nav.glass-dock.fixed')?.getBoundingClientRect();
+    return nav?{contentBottom:Math.round(last.bottom),navTop:Math.round(nav.top),gap:Math.round(nav.top-last.bottom)}:null;
+  });
+  console.log('scroll clearance: '+JSON.stringify(clearance));
+  if(!clearance) failures.push('bottom nav not found for clearance measurement');
+  else if(clearance.gap<8) failures.push('bottom nav overlaps treasury content at scroll bottom (gap '+clearance.gap+'px)');
+  await page.screenshot({path:'www/check-treasury-bottom.png'});
+  await page.evaluate(()=>window.scrollTo(0,0));
   await page.evaluate(()=>{document.documentElement.setAttribute('data-valerian-theme','light');});
   await page.waitForTimeout(400);
   await page.screenshot({path:'www/check-treasury-light.png'});

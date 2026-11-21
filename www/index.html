@@ -4006,8 +4006,8 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
           <div class="glass-card rounded-2xl p-4 space-y-2.5 text-xs">
             <strong class="text-white text-sm">تحويل رصيد بين حسابين</strong>
             <div class="grid grid-cols-2 gap-2">
-              <select id="trsFrom" class="rounded-xl glass-pill px-3 py-2 text-slate-100"></select>
-              <select id="trsTo" class="rounded-xl glass-pill px-3 py-2 text-slate-100"></select>
+              <label class="block min-w-0"><span class="block text-[10px] text-slate-400 mb-1">من حساب (صادر)</span><select id="trsFrom" class="w-full rounded-xl glass-pill px-3 py-2 text-slate-100"></select></label>
+              <label class="block min-w-0"><span class="block text-[10px] text-slate-400 mb-1">إلى حساب (وارد)</span><select id="trsTo" class="w-full rounded-xl glass-pill px-3 py-2 text-slate-100"></select></label>
             </div>
             <div class="grid grid-cols-2 gap-2">
               <input id="trsAmount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="المبلغ" class="rounded-xl glass-pill px-3 py-2 text-slate-100">
@@ -4021,8 +4021,8 @@ html[data-valerian-theme="light"] #v5SupplyPurchaseSheet .text-slate-300{color:#
           <div class="glass-card rounded-2xl p-4 space-y-2.5 text-xs">
             <strong class="text-white text-sm">الرصيد الافتتاحي لحساب</strong>
             <div class="grid grid-cols-2 gap-2">
-              <select id="trsOpenMethod" class="rounded-xl glass-pill px-3 py-2 text-slate-100" onchange="prefillTreasuryOpening()"></select>
-              <input id="trsOpenAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="المبلغ" class="rounded-xl glass-pill px-3 py-2 text-slate-100">
+              <label class="block min-w-0"><span class="block text-[10px] text-slate-400 mb-1">الحساب</span><select id="trsOpenMethod" class="w-full rounded-xl glass-pill px-3 py-2 text-slate-100" onchange="prefillTreasuryOpening()"></select></label>
+              <label class="block min-w-0"><span class="block text-[10px] text-slate-400 mb-1">المبلغ</span><input id="trsOpenAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0" class="w-full rounded-xl glass-pill px-3 py-2 text-slate-100"></label>
             </div>
             <div class="grid grid-cols-2 gap-2">
               <input id="trsOpenDate" type="date" class="rounded-xl glass-pill px-3 py-2 text-slate-100">
