@@ -3398,6 +3398,58 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
 #tab-offers>div:nth-child(2) h2,#offersDisplayGrid h3{color:#111!important}
 #tab-offers>div:nth-child(2) p,#offersDisplayGrid p{color:#444!important}
 }
+</style><style id="v20-navy-reports-refinement">
+/* V20.14 — Reports workspace visual refinement only. No business or reporting logic changes. */
+@media screen{
+#tab-reports{color:#e8eef5}
+#tab-reports>div:first-child{background:linear-gradient(135deg,rgba(30,49,73,.96),rgba(13,25,41,.98))!important;border:1px solid rgba(195,210,229,.2)!important;border-radius:17px!important;box-shadow:0 10px 24px rgba(0,0,0,.16)!important}
+#tab-reports>div:first-child button{min-height:42px!important;background:linear-gradient(135deg,#e8edf4,#bdc9d7)!important;color:#142238!important;border:1px solid rgba(240,244,249,.72)!important;box-shadow:0 5px 14px rgba(0,0,0,.18)!important}
+#tab-reports>div:nth-child(2){background:linear-gradient(135deg,rgba(29,47,70,.98),rgba(11,22,37,.99))!important;border:1px solid rgba(195,210,229,.2)!important;border-radius:19px!important;box-shadow:0 13px 28px rgba(0,0,0,.2)!important}
+#tab-reports>div:nth-child(2) h2{color:#f0f4f8!important;line-height:1.55!important}
+#tab-reports>div:nth-child(2) p{color:#aebdd0!important;line-height:1.7!important}
+#reportPeriodSelect{min-height:40px!important;background:#122238!important;color:#edf2f7!important;border:1px solid rgba(195,210,229,.28)!important;border-radius:11px!important;color-scheme:dark}
+#tab-reports>div:nth-child(2) button{min-height:40px!important;background:linear-gradient(135deg,#e8edf4,#bdc9d7)!important;color:#142238!important;border:1px solid rgba(240,244,249,.72)!important;box-shadow:0 5px 14px rgba(0,0,0,.18)!important}
+#tab-reports>div:nth-child(3),#tab-reports>div:nth-child(4){gap:13px!important}
+#tab-reports>div:nth-child(3)>div,#tab-reports>div:nth-child(4)>div{min-width:0!important;padding:17px!important;background:radial-gradient(circle at 100% 0%,rgba(195,210,229,.09),transparent 44%),linear-gradient(145deg,rgba(29,47,70,.96),rgba(12,24,40,.99))!important;border:1px solid rgba(195,210,229,.19)!important;border-radius:17px!important;box-shadow:0 9px 22px rgba(0,0,0,.16)!important}
+#tab-reports>div:nth-child(3)>div>span,#tab-reports>div:nth-child(4)>div>span{color:#aebdd0!important;line-height:1.65!important}
+#repFullSales,#repReservations,#repReturns,#repExpenses,#repNetProfit,#repInventoryValue,#repSupplierDue{overflow-wrap:anywhere!important;line-height:1.45!important}
+#repFullSales{color:#a8d4ba!important}
+#repReservations{color:#e4c98e!important}
+#repReturns,#repSupplierDue{color:#e3a6a6!important}
+#repExpenses{color:#c3cfdd!important}
+#repNetProfit{color:#f0f4f8!important}
+#repInventoryValue{color:#dce6f1!important}
+#tab-reports>div:nth-child(4)>div p{color:#8fa1b6!important;line-height:1.7!important}
+#tab-reports>div:nth-child(5){background:linear-gradient(145deg,rgba(28,46,69,.98),rgba(11,22,37,.99))!important;border:1px solid rgba(195,210,229,.2)!important;border-radius:18px!important;box-shadow:0 12px 26px rgba(0,0,0,.18)!important;color:#e8eef5!important}
+#tab-reports>div:nth-child(5)>h3{color:#f0f4f8!important;line-height:1.6!important}
+#tab-reports>div:nth-child(5) table{min-width:760px!important;border-collapse:separate!important;border-spacing:0!important}
+#tab-reports>div:nth-child(5) thead{background:rgba(195,210,229,.1)!important;color:#cbd6e3!important}
+#tab-reports>div:nth-child(5) th{white-space:nowrap!important;border-bottom:1px solid rgba(195,210,229,.2)!important}
+#reportsTableBody tr{border-color:rgba(195,210,229,.13)!important}
+#reportsTableBody td{color:#d5dfeb!important;border-color:rgba(195,210,229,.1)!important;white-space:nowrap!important}
+#reportsTableBody tr:nth-child(odd) td{background:rgba(195,210,229,.035)!important}
+#reportsTableBody tr:hover td{background:rgba(195,210,229,.085)!important}
+}
+@media screen and (max-width:767px){
+#tab-reports>div:first-child{padding:12px!important;gap:10px!important}
+#tab-reports>div:first-child button{width:100%!important;justify-content:center!important}
+#tab-reports>div:nth-child(2){padding:14px!important;gap:12px!important;align-items:stretch!important}
+#tab-reports>div:nth-child(2)>div:last-child{width:100%!important;display:flex!important;flex-wrap:wrap!important;gap:8px!important}
+#reportPeriodSelect{flex:1 1 130px!important;min-width:0!important;min-height:44px!important}
+#tab-reports>div:nth-child(2) button{flex:1 1 145px!important;min-height:44px!important;justify-content:center!important}
+#tab-reports>div:nth-child(3){grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+#tab-reports>div:nth-child(3)>div{padding:13px!important}
+#tab-reports>div:nth-child(3)>div:last-child{grid-column:1/-1!important}
+#tab-reports>div:nth-child(3)>div>span{display:block!important;min-height:2.8em!important;font-size:11px!important}
+#repFullSales,#repReservations,#repReturns,#repExpenses,#repNetProfit{font-size:1.12rem!important}
+#tab-reports>div:nth-child(4){grid-template-columns:1fr!important;gap:10px!important}
+#tab-reports>div:nth-child(4)>div{padding:14px!important}
+#tab-reports>div:nth-child(5){padding:13px!important;overflow-x:auto!important;overflow-y:hidden!important}
+#tab-reports>div:nth-child(5) table{min-width:760px!important}
+}
+@media (prefers-reduced-motion:reduce){
+#tab-reports *{scroll-behavior:auto!important;transition:none!important;animation:none!important}
+}
 </style></head>
 <!-- V19.30: smart operating supplies inventory; preserve original layout and schemaVersion 18 -->
 <!-- V19.37: compact A4 landscape inventory print with fixed image thumbnails -->
