@@ -3450,6 +3450,156 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
 @media (prefers-reduced-motion:reduce){
 #tab-reports *{scroll-behavior:auto!important;transition:none!important;animation:none!important}
 }
+</style><style id="v20-navy-finance-refinement">
+/* V20.15 — Expenses and cashbook visual refinement only. No financial logic changes. */
+@media screen{
+  #tab-expenses,#tab-cashbook{color:#e8eef5!important}
+  #tab-expenses>div:first-child,
+  #tab-cashbook>div:first-child{
+    background:linear-gradient(135deg,rgba(30,49,73,.96),rgba(13,25,41,.98))!important;
+    border:1px solid rgba(195,210,229,.2)!important;border-radius:17px!important;
+    box-shadow:0 10px 24px rgba(0,0,0,.16)!important
+  }
+  #tab-expenses>div:first-child button,
+  #tab-expenses>div:nth-child(3)>div:first-child button,
+  #tab-cashbook>div:first-child button,
+  #tab-cashbook>div:nth-child(2)>button,
+  #tab-cashbook>div:nth-child(4) button,
+  #tab-cashbook>div:nth-child(5) button,
+  #tab-cashbook>div:nth-child(8) button:first-of-type{
+    min-height:42px!important;background:linear-gradient(135deg,#e8edf4,#bdc9d7)!important;
+    color:#142238!important;border:1px solid rgba(240,244,249,.72)!important;
+    border-radius:11px!important;box-shadow:0 5px 14px rgba(0,0,0,.18)!important;
+    font-weight:800!important
+  }
+  #tab-cashbook>div:nth-child(8) button:last-of-type{
+    min-height:42px!important;background:rgba(195,210,229,.1)!important;
+    color:#e4ebf3!important;border:1px solid rgba(195,210,229,.25)!important;
+    border-radius:11px!important
+  }
+  #tab-expenses>div:nth-child(2)>div,
+  #tab-cashbook>div:nth-child(6)>div{
+    min-width:0!important;padding:17px!important;
+    background:radial-gradient(circle at 100% 0%,rgba(195,210,229,.09),transparent 44%),linear-gradient(145deg,rgba(29,47,70,.96),rgba(12,24,40,.99))!important;
+    border:1px solid rgba(195,210,229,.19)!important;border-radius:17px!important;
+    box-shadow:0 9px 22px rgba(0,0,0,.16)!important
+  }
+  #tab-expenses>div:nth-child(2) span,
+  #tab-cashbook>div:nth-child(6)>div>div:first-child{
+    color:#aebdd0!important;line-height:1.65!important
+  }
+  #finTotalExpenses,#cashBookOut{color:#e3a6a6!important}
+  #finTotalRevenue,#cashBookIn{color:#a8d4ba!important}
+  #finNetProfit,#cashBookNet{color:#dce6f1!important}
+  #tab-expenses>div:nth-child(3),
+  #tab-cashbook>div:nth-child(7),
+  #tab-cashbook>div:nth-child(9){
+    background:linear-gradient(145deg,rgba(28,46,69,.98),rgba(11,22,37,.99))!important;
+    border:1px solid rgba(195,210,229,.2)!important;border-radius:18px!important;
+    box-shadow:0 12px 26px rgba(0,0,0,.18)!important;color:#e8eef5!important
+  }
+  #tab-expenses>div:nth-child(3){overflow-x:auto!important}
+  #tab-expenses>div:nth-child(3)>div:first-child,
+  #tab-cashbook>div:nth-child(7)>div:first-child,
+  #tab-cashbook>div:nth-child(9)>div:first-child{
+    border-color:rgba(195,210,229,.17)!important
+  }
+  #tab-expenses h3,#tab-cashbook h2,#tab-cashbook h3{color:#f0f4f8!important;line-height:1.6!important}
+  #tab-expenses p,#tab-cashbook p,
+  #tab-expenses .text-slate-500,#tab-cashbook .text-slate-500,
+  #tab-expenses .text-slate-600,#tab-cashbook .text-slate-600{color:#aebdd0!important}
+  #tab-cashbook>div:nth-child(2){
+    padding:15px!important;border-radius:17px!important;
+    background:linear-gradient(135deg,rgba(29,47,70,.72),rgba(11,22,37,.48))!important;
+    border:1px solid rgba(195,210,229,.16)!important
+  }
+  #tab-cashbook>div:nth-child(3){
+    background:rgba(150,112,48,.13)!important;color:#ead8ad!important;
+    border:1px solid rgba(214,174,104,.3)!important;border-radius:14px!important
+  }
+  #tab-cashbook>div:nth-child(4)>div,
+  #tab-cashbook>div:nth-child(5),
+  #tab-cashbook>div:nth-child(8){
+    min-width:0!important;background:linear-gradient(145deg,rgba(29,47,70,.96),rgba(12,24,40,.99))!important;
+    border:1px solid rgba(195,210,229,.19)!important;border-radius:17px!important;
+    box-shadow:0 9px 22px rgba(0,0,0,.15)!important;color:#e8eef5!important
+  }
+  #tab-cashbook input,#tab-cashbook select{
+    min-width:0!important;min-height:42px!important;background:#122238!important;color:#edf2f7!important;
+    border:1px solid rgba(195,210,229,.28)!important;border-radius:11px!important;
+    color-scheme:dark!important
+  }
+  #tab-cashbook input::placeholder{color:#8799ae!important;opacity:1!important}
+  #tab-cashbook label{color:#c5d1df!important}
+  #tab-expenses table,#tab-cashbook table{border-collapse:separate!important;border-spacing:0!important}
+  #tab-expenses thead,#tab-cashbook thead{
+    background:rgba(195,210,229,.1)!important;color:#cbd6e3!important
+  }
+  #tab-expenses th,#tab-cashbook th{
+    color:#cbd6e3!important;white-space:nowrap!important;
+    border-bottom:1px solid rgba(195,210,229,.2)!important
+  }
+  #expensesTableBody td,#paymentMethodBalancesBody td,#cashBookTableBody td{
+    color:#d5dfeb!important;border-color:rgba(195,210,229,.12)!important
+  }
+  #expensesTableBody tr:nth-child(odd) td,
+  #paymentMethodBalancesBody tr:nth-child(odd) td,
+  #cashBookTableBody tr:nth-child(odd) td{background:rgba(195,210,229,.035)!important}
+  #expensesTableBody tr:hover td,
+  #paymentMethodBalancesBody tr:hover td,
+  #cashBookTableBody tr:hover td{background:rgba(195,210,229,.08)!important}
+  #tab-expenses table{min-width:700px!important}
+  #tab-cashbook>div:nth-child(7) table{min-width:650px!important}
+  #tab-cashbook>div:nth-child(9) table{min-width:760px!important}
+  #tab-cashbook>div:nth-child(7)>div:last-child,
+  #tab-cashbook>div:nth-child(9)>div:last-child{
+    overflow-x:auto!important;-webkit-overflow-scrolling:touch!important
+  }
+}
+@media screen and (max-width:767px){
+  #tab-expenses>div:first-child{padding:12px!important}
+  #tab-expenses>div:first-child button{width:100%!important;justify-content:center!important}
+  #tab-expenses>div:nth-child(2){grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+  #tab-expenses>div:nth-child(2)>div{padding:13px!important}
+  #tab-expenses>div:nth-child(2)>div:last-child{grid-column:1/-1!important}
+  #tab-expenses>div:nth-child(2)>div>span{display:block!important;min-height:2.8em!important;font-size:11px!important}
+  #finTotalExpenses,#finTotalRevenue,#finNetProfit{font-size:1.12rem!important;overflow-wrap:anywhere!important}
+  #tab-expenses>div:nth-child(3)>div:first-child{align-items:flex-start!important;gap:8px!important;flex-wrap:wrap!important}
+  #tab-expenses>div:nth-child(3)>div:first-child button{width:100%!important}
+  #tab-cashbook>div:nth-child(2){align-items:stretch!important;gap:10px!important}
+  #tab-cashbook>div:nth-child(2)>button{width:100%!important;justify-content:center!important}
+  #tab-cashbook>div:nth-child(4){grid-template-columns:1fr!important;gap:10px!important}
+  #tab-cashbook>div:nth-child(4)>div{padding:14px!important}
+  #tab-cashbook>div:nth-child(4) .grid,
+  #tab-cashbook>div:nth-child(5) .grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #tab-cashbook>div:nth-child(5){padding:14px!important}
+  #tab-cashbook>div:nth-child(6){grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+  #tab-cashbook>div:nth-child(6)>div{padding:13px!important}
+  #tab-cashbook>div:nth-child(6)>div:last-child{grid-column:1/-1!important}
+  #cashBookIn,#cashBookOut,#cashBookNet{font-size:1.12rem!important;overflow-wrap:anywhere!important}
+  #tab-cashbook>div:nth-child(8){align-items:stretch!important;gap:9px!important;padding:13px!important}
+  #tab-cashbook>div:nth-child(8)>div,
+  #tab-cashbook>div:nth-child(8)>button{flex:1 1 100%!important;min-width:0!important}
+  #tab-cashbook>div:nth-child(8) input{width:100%!important}
+}
+@media (prefers-reduced-motion:reduce){
+  #tab-expenses *,#tab-cashbook *{scroll-behavior:auto!important;transition:none!important;animation:none!important}
+}
+@media print{
+  #tab-expenses,#tab-cashbook{background:#fff!important;color:#111!important}
+  #tab-expenses>div,#tab-cashbook>div,
+  #tab-cashbook>div:nth-child(4)>div,#tab-cashbook>div:nth-child(5){
+    background:#fff!important;color:#111!important;box-shadow:none!important;border-color:#ddd!important
+  }
+  #tab-expenses h3,#tab-cashbook h2,#tab-cashbook h3,
+  #tab-expenses p,#tab-cashbook p,#tab-expenses span,#tab-cashbook span,
+  #tab-expenses label,#tab-cashbook label{color:#111!important}
+  #tab-expenses table,#tab-cashbook table{min-width:0!important;width:100%!important}
+  #tab-expenses th,#tab-expenses td,#tab-cashbook th,#tab-cashbook td{
+    background:#fff!important;color:#111!important;border-color:#ddd!important
+  }
+  #tab-cashbook input,#tab-cashbook select{background:#fff!important;color:#111!important;border-color:#bbb!important}
+}
 </style></head>
 <!-- V19.30: smart operating supplies inventory; preserve original layout and schemaVersion 18 -->
 <!-- V19.37: compact A4 landscape inventory print with fixed image thumbnails -->
