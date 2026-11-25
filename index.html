@@ -3600,7 +3600,219 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
   }
   #tab-cashbook input,#tab-cashbook select{background:#fff!important;color:#111!important;border-color:#bbb!important}
 }
-</style></head>
+</style><style id="v20-navy-intelligence-refinement">
+/* V20.16 — Intelligence workspace visual refinement only. No analysis or chat behavior changes. */
+@media screen {
+  #tab-intelligence {
+    color:#e8eef5;
+    direction:rtl;
+  }
+  #tab-intelligence > .v1916-ai-card {
+    position:relative;
+    overflow:hidden;
+    isolation:isolate;
+    background:
+      radial-gradient(ellipse at 8% 0%,rgba(180,198,218,.17),transparent 38%),
+      radial-gradient(ellipse at 92% 100%,rgba(91,125,160,.16),transparent 42%),
+      linear-gradient(135deg,#0a111d 0%,#132238 52%,#18283d 100%) !important;
+    color:#f4f7fb !important;
+    border:1px solid rgba(199,211,226,.27);
+    border-radius:22px;
+    padding:clamp(18px,3vw,28px);
+    box-shadow:0 16px 38px rgba(2,8,18,.22),inset 0 1px 0 rgba(255,255,255,.08);
+  }
+  #tab-intelligence > .v1916-ai-card h2 {
+    color:#f5f7fa !important;
+    letter-spacing:.01em;
+  }
+  #tab-intelligence > .v1916-ai-card p,
+  #tab-intelligence > .v1916-ai-card .text-violet-100,
+  #tab-intelligence > .v1916-ai-card .text-violet-200 {
+    color:#c7d2df !important;
+  }
+  #tab-intelligence > .v1916-ai-card button {
+    background:linear-gradient(135deg,#f1f4f7,#cbd4df) !important;
+    color:#101c2b !important;
+    border:1px solid rgba(255,255,255,.72);
+    box-shadow:0 5px 14px rgba(0,0,0,.18);
+    min-height:42px;
+  }
+  #tab-intelligence > div.flex.flex-wrap.items-center.gap-2 {
+    padding:12px 14px;
+    border:1px solid rgba(174,190,208,.22);
+    border-radius:16px;
+    background:linear-gradient(135deg,rgba(24,40,61,.82),rgba(13,24,39,.9));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.045);
+  }
+  #tab-intelligence > div.flex.flex-wrap.items-center.gap-2 label {
+    color:#dce5ef !important;
+  }
+  #tab-intelligence #intelPeriod {
+    min-height:40px;
+    color:#edf2f7 !important;
+    background:#14243a !important;
+    border:1px solid rgba(190,204,220,.35) !important;
+    border-radius:11px;
+    outline:none;
+  }
+  #tab-intelligence #intelDataQuality {
+    color:#aebed0 !important;
+  }
+  #tab-intelligence .v1916-metric {
+    min-width:0;
+    background:linear-gradient(145deg,rgba(29,47,70,.94),rgba(15,27,44,.96)) !important;
+    color:#f2f5f8 !important;
+    border:1px solid rgba(177,194,213,.25) !important;
+    border-radius:17px;
+    box-shadow:0 8px 20px rgba(2,8,18,.15),inset 0 1px 0 rgba(255,255,255,.055);
+    backdrop-filter:blur(10px);
+  }
+  #tab-intelligence .v1916-metric > div:first-child {
+    color:#b9c7d6 !important;
+    line-height:1.75;
+  }
+  #tab-intelligence .v1916-metric > div:last-child {
+    color:#f5f7fa !important;
+    overflow-wrap:anywhere;
+  }
+  #tab-intelligence > div.grid[class*="xl:grid-cols-2"] > div,
+  #tab-intelligence > div.bg-white.rounded-2xl.border.p-4 {
+    color:#e8eef5 !important;
+    background:linear-gradient(145deg,rgba(25,42,64,.94),rgba(13,25,41,.97)) !important;
+    border:1px solid rgba(174,191,211,.24) !important;
+    border-radius:18px;
+    box-shadow:0 9px 22px rgba(2,8,18,.14),inset 0 1px 0 rgba(255,255,255,.045);
+  }
+  #tab-intelligence > div.grid[class*="xl:grid-cols-2"] h3,
+  #tab-intelligence > div.bg-white.rounded-2xl.border.p-4 h3 {
+    color:#f1f4f8 !important;
+  }
+  #tab-intelligence #intelTopDemand > div,
+  #tab-intelligence #intelTopProfit > div,
+  #tab-intelligence #intelLowProfit > div,
+  #tab-intelligence #intelSlowItems > div,
+  #tab-intelligence #intelRecommendations > div {
+    color:#dce5ef;
+    border-color:rgba(180,196,214,.16) !important;
+  }
+  #tab-intelligence > div.rounded-2xl.border.border-amber-200 {
+    color:#eadbb8 !important;
+    background:linear-gradient(135deg,rgba(74,57,29,.55),rgba(39,34,27,.72)) !important;
+    border-color:rgba(194,164,105,.42) !important;
+    border-radius:16px;
+  }
+  #tab-intelligence > div.rounded-2xl.border.border-amber-200 b {
+    color:#fff1cf;
+  }
+  #valerianAssistantChat {
+    color:#e8eef5;
+    background:linear-gradient(145deg,rgba(23,39,60,.98),rgba(11,22,37,.99)) !important;
+    border:1px solid rgba(183,199,217,.28) !important;
+    border-radius:20px;
+    box-shadow:0 15px 32px rgba(2,8,18,.2);
+  }
+  #valerianAssistantChat > div:first-child {
+    background:
+      radial-gradient(ellipse at 0% 0%,rgba(190,207,226,.14),transparent 45%),
+      linear-gradient(120deg,#0a111d,#18283d) !important;
+    border-bottom:1px solid rgba(196,209,224,.2);
+  }
+  #valerianAssistantChat > div:first-child .text-violet-100,
+  #valerianAssistantChat > div:first-child .text-violet-200 {
+    color:#c7d3e0 !important;
+  }
+  #valerianAssistantChat > div:first-child button {
+    color:#e9eef4 !important;
+    background:rgba(255,255,255,.075) !important;
+    border-color:rgba(205,216,229,.25) !important;
+  }
+  #valerianAssistantChat #valerianChatSuggestions button {
+    color:#dce5ef !important;
+    background:rgba(202,215,230,.075) !important;
+    border:1px solid rgba(183,199,217,.22);
+    min-height:38px;
+  }
+  #valerianAssistantChat #valerianChatSuggestions button:hover {
+    background:rgba(202,215,230,.15) !important;
+    border-color:rgba(209,221,234,.42);
+  }
+  #valerianAssistantChat #valerianChatMessages {
+    color:#e8eef5 !important;
+    background:rgba(5,13,24,.55) !important;
+    border-color:rgba(176,193,212,.2) !important;
+  }
+  #valerianAssistantChat #valerianChatMessages > div {
+    color:#e8eef5 !important;
+    background:linear-gradient(145deg,rgba(34,52,75,.92),rgba(20,34,52,.96)) !important;
+    border-color:rgba(184,200,218,.2) !important;
+  }
+  #valerianAssistantChat #valerianChatMessages .text-violet-800 {
+    color:#d5e0eb !important;
+  }
+  #valerianAssistantChat #valerianChatInput {
+    min-height:46px;
+    color:#f1f5f9 !important;
+    background:rgba(6,15,27,.78) !important;
+    border-color:rgba(181,198,217,.3) !important;
+  }
+  #valerianAssistantChat #valerianChatInput::placeholder {
+    color:#93a5b9;
+  }
+  #valerianAssistantChat form button {
+    min-width:88px;
+    color:#101c2b !important;
+    background:linear-gradient(135deg,#f0f3f6,#c7d2df) !important;
+    border:1px solid rgba(255,255,255,.65);
+    box-shadow:0 5px 13px rgba(0,0,0,.16);
+  }
+  #valerianAssistantChat .text-slate-500 {
+    color:#aebed0 !important;
+  }
+  #tab-intelligence button:focus-visible,
+  #tab-intelligence select:focus-visible,
+  #tab-intelligence input:focus-visible {
+    outline:2px solid #cbd6e2;
+    outline-offset:2px;
+    box-shadow:0 0 0 4px rgba(180,198,218,.16);
+  }
+}
+@media screen and (max-width:640px) {
+  #tab-intelligence > .v1916-ai-card {
+    padding:17px;
+    border-radius:18px;
+  }
+  #tab-intelligence > div.grid.grid-cols-2 {
+    grid-template-columns:1fr;
+  }
+  #tab-intelligence > div.flex.flex-wrap.items-center.gap-2 {
+    align-items:stretch;
+  }
+  #tab-intelligence #intelPeriod {
+    flex:1 1 100%;
+    width:100%;
+  }
+  #valerianAssistantChat form {
+    flex-wrap:wrap;
+  }
+  #valerianAssistantChat #valerianChatInput {
+    flex:1 1 100%;
+    width:100%;
+  }
+  #valerianAssistantChat form button {
+    flex:1 1 100%;
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  #tab-intelligence *,
+  #tab-intelligence *::before,
+  #tab-intelligence *::after {
+    scroll-behavior:auto !important;
+    transition:none !important;
+    animation:none !important;
+  }
+}
+</style>
+</head>
 <!-- V19.30: smart operating supplies inventory; preserve original layout and schemaVersion 18 -->
 <!-- V19.37: compact A4 landscape inventory print with fixed image thumbnails -->
 <!-- V19.51: image-aware cloud sync and backup verification; per-product low-stock alerts; preserve schemaVersion 18 -->
