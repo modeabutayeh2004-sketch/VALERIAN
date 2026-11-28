@@ -4208,6 +4208,175 @@ html,body{font-family:Cairo,Tahoma,Arial,sans-serif!important}
 }
 </style>
 
+
+<style id="v20-cloud-access-refinement">
+/* V20.19 — Cloud access presentation only. Authentication, sync handlers and stored data remain untouched. */
+@media screen {
+  #tab-settings #cloudPanel > div {
+    position:relative;
+    overflow:hidden;
+    padding:22px!important;
+    color:#edf2f7!important;
+    background:
+      radial-gradient(ellipse at 92% 0%,rgba(205,219,235,.13),transparent 36%),
+      linear-gradient(150deg,#182b43 0%,#13243a 54%,#0c192a 100%)!important;
+    border:1px solid rgba(198,213,231,.3)!important;
+    border-radius:20px!important;
+    box-shadow:0 18px 44px rgba(1,7,16,.3),inset 0 1px 0 rgba(255,255,255,.065)!important;
+  }
+  #tab-settings #cloudPanel > div::before {
+    content:"";
+    position:absolute;
+    inset:0 12% auto;
+    height:1px;
+    background:linear-gradient(90deg,transparent,rgba(236,242,249,.7),transparent);
+    pointer-events:none;
+  }
+  #tab-settings #cloudPanel > div > div:first-child {
+    align-items:center!important;
+    padding-bottom:12px;
+    border-bottom:1px solid rgba(195,210,229,.16);
+  }
+  #tab-settings #cloudPanel h2 {
+    margin:0;
+    font-size:18px!important;
+    letter-spacing:.14em;
+    line-height:1.5;
+  }
+  #tab-settings #cloudPanel > div > div:first-child button {
+    display:inline-grid;
+    place-items:center;
+    width:38px;
+    min-width:38px;
+    height:38px;
+    color:#e2eaf3!important;
+    background:rgba(210,223,238,.08)!important;
+    border:1px solid rgba(195,210,229,.24)!important;
+    border-radius:12px!important;
+    line-height:1;
+  }
+  #tab-settings #cloudPanel > div > p:first-of-type {
+    max-width:62ch;
+    margin:12px 0 18px!important;
+    color:#b9c8d8!important;
+    line-height:1.9!important;
+  }
+  #tab-settings #cloudPanel label {
+    display:block;
+    margin:12px 0 6px!important;
+    color:#dbe5ef!important;
+    font-size:12px!important;
+    font-weight:800!important;
+    line-height:1.8;
+  }
+  #tab-settings #cloudEmail,
+  #tab-settings #cloudPassword {
+    box-sizing:border-box;
+    width:100%!important;
+    min-width:0;
+    min-height:48px!important;
+    padding:12px 14px!important;
+    color:#f2f5f8!important;
+    background:rgba(4,12,23,.72)!important;
+    border:1px solid rgba(190,207,226,.3)!important;
+    border-radius:12px!important;
+    direction:ltr!important;
+    text-align:left!important;
+    font-size:16px!important;
+    line-height:1.4;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+  }
+  #tab-settings #cloudPassword {
+    letter-spacing:.12em;
+  }
+  #tab-settings #cloudEmail::placeholder,
+  #tab-settings #cloudPassword::placeholder {
+    color:#8194aa!important;
+    letter-spacing:normal;
+  }
+  #tab-settings #cloudPanel button[onclick="cloudSignIn()"],
+  #tab-settings #cloudPanel button[onclick="cloudSignUp()"] {
+    min-height:46px!important;
+    padding:11px 14px!important;
+    border-radius:12px!important;
+    font-size:12px!important;
+    font-weight:850!important;
+    transition:background-color .16s ease,border-color .16s ease,transform .16s ease,box-shadow .16s ease;
+  }
+  #tab-settings #cloudPanel button[onclick="cloudSignIn()"] {
+    color:#101c2b!important;
+    background:linear-gradient(135deg,#f3f5f8 0%,#c4cfdd 100%)!important;
+    border:1px solid rgba(255,255,255,.72)!important;
+    box-shadow:0 7px 18px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.7);
+  }
+  #tab-settings #cloudPanel button[onclick="cloudSignUp()"] {
+    color:#e6edf5!important;
+    background:linear-gradient(145deg,rgba(192,207,224,.13),rgba(192,207,224,.055))!important;
+    border:1px solid rgba(195,210,229,.3)!important;
+  }
+  #tab-settings #cloudPanel button[onclick="cloudSignIn()"]:hover,
+  #tab-settings #cloudPanel button[onclick="cloudSignUp()"]:hover {
+    transform:translateY(-1px);
+    box-shadow:0 9px 20px rgba(0,0,0,.23);
+  }
+  #tab-settings #cloudPanel #cloudMessage {
+    padding:10px 12px!important;
+    color:#d5e0eb!important;
+    background:rgba(4,12,23,.38)!important;
+    border:1px solid rgba(190,207,226,.16)!important;
+    border-radius:11px!important;
+    line-height:1.85!important;
+  }
+  #tab-settings #cloudPanel > div > p:last-child {
+    padding-top:10px;
+    color:#91a3b8!important;
+    border-top:1px solid rgba(195,210,229,.13);
+    line-height:1.85!important;
+  }
+  #tab-settings #cloudHeaderStatus {
+    color:#e1e9f2!important;
+    background:linear-gradient(145deg,rgba(192,207,224,.13),rgba(192,207,224,.055))!important;
+    border:1px solid rgba(195,210,229,.28)!important;
+    border-radius:999px!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.055);
+  }
+  #tab-settings #cloudPanel :is(button,input):focus-visible,
+  #tab-settings #cloudHeaderStatus:focus-visible {
+    outline:2px solid #d9e4ef!important;
+    outline-offset:3px!important;
+    box-shadow:0 0 0 4px rgba(185,203,223,.16)!important;
+  }
+}
+@media screen and (max-width:640px) {
+  #tab-settings #cloudPanel > div {
+    padding:16px!important;
+    border-radius:17px!important;
+  }
+  #tab-settings #cloudPanel > div > div:nth-child(7) {
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:9px!important;
+  }
+  #tab-settings #cloudPanel button[onclick="cloudSignIn()"],
+  #tab-settings #cloudPanel button[onclick="cloudSignUp()"] {
+    width:100%;
+    min-width:0;
+    min-height:46px!important;
+  }
+}
+@media screen and (max-width:380px) {
+  #tab-settings #cloudPanel > div > div:nth-child(7) {
+    grid-template-columns:minmax(0,1fr);
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  #tab-settings #cloudPanel button {
+    transition:none!important;
+    transform:none!important;
+  }
+}
+</style>
+
 </head>
 <!-- V19.30: smart operating supplies inventory; preserve original layout and schemaVersion 18 -->
 <!-- V19.37: compact A4 landscape inventory print with fixed image thumbnails -->
